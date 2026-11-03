@@ -49,6 +49,8 @@ Type names carry no version suffix yet. A change that old scenes cannot take get
 | `messages` | no | `Report`, `message`, `warning`, `error`, text helpers (ux-tools.md section 2). |
 | `errors` | no | `UserError`. |
 | `names` | only the two group-name wrappers | D-STR helpers, `encode_group_name` / `decode_group_name`, `lod_uid`, int32 helpers. |
+| `lod_container` | yes (lazily) | The two shapes of geometry (LOD geometry, P3D geometry): `classify`, `lod_content`, detail copy. Extract LOD and Assemble LODs use it. |
+| `lod_match` | no | The Assemble LODs match rule (spec 3.2) as a pure function, `match_lods`. |
 | `p3d_import` | `lod_builder` and `import_model` | The importer: `plan` (decisions, no `hou`), `lod_builder` (writes geometry), `proxies`, `lod_filter`. |
 
 ## The importer in short

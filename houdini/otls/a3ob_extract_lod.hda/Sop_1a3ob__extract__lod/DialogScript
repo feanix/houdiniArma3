@@ -1,0 +1,21 @@
+# Dialog script for a3ob_extract_lod, version 1
+
+{
+    name	a3ob_extract_lod
+    script	a3ob_extract_lod
+    label	"Extract LOD"
+
+    help {
+	"Takes one LOD out of a P3D geometry and outputs it as a LOD geometry that you can edit."
+    }
+
+    inputlabel	1	"P3D geometry"
+
+    parm {
+	name	"lod"
+	label	"LOD"
+	type	string
+	default	{ "0" }
+	help	"Which LOD to extract: its position in the P3D geometry (0 is the first), or its name, for example Geometry or Resolution 1."
+    }
+}
