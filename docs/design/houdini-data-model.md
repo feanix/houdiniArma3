@@ -1,6 +1,6 @@
 # Houdini data model for P3D (M2 spec)
 
-Status: revision 5 (2026-11-03), owner decisions D7-D9 and D14-D17 applied, plus D24 and D25. Normative for M3 (import) and M4 (export). No question is open
+Status: revision 6 (2026-11-03), owner decisions D7-D9 and D14-D17 applied, plus D23 (layout record, §19), D24 and D25. Normative for M3 (import) and M4 (export). No question is open
 except the F-4 follow-up (see [Still open](#still-open)).
 
 Changes of D24 and D25 (task #38): the tier-2 rules follow Bohemia's own files (§17.1.1: `T2-TRI` allows convex quads in Geometry and
@@ -150,6 +150,7 @@ geometry from a base P3D geometry plus edited LOD geometries. With its `replace`
 | `a3ob_lod_uid` | **prim** int32 (not detail) | absent; a prim without a value reads `0` = "no uid" | Which import-time LOD a polygon came from (D8). Written by the importer on every polygon of every LOD, never written to the P3D file. Rules: §3.5. |
 | `a3ob_source_counts` | detail int32[3] | absent | `(points, faces, corners)` at import, including proxies: the same triple as M1's `RawTagg.counts`. Used to drop stale topology-bound data (§11.2, §9.2). The "looks merged" check (§17.1) reads only the first two. |
 | `a3ob_sharp_extra` | detail int32[] (flat pairs) | absent | `#SharpEdges#` pairs that are not polygon edges (§9.2). |
+| `a3ob_layout` | detail string (base64 of zlib) | absent | The file layout Houdini cannot hold (normal table, triangle pads, sharp pair order, interleaved proxy order, signed zero), bound to the positions and topology it was taken from (D23, §19). Ignored with an info line when the mesh changed. |
 
 Constants that are not stored: `MLOD`/257 (`data_p3d.py:777-782`) and `P3DM`/28.256 (`data_p3d.py:472-478`).
 
@@ -664,7 +665,7 @@ All of the following must hold:
 
 Otherwise the triangle stays inline. Its selection stays a normal point group. If the name passes the first test, prim attributes `a3ob_proxy_path` / `a3ob_proxy_index` are set on the selection's member faces. That is the same form an unpacked packed proxy has, so the exporter treats both the same way (§13.5).
 
-Lossless order requires the proxy vertices and faces to be the **tail** of the vertex and face lists in prim order. That holds in the fixture (§6). If proxies are interleaved, the round trip is L1 (D7, OQ-2): the bytes differ, the content does not. Index-bound records follow the move (task #36, `permutation.py`): the importer stores blobs (editor masks, `#Hide#`, inactive selections, `#Mass#`, `#Animation#`, `#UVSet#`, `#SharpEdges#`) and the pairs of `a3ob_sharp_extra` in the order the export writes (mesh, then proxies), so they mark the same points and faces by position. A record that cannot be moved (unknown layout, wrong size) is dropped with a warning that names the LOD and the record. With Sort sections the export moves face and corner bytes of blobs the same way.
+Lossless order requires the proxy vertices and faces to be the **tail** of the vertex and face lists in prim order. That holds in the fixture (§6). If proxies are interleaved, the round trip is L1 (D7, OQ-2): the bytes differ, the content does not. Index-bound records follow the move (task #36, `permutation.py`): the importer stores blobs (editor masks, `#Hide#`, inactive selections, `#Mass#`, `#Animation#`, `#UVSet#`, `#SharpEdges#`) and the pairs of `a3ob_sharp_extra` in the order the export writes (mesh, then proxies), so they mark the same points and faces by position. A record that cannot be moved (unknown layout, wrong size) is dropped with a warning that names the LOD and the record. With Sort sections the export moves face and corner bytes of blobs the same way. Since D23 the layout record (§19) keeps the permutation and the export moves the LOD back to the file order while the LOD is unedited, so an interleaved file is L0 again.
 
 ## 14. Reserved and meaningful Houdini names
 
@@ -683,6 +684,7 @@ Lossless order requires the proxy vertices and faces to be the **tail** of the v
 | `xn__*` | `encodeAttrib` prefix (docs: `hom/hou/text`) | group names that start with `xn__` decode on export |
 | `__*` groups | conventional temporary groups | excluded from export by default (§7.2) |
 | `a3ob_lod_uid` | no Houdini meaning | ✔ prim int, import-time LOD marker (D8, §3.5). Not a P3D field; never exported. |
+| `a3ob_layout` | no Houdini meaning | ✔ detail string, the layout record of D23 (§19). Count-bound like the blobs of §11.2, and also bound to a checksum of positions and topology. Never a group or a user attribute; never exported as a TAGG. |
 | `a3ob_*` | ours | the reserved prefix. Selection-derived names always carry `a3ob_w_` / `a3ob_fw_`, so they cannot collide with fixed names. |
 
 ## 15. Round-trip invariant table
@@ -700,12 +702,14 @@ Lossless order requires the proxy vertices and faces to be the **tail** of the v
 | vertex count | points − pack points (used only by packed prims) + 3·packed proxies | count | ✔ | L0 |
 | vertex xyz | `P = (x, y, −z)` | inverse | ✔ | L0 |
 | vertex flags | `a3ob_vertex_flags` raw | `& 0xFFFFFFFF` | lossy groups | L0 |
-| normals table | vertex `N`, rebuilt first-appearance | rebuild | renormalised; visual only | L0 if unique, referenced and first-appearance (fixtures ✔); else L1 |
+| normals table | vertex `N`, rebuilt first-appearance | rebuild; with a valid layout record (§19) the table of the source file | renormalised; visual only | L0 (record valid, §19); else L0 if unique, referenced and first-appearance (fixtures ✔); else L1 |
 | proxy normal equal to a mesh normal, stored as a separate entry | shares one index after exact-f32 dedup | rebuild | — | L1 (fixtures: all values unique, S2) |
 | normal values | `(−nx, −ny, nz)` f32 | inverse | renormalised | L0 |
 | face sides 3–4, corner order | polygon, §4.3 map | inverse | ✔ | L0 |
 | faces with 0–2 sides | closed polygon with 0–2 vertices | skipped with a warning (M1 cannot write them) | — | L1 = dropped (fixtures have none) |
-| triangle pad | not stored | zeros | zeros | L1 if the source pad ≠ 0 (fixtures: 0) |
+| triangle pad | `a3ob_layout` (§19) | the recorded values, else zeros | zeros | L0 (record valid); else L1 if the source pad ≠ 0 (fixtures: 0) |
+| vertex xyz sign of zero | `a3ob_layout` (§19) | the recorded sign | -- | L0 (record valid); else the unpack turns a source +0.0 z into -0.0 (L1) |
+| interleaved proxy order, sharp pair order | `a3ob_layout` (§19) | file order | -- | L0 (record valid); else L1 |
 | face-data UV | `uv` or `a3ob_face_uv` (f64) | `1 − v` → f32 | ✔ | L0 for `v = 0` or `abs(v) ≥ 2⁻³⁰` |
 | face flags | `a3ob_face_flags` | raw | lossy groups | L0 |
 | texture, rvmat | `a3ob_texture`, `a3ob_material` (D-STR: M1 string unchanged) | `encode_string`; a character it cannot encode is a validator error. Export option lowercase (off by default, §5 Paths) lowercases both | ✔ ASCII only | L0 for every byte 0x01–0xFF (V9); L1 with lowercase on |
@@ -743,7 +747,7 @@ Lossless order requires the proxy vertices and faces to be the **tail** of the v
 5. **`N` and UV attributes** (float64 via the verb, U7).
 6. **Groups and weights** (`a3ob_w_*` / `a3ob_fw_*` created with default 1.0); blobs for empty or duplicate names and repeated UVSet ids (§7.3, §8).
 7. **Sharp edges.**
-8. **Detail attributes**, including `a3ob_lod_signature`, `a3ob_source_counts` (points, faces, corners), `a3ob_tagg_order` and, when needed, `a3ob_tagg_active`, `a3ob_eof_active` and `a3ob_prop_raw`.
+8. **Detail attributes**, including `a3ob_lod_signature`, `a3ob_source_counts` (points, faces, corners), `a3ob_layout` (§19), `a3ob_tagg_order` and, when needed, `a3ob_tagg_active`, `a3ob_eof_active` and `a3ob_prop_raw`.
 9. **Proxies last**, as packed prims in ascending proxy face index, with path/index both outside and inside (§13.3).
 10. **Pack** each LOD and merge into the P3D geometry, setting `name`. Store `a3ob_file_trailing` if the file has trailing bytes.
 
@@ -758,6 +762,7 @@ Lossless order requires the proxy vertices and faces to be the **tail** of the v
       - the normals table, the UVs and the strings (encoded back with `encode_string`, D-STR).
    2. **Then add the TAGGs**, by hint plus canonical order, with active bytes (§11.3): sharp edges, UV sets, properties, mass, selections, blobs (through `parse_tagg`, §11.2).
    3. Check `LOD.dropped_taggs`. A non-empty list is an error (a TAGG was added before `set_mesh`).
+   4. **Apply the layout record** (`a3ob_layout`, §19) if it is valid for the built LOD, else say so in one info line.
 4. **Run M1's checks** on every LOD before writing:
    - **`structure_errors()` is a hard stop.** Any message aborts the export with the messages listed. It means array lengths or TAGG sizes are wrong, which is a glue bug or a stale blob that §11.2 should have dropped.
    - **`check()` is advisory.** Its extra messages are shown as warnings and do not stop the write. (`check()` returns the `structure_errors()` messages alone when there are any.) The glue **pre-empts** three of them, which it has already handled and reported, so M4 drops them from the advisory list: repeated `#UVSet#` ids are handled as blobs (§8) and warned about at import and at validation, and when such a blob is written back (counts unchanged) M1 reports the repeated id once more; selection names equal up to case (and exact-duplicate names, which are blobs, §7.3) are reported by the glue as its own warning; faces with fewer than 3 sides are skipped in step 2 (§5), so M1 never sees them. The rest stay as they are: point or normal index out of range, sharp edge with a missing point, proxy selection without a triangle.
@@ -1149,6 +1154,81 @@ Pure Python (no `hou`), in `tests/`; each names what it catches.
   auto-components use it; the validator rules and the mass warning keep their own sets (Geometry, Geometry Buoyancy,
   Geometry PhysX, plus Underground for T2-CONVEX and T2-COMP).
 - The two `propeller` aliases of §18.3: **kept** (D19). English to Czech on export is confirmed.
+
+## 19. Revision 6: the layout record (D23, task #37)
+
+Why. Object Builder's files hold layout that Houdini geometry cannot: duplicate entries in the normal table, old values in the
+unused fourth slot of a triangle, sharp pairs in their own order, proxies between the other points and faces, and the sign of
+a zero. The content survives import and export (L1), the bytes do not (findings F-1 to F-5 of task #29). D23 asks for
+byte-identical files. The layout is kept in a record, bound to the mesh it was taken from like the count-bound blobs of §11.2.
+When the mesh changes, the record is ignored and today's content-lossless layout is written.
+
+### 19.1 Storage
+
+- **Name and class.** Detail string `a3ob_layout` on the LOD geometry (§3.3): base64 of a zlib stream. Absent for a LOD that
+  was not imported (made by hand, or by New P3D). It is a hidden detail: it is not a group, a selection, a point, prim or
+  vertex attribute, and no node shows it.
+- **Carried unchanged.** Extract LOD and Assemble LODs copy every detail attribute (`lod_container.copy_detail_attributes`), so
+  the record travels with the LOD. A node that edits a LOD does not have to touch it: the record checks itself (19.3).
+- **Never exported as a TAGG.** It is read at export and not written to the file.
+
+### 19.2 Content
+
+All numbers are little-endian, all indices are **file indices** of the LOD as it was read (points, faces and corners as in the
+source file). The zlib body is:
+
+| Field | Size | Meaning |
+|---|---|---|
+| magic | 4 bytes | `A3LR` |
+| version | u8 | `1`. A reader that does not know the version ignores the record. |
+| parts | u8 | Bit mask of the parts that follow: 1 order, 2 normals, 4 pads, 8 sharp, 16 zeros. |
+| counts | 4 x u32 | points, faces, corners, normal entries of the source LOD. |
+| digest | 16 bytes | Checksum of positions and topology (19.3). |
+| parts | per set bit, in bit order | u32 byte length, then the part. |
+
+- **order** (F-4): `point_old` (u32 per point) and `face_old` (u32 per face): the file index behind each point and face of the
+  Houdini order. It is `permutation.Permutation` of the import (§13.6). Absent when the order is the identity.
+- **normals** (F-1): the file's normal table entry of every corner (u32 per corner, file face order, file corner order), then
+  a u32 count of entries no corner uses, each as u32 entry number and three f32. The values of the used entries come from the
+  corners' `N` at export, so an edit of `N` is written; the record only says which corners share an entry.
+- **pads** (F-2): for every triangle in file order, the unused fourth slot of the face record: vertex index, normal index,
+  and the two UV values as raw u32 bits, as four columns of u32. Absent when all of them are zero.
+- **sharp** (F-3): the payload of the first `#SharpEdges#` TAGG (flat u32 pairs, file point numbers, file order).
+- **zeros** (F-5): a u32 count, then u32 coordinate numbers `3 * point + axis` of every position value in the file that is
+  `-0.0`.
+
+### 19.3 When it is valid
+
+- **Digest.** blake2b-128 of: the three counts as u32; the positions (f32, file axes, points in Houdini order, `-0.0` replaced
+  by `+0.0`); the face sides (u32, faces in Houdini order); the point number (Houdini order) of every corner, face by face in
+  file corner order. It is computed from the file LOD at import and from the built LOD at export, in the same order, before the
+  record is applied. It covers positions and topology, not normals, UVs, flags, textures or selections.
+- **Rule.** The export builds the LOD as always (§16 step 3, content-lossless), then compares the counts of the built LOD with
+  the record and the digests. If both match, the record is applied (19.4). If not, it is ignored, the content-lossless LOD is
+  kept, and the report gets one info line: `<LOD>: the layout record does not match the mesh (it was edited), so the content
+  is written in the layout of the export, not the layout of the source file`. A LOD with no record gets no line.
+- **Never a wrong file.** The record is applied to a copy of the built LOD, and a part that cannot be applied is skipped. After
+  it, the LOD holds the same content as before: same points and faces by position, same corner normals, same UVs, same TAGG
+  content. Only positions in the file and layout change.
+
+### 19.4 Applying the record, in this order
+
+1. **order.** The built LOD moves to file order: points, point flags, faces, UV and normal records, and every TAGG that holds
+   point, face or corner numbers (`permutation.remap_payload` through the inverse permutation). If a TAGG cannot be moved, the
+   whole record is ignored (with the info line).
+2. **normals.** The table is rebuilt: entry `e` is the `N` of the corners that the record gives entry `e`. If two corners of one
+   entry have different `N` (the artist edited some of them), the table of the built LOD (first appearance) is kept, and
+   nothing else changes. Unused entries come from the record.
+3. **pads.** The unused slots of triangles get the recorded values.
+4. **sharp.** If the built pairs and the recorded pairs are the same pairs (compared as unordered pairs, with repeats, in file
+   numbers), the recorded payload replaces the built one, so the order is the file's. Otherwise the built pairs stay.
+5. **zeros.** Every position value that is zero gets the sign the record has for it (`-0.0` if listed, else `+0.0`).
+
+### 19.5 Levels
+
+L0 for a LOD whose positions and topology are unchanged since import, whatever else was edited (the rest of the content is
+written from the geometry as before). A LOD that was edited in position, topology, order or counts is L1 as in §15 and gets
+the info line. The record does not grow with edits: nothing rewrites it. It is not a place to store anything else.
 
 ## Resolved (D7-D9)
 
