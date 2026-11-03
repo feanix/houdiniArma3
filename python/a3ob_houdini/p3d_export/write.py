@@ -21,9 +21,12 @@ def with_p3d_extension(path: str) -> str:
 
     Same as Blender's ``ExportHelper.check_extension`` with A3OB's ``filename_ext = ".p3d"``
     (Arma3ObjectBuilder/ui/import_export_p3d.py:235): ``model`` -> ``model.p3d``, ``model.v2`` -> ``model.v2.p3d``.
-    ``write_file`` applies it, so the backup and temp names follow the final name."""
+    ``write_file`` applies it, so the backup and temp names follow the final name.
+
+    The check reads the path with environment variables expanded (``$MODEL`` may already end in ``.p3d``), but the
+    path comes back as typed, so a message or a remembered path shows what the user wrote."""
     path = os.fspath(path) if path else ""
-    if path and not path.lower().endswith(".p3d"):
+    if path and not os.path.expandvars(path).lower().endswith(".p3d"):
         return path + ".p3d"
     return path
 
@@ -33,7 +36,7 @@ def write_file(path: str, data: bytes, report: messages.Report, backup: bool = F
     failures go to ``report``.
 
     With ``backup`` an existing file is kept as ``<path>.bak`` first (A3OB's "Create Backups")."""
-    path = os.path.abspath(with_p3d_extension(os.path.expandvars(os.fspath(path)))) if path else ""
+    path = os.path.abspath(os.path.expandvars(with_p3d_extension(path))) if path else ""
     if not path:
         report.error(messages.format_problem(None, "no output file is set", "Set the file parameter"))
         return False

@@ -27,6 +27,19 @@ class TestHelper(unittest.TestCase):
                               ("model.v2", "model.v2.p3d"), ("a/b\\c", "a/b\\c.p3d"), ("", "")):
             self.assertEqual(with_p3d_extension(given), wanted)
 
+    def test_a_variable_that_holds_the_ending_is_not_extended(self):
+        # The message and the written file must agree when the path is an environment variable.
+        folder = tempfile.mkdtemp(prefix="a3ob_ext_")
+        self.addCleanup(shutil.rmtree, folder, True)
+        os.environ["A3OB_TEST_MODEL"] = os.path.join(folder, "model.p3d")
+        self.addCleanup(os.environ.pop, "A3OB_TEST_MODEL", None)
+        self.assertEqual(with_p3d_extension("$A3OB_TEST_MODEL"), "$A3OB_TEST_MODEL")
+        os.environ["A3OB_TEST_STEM"] = os.path.join(folder, "stem")
+        self.addCleanup(os.environ.pop, "A3OB_TEST_STEM", None)
+        self.assertEqual(with_p3d_extension("$A3OB_TEST_STEM"), "$A3OB_TEST_STEM.p3d")
+        self.assertTrue(write_file("$A3OB_TEST_MODEL", b"one", messages.Report()))
+        self.assertEqual(os.listdir(folder), ["model.p3d"])
+
     def test_write_file_adds_the_ending_and_the_backup_follows(self):
         folder = tempfile.mkdtemp(prefix="a3ob_ext_")
         self.addCleanup(shutil.rmtree, folder, True)
