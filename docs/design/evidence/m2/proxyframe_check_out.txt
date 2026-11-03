@@ -1,0 +1,5 @@
+X1 random triangles: 5000
+X1 spec frame == (M x, M y, -M z, M origin) of M1's frame for all: True (mismatches 0)
+X1 det of M1's mapped frame is -1 and det of the spec frame is +1 for all: True
+X1 canonical triangle, M1 file-space frame: (1.0, 0.0, 0.0) (0.0, 1.0, 0.0) (0.0, 0.0, 1.0) origin (0.0, 0.0, 0.0)
+X1 canonical triangle, spec Houdini frame: ((1.0, -0.0, 0.0), (0.0, 1.0, 0.0), (-0.0, -0.0, 1.0))

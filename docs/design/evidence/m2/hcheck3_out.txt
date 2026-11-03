@@ -1,0 +1,25 @@
+Houdini 22.0.466 Python 3.13.10
+V1 M1 str has lone surrogates: 5
+V1 converted max code point: 0xff bijective back to M1 str: True bytes equal: True
+V1 prim string round trip: True detail string[] round trip: True
+V1 group names a<byte>b for bytes 1..255 that fail encode/create/decode: []
+V1 encodeAttrib(lone surrogate): TypeError
+V2 encodeAttrib('') = ''
+V2 createPointGroup('') fails: OperationFailed
+V2 encodeAttrib('__foo') = '__foo' encodeAttrib('Head') = 'Head' encodeAttrib('head') = 'head'
+V2 groups Head and head coexist: ['Head', 'head']
+V3 inner prim.normal (0.0, 0.0, -1.0)
+V3 translate+5x P [(5.0, 0.0, 0.0), (6.0, 0.0, 0.0), (5.0, 1.0, 0.0)] prim.normal (0.0, 0.0, -1.0) N (0.0, 0.0, -1.0)
+V3 mirrorX P [(0.0, 0.0, 0.0), (-1.0, 0.0, 0.0), (0.0, 1.0, 0.0)] prim.normal (0.0, 0.0, 1.0) N (0.0, 0.0, -1.0)
+V4 after unpacking the LOD (default parms): nested packed prims 1 fullTransform == P*T err 0.0 outer a3ob_proxy_path kept on nested prim: \a3\outer detail a3ob_lod_type kept: True
+V4 after unpacking the proxy too (default parms, transfer_attributes=''): polygons 2 embedded a3ob_proxy_path/index values [('', 0), ('\\a3\\inner', 7)]
+V5 fuse::2.0 points 4 -> 3 pack points [0] shared with polygons [0] pack-only points []
+V6 pack verb packbyname default: 0
+V6 default pack: prims ['PackedGeometry']
+V6 packbyname=1: prims ['PackedFragment', 'PackedFragment']
+   fragment {'typename': 'PackedFragment', 'packedprimitivename': 'PackedFragment.0', 'fragmentattribute': 'name', 'fragmentname': 'piece0', 'geometryid': 19} unpacked prims 1 detail a3ob_lod_type 6
+   fragment {'typename': 'PackedFragment', 'packedprimitivename': 'PackedFragment.1', 'fragmentattribute': 'name', 'fragmentname': 'piece1', 'geometryid': 19} unpacked prims 1 detail a3ob_lod_type 6
+V6 fragment intrinsic names: ('primitivetokens', 'memoryusage', 'vertexcount', 'indexorder', 'typename', 'typeid', 'bounds', 'measuredvolume', 'measuredarea', 'measuredperimeter', 'packedprimitivename', 'packedtypename', 'packedtypelabel', 'viewportlod', 'packedbounds', 'packedrenderbounds', 'pivot', 'transform', 'packedlocaltransform', 'packedfulltransform', 'pointinstancetransform', 'fragmentattribute', 'fragmentname', 'geometryid')
+V7 addAttrib default 1.0: new HOM point weight 1.0
+V7 subdivide new points interpolate weights: [0.25, 0.625, 0.75, 1.0]
+V8 merge of two unpacked LODs: lod_type 0 source_counts (3, 1) current counts (6, 2)

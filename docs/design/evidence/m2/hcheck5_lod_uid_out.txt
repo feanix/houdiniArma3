@@ -1,0 +1,19 @@
+Houdini 22.0.466 Python 3.13.10
+W1 dataType attribData.Int size 1 default 0
+W1 2**31-1 round trip: True
+W1 a prim created after the attribute reads 0 (unstamped = 0)
+W2 packed prims per LOD [1, 1] outer prim has the attribute: [False, False]
+W2 embedded geometry keeps uids: [111, 111]
+W2 Unpack of one packed LOD: [111, 111]
+W3 Merge of two packed LODs -> prims 2
+W3 Unpack of both: uids [111, 111, 222, 222] distinct [111, 222] (detail a3ob_lod_type is now detail )
+W4 Merge of two unpacked LODs: uids [111, 111, 222, 222] distinct [111, 222]
+W5 blast first quad -> prims 1 uids [111]
+W5 fuse::2.0 -> prims 2 uids [111, 111]
+W5 polyextrude::2.0 all -> prims 10 uids [111, 111, 111, 111, 111, 111, 111, 111, 111, 111]
+W5 copytopoints::2.0 (2 copies): prims 4 distinct uids [111]
+W6 HOM-created prim in a stamped LOD: uids [111, 111, 0] distinct nonzero [111]
+W6 hand-authored LOD without the attribute: uids None distinct []
+W6 Merge(stamped LOD, hand-authored LOD): uids [111, 111, 0, 0] distinct [111]
+W7 bgeo save/load of the packed P3D geometry, then Unpack: [111, 111, 222, 222]
+W8 generator: deterministic True | 1000 import nodes x 32 LODs = 32000 uids, distinct 32000 min 34475 max 2147476213 all fit int32: True

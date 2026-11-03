@@ -1,0 +1,6 @@
+sample_2_crate.p3d LOD 2 1.000e+04: no #UVSet# TAGG, face corners with nonzero UV: 0
+sample_1_character.p3d LOD 3 1.000e+04: no #UVSet# TAGG, face corners with nonzero UV: 0
+sample_1_character.p3d LOD 4 1.000e+13: no #UVSet# TAGG, face corners with nonzero UV: 0
+sample_1_character.p3d LOD 5 1.000e+15: no #UVSet# TAGG, face corners with nonzero UV: 0
+sample_1_character.p3d LOD 8 7.000e+15: no #UVSet# TAGG, face corners with nonzero UV: 0
+weight bytes 1..255 failing decode->f32->encode: []
