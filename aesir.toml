@@ -4,3 +4,10 @@ session_prefix = "armaHou"
 
 [aesir]
 source = "E:/Projects/houdiniArma3/aesir"
+
+[gates]
+# Stdlib unittest suite (D5) under system CPython and Houdini's hython (D2).
+quick = [
+    "python scripts/run_tests.py -q",
+    "\"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scripts/run_tests.py -q",
+]
