@@ -1,6 +1,16 @@
 # Houdini data model for P3D (M2 spec)
 
-Status: draft for owner review, revision 2 (2026-11-03, after the M2 review). Normative for M3 (import) and M4 (export).
+Status: revision 3 (2026-11-03), owner decisions D7-D9 applied. Normative for M3 (import) and M4 (export). Two
+questions stay open (OQ-5, OQ-11; see [Still open](#still-open)).
+
+Revision 3 changes: the owner decisions D7, D8 and D9 are folded in, so the spec no longer says "recommended" for
+resolved items, and the open-questions table is now a "Resolved (D7-D9)" table plus a short "Still open" table. D8 adds
+the per-prim int attribute `a3ob_lod_uid` (§3.3, §3.5, §14, §15, §17.1), and `a3ob_source_counts` now holds three
+numbers so that it matches M1's `RawTagg.counts` (§3.3). The verification review of revision 2 is answered: §11.2
+covers M1's typed `MaskTagg` / `AnimationTagg` and `LOD.dropped_taggs`, with the M4 build order (`set_mesh`, then TAGGs);
+faces with 0-2 sides are an export skip, because M1 cannot write them (§5); §13.4 relates the spec's proxy frame to M1's
+`proxy_frame` (do not feed `matrix_rows` to `setTransform`); M1 citations use names, not line numbers; §16 and §17.1 state
+how M4 uses `structure_errors()` and `check()`; evidence row V1 is shortened.
 
 Revision 2 changes: the hou string boundary (§5, D-STR; aligned with M1's final codec by the lead); signatures defer to M1 and keep raw bits (§3.4); LOD
 collection and packed transforms follow what Unpack actually does (§3.2); proxies carry their identity inside the
@@ -14,15 +24,18 @@ and changes them where marked **(change)**.
 ## How to read this
 
 - **`file:line`** refers to A3OB v2.5.1 @ 9f2b8bc, relative to `.reference/Arma3ObjectBuilder/Arma3ObjectBuilder/`.
-- **`T#`, `U#`, `V#`** are Houdini 22.0.466 hython checks (`V#` added in revision 2), and **`R#`** are reproduced
-  review findings. **`S#`** are fixture and pure-Python surveys. All are listed in [Evidence](#evidence); the scripts
-  and their outputs are in `docs/design/evidence/m2/`.
+- **`T#`, `U#`, `V#`, `W#`** are Houdini 22.0.466 hython checks (`V#` added in revision 2, `W#` in revision 3), and
+  **`R#`** are reproduced review findings. **`S#`** are fixture and pure-Python surveys (`X#`, revision 3, is a
+  pure-Python check against M1). All are listed in [Evidence](#evidence); the scripts and their outputs are in
+  `docs/design/evidence/m2/`.
+- **M1 citations** name functions and classes (`LOD.set_mesh`, `RawTagg`), never line numbers, because the lines move.
 - **M1** = the existing pure layer `python/a3ob_core` (`binary.py`, `p3d/model.py`, `p3d/lod_types.py`,
   `p3d/reader.py`, `p3d/writer.py`).
 - **"docs: page"** is the offline Houdini 22.0.466 documentation, read through the `docs` tool.
 - **L0** = byte-identical after import → export with no edits. **L1** = same P3D content, but bytes may differ.
   The goal is L0 on both fixtures.
-- **OQ-n** = open question for the owner ([list](#open-questions-for-the-owner)).
+- **OQ-n** = owner question. Resolved ones are in the [Resolved (D7-D9)](#resolved-d7-d9) table; OQ-5 and OQ-11 are
+  [still open](#still-open). **D#** = an owner decision record.
 
 ## 1. Terminology
 
@@ -48,6 +61,7 @@ and changes them where marked **(change)**.
 | D-RAW | Flags, the LOD header flags, named properties and unknown TAGGs are stored raw. A decoded view is optional and never authoritative. |
 | D-PROXY | Each proxy becomes a PackedGeometry primitive. Its embedded geometry is the proxy triangle in proxy-local space, with all its attributes and groups. Its transform is A3OB's triangle frame expressed in Houdini axes. Prim attributes `a3ob_proxy_path` and `a3ob_proxy_index` carry the reference, on the packed prim **and** on the embedded triangle, so unpacking a proxy yields a valid inline proxy (§13.3). |
 | D-STR | M1 strings are valid Unicode (cp1252, undefined bytes as C1) and go to `hou` unchanged; export encodes them back with M1's `encode_string`, and a character it cannot encode is a validator error (§5, V9). Lone surrogates crash Houdini (R1), and M1 never produces them. |
+| D-UID | Every polygon of an imported LOD carries the prim int `a3ob_lod_uid`, one fresh value per LOD per import (D8). The validator flags a LOD geometry that holds two or more distinct non-zero uids, i.e. a Merge of LODs. The uid is never written to the P3D file (§3.5). |
 | D-PREFIX | Every custom attribute is named `a3ob_*`. The Houdini standard names `P`, `N` and `uv*` are used only where their Houdini meaning is exactly right (§14). |
 
 ## 3. P3D and LOD containers
@@ -60,7 +74,7 @@ and changes them where marked **(change)**.
 | B. One geometry, with a per-prim `a3ob_lod` attribute | Must become per-prim attributes or detail arrays | Points cannot be shared between LODs. Groups and selections collide across LODs. Fuse, Normal and PolyReduce bleed across LODs. Loose points (Memory LOD) have no prim to carry the LOD id. | Rejected |
 | C. One geometry, one PackedGeometry prim per LOD (embedded geometry = A) | Each embedded detail survives (T7, T7b) | Merging packed LODs keeps every LOD's detail (T7d). Unpacking one LOD gives back its detail attributes (T7e). Copies are cheap. | Good as the **container** |
 
-**Recommendation: A for editing a LOD, C for the P3D.**
+**Decision (D7, OQ-7): A for editing a LOD, C for the P3D.** The importer outputs the P3D geometry (C) and ships an "unpack LOD k" helper (§17.2).
 
 - **LOD geometry** = A. **P3D geometry** = C: a Merge of `Pack` SOP outputs, in LOD order.
 - **Pack keeps the geometry in place.** The Pack SOP's packed prim has `fullTransform() == identity` and keeps the embedded detail attributes (T7b).
@@ -76,8 +90,8 @@ A3OB exports every visible, parentless mesh with `is_a3_lod` (`export_p3d.py:26-
 | Input | The exporter (ROP or shelf tool, M4) has a list of SOP paths, usually one. |
 | LOD detection | For each SOP's cooked geometry, in list order:<br>• **A LOD geometry.** If the geometry itself has the detail attribute `a3ob_lod_type`, the whole geometry is one LOD. Any packed prims in it are proxies (§13), never LODs. Embedded proxy geometry never carries `a3ob_lod_type`.<br>• **A P3D geometry.** Otherwise, if **every** prim is packed and each unpacks (with the `unpack` SOP verb, so that PackedDisk and PackedFragment also work) to content with detail `a3ob_lod_type`, the prims are LODs, in prim order. Exception: **PackedFragment prims that share one source detail** (equal intrinsic `geometryid`, V6) are **one** LOD. They appear only when the Pack SOP's "Pack by Name" (`packbyname`) is on (default off, V6). They are unpacked together, at the position of the first fragment. Their prim and point order may differ from the source (L1, with a warning).<br>• **Errors.** A geometry that mixes packed LOD prims with loose polygons or points is an error ("unpack or blast them first"). So is a packed prim whose content lacks `a3ob_lod_type`, and so is a geometry where `a3ob_lod_type` is a prim attribute (the result of unpacking several LODs at once, §3.1). Anything else is an error too. |
 | Count | Unlimited. The file's u32 LOD count = number of collected LODs + LOD copies (`data_p3d.py:787`, `811`). |
-| Order | **Preserve the collected order** (L0). A3OB always sorts by signature (`export_p3d.py:716`); here sorting is an export option (OQ-3). |
-| Packed transform | For a LOD that came from a packed prim:<br>1. Read `det = fullTransform()` 3×3 determinant from the LOD prim **before** unpacking.<br>2. Let the `unpack` verb bake the transform. Run it on a geometry that holds only that LOD prim (or only the fragments of one LOD), with `dotransform = 1` ("Apply Transform", default), `limit_iterations = 1` / `iterations = 1` (defaults, so nested proxies stay packed) and default `detail_attributes`. Unpack drops non-packed prims (docs: `nodes/sop/unpack`), which is one more reason mixed inputs are errors. It already transforms `P`, `N` (as a normal) and the transforms of nested proxy packed prims (V3: translate +5 moved `P`; V4: a nested proxy's `fullTransform()` = `P·T` exactly).<br>3. **The exporter never applies the LOD transform a second time.**<br>4. If `det < 0`, reverse the corner order of every polygon of that LOD when building P3D faces. Unpack does not do this: after a mirror-X, `prim.normal()` flips while `N` does not (V3). Warn when the transform is not identity (OQ-10).<br>Nested proxies with `det < 0` are handled in §13.5. |
+| Order | **Preserve the collected order** (L0). A3OB always sorts by signature (`export_p3d.py:716`); here sorting is an export option, off by default, and an unsorted result gets a validator warning (D7, OQ-3). |
+| Packed transform | For a LOD that came from a packed prim:<br>1. Read `det = fullTransform()` 3×3 determinant from the LOD prim **before** unpacking.<br>2. Let the `unpack` verb bake the transform. Run it on a geometry that holds only that LOD prim (or only the fragments of one LOD), with `dotransform = 1` ("Apply Transform", default), `limit_iterations = 1` / `iterations = 1` (defaults, so nested proxies stay packed) and default `detail_attributes`. Unpack drops non-packed prims (docs: `nodes/sop/unpack`), which is one more reason mixed inputs are errors. It already transforms `P`, `N` (as a normal) and the transforms of nested proxy packed prims (V3: translate +5 moved `P`; V4: a nested proxy's `fullTransform()` = `P·T` exactly).<br>3. **The exporter never applies the LOD transform a second time.**<br>4. If `det < 0`, reverse the corner order of every polygon of that LOD when building P3D faces. Unpack does not do this: after a mirror-X, `prim.normal()` flips while `N` does not (V3). Accept a non-identity transform, bake it once, and warn (D7, OQ-10).<br>Nested proxies with `det < 0` are handled in §13.5. |
 | Duplicate signatures | After copies are expanded, a duplicate signature is an error by default. Option: skip or ignore, mirroring A3OB `lod_collisions` (`export_p3d.py:614-622`). |
 | Object transform | Not applied: SOP space = P3D space. This mirrors the P3D origin = object origin rule. |
 
@@ -98,7 +112,8 @@ A3OB exports every visible, parentless mesh with `is_a3_lod` (`export_p3d.py:26-
 | `a3ob_tagg_order` | detail string[] | absent | Order hint (§11.3). |
 | `a3ob_tagg_active` | detail int32[], parallel to `a3ob_tagg_order` | absent (→ 1) | Raw active byte per ordered TAGG (§11.3). |
 | `a3ob_tagg_unknown_names`, `a3ob_tagg_unknown_active`, `a3ob_tagg_unknown_data` | detail string[] / int32[] (raw byte 0..255) / string[] (base64) | absent | Opaque TAGGs (§11.2). |
-| `a3ob_source_counts` | detail int32[2] | absent | Vertex and face counts at import, including proxies. Used to drop stale topology-bound data (§11.2, §9.2). |
+| `a3ob_lod_uid` | **prim** int32 (not detail) | absent; a prim without a value reads `0` = "no uid" | Which import-time LOD a polygon came from (D8). Written by the importer on every polygon of every LOD, never written to the P3D file. Rules: §3.5. |
+| `a3ob_source_counts` | detail int32[3] | absent | `(points, faces, corners)` at import, including proxies: the same triple as M1's `RawTagg.counts`. Used to drop stale topology-bound data (§11.2, §9.2). The "looks merged" check (§17.1) reads only the first two. |
 | `a3ob_sharp_extra` | detail int32[] (flat pairs) | absent | `#SharpEdges#` pairs that are not polygon edges (§9.2). |
 
 Constants that are not stored: `MLOD`/257 (`data_p3d.py:777-782`) and `P3DM`/28.256 (`data_p3d.py:472-478`).
@@ -149,6 +164,60 @@ In S6, 9 of 200 000 random f32 bit patterns cannot be reproduced by re-encoding 
 200 000 / 200 000 patterns, both near-miss values and all 16 fixture LODs round-trip bit for bit (S6). The revision-1
 "store Unknown with res = sig" fallback is dropped: M1 cannot encode it.
 
+### 3.5 LOD uid `a3ob_lod_uid` (D8)
+
+**Why.** Merging unpacked LOD geometries keeps only the first input's detail attributes (T7c, V8). The LOD
+identity, flags, properties and TAGG hints of the other LODs vanish without an error. Prim attributes are merged
+per prim, so a per-prim marker shows the damage exactly.
+
+**Storage.** Prim int32 `a3ob_lod_uid` (type and range: W1). `0` means "no uid"; the attribute default is 0.
+
+**Generation (importer).**
+
+- One uid per LOD per import: a random integer in `1 .. 2³¹−1`, from `random.SystemRandom`, redrawn when it was
+  already issued in this Python session. So two LODs of one file, and the LODs of two imports of the same file, get
+  different uids.
+- The importer writes it on **every polygon** of the LOD, inline proxy triangles included. It does not write it on
+  packed proxy prims or on their embedded triangles. Those are ignored by the check (value 0).
+- A new import never reuses a uid of an earlier import, even of the same file. This is deliberate: two imports of one
+  file merged together are exactly the error to catch.
+- Across hip sessions the session memory is gone. A saved uid can collide with a new random one with probability about
+  n²/2³² for n LODs in one scene (n = 1000: about 2e-4). A collision only hides a merge from this check (the count
+  heuristic is still there); it never changes exported data. The generator is tested in W8.
+
+**Survival (hython checks W2-W7).** The uid is an ordinary prim attribute, so everything that keeps prim attributes keeps it:
+
+| Operation | Result |
+|---|---|
+| Pack SOP verb, then Unpack of one LOD | kept: the embedded geometry holds it (W2); the outer packed prim has no such attribute |
+| Merge of packed LODs, then Unpack of both | kept per prim: 111, 111, 222, 222 (W3) |
+| Merge of unpacked LODs | kept per prim, two distinct uids in one geometry (W4). This is the case it detects. |
+| Blast, Fuse, PolyExtrude | kept; PolyExtrude's new side prims inherit it (W5) |
+| Copy to Points (copies of one LOD) | all copies share the uid, so a copy of one LOD is never "two LODs" (W5) |
+| bgeo save and load (hip) | kept (W7) |
+| a prim an artist adds by script or by a SOP that does not inherit (HOM `createPolygon`) | reads `0` (W6) |
+
+**Validator rule (§17.1).** Take the polygons of the LOD geometry. Collect their **non-zero** uids. If two or more
+distinct values exist, the geometry is a merged LOD. The check is exact for stamped LODs, with no count heuristic.
+
+**Hand-authored LODs and partial stamping.**
+
+| Case | Behaviour |
+|---|---|
+| No `a3ob_lod_uid` attribute (a LOD made by hand, or by the "A3OB LOD" shelf tool) | The uid check does not fire. Nothing is written for it on export. The count heuristic still applies if `a3ob_source_counts` exists. |
+| Some prims 0, others one non-zero uid (new prims added to an imported LOD) | Fine: 0 is "unstamped", not a second uid. The geometry has one distinct uid. |
+| Prims with two or more distinct non-zero uids | Merged LOD (warning). |
+| Imported LOD merged with a hand-authored mesh | Not seen by the uid check (the hand-authored prims read 0 or have no attribute), only by the count heuristic (W6). |
+| LOD with no polygons (Memory, Land Contact: only loose points) | No prim can carry a uid, so the uid check is blind for it. The count heuristic still applies. |
+| Two copies of one LOD merged | One uid: not flagged. The duplicate-signature error (§3.2) catches the result. |
+
+The "A3OB LOD" shelf tool (§17.2) stamps nothing: an artist-authored LOD has no import to trace. An artist who wants
+the check on such a LOD can run the same stamping helper (`new_lod_uid`) on it.
+
+**Never exported.** The exporter ignores `a3ob_lod_uid`: it is not a TAGG, not part of any signature and has no P3D
+field. The same holds if the attribute is lost; nothing in the file depends on it. So it is invisible to every
+round-trip level (§15).
+
 ## 4. Coordinates, winding, normals, UV
 
 ### 4.1 Facts
@@ -170,7 +239,7 @@ In S6, 9 of 200 000 random f32 bit patterns cannot be reproduced by re-encoding 
 1. **Choose the axis map.** File space is left-handed and Houdini is right-handed (F3, F4). An unmirrored conversion therefore needs a map with det = −1, i.e. one negated axis. Take **`M = diag(1, 1, −1)`**:
    - The model's left stays at +X and up stays at +Y, so the F6 character faces **+Z** in Houdini.
    - It is also what you get by taking A3OB's Blender coordinates (F1) through the standard Blender→Houdini Y-up rotation `(x_b, z_b, −y_b)`. Assets that went A3OB → Blender → FBX/Alembic → Houdini therefore land in the same place.
-   - The alternative `diag(−1, 1, 1)` makes the model face −Z (OQ-1).
+   - The alternative `diag(−1, 1, 1)` makes the model face −Z. It was not chosen (D7, OQ-1).
 2. **Winding.** For an orthogonal diagonal M with det −1, `(M e1) × (M e2) = −M (e1 × e2)`.
    - Keeping file order, Houdini's front would be `−(−M(e1×e2)) = M(e1×e2) = −M·outward`. That points inward, so the order **must be reversed**.
    - After reversal, Houdini's front = `−M(e1×e2) = M·outward` ✓.
@@ -189,7 +258,7 @@ In S6, 9 of 200 000 random f32 bit patterns cannot be reproduced by re-encoding 
 | Corner normal | `N = (−nx, −ny, nz)`, vertex float32, `transform_as_normal=True` (qualifier "Normal", U5). **No renormalisation** **(change:** A3OB renormalises on read (`data_p3d.py:488`, `572-584`); the fixtures' normals have length 0.99995 (S2), so renormalising would change bytes) | `(−Nx, −Ny, Nz)` | yes |
 | UV `(u, v)` | `uv = (u, 1 − v, 0)`, vertex **float64** | `(uv.x, 1 − uv.y)`, cast to f32 | yes for `v = 0` or `abs(v) ≥ 2⁻³⁰` |
 
-- **UV precision.** With float32 storage, `f32(1 − f32(1 − v)) ≠ v` for 33 388 of 100 000 random v; with float64 storage, 0 mismatches (T4c).
+- **UV precision (D7, OQ-8: float64 accepted).** With float32 storage, `f32(1 − f32(1 − v)) ≠ v` for 33 388 of 100 000 random v; with float64 storage, 0 mismatches (T4c).
 - **Making a float64 attribute.** HOM `addAttrib` always makes float32 (U2). A float64 attribute comes from the `attribcreate::2.0` SOP verb with `precision# = 3` (64-bit). This works on a standalone `hou.Geometry` (U7), and float64 survives Python SOP writes, Transform, `Geometry.merge` and bgeo save/load (U2).
 - **UV type info.** Set `uv*` attributes to `setOption("type", "texturecoord")` → qualifier "Texture Coord" (U5).
 
@@ -221,13 +290,16 @@ In S6, 9 of 200 000 random f32 bit patterns cannot be reproduced by re-encoding 
   - **Why it matters.** An earlier M1 codec (cp1252 + `surrogateescape`) produced lone surrogates, and Houdini cannot take them: `setAttribValue` kills hython 22.0.466 with a segmentation fault (R1: exit 139), and `hou.text.encodeAttrib` raises `TypeError` (V1). M1 no longer does this.
   - **Boundary (in `a3ob_houdini`).** M1 strings go to `hou` **unchanged** on import. On export, hou strings go back through `encode_string`. A character it cannot encode (e.g. an artist typed `ř`) is a **validator error** that names the attribute and element. It is never silently replaced.
   - **Result.** The map from file bytes to hou strings is a bijection. V9 checks all 255 non-NUL bytes for prim strings, detail string arrays and encoded group names (`encodeAttrib` → `createPointGroup` → `decodeAttrib`).
-  - **Display.** Text shows as cp1252: `é`, `ß`, `€`, `Š` look right. The 5 undefined bytes show as C1 control characters. Czech CP1250 text would show as cp1252 look-alikes; the real code page of Arma files is still open (OQ-5).
+  - **Display.** Text shows as cp1252: `é`, `ß`, `€`, `Š` look right. The 5 undefined bytes show as C1 control characters. Czech CP1250 text would show as cp1252 look-alikes; the real code page of Arma files is still open (OQ-5, D9).
   - **Scope.** It applies to `a3ob_texture`, `a3ob_material`, `a3ob_prop_names` / `a3ob_prop_values`, selection names (before `encodeAttrib`), `a3ob_proxy_path`, `a3ob_tagg_order` tokens, `a3ob_tagg_unknown_names` and the LOD `name` label. The pure layer stays hou-free.
 - **Paths.** Stored exactly as in the file (backslashes, relative, no forced case). Lowercasing (`export_p3d.py:720-722`) and relative/absolute conversion (`utilities/generic.py:174-216`) are export options, off for a lossless round trip.
 - **Polygon sides.**
   - P3D faces have 3 or 4 sides; triangles carry a 16-byte zero pad (`data_p3d.py:457-458`, `530-531`). The pad is not stored and is written as zeros; all fixture pads are zero (S2).
   - The exporter rejects polygons with more than 4 vertices, open polygons and non-polygon prims, other than proxy packed prims (validator, M4).
-  - **Faces with 0–2 sides.** M1 reads them (it only rejects more than 4, `reader.py:173`). The importer makes closed polygons with that many vertices (the §4.3 map also works for n ≤ 2). The exporter writes 0–2-vertex closed polygons as such faces, with a validator warning. Their unused slots are not stored, and SOP survival of such polygons is not verified, so the level is **L1**.
+  - **Faces with 0–2 sides.** M1's reader accepts them (it rejects only more than 4 sides, in `_read_lod`), but M1 cannot write one through its API: `LOD.set_mesh` and `LOD.add_face` raise `ValueError` for fewer than 3 vertices, and `LOD.check()` reports such a face.
+    - **Import.** The importer makes a closed polygon with that many vertices (the §4.3 map also works for n ≤ 2). SOP survival of such polygons is not verified.
+    - **Export.** The exporter **skips** any polygon with fewer than 3 vertices and warns, naming the prim. It is dropped, not an error. Dropping a face shifts the later face indices, so count-bound data follows the new counts (face bytes are rebuilt from the point groups; blobs are stale and dropped by the §11.2 rule, because `a3ob_source_counts` no longer matches). The level is **L1 = dropped**.
+    - The fixtures have no such face (S1).
 - **Loose points.** Points referenced by no polygon (e.g. Memory, Land Contact, Hit-points LODs: S1) are ordinary points and are exported.
 - **Pack points (normative).** A **pack point** is a point referenced by one or more packed prims and by **no polygon**. Pack points are not exported.
   - A point shared by a packed proxy and a polygon is exported as an ordinary mesh vertex. Fuse does this with default settings: `fuse::2.0` merged a proxy's pack point at the origin into mesh point 0 (4 → 3 points; V5, R2).
@@ -268,7 +340,7 @@ In the character fixture all 11 proxies are the **last** 33 vertices and the **l
 |---|---|---|---|
 | vertex membership | **point group** `G = hou.text.encodeAttrib(name)` | always, even if empty | byte = 0 for non-members |
 | vertex weight | point float32 `a3ob_w_G`, **attribute default 1.0** | some member byte ≠ 1 | member: `clamp(round(255 − 254·w), 1, 255)`; attribute absent → 1. All 255 bytes survive decode → f32 → encode (S4). |
-| face membership | **prim group** `G` | the face bytes differ from the derived rule | prim group present → it is authoritative; absent → derived rule (all corner points in `G` → 1) |
+| face membership | **prim group** `G` | the face bytes differ from the derived rule; or always, when the import option "explicit face groups" is on (D7, OQ-6) | prim group present → it is authoritative; absent → derived rule (all corner points in `G` → 1) |
 | face weight | prim float32 `a3ob_fw_G`, **attribute default 1.0** | some face byte ∉ {0,1} | same formula as vertex weight |
 
 **Weight defaults (normative).** `a3ob_w_*` and `a3ob_fw_*` are always created with default value 1.0
@@ -291,7 +363,7 @@ Why this shape:
 Further rules:
 
 - **Which groups are selections (export).**
-  - **Default.** Every point group except names starting with `__` (Houdini temporary convention) is a selection. The M4 export option is "selection mask", default `* ^__*`.
+  - **Default (D7, OQ-9).** Every point group except names starting with `__` (Houdini temporary convention) is a selection. The M4 export option is "selection mask", default `* ^__*`.
   - **Exception.** A point group whose **decoded** name appears in `a3ob_tagg_order` is a selection whatever the mask says. `encodeAttrib("__foo")` returns `__foo` unchanged (V2), so without this rule a real imported selection named `__foo` would be dropped silently.
 - **Prim groups count only with a partner.** A prim group counts as a face selection only if a point group of the same name exists. The importer creates an empty point group for face-only selections. `a3ob_w_X` / `a3ob_fw_X` without group `X` are ignored with a warning, so stray PolyExtrude prim groups do not leak into the file.
 - **Namespaces.** Point groups, prim groups and point attributes of the same name coexist (T3).
@@ -310,9 +382,9 @@ Further rules:
 
 | Case | Houdini fact | Rule | Level |
 |---|---|---|---|
-| Empty name `""` | M1 `is_selection_name("")` is True (`model.py:72`), but `encodeAttrib("")` is `""` and `createPointGroup("")` raises `OperationFailed` (V2) | The importer stores the TAGG as an opaque blob (§11.2) and warns. It is not a group. | L0 while counts are unchanged; dropped otherwise |
+| Empty name `""` | M1 `is_selection_name("")` is True (`model.py`), but `encodeAttrib("")` is `""` and `createPointGroup("")` raises `OperationFailed` (V2) | The importer stores the TAGG as an opaque blob (§11.2) and warns. It is not a group. | L0 while counts are unchanged; dropped otherwise |
 | Exact duplicate names | Two TAGGs would collide on one group | The first becomes the group; later duplicates are stored as blobs (§11.2), with a warning | L0 while counts are unchanged; dropped otherwise |
-| Names that differ only in case (`Head`, `head`) | Houdini groups are case-sensitive and both coexist (V2). P3D lookup is case-insensitive (M1 `LOD.selection`, `model.py:510-520`) | Both import as separate groups and export as two selections, as in the source. The validator **warns** about case-insensitive duplicates, which Object Builder / the game may treat as one selection. | L0 |
+| Names that differ only in case (`Head`, `head`) | Houdini groups are case-sensitive and both coexist (V2). P3D lookup is case-insensitive (M1 `LOD.selection`: exact match first, then case-insensitive) | Both import as separate groups and export as two selections, as in the source. The glue pre-empts M1's `LOD.check()` message for this case: it warns itself (§16, §17.1), because `selection()` finds only the first of the two and Object Builder / the game may treat them as one selection. | L0 |
 | Names starting with `__` | `encodeAttrib` keeps them unchanged (V2) | Exported because of the `a3ob_tagg_order` exception (§7.2) | L0 |
 | Names starting with `xn__` | encoded again (T2) | normal | L0 |
 
@@ -358,7 +430,7 @@ The A3OB rule that drops UVs on non-UV LOD types (`export_p3d.py:275-277`, `util
 - **P3D.** `#Mass#` is one f32 per vertex (`data_p3d.py:89-104`); its length is 4·nverts (S3).
 - **A3OB.** Imports and exports it only on the Geometry LOD, as the `a3ob_mass` layer (`import_p3d.py:150-162`, `368`; `export_p3d.py:578-583`).
 - **Port.** Point float32 **`a3ob_mass`**, imported for any LOD that has the TAGG. The TAGG is written iff the attribute exists. The validator warns if it exists on a non-Geometry LOD.
-- **Why not Houdini `mass`?** It is a simulation attribute: Vellum Configure nodes compute "particle mass" (docs: `nodes/sop/vellumconstraints_grain`, "Physical Attributes"). A stray `mass` from a sim setup would silently emit a `#Mass#` TAGG. A helper can copy `a3ob_mass` ↔ `mass` (OQ-4).
+- **Why not Houdini `mass`?** It is a simulation attribute: Vellum Configure nodes compute "particle mass" (docs: `nodes/sop/vellumconstraints_grain`, "Physical Attributes"). A stray `mass` from a sim setup would silently emit a `#Mass#` TAGG. A helper copies `a3ob_mass` ↔ `mass` in either direction (D7, OQ-4).
 
 ## 11. Named properties, unknown TAGGs, TAGG order
 
@@ -367,7 +439,7 @@ The A3OB rule that drops UVs on non-UV LOD types (`export_p3d.py:275-277`, `util
 - **Storage.** `a3ob_prop_names[i]` and `a3ob_prop_values[i]`, parallel detail string arrays (T4), in file order.
 - **Why not a dict.** A dict attribute (also works, T4) would lose order and duplicate keys.
 - **Limits.** Maximum 63 characters each (`props/object.py:28-42`).
-- **Bytes after the NUL.** A3OB drops the bytes after the NUL inside a fixed field (`io/binary_handler.py:86-95`). M1's `PropertyTagg` keeps the raw 128-byte payload until key or value change (`model.py:160-189`).
+- **Bytes after the NUL.** A3OB drops the bytes after the NUL inside a fixed field (`io/binary_handler.py:86-95`). M1's `PropertyTagg` keeps the raw 128-byte payload until key or value change (`PropertyTagg.from_payload` / `payload`).
   - **Storage.** The importer stores it as `a3ob_prop_raw[i]` (base64), parallel to the name and value arrays, but only when it differs from the canonical NUL-padded form. Otherwise the entry is `""`. If no property has a tail, the attribute is absent.
   - **Export.** If `a3ob_prop_raw[i]` is non-empty and its decoded key/value equal the current `a3ob_prop_names[i]` / `a3ob_prop_values[i]`, the raw payload is written. Otherwise the canonical form is written. Either way the result is **L0** for an unedited property.
   - **Fixture values:** `lodnoshadow=1`, `autocenter=0`, `buoyancy=1`, `class=man` (S1).
@@ -375,20 +447,25 @@ The A3OB rule that drops UVs on non-UV LOD types (`export_p3d.py:275-277`, `util
 ### 11.2 Unknown and inactive TAGGs **(change: preserved)**
 
 - **What A3OB drops.** It skips every TAGG it does not parse (`#Animation#`, `#Lock#`, `#Selected#`, `#Hidden#`, …) and every TAGG with `active = 0` (`data_p3d.py:228-230`, `500-501`).
-- **What M1 keeps.** It keeps all of them. Unknown names become `RawTagg`. Known names are parsed whatever their active byte, and the raw byte 0..255 is kept in `Tagg.active` (`reader.py:128-145`, `model.py:100-126`).
+- **What M1 keeps.** It keeps all of them. Names it does not know become `RawTagg`. M1 also parses Object Builder's editor TAGGs into typed classes: `MaskTagg` for `#Selected#`, `#Lock#` and `#Hidden#` (one byte per point, then one per face), and `AnimationTagg` for `#Animation#` (one TAGG per frame, each a frame time and 3 floats per point). Known names are parsed whatever their active byte, and the raw byte 0..255 is kept in `Tagg.active` (`_read_lod` in `reader.py`; `Tagg`, `parse_tagg` in `model.py`). A payload that does not fit the LOD stays a `RawTagg` with `counts` set (`strict=False`; always for the editor TAGGs).
 - **Which TAGGs become blobs.** A TAGG is stored as a blob when any of these holds:
   - M1 gives a `RawTagg` (unknown name, or a known TAGG that M1 kept raw in non-strict mode);
+  - it is a `MaskTagg` (`#Selected#`, `#Lock#`, `#Hidden#`) or an `AnimationTagg` (`#Animation#`). The port has no Houdini form for them: editor state and obsolete vertex animation. They are kept so that a file saved by Object Builder survives an import and export;
   - its active byte is 0 (an *inactive known* TAGG: importing it as a live group or attribute would change its meaning);
   - it is a repeated `#UVSet#` id (§8);
   - it is an exact-duplicate or empty selection name (§7.3).
 - **Port storage.** Each blob is one entry in three parallel detail arrays:
   - `a3ob_tagg_unknown_names[i]` (raw M1 name);
   - `a3ob_tagg_unknown_active[i]` (the **raw active byte** as int32, 0..255);
-  - `a3ob_tagg_unknown_data[i]` (base64 of the raw payload, M1 `tagg.payload()`).
+  - `a3ob_tagg_unknown_data[i]` (base64 of the raw payload, M1 `tagg.payload()`, which works for every TAGG class).
+- **One entry per TAGG.** A `MaskTagg` is one entry (name, active byte, payload). A LOD with several `#Animation#` frames gets **one entry per frame**, in file order, each with its own active byte, because every frame is its own TAGG and the order matters. Each entry has an order token `#?<i>` in `a3ob_tagg_order` (§11.3), so the frames stay in place relative to each other and to the other TAGGs. Round trip stays **L0 while the counts are unchanged**.
+- **Counts.** `a3ob_source_counts` is the `(points, faces, corners)` triple, the same triple as `RawTagg.counts` in M1. So a blob stays valid exactly when M1 would keep a raw TAGG valid: the three current numbers equal the stored ones.
+- **M3 and M1's `set_mesh`.** M3 reads the file into M1 objects and builds Houdini geometry from the columns. It must not call `LOD.set_mesh` on an imported M1 LOD: `set_mesh` removes every count-dependent TAGG (selections, `#Mass#`, `#UVSet#`, `#SharpEdges#`, editor masks, `#Animation#`) into `LOD.dropped_taggs`. If M3 ever does (for example to rebuild a LOD), it reports a non-empty `dropped_taggs` to the user.
+- **M4 build order.** M4 builds a fresh M1 `LOD` and calls `set_mesh` **first**, while the TAGG list is empty, so `dropped_taggs` stays empty. Then it adds the TAGGs: typed ones through M1's helpers, and each blob through `parse_tagg(name, active, payload, points, faces, corners)` with the current counts. A blob whose known name does not parse (for example a TAGG kept raw because its size was wrong) is built as `RawTagg(name, payload, active, counts=<stored source counts>)`, which `structure_errors()` accepts while the counts are unchanged. After building, M4 fails with an error when `dropped_taggs` is not empty (it means a TAGG was added before `set_mesh`; this is a coding bug, not user data).
 - **Live TAGGs with other active bytes.** A known, live TAGG whose active byte is neither 0 nor 1 keeps its normal representation; its byte goes to `a3ob_tagg_active` (§11.3).
 - **Why base64.** Houdini string attributes cannot hold NUL bytes. These TAGGs are usually sized per vertex or face.
-- **Staleness rule.** Export writes them unchanged only while the current vertex/face counts equal `a3ob_source_counts`; otherwise it drops them with a warning. This applies to every blob, including the ones (an inactive `#Property#`, say) whose size does not depend on the counts. That is simple and conservative: blob round trips are **L0 while counts are unchanged**.
-- **Fixtures** contain none (S2), so this path needs a synthetic test in M3/M4.
+- **Staleness rule.** Export writes them unchanged only while the current point, face and corner counts equal `a3ob_source_counts`; otherwise it drops them with a warning. This applies to every blob, including the ones (an inactive `#Property#`, say) whose size does not depend on the counts. That is simple and conservative: blob round trips are **L0 while counts are unchanged**.
+- **Fixtures** contain none (S2), so this path needs a synthetic test in M3/M4 until real Object Builder files with `#Animation#`, `#Lock#`, `#Hidden#` or `#Selected#` are available (OQ-11, still open, D9).
 
 ### 11.3 TAGG order hint
 
@@ -431,8 +508,8 @@ The A3OB rule that drops UVs on non-UV LOD types (`export_p3d.py:275-277`, `util
 | Packed **disk** prim referencing the proxy path | No: no per-vertex data. The path is a game path to a `.p3d`, which Houdini cannot load (docs: `model/packed`, "Packed disk primitives"). | partly | Rejected |
 | Packed **fragment** | It references a named piece of a shared source geometry (docs: `model/packed`, "Packed fragments") and couples proxies to the LOD's points. | yes | Rejected |
 | Point carrying a transform (`orient`/`transform`) + path | No: loses the triangle's groups, N, uv and flags. | yes (instancing) | Use only as a derived view for instancing |
-| Inline triangle with prim attributes `a3ob_proxy_path`/`index` | Yes, trivially: order and data stay in place. | weak: moving a proxy means moving 3 points | Fallback (§13.6); alternative for OQ-2 |
-| **PackedGeometry prim** (in-memory) | Yes: the embedded geometry holds the triangle with all its attributes and groups (T7: groups and detail survive embedding). It has a transform intrinsic (`transform`, `packedfulltransform`; T7). | yes: one prim, transformable, Unpack-able | **Recommended** |
+| Inline triangle with prim attributes `a3ob_proxy_path`/`index` | Yes, trivially: order and data stay in place. | weak: moving a proxy means moving 3 points | Automatic fallback (§13.6) |
+| **PackedGeometry prim** (in-memory) | Yes: the embedded geometry holds the triangle with all its attributes and groups (T7: groups and detail survive embedding). It has a transform intrinsic (`transform`, `packedfulltransform`; T7). | yes: one prim, transformable, Unpack-able | **Chosen (D7, OQ-2)** |
 
 ### 13.3 Packed proxy, normative
 
@@ -475,7 +552,20 @@ embedded local p = (p − C) · [X; Y; Z]ᵀ      (orthonormal, so inverse = tra
 ```
 
 - **Check: the canonical triangle gives the identity.** A3OB's `create_proxy` triangle in Blender, `(0,0,0)`, `(0,0,2)`, `(0,1,0)` (`proxy.py:34`), is `C=(0,0,0)`, `B=(0,2,0)`, `A=(0,0,−1)` in Houdini. The formula gives X=(1,0,0), Y=(0,1,0), Z=(0,0,1). In file terms: proxy up (+Y) = long leg, proxy forward (file +Z) = short leg.
-- **Degenerate shapes.** Isosceles or degenerate triangles make the angle sort ambiguous, as in A3OB. The validator should warn.
+- **Degenerate shapes.** Isosceles or degenerate triangles make the angle sort ambiguous, as in A3OB. The validator should warn. M1's `proxy_frame` raises `ValueError` for a degenerate triangle; the glue catches it and reports the proxy.
+
+**4. Relation to M1's `proxy_frame` (do not mix them up).** M1 (`a3ob_core/p3d/proxy.py`) computes the same frame in **file space**: `ProxyFrame(origin, x_axis, y_axis, z_axis)`, with `Z` = short leg, `X = n(long × short)`, `Y = Z × X`. Its `matrix_rows()` is the matrix of that file-space frame.
+
+- **Do not pass `matrix_rows()` to `setTransform`.** Mapping M1's frame into Houdini with `M = diag(1, 1, −1)` gives a **left-handed** frame (det −1; X1), because `M` has det −1. A Houdini packed transform must be a proper rotation. The spec frame differs from M1's mapped frame in the sign of the Z axis only.
+- **Houdini formula from M1's frame `f`** (equivalent to the block above, X1: 5000 random triangles, max difference below 1e-9):
+
+```
+X_h = M · f.x_axis        Y_h = M · f.y_axis        Z_h = −(M · f.z_axis)        C_h = M · f.origin
+setTransform rows: (X_h,0), (Y_h,0), (Z_h,0), (C_h,1)
+```
+
+- **Angle sort.** For the origin and the two legs, the glue calls M1's `find_axis_vertices(a, b, c)` (largest angle first, ties keep input order, as in A3OB) on the file-space points, then maps the three results with `M`. Houdini's own points give the same order, because a reflection keeps angles. Only the importer needs the sort; the exporter rebuilds from the embedded triangle and the transform (§13.5).
+- **M4 direction.** To rebuild the three file-space points of a proxy, M4 applies the packed transform to the embedded triangle (§13.5), then converts to file space. It never inverts `matrix_rows()`.
 
 ### 13.5 Export rebuild
 
@@ -518,7 +608,7 @@ All of the following must hold:
 
 Otherwise the triangle stays inline. Its selection stays a normal point group. If the name passes the first test, prim attributes `a3ob_proxy_path` / `a3ob_proxy_index` are set on the selection's member faces. That is the same form an unpacked packed proxy has, so the exporter treats both the same way (§13.5).
 
-Lossless order requires the proxy vertices and faces to be the **tail** of the vertex and face lists in prim order. That holds in the fixture (§6). If proxies are interleaved, the round trip is L1 (OQ-2).
+Lossless order requires the proxy vertices and faces to be the **tail** of the vertex and face lists in prim order. That holds in the fixture (§6). If proxies are interleaved, the round trip is L1 (D7, OQ-2).
 
 ## 14. Reserved and meaningful Houdini names
 
@@ -536,6 +626,7 @@ Lossless order requires the proxy vertices and faces to be the **tail** of the v
 | `varmap` | local-variable map | ✘ never created (`create_local_variable=False`) |
 | `xn__*` | `encodeAttrib` prefix (docs: `hom/hou/text`) | group names that start with `xn__` decode on export |
 | `__*` groups | conventional temporary groups | excluded from export by default (§7.2) |
+| `a3ob_lod_uid` | no Houdini meaning | ✔ prim int, import-time LOD marker (D8, §3.5). Not a P3D field; never exported. |
 | `a3ob_*` | ours | the reserved prefix. Selection-derived names always carry `a3ob_w_` / `a3ob_fw_`, so they cannot collide with fixed names. |
 
 ## 15. Round-trip invariant table
@@ -557,7 +648,7 @@ Lossless order requires the proxy vertices and faces to be the **tail** of the v
 | proxy normal equal to a mesh normal, stored as a separate entry | shares one index after exact-f32 dedup | rebuild | — | L1 (fixtures: all values unique, S2) |
 | normal values | `(−nx, −ny, nz)` f32 | inverse | renormalised | L0 |
 | face sides 3–4, corner order | polygon, §4.3 map | inverse | ✔ | L0 |
-| faces with 0–2 sides | closed polygon with 0–2 vertices | written with a warning | — | L1 |
+| faces with 0–2 sides | closed polygon with 0–2 vertices | skipped with a warning (M1 cannot write them) | — | L1 = dropped (fixtures have none) |
 | triangle pad | not stored | zeros | zeros | L1 if the source pad ≠ 0 (fixtures: 0) |
 | face-data UV | `uv` or `a3ob_face_uv` (f64) | `1 − v` → f32 | ✔ | L0 for `v = 0` or `abs(v) ≥ 2⁻³⁰` |
 | face flags | `a3ob_face_flags` | raw | lossy groups | L0 |
@@ -576,6 +667,10 @@ Lossless order requires the proxy vertices and faces to be the **tail** of the v
 | selection names equal up to case | two groups | two selections, with a warning | ✔ | L0 |
 | proxy selection + triangle | PackedGeometry prim + path/index (outer and embedded) + snap guard; or an inline triangle with path/index | rebuild + append, or in place | ✔ (UV/flags blanked) | L0 if untouched and tail-ordered; else L1. An unpacked proxy stays a proxy (inline form) |
 | unknown TAGGs (`RawTagg`) | base64 blobs | raw | lost | L0 while counts are unchanged; dropped otherwise |
+| `#Selected#`, `#Lock#`, `#Hidden#` (M1 `MaskTagg`) | one base64 blob each (`tagg.payload()`) | raw payload, rebuilt with `parse_tagg` | lost | L0 while counts are unchanged; dropped otherwise |
+| `#Animation#` frames (M1 `AnimationTagg`) | one blob per frame, in file order, each with its own `#?<i>` order token and active byte | raw payloads, in order | lost | L0 while counts are unchanged; dropped otherwise |
+| malformed known TAGG kept raw by M1 (`RawTagg.counts` set) | blob; `a3ob_source_counts` = the same `(points, faces, corners)` triple | `RawTagg(..., counts=stored)` | lost | L0 while counts are unchanged; dropped otherwise |
+| LOD uid | prim int `a3ob_lod_uid`, importer-made | not exported | — | n/a: not a P3D field, so no level. Loss of the attribute changes no exported byte (§3.5) |
 | inactive (active = 0) TAGGs | base64 blobs, raw active byte | raw | lost | L0 while counts are unchanged; dropped otherwise |
 | TAGG active bytes other than 0/1 | `a3ob_tagg_active` (live TAGGs), `a3ob_tagg_unknown_active` (blobs) | raw | written as 1 | L0 |
 | TAGG order | `a3ob_tagg_order` | hint + canonical | canonical | L0 |
@@ -587,28 +682,31 @@ Lossless order requires the proxy vertices and faces to be the **tail** of the v
 
 1. **Read with `a3ob_core`** (M1): no renormalising, no rounding. M1 strings go to `hou` unchanged (D-STR, §5).
 2. **Points and loose points.**
-3. **Polygons**, with the §4.3 corner map (0–2-sided faces included, §5).
+3. **Polygons**, with the §4.3 corner map (0–2-sided faces included, §5), each stamped with the LOD's fresh `a3ob_lod_uid` (§3.5).
 4. **Prim strings and flags.**
 5. **`N` and UV attributes** (float64 via the verb, U7).
 6. **Groups and weights** (`a3ob_w_*` / `a3ob_fw_*` created with default 1.0); blobs for empty or duplicate names and repeated UVSet ids (§7.3, §8).
 7. **Sharp edges.**
-8. **Detail attributes**, including `a3ob_lod_signature`, `a3ob_source_counts`, `a3ob_tagg_order` and, when needed, `a3ob_tagg_active`, `a3ob_eof_active` and `a3ob_prop_raw`.
+8. **Detail attributes**, including `a3ob_lod_signature`, `a3ob_source_counts` (points, faces, corners), `a3ob_tagg_order` and, when needed, `a3ob_tagg_active`, `a3ob_eof_active` and `a3ob_prop_raw`.
 9. **Proxies last**, as packed prims in ascending proxy face index, with path/index both outside and inside (§13.3).
 10. **Pack** each LOD and merge into the P3D geometry, setting `name`. Store `a3ob_file_trailing` if the file has trailing bytes.
 
 ### Export
 
 1. **Collect** LODs (§3.2). For each LOD prim, read the determinant of `fullTransform()` **before** unpacking, then unpack it with the `unpack` verb. The verb bakes `P`, `N` and nested proxy transforms (V3, V4); **nothing applies the LOD transform again**. Unpack never reverses winding, so for `det < 0` the face builder reverses polygon corner order (and warns).
-2. **Validate** (§17). Errors stop the export.
-3. **Per LOD, build `a3ob_core` objects in file order:**
-   - vertices: points minus pack points (§5), then the packed proxies' triangle points;
-   - faces: polygons, inline proxies included, then the packed proxies' faces (§13.5);
-   - normals table;
-   - TAGGs, by hint plus canonical order, with active bytes (§11.3);
-   - strings encoded back with `encode_string` (D-STR);
-   - signature by the §3.4 rule.
-4. **Expand copies**, then check for duplicate signatures.
-5. **Write.** Append `a3ob_file_trailing` if it applies (§3.3).
+2. **Validate the Houdini side** (§17.1). Errors stop the export. Polygons with fewer than 3 vertices are skipped here with a warning (§5), before any M1 object exists.
+3. **Per LOD, build `a3ob_core` objects in file order.** The order matters (§11.2):
+   1. Make a new `LOD`, set its signature (§3.4), then call **`LOD.set_mesh` first**, with an empty TAGG list:
+      - points: points minus pack points (§5), then the packed proxies' triangle points;
+      - faces: polygons, inline proxies included, then the packed proxies' faces (§13.5);
+      - the normals table, the UVs and the strings (encoded back with `encode_string`, D-STR).
+   2. **Then add the TAGGs**, by hint plus canonical order, with active bytes (§11.3): sharp edges, UV sets, properties, mass, selections, blobs (through `parse_tagg`, §11.2).
+   3. Check `LOD.dropped_taggs`. A non-empty list is an error (a TAGG was added before `set_mesh`).
+4. **Run M1's checks** on every LOD before writing:
+   - **`structure_errors()` is a hard stop.** Any message aborts the export with the messages listed. It means array lengths or TAGG sizes are wrong, which is a glue bug or a stale blob that §11.2 should have dropped.
+   - **`check()` is advisory.** Its extra messages are shown as warnings and do not stop the write. (`check()` returns the `structure_errors()` messages alone when there are any.) The glue **pre-empts** three of them, which it has already handled and reported, so M4 drops them from the advisory list: repeated `#UVSet#` ids are handled as blobs (§8) and warned about at import and at validation, and when such a blob is written back (counts unchanged) M1 reports the repeated id once more; selection names equal up to case (and exact-duplicate names, which are blobs, §7.3) are reported by the glue as its own warning; faces with fewer than 3 sides are skipped in step 2 (§5), so M1 never sees them. The rest stay as they are: point or normal index out of range, sharp edge with a missing point, proxy selection without a triangle.
+5. **Expand copies**, then check for duplicate signatures.
+6. **Write.** Append `a3ob_file_trailing` if it applies (§3.3). `a3ob_lod_uid` is not written (§3.5).
 
 Export options that change data (lowercase, relative paths, sort sections, sort LODs, auto-components `export_p3d.py:294-303`, renumber components, Czech translation `export_p3d.py:591-593`) all default to off. They are applied in `a3ob_core` after collection.
 
@@ -626,14 +724,20 @@ Export options that change data (lowercase, relative paths, sort sections, sort 
 | LOD prim transform not identity, and the mirror flip when det < 0 | warning | §3.2 |
 | Pack-by-name fragments collected as one LOD (order may change) | warning | §3.2 |
 | Point shared between a proxy packed prim and polygons | warning | §5 |
-| Polygon with 0–2 vertices; inline proxy polygon that is not a triangle | warning | §5, §13.5 |
+| Polygon with 0–2 vertices (skipped on export, so L1 = dropped); inline proxy polygon that is not a triangle | warning | §5, §13.5 |
 | Outer and embedded proxy path/index disagree | warning | §13.3 |
-| Selection names equal up to case | warning | §7.3 |
-| **LOD looks merged.** `a3ob_source_counts` exists and the current point and face counts are both higher than it. The message names the counts and explains that a Merge of unpacked LODs keeps only the first input's detail (T7c; V8: two 3-point LODs merged give the first LOD's detail, with counts 6/2 against source 3/1). | warning | §3.1 |
+| Selection names equal up to case (pre-empts M1's `check()` message) | warning | §7.3 |
+| Repeated `#UVSet#` id, empty or exact-duplicate selection name (stored as blobs; the glue reports them, and drops M1's repeated `check()` message about the written-back blob) | warning | §7.3, §8 |
+| **LOD uid: merged LOD.** The polygons of one LOD geometry carry two or more distinct **non-zero** `a3ob_lod_uid` values (a prim without the attribute, or with 0, is unstamped and ignored). The message names the uids, the prim counts per uid and explains that a Merge of unpacked LODs keeps only the first input's detail (W4, T7c). Exact for stamped LODs. A LOD with no polygons, or a hand-authored LOD with no uid, cannot be checked this way. | warning | §3.5 |
+| **LOD looks merged (secondary).** `a3ob_source_counts` exists and the current point and face counts are both higher than its first two numbers. The message names the counts and explains the same Merge behaviour (V8: two 3-point LODs merged give the first LOD's detail, with counts 6/2 against source 3/1). It covers what the uid cannot see (LODs with no polygons, merges with hand-authored meshes). | warning | §3.1, §3.5 |
 | Stale blobs / sharp extras dropped because counts changed | warning | §9.2, §11.2 |
+| Non-empty `LOD.dropped_taggs` after building (a TAGG was added before `set_mesh`); any `structure_errors()` message | error (hard stop; coding or stale-blob bug) | §11.2, §16 |
+| Any other M1 `check()` message (index out of range, proxy selection without a triangle) | warning (advisory) | §16 |
 | Flag values not on the LOD type's known list; `a3ob_mass` on a non-Geometry LOD; degenerate proxy triangle | warning | §5, §10, §13.4 |
 
-The "looks merged" check is a heuristic: legitimate modelling also adds points. It is a warning only (see OQ-13).
+**Severities (D8).** Both "merged" checks are warnings, never errors. Merging LODs can be deliberate (the first LOD's
+detail wins, and the result is well defined), and legitimate modelling also adds points, so the count heuristic fires on
+innocent edits. The uid check is exact where it applies; the count heuristic stays as a secondary warning.
 
 ### 17.2 Artist tooling (deferred HDAs, D3)
 
@@ -646,26 +750,36 @@ HDAs are deferred (D3), so M3/M4 ship Python tools that need no `.hda`:
   `xn__proxies_cka`). It can create or rename a selection by its P3D name, and makes the encoded group.
 - **Proxy tool.** It creates a packed proxy from a path and index, using the canonical triangle and both attribute
   copies (§13.3).
-- **Unpack LOD k / Pack LODs helpers** (OQ-7), which unpack one LOD at a time so that detail attributes stay detail
+- **Unpack LOD k / Pack LODs helpers** (D7, OQ-7), which unpack one LOD at a time so that detail attributes stay detail
   (§3.1).
 
-## Open questions for the owner
+## Resolved (D7-D9)
 
-| # | Question | Recommendation |
+The owner settled these questions (D7 for OQ-1 to OQ-4, OQ-6 to OQ-10 and OQ-12; D8 for OQ-13). The body of the spec
+already states each choice as normative.
+
+| # | Question | Final choice | Decision |
+|---|---|---|---|
+| OQ-1 | Axis map | `P = (x, y, −z)`. The model faces +Z in Houdini (§4.2). | D7 |
+| OQ-2 | Proxy representation | PackedGeometry prims, with an automatic inline-triangle fallback (§13.3, §13.6). | D7 |
+| OQ-3 | LOD order on export | Keep the collected order. Sorting by signature is an option, and the validator warns when the result is unsorted (§3.2). | D7 |
+| OQ-4 | Mass attribute | `a3ob_mass`, plus a helper that copies to and from Houdini `mass` (§10). | D7 |
+| OQ-6 | Explicit face prim groups | Only when the face bytes differ from the derived rule, plus an import option to always make them (§7.2). | D7 |
+| OQ-7 | Importer output | The P3D container (packed LODs), plus an "unpack LOD k" helper or option (§3.1, §17.2). | D7 |
+| OQ-8 | float64 UVs | Accepted (§4.3). | D7 |
+| OQ-9 | Which point groups export | All except `__*`, with a mask parameter, default `* ^__*` (§7.2). | D7 |
+| OQ-10 | LOD prim with a non-identity transform | Accept, bake once, fix the winding when det < 0, and warn (§3.2). | D7 |
+| OQ-12 | Empty or duplicate selection names, repeated UV-set ids | Keep them as raw blobs: L0 while counts are unchanged, dropped with a warning otherwise (§7.3, §8, §11.2). | D7 |
+| OQ-13 | LOD merge marker | **Changed from the spec's earlier recommendation (heuristic first).** The importer writes the per-prim int `a3ob_lod_uid` on every LOD's polygons now. The validator flags exactly when one LOD geometry holds two or more distinct uids. The count heuristic stays as a secondary warning (§3.5, §17.1). | D8 |
+
+## Still open
+
+Both stay open until Bohemia's Arma 3 Samples MLOD files are available (D6). Until then M3/M4 use synthetic tests for the blob paths.
+
+| # | Question | Current state (D9) |
 |---|---|---|
-| **OQ-1** | Which axis map: `(x, y, −z)` (model faces +Z in Houdini; equal to A3OB-Blender + the standard Blender→Houdini conversion) or `(−x, y, z)` (keeps file Z; model faces −Z)? | `(x, y, −z)` |
-| **OQ-2** | How should proxies be represented: PackedGeometry prims (Houdini-native, needs the snap guard and a tail-order assumption) or inline triangles tagged with prim attributes (trivially lossless, less ergonomic)? | Packed, with inline as an automatic fallback |
-| **OQ-3** | What is the default LOD order on export: keep collected order (L0) or sort by signature like A3OB? | Keep, with a validator warning when unsorted |
-| **OQ-4** | Should mass be stored as `a3ob_mass` (safe) or Houdini `mass` (works with Houdini sim/mass tools, but sims can create it by accident)? | `a3ob_mass` + a copy helper |
-| **OQ-5** | **Code page of Arma P3D strings (open, owner).** Current state, not a decision: M1 uses cp1252 with C1 code points for the 5 undefined bytes (the owner said keep cp1252 for now), and §5 passes M1 strings to `hou` unchanged because they are valid Unicode (V9). Open: whether real files use CP1250 (Czech) or another code page. CP1250 also has 5 undefined bytes and would need the same C1 handling; switching would change only `binary.py`. To be settled with Bohemia's Arma 3 Samples MLOD files (D6). | Keep cp1252 until the Samples files show otherwise. |
-| **OQ-6** | When should face selections become explicit prim groups: only when they differ from the derived rule, or always (simpler mental model, but stale after point-group edits)? | Only when they differ, with an import option for always |
-| **OQ-7** | Should the importer output only the P3D geometry (packed LODs), or also offer "unpack LOD k" / per-LOD streams? That is an M3 UX choice, outside the data model. | Container, plus an unpack helper/option |
-| **OQ-8** | Is the float64 UV requirement acceptable? Any SOP that rebuilds `uv` as float32 (UV tools) reintroduces about 6e-8 error, which counts as an edit. | Yes |
-| **OQ-9** | Which point groups export as selections: all except `__*`? Or require an explicit marker? | All except `__*`, with a mask parameter |
-| **OQ-10** | For a LOD packed prim with a non-identity transform: accept it (Unpack bakes it once; the exporter only fixes winding for det < 0, §3.2) or reject? | Accept and warn |
-| **OQ-11** | The fixtures contain no unknown/inactive TAGGs, interleaved proxies, non-edge sharp pairs or duplicate normal values. Can the owner supply a real MLOD with `#Animation#`/`#Lock#`/`#Hidden#` from Object Builder to test the blob path? | Obtain one; otherwise M3/M4 use synthetic tests |
-| **OQ-12** | Where review fixes were suggested as "L1 fallback", revision 2 chose blobs instead: empty selection names, exact-duplicate selection names and repeated `#UVSet#` ids are kept as raw blobs (L0 while counts are unchanged) rather than renamed (L1). The cost is that they are invisible as groups or attributes. Is that acceptable, or should they be imported as renamed, editable groups/attributes? | Blobs: these cases are corrupt or near-corrupt files, and losing them on edit (with a warning) beats inventing names |
-| **OQ-13** | The "LOD looks merged" validator check (§17.1) is a count heuristic and fires on legitimate modelling. Is a stronger marker wanted, e.g. a per-prim `a3ob_lod_uid` int written at import, so that a Merge is detected exactly (two uids in one LOD)? It costs one prim attribute per LOD. | Start with the heuristic; add the uid if artists hit silent merges |
+| **OQ-5** | **Code page of Arma P3D strings.** Do real files use CP1250 (Czech) or another code page? | M1 uses cp1252, with C1 code points for the 5 undefined bytes, and §5 passes M1 strings to `hou` unchanged because they are valid Unicode (V9). CP1250 also has 5 undefined bytes and would need the same C1 handling; switching would change only `binary.py`. Keep cp1252 until the Samples files show otherwise. |
+| **OQ-11** | **Blob TAGG coverage.** The fixtures contain no unknown or inactive TAGGs, no `#Animation#` / `#Lock#` / `#Hidden#` / `#Selected#`, no interleaved proxies, no non-edge sharp pairs and no duplicate normal values. | The blob path of §11.2 (including M1's `MaskTagg` and `AnimationTagg`) is tested with synthetic files only. Test it against real Object Builder files from the Samples set (D6) when they are available. |
 
 ## Evidence
 
@@ -707,7 +821,7 @@ Run headless with `"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.ex
 | U6 | `hcheck2.py` | Proxy matrix sanity check |
 | U7 | `hcheck2.py` | The `attribcreate::2.0` verb with `precision#: 3` makes a Float64 vertex `uv` on a standalone `hou.Geometry` and stores exact doubles |
 | U8 | `hcheck2.py` | Unpack `detail_attributes` menu labels |
-| V1 | `hcheck3.py` → `hcheck3_out.txt` | (Against the earlier M1 codec; superseded by V9.) M1's decoding of bytes 0x01–0xFF has 5 lone surrogates; the D-STR conversion has max code point U+00FF, is bijective back to the bytes, and round-trips through a prim string, a detail string[] and `encodeAttrib` → `createPointGroup` → `decodeAttrib` for every byte; `encodeAttrib` of a lone surrogate raises `TypeError` |
+| V1 | `hcheck3.py` → `hcheck3_out.txt` | Against the earlier M1 codec only. What still holds: `encodeAttrib` of a lone surrogate raises `TypeError` (and a lone surrogate in `setAttribValue` crashes hython, R1). The current rule and its proof are V9. |
 | V2 | `hcheck3.py` | `encodeAttrib("")` = `""` and `createPointGroup("")` raises `OperationFailed`; `__foo`, `Head`, `head` pass unchanged; groups `Head` and `head` coexist |
 | V3 | `hcheck3.py` | The `unpack` verb bakes a packed translate into `P`; with a mirror-X transform, `prim.normal()` flips to +Z while `N` stays (0,0,−1): Unpack does not reverse winding |
 | V4 | `hcheck3.py` | Unpacking a LOD (default parms) keeps a nested proxy packed, with `fullTransform()` = proxy·LOD exactly, its outer prim attribute and the LOD detail; unpacking the proxy too yields its embedded `a3ob_proxy_path` / `a3ob_proxy_index` prim values |
@@ -716,9 +830,18 @@ Run headless with `"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.ex
 | V7 | `hcheck3.py` | A point attribute created with default 1.0 gives new points 1.0; Subdivide interpolates weights |
 | V8 | `hcheck3.py` | Merging two unpacked LODs keeps the first's `a3ob_lod_type` and `a3ob_source_counts` (3, 1) while counts become (6, 2) |
 | V9 | `hcheck4_codec_direct.py` → `hcheck4_codec_direct_out.txt` | M1's final `decode_string` of every byte 0x01–0xFF holds no surrogates and round-trips unchanged through a prim string, a detail string[] and `encodeAttrib` → `createPointGroup` → `decodeAttrib`, and back to the same bytes through `encode_string`; 0x80 shows as `€` |
+| W1 | `hcheck5_lod_uid.py` → `hcheck5_lod_uid_out.txt` | A prim int attribute is `attribData.Int`, size 1, default 0; 2³¹−1 round-trips; a prim created after the attribute reads 0 |
+| W2 | `hcheck5_lod_uid.py` | Pack verb: the outer packed prim has no uid attribute, the embedded geometry keeps it; Unpack of one packed LOD keeps it |
+| W3 | `hcheck5_lod_uid.py` | Merge of two packed LODs, then Unpack of both: uids 111, 111, 222, 222 per prim; the detail `a3ob_lod_type` stays detail (equal values) |
+| W4 | `hcheck5_lod_uid.py` | Merge of two unpacked LODs: uids 111, 111, 222, 222 in one geometry (two distinct uids) |
+| W5 | `hcheck5_lod_uid.py` | Blast, `fuse::2.0` and `polyextrude::2.0` keep the uid (PolyExtrude's new prims inherit it); `copytopoints::2.0` copies share it |
+| W6 | `hcheck5_lod_uid.py` | A prim created by HOM in a stamped LOD reads 0 (one distinct non-zero uid); a LOD without the attribute has none; Merge(stamped, hand-authored) shows one distinct non-zero uid |
+| W7 | `hcheck5_lod_uid.py` | bgeo save and load of the packed P3D geometry, then Unpack: the uids are intact |
+| W8 | `hcheck5_lod_uid.py` | The uid generator (`SystemRandom`, 1..2³¹−1, session-unique): 200 000 draws, all distinct and in int32 range |
+| X1 | `proxyframe_check.py` → `proxyframe_check_out.txt` (pure Python, uses M1) | For 5000 random triangles, the §13.4 Houdini frame equals `(M·x, M·y, −M·z, M·origin)` of M1's `proxy_frame`; M1's frame mapped by `M` has det −1 and the spec frame det +1; the canonical triangle gives the identity |
 | R1 | `hcheck3_surrogate_crash.py` → `hcheck3_surrogate_crash_out.txt` (review evidence `rv_sur.py`, reproduced) | `setAttribValue` with an M1 string containing U+DC81 kills hython with "Fatal error: Segmentation fault" (exit 139) |
 | R2 | review evidence `rv_check2.py` case F (not copied; same result as V5) | Fuse merges a packed proxy's point with a mesh point |
 
 ### Docs pages read
 
-`unreal/coordinates`, `hom/hou/PackedPrim`, `hom/hou/Geometry` (Attributes), `hom/hou/Attrib`, `hom/hou/text`, `model/packed`, `solaris/udim`, `nodes/sop/vellumconstraints_grain`, `nodes/sop/pack`, `nodes/sop/unpack` (revision 2).
+`unreal/coordinates`, `hom/hou/PackedPrim`, `hom/hou/Geometry` (Attributes), `hom/hou/Attrib`, `hom/hou/text`, `model/packed`, `solaris/udim`, `nodes/sop/vellumconstraints_grain`, `nodes/sop/pack`, `nodes/sop/unpack` (revision 2). Revision 3 added no docs pages; its Houdini claims are the W checks.
