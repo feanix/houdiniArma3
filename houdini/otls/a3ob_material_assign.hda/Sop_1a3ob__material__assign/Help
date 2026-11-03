@@ -83,7 +83,7 @@ Color Type:
 Color (old scenes):
     #id: color
 
-    Never shown. It only keeps the colour of scenes saved before Color became a colour picker: if Color is still white and this is not, this one is used. Change Color instead.
+    Never shown. It only keeps the colour of scenes saved before Color became a colour picker: when a scene loads, a colour that is not white is moved into Color and this goes back to white. Change Color instead.
 
     Type: 4 numbers. Default: 1, 1, 1, 1. Shown when: Texture Source is never.
 

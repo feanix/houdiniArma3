@@ -27,7 +27,7 @@ from typing import Dict, List
 
 from .docs_common import (FOLDER_TEXT, NODE_INTRO, collapse_inputs, condition_text, default_text, input_sentence,
                           menu_texts, parm_index_for, range_text, type_text, wiki_escape)
-from .params import CALLBACK, CREATED_SCRIPT, MENU_SCRIPT, NodeSpec, Parm, hide_when_text
+from .params import CALLBACK, CREATED_SCRIPT, LOADED_SCRIPT, MENU_SCRIPT, NodeSpec, Parm, hide_when_text
 
 __all__ = ["hda_folder_name", "section_name", "render", "write", "differences"]
 
@@ -52,14 +52,10 @@ PrefixDroppedParmLabel := 1;
 UnlockOnCreate := 0;
 """
 
-#: Tells Houdini that the OnCreated section is Python, not Hscript.
-_EXTRA_FILE_OPTIONS = """{
-\t"OnCreated/IsPython":{
-\t\t"type":"bool",
-\t\t"value":true
-\t}
-}
-"""
+def _extra_file_options(sections) -> str:
+    """Tells Houdini that each named event section (OnCreated, OnLoaded) is Python, not Hscript."""
+    entries = ',\n'.join('\t"%s/IsPython":{\n\t\t"type":"bool",\n\t\t"value":true\n\t}' % name for name in sections)
+    return "{\n%s\n}\n" % entries
 
 _TOOLS_SHELF = """<?xml version="1.0" encoding="UTF-8"?>
 <shelfDocument>
@@ -161,7 +157,7 @@ def _parm_block(spec: NodeSpec, parm: Parm) -> str:
         lines.append('\tparmtag\t{ "filechooser_mode" "%s" }' % parm.file_mode)
         if parm.file_pattern:
             lines.append("\tparmtag\t{ \"filechooser_pattern\" %s }" % _quote(parm.file_pattern))
-    if parm.kind == "button" or (parm.kind == "menu" and parm.action):
+    if parm.kind == "button" or (parm.kind in ("menu", "toggle") and parm.action):
         callback = CALLBACK % (spec.kind, parm.action)
         lines.append("\tparmtag\t{ \"script_callback\" %s }" % _quote(callback))
         lines.append('\tparmtag\t{ "script_callback_language" "python" }')
@@ -326,10 +322,14 @@ def render(spec: NodeSpec) -> Dict[str, str]:
         section + "/Tools.shelf": _TOOLS_SHELF % {"submenu": spec.submenu},
         section + "/Help": help_text(spec),
     }
-    if spec.on_created:
-        files[section + "/OnCreated"] = CREATED_SCRIPT % spec.kind
-        files[section + "/ExtraFileOptions"] = _EXTRA_FILE_OPTIONS
-        listed += [("OnCreated", "OnCreated"), ("ExtraFileOptions", "ExtraFileOptions")]
+    events = [(name, script) for name, script, wanted in (
+        ("OnCreated", CREATED_SCRIPT, spec.on_created), ("OnLoaded", LOADED_SCRIPT, spec.on_loaded)) if wanted]
+    if events:
+        for name, script in events:
+            files["%s/%s" % (section, name)] = script % spec.kind
+            listed.append((name, name))
+        files[section + "/ExtraFileOptions"] = _extra_file_options([name for name, _ in events])
+        listed.append(("ExtraFileOptions", "ExtraFileOptions"))
     files[section + "/Sections.list"] = _sections_list(listed)
     return files
 

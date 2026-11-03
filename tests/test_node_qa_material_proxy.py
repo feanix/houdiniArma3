@@ -7,6 +7,8 @@ absolute proxy path gives the same name as typing it. Needs ``hou``.
 SPDX-License-Identifier: GPL-3.0-or-later
 """
 
+import os
+import tempfile
 import unittest
 
 from tests.hou_support import HAS_HOU, hou
@@ -87,12 +89,43 @@ class TestMaterialAssignNode(NodeTestCase):
         self.node.parm("raw").set("#(argb,8,8,3)color(1,0,0,1,CO)")
         self.assertEqual(self.texture_values(), {"#(argb,8,8,3)color(1,0,0,1,CO)"})
 
-    def test_an_old_scene_keeps_its_colour(self):
+    def old_colour_node(self):
         self.node.parm("setmat").set(0)
         self.node.parm("texsource").set("color")
         self.node.parmTuple("color").set((0.25, 0.5, 0.75, 1.0))  # what a scene saved with the old Color holds
-        self.assertEqual(self.texture_values(), {"#(argb,8,8,3)color(0.250,0.500,0.750,1.000,CO)"})
+        return self.node
+
+    def test_the_cook_no_longer_reads_the_old_colour(self):
+        self.old_colour_node()
+        self.assertEqual(self.texture_values(), {"#(argb,8,8,3)color(1.000,1.000,1.000,1.000,CO)"})
         self.assertTrue(self.state("color")[0])  # the old fields never show
+
+    def test_loading_keeps_a_colour_already_picked(self):
+        path = self.old_colour_node().path()
+        self.node.parmTuple("texcolor").set((0.5, 0.5, 0.0, 1.0))
+        hip = os.path.join(tempfile.mkdtemp(prefix="a3ob_material_hip_"), "both.hip")
+        hou.hipFile.save(hip)
+        hou.hipFile.load(hip, suppress_save_prompt=True)
+        node = hou.node(path)
+        self.network = node.parent()
+        self.node = node
+        self.assertEqual(tuple(node.parmTuple("texcolor").eval()), (0.5, 0.5, 0.0, 1.0))
+        self.assertEqual(tuple(node.parmTuple("color").eval()), (1.0, 1.0, 1.0, 1.0))
+
+    def test_loading_a_scene_moves_the_old_colour_into_the_picker(self):
+        # #32: saved in a hip and loaded again, OnLoaded moves it; then a white typed later counts
+        path = self.old_colour_node().path()
+        hip = os.path.join(tempfile.mkdtemp(prefix="a3ob_material_hip_"), "old.hip")
+        hou.hipFile.save(hip)
+        hou.hipFile.load(hip, suppress_save_prompt=True)
+        node = hou.node(path)
+        self.network = node.parent()  # the old reference is gone after a load
+        self.node = node
+        self.assertEqual(tuple(node.parmTuple("texcolor").eval()), (0.25, 0.5, 0.75, 1.0))
+        self.assertEqual(tuple(node.parmTuple("color").eval()), (1.0, 1.0, 1.0, 1.0))
+        self.assertEqual(self.texture_values(), {"#(argb,8,8,3)color(0.250,0.500,0.750,1.000,CO)"})
+        node.parmTuple("texcolor").set((1.0, 1.0, 1.0, 1.0))
+        self.assertEqual(self.texture_values(), {"#(argb,8,8,3)color(1.000,1.000,1.000,1.000,CO)"})
 
 
 @unittest.skipUnless(HAS_HOU, "needs hou (run under hython)")

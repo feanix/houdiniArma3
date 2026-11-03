@@ -1,0 +1,6 @@
+try:
+    import a3ob_houdini.entry as e
+except ImportError:
+    e = None
+if e is not None:
+    e.loaded('mass', kwargs)

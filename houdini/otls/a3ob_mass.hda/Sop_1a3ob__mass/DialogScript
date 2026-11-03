@@ -62,7 +62,7 @@
 	type	float
 	size	1
 	default	{ "-1.0" }
-	help	"Not shown. Scenes saved before the three mass parameters existed stored the number here. While it is 0 or more and the parameter of the current mode is still 1, the node uses it, so old scenes keep their mass. A new node leaves it at -1."
+	help	"Not shown. Scenes saved before the three mass parameters existed stored the number here. When a scene loads, a number of 0 or more is moved into the parameter of the current mode and this goes back to -1. A new node leaves it at -1."
 	invisible
     }
     parm {
@@ -77,6 +77,8 @@
 	label	"Visualize"
 	type	toggle
 	default	{ "0" }
-	help	"Write the colour Cd: blue is the least mass, red the most, black no mass. The export ignores Cd."
+	help	"Colour the points in the viewport by their mass: blue is the least mass, red the most, black no mass. This is a node visualizer, so the geometry (and any Cd it has) is not changed. The export ignores it."
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('mass', 'visualize', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
     }
 }

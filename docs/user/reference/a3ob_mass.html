@@ -90,7 +90,7 @@
 </section>
 <section class="parm" id="value">
 <h3>Value (old scenes) <code>value</code></h3>
-<p>Not shown. Scenes saved before the three mass parameters existed stored the number here. While it is 0 or more and the parameter of the current mode is still 1, the node uses it, so old scenes keep their mass. A new node leaves it at -1.</p>
+<p>Not shown. Scenes saved before the three mass parameters existed stored the number here. When a scene loads, a number of 0 or more is moved into the parameter of the current mode and this goes back to -1. A new node leaves it at -1.</p>
 <dl>
 <dt>Type</dt><dd>Number</dd>
 <dt>Default</dt><dd>-1</dd>
@@ -106,7 +106,7 @@
 </section>
 <section class="parm" id="visualize">
 <h3>Visualize <code>visualize</code></h3>
-<p>Write the colour Cd: blue is the least mass, red the most, black no mass. The export ignores Cd.</p>
+<p>Colour the points in the viewport by their mass: blue is the least mass, red the most, black no mass. This is a node visualizer, so the geometry (and any Cd it has) is not changed. The export ignores it.</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>Off</dd>

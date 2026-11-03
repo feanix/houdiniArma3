@@ -13,7 +13,7 @@ from ..errors import UserError
 from ..messages import Report, format_problem
 from ..params import NodeSpec, Parm, read_parms
 
-__all__ = ["SPEC", "cook", "BUTTONS", "MENUS"]
+__all__ = ["SPEC", "cook", "BUTTONS", "MENUS", "loaded"]
 
 NAME = "Material Assign"
 
@@ -59,8 +59,9 @@ SPEC = NodeSpec(
              items=tuple((token, "%s - %s" % (token, text)) for token, text in material_text.COLOR_TYPES),
              show_when=(("texsource", ("color",)),), enable_when=_TEX_ON),
         Parm("color", "Color (old scenes)", "float", (1.0, 1.0, 1.0, 1.0),
-             "Never shown. It only keeps the colour of scenes saved before Color became a colour picker: if Color "
-             "is still white and this is not, this one is used. Change Color instead.",
+             "Never shown. It only keeps the colour of scenes saved before Color became a colour picker: when a "
+             "scene loads, a colour that is not white is moved into Color and this goes back to white. Change Color "
+             "instead.",
              size=4, show_when=(("texsource", (LEGACY_SOURCE,)),)),
         Parm("raw", "Texture Text", "string", "",
              "A texture line, copied exactly as typed. It is either a path or a generated texture such as "
@@ -85,7 +86,19 @@ SPEC = NodeSpec(
              "Material on. Add your own in the common data file of the Project root and presets tool.",
              action="fillmat", menu_action="commonmat", enable_when=_MAT_ON),
     ),
+    on_loaded=True,
 )
+
+
+def loaded(node) -> None:
+    """The OnLoaded event: an old scene stored its colour in the hidden ``color``. Move it into ``texcolor`` and
+    set ``color`` back to white ("not stored"), so a colour typed later counts, white included."""
+    old = tuple(node.parmTuple("color").eval())
+    if old != WHITE:
+        # Only move it when the picker is still white: a colour picked there wins.
+        if tuple(node.parmTuple("texcolor").eval()) == WHITE:
+            node.parmTuple("texcolor").set(old)
+        node.parmTuple("color").set(WHITE)
 
 
 def _check_text(text: str, field: str) -> str:
@@ -102,8 +115,6 @@ def _texture_text(values) -> str:
         return material_text.normalise_path(_check_text(values["texture"], "The texture"))
     if source == "color":
         color = tuple(values["texcolor"])
-        if color == WHITE and tuple(values["color"]) != WHITE:  # a scene saved before the colour picker
-            color = tuple(values["color"])
         if any(not 0.0 <= channel <= 1.0 for channel in color):
             raise UserError(format_problem(NAME, "the colour %s has a channel outside 0 to 1" % (tuple(color),),
                                            "Use values from 0 to 1"))

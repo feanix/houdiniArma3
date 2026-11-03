@@ -9,6 +9,7 @@ Once a node has shipped, the names and arguments here must not change. Everythin
     button(kind, action, kwargs) -- a button callback
     menu(kind, name, kwargs)     -- the items of a menu that is made when it opens (flat list: token, label, ...)
     created(kind, kwargs)        -- the OnCreated event of a node that asks for it (NodeSpec.on_created)
+    loaded(kind, kwargs)         -- the OnLoaded event of a node that asks for it (NodeSpec.on_loaded)
 
 ``cook`` turns every exception into a node error: a ``UserError`` shows its own text (already in the ux-tools.md
 section 2 form); any other exception is a bug, so it shows a short text and the traceback goes to the console.
@@ -22,7 +23,7 @@ from . import messages, nodes
 from .errors import UserError
 from .messages import format_problem
 
-__all__ = ["cook", "button", "menu", "created"]
+__all__ = ["cook", "button", "menu", "created", "loaded"]
 
 LOGGER = logging.getLogger("a3ob")
 
@@ -69,6 +70,14 @@ def created(kind: str, kwargs) -> None:
         nodes.load(kind).created(kwargs["node"])
     except Exception:
         LOGGER.error("created %s failed:\n%s", kind, traceback.format_exc())
+
+
+def loaded(kind: str, kwargs) -> None:
+    """The OnLoaded event: run the node module's ``loaded(node)`` when a scene with the node loads. Never raises."""
+    try:
+        nodes.load(kind).loaded(kwargs["node"])
+    except Exception:
+        LOGGER.error("loaded %s failed:\n%s", kind, traceback.format_exc())
 
 
 def menu(kind: str, name: str, kwargs) -> list:

@@ -123,6 +123,27 @@ def ramp_colors(masses: Sequence[float]) -> List[Vec]:
     return colors
 
 
+def ramp_stops() -> List[Tuple[float, Vec]]:
+    """The same ramp as ``ramp_colors`` as ``(position, colour)`` stops from 0 to 1, for a node visualizer."""
+    return [(float(_STOPS[k]), _COLORS[k + 1]) for k in range(6)]
+
+
+def ramp_range(masses: Sequence[float]) -> Tuple[float, float]:
+    """The values at position 0 and 1 of ``ramp_stops`` that give the colours of ``ramp_colors``.
+
+    Zero mass lands at or below position 0 (black). With no mass at all the range is (0, 1). One ramp cannot keep
+    zero black and also keep a mass below 0.1 percent of the largest one blue, so such a mass shows nearly black.
+    """
+    nonzero = [value for value in masses if value != 0]
+    if not nonzero:
+        return 0.0, 1.0
+    low, high = min(nonzero), max(nonzero)
+    if high == low:
+        return 0.0, high
+    start = low - 0.001 * (high - low) / 0.999
+    return (max(start, 0.0) if low > 0 else start), high
+
+
 def centre_of_mass(positions: Sequence[Vec], masses: Sequence[float]) -> Optional[Vec]:
     """The mass-weighted mean of the points with mass above 0, or None when there are none (A3OB)."""
     total = math.fsum(mass for mass in masses if mass > 0)

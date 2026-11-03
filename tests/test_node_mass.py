@@ -6,14 +6,73 @@ SPDX-License-Identifier: GPL-3.0-or-later
 """
 
 import os
+import tempfile
 import unittest
 
 from tests.hou_support import HAS_HOU, REPO_ROOT, hou
 from tests.test_mass_math import CUBE_FACES, cube_points
 from tests.mass_proxy_support import NodeTestCase, cook, make_source
 
+if HAS_HOU:
+    from a3ob_houdini import node_visualizer
+    from a3ob_houdini.nodes import mass as mass_node
+
 
 MODE_PARM = {"each": "mass_each", "total": "mass_total", "density": "density"}  # the one parameter each mode reads
+
+
+class FakeViz:
+    """Stands in for hou.ViewportVisualizer (hython has none): keeps what the code sets."""
+
+    def __init__(self, owner, node):
+        self.owner, self.node, self.type, self._name, self.parms, self.active = owner, node, None, "", {}, False
+
+    def setType(self, vtype):
+        self.type = vtype
+
+    def setName(self, name):
+        self._name = name
+
+    def name(self):
+        return self._name
+
+    def setLabel(self, label):
+        self.label = label
+
+    def setParm(self, name, value):
+        self.parms[name] = value
+
+    def evalParmAsFloat(self, name):
+        return float(self.parms.get(name, 0.0))
+
+    def setIsActive(self, on):
+        self.active = bool(on)
+
+    def destroy(self):
+        self.owner.items.remove(self)
+
+
+class FakeVisualizers:
+    """Stands in for hou.viewportVisualizers, with the calls the code uses (signatures from the Houdini docs)."""
+
+    def __init__(self):
+        self.items = []
+
+    def type(self, name):
+        return name
+
+    def createVisualizer(self, vtype, category=None, node=None):
+        viz = FakeViz(self, node)
+        viz.type = vtype
+        self.items.append(viz)
+        return viz
+
+    def visualizers(self, category=None, node=None):
+        return tuple(viz for viz in self.items if viz.node == node)
+
+    def only(self):
+        assert len(self.items) == 1, self.items
+        return self.items[0]
 
 
 def cube_geometry(side=1.0, offset=(0.0, 0.0, 0.0), extra=None):
@@ -159,18 +218,67 @@ class TestMassNode(NodeTestCase):
         _, result = self.run_mass(cube_geometry(2.0), mode="each", value=3, group="0")
         self.assertIn("Total 3.0 kg on 1 points. Centre of mass (0.00, 0.00, 0.00).", result.messages[0])
 
-    def test_visualize_writes_cd_and_off_leaves_it_alone(self):
-        def one_heavy(geo):
-            _set_a3ob_mass(geo, 0.0)
-            geo.setPointFloatAttribValues("a3ob_mass", [0.0, 1.0, 3.0, 5.0, 0.0, 0.0, 0.0, 0.0])
+    def test_visualize_does_not_write_cd(self):
+        # #32: Visualize is a node visualizer; an input Cd passes through unchanged, and none is made
+        def with_cd(geo):
+            geo.addAttrib(hou.attribType.Point, "Cd", (1.0, 1.0, 1.0))
+            geo.setPointFloatAttribValues("Cd", [0.25, 0.5, 0.75] * 8)
 
-        node, _ = self.run_mass(cube_geometry(extra=one_heavy), mode="clear", group="7", visualize=1)  # point 7 is already 0: only Cd is new
-        colors = list(node.geometry().pointFloatAttribValues("Cd"))
-        self.assertEqual(colors[0:3], [0.0, 0.0, 0.0])  # no mass: black
-        self.assertEqual(colors[3:6], [0.0, 0.0, 1.0])  # least: blue
-        self.assertEqual(colors[9:12], [1.0, 0.0, 0.0])  # most: red
-        plain, _ = self.run_mass(cube_geometry(), mode="total", value=8)
-        self.assertIsNone(plain.geometry().findPointAttrib("Cd"))
+        node, result = self.run_mass(cube_geometry(extra=with_cd), mode="total", value=8, visualize=1)
+        self.assertEqual(result.errors, ())
+        self.assertEqual(list(node.geometry().pointFloatAttribValues("Cd")), [0.25, 0.5, 0.75] * 8)
+        self.assertEqual(self.masses(node), [1.0] * 8)
+        bare, _ = self.run_mass(cube_geometry(), mode="total", value=8, visualize=1)
+        self.assertIsNone(bare.geometry().findPointAttrib("Cd"))
+
+    def test_visualize_toggle_runs_the_visualizer_callback(self):
+        template = self.network.createNode("a3ob_mass").parm("visualize").parmTemplate()
+        self.assertIn("e.button('mass', 'visualize', kwargs)", template.scriptCallback())
+
+    def test_hython_has_no_viewport_visualizers_and_the_toggle_is_harmless(self):
+        # Research finding (#32): hou.viewportVisualizers exists only with the Houdini window.
+        node, _ = self.run_mass(cube_geometry(), mode="total", value=8, visualize=1)
+        self.assertEqual(hasattr(hou, "viewportVisualizers"), hou.isUIAvailable())
+        mass_node.visualize({"node": node})
+        mass_node.loaded(node)
+        self.assertIsNone(node_visualizer.find(node, mass_node.VISUALIZER))
+
+    def test_visualize_makes_and_removes_a_node_color_visualizer(self):
+        fake = FakeVisualizers()
+        hou.viewportVisualizers = fake
+        try:
+            node, _ = self.run_mass(cube_geometry(), mode="each", value=2.0, visualize=1)
+            mass_node.visualize({"node": node})
+            viz = fake.only()
+            self.assertEqual((viz.name(), viz.type, viz.parms["attrib"], viz.parms["colortype"]),
+                             ("a3ob_mass_color", "vis_color", "a3ob_mass", "attribramped"))
+            self.assertTrue(viz.active)
+            self.assertEqual((viz.evalParmAsFloat("minscalar"), viz.evalParmAsFloat("maxscalar")), (0.0, 2.0))
+            ramp = viz.parms["colorramp"]
+            for got, want in zip(ramp.keys(), (0.0, 0.001, 0.25, 0.5, 0.75, 1.0)):
+                self.assertAlmostEqual(got, want, places=6)
+            self.assertEqual((ramp.values()[0], ramp.values()[1], ramp.values()[-1]),
+                             ((0.0, 0.0, 0.0), (0.0, 0.0, 1.0), (1.0, 0.0, 0.0)))  # black, blue, red
+            node.parm("mass_each").set(5.0)  # the cook keeps the range on the masses
+            cook(node)
+            self.assertEqual(viz.evalParmAsFloat("maxscalar"), 5.0)
+            mass_node.visualize({"node": node})  # again: no second visualizer
+            self.assertEqual(len(fake.items), 1)
+            node.parm("visualize").set(0)
+            mass_node.visualize({"node": node})
+            self.assertEqual(fake.items, [])
+        finally:
+            del hou.viewportVisualizers
+
+    def test_loading_a_scene_with_visualize_on_makes_the_visualizer(self):
+        fake = FakeVisualizers()
+        hou.viewportVisualizers = fake
+        try:
+            node, _ = self.run_mass(cube_geometry(), mode="each", value=2.0, visualize=1)
+            mass_node.loaded(node)
+            self.assertEqual(len(fake.items), 1)
+        finally:
+            del hou.viewportVisualizers
 
     def test_mass_on_a_lod_that_is_not_geometry_warns(self):
         def lod(number):
@@ -218,23 +326,68 @@ class TestMassNode(NodeTestCase):
             condition = node.parm(name).parmTemplate().conditionals()[hou.parmCondType.HideWhen]
             self.assertEqual(condition, "{ mode != %s }" % token, name)  # so Clear and the copy modes hide all three
 
-    def test_an_old_scene_keeps_its_mass(self):
-        # B4: a node saved by the old asset stored "value" (now the hidden legacy parameter) and no new parameter
-        for mode, value, expected in (("each", 2.5, [2.5] * 8), ("total", 40.0, [5.0] * 8)):
-            source = make_source(self.network, cube_geometry())
-            node = self.network.createNode("a3ob_mass")
-            node.setInput(0, source)
-            node.parm("mode").set(mode)
-            node.parm("value").set(value)
+    def old_style_node(self, mode, value):
+        """A node as an old scene holds it: the shared hidden "value" set, the three own parameters untouched."""
+        node = self.network.createNode("a3ob_mass")
+        node.setInput(0, make_source(self.network, cube_geometry()))
+        node.parm("mode").set(mode)
+        node.parm("value").set(value)
+        return node
+
+    def test_the_cook_no_longer_reads_the_legacy_value(self):
+        node = self.old_style_node("each", 2.5)
+        cook(node)
+        self.assertEqual(self.masses(node), [1.0] * 8)  # own parameter at its default: the old value waits for the load
+
+    def test_loading_moves_the_old_value_into_the_mode_parameter(self):
+        # #32 (follow-up of #39): saved in a hip and loaded again, the OnLoaded event does the move
+        wanted = (("each", 2.5, "mass_each", [2.5] * 8), ("total", 40.0, "mass_total", [5.0] * 8),
+                  ("density", 1000.0, "density", [1000.0 / 8] * 8))
+        paths = []
+        for mode, value, _, _ in wanted:
+            paths.append(self.old_style_node(mode, value).path())
+        hip = os.path.join(tempfile.mkdtemp(prefix="a3ob_mass_hip_"), "old.hip")
+        hou.hipFile.save(hip)
+        hou.hipFile.load(hip, suppress_save_prompt=True)
+        self.network = hou.node(os.path.dirname(paths[0]))  # the old reference is gone after a load
+        for path, (mode, value, own, expected) in zip(paths, wanted):
+            node = hou.node(path)
+            self.assertEqual(node.parm(own).eval(), value, mode)
+            self.assertEqual(node.parm("value").eval(), -1.0, mode)
             cook(node)
             self.assertEqual(self.masses(node), expected, mode)
-        node, _ = self.run_mass(cube_geometry(), mode="density")
-        node.parm("value").set(1000.0)
+        # after the load a typed 1.0 takes effect (it used to be mistaken for "not typed")
+        node = hou.node(paths[0])
+        node.parm("mass_each").set(1.0)
         cook(node)
-        self.assertEqual(self.masses(node), [1000.0 / 8] * 8)
-        node.parm("density").set(2000.0)  # a value typed in the new parameter wins over the old one
-        cook(node)
-        self.assertEqual(self.masses(node), [2000.0 / 8] * 8)
+        self.assertEqual(self.masses(node), [1.0] * 8)
+
+    def test_loading_keeps_a_number_already_typed_in_the_mode_parameter(self):
+        node = self.old_style_node("each", 40.0)
+        node.parm("mass_each").set(7.0)
+        hip = os.path.join(tempfile.mkdtemp(prefix="a3ob_mass_hip_"), "both.hip")
+        path = node.path()
+        hou.hipFile.save(hip)
+        hou.hipFile.load(hip, suppress_save_prompt=True)
+        node = hou.node(path)
+        self.network = node.parent()
+        self.assertEqual((node.parm("mass_each").eval(), node.parm("value").eval()), (7.0, -1.0))
+
+    def test_loaded_with_nothing_old_changes_nothing(self):
+        node, _ = self.run_mass(cube_geometry(), mode="total", value=8)
+        mass_node.loaded(node)
+        self.assertEqual((node.parm("mass_total").eval(), node.parm("value").eval()), (8.0, -1.0))
+
+    def test_loaded_in_a_mode_without_a_number_just_drops_the_old_value(self):
+        node = self.old_style_node("clear", 7.0)
+        mass_node.loaded(node)
+        self.assertEqual([node.parm(name).eval() for name in ("mass_each", "mass_total", "density", "value")],
+                         [1.0, 1.0, 1.0, -1.0])
+
+    def test_the_asset_has_an_on_loaded_event(self):
+        definition = hou.nodeType(hou.sopNodeTypeCategory(), "a3ob_mass").definition()
+        self.assertIn("a3ob_houdini.entry", definition.sections()["OnLoaded"].contents())
+        self.assertIn("except ImportError", definition.sections()["OnLoaded"].contents())
 
     def test_the_asset_parameters_match_the_table_and_the_value_is_strict(self):
         node = self.network.createNode("a3ob_mass")
