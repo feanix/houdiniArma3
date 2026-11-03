@@ -1,0 +1,33 @@
+= Assemble LODs =
+
+#type: node
+#context: sop
+#internal: a3ob_assemble_lods
+#tags: arma, p3d
+
+"""Puts edited LODs back into a P3D geometry. Input 1 is the base; inputs 2 and up are LOD geometries."""
+
+A P3D file keeps several LODs (versions of the model for different viewing distances) together. After you edit LODs one at a time, this node puts them back together.
+
+Input 1 is optional: it takes the original P3D geometry, so that the LODs you did not touch stay as they were. Every other input takes one LOD geometry.
+
+@inputs
+
+Base P3D geometry (optional):
+    Input 1.
+
+LOD geometry:
+    Inputs 2 to 32.
+
+The node also works with no input connected.
+
+@parameters
+
+Replace Matching LODs:
+    #id: replace
+
+    A LOD input replaces the base LOD that has the same stored LOD signature and keeps its position. A LOD with no match is added at the end. Off: every LOD input is added at the end.
+
+    Type: On or off. Default: On.
+
+The full page for this node is docs/user/reference/a3ob_assemble_lods.html in the A3OB folder. Open it in a web browser.

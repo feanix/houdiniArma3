@@ -1,0 +1,207 @@
+= Validate =
+
+#type: node
+#context: sop
+#internal: a3ob_validate
+#tags: arma, p3d
+
+"""Checks a P3D geometry or a LOD geometry the way the export does and shows what is wrong. Changes nothing."""
+
+Run this node before you export. It looks for problems that Arma would reject or that break the model, and lists them as messages on the node. It does not change the geometry.
+
+@inputs
+
+P3D geometry or LOD geometry:
+    Input 1.
+
+@parameters
+
+Errors Show As:
+    #id: errorlevel
+
+    Type: Menu. Default: Error (stop here).
+
+    Error (stop here):
+        the node turns red and the nodes below it stop.
+
+    Warning (keep geometry):
+        the node turns yellow and the geometry keeps flowing; the text still starts with Error:. Saving stops on errors either way.
+
+Warnings Count As Errors:
+    #id: strict
+
+    Treat every warning as an error. Off by default: a warning can be what you meant.
+
+    Type: On or off. Default: Off.
+
+Duplicate LODs:
+    #id: dupes
+
+    What to do with a LOD whose type and resolution were already written: Fail, Skip the later one, or Ignore and write both.
+
+    Type: Menu. Default: Fail.
+
+    Fail:
+        Sets this to Fail.
+
+    Skip:
+        Sets this to Skip.
+
+    Ignore:
+        Sets this to Ignore.
+
+Max Messages:
+    #id: maxmessages
+
+    How many messages the node shows. The rest are counted in one line and listed in the console.
+
+    Type: Whole number. Default: 25. Allowed: At least 1; no upper limit.
+
+Check LOD-Type Rules:
+    #id: typerules
+
+    Warn about what Object Builder's validator would: rules for geometry, shadow, roadway and other LOD types. Each rule has its own switch below.
+
+    Type: On or off. Default: On.
+
+T2-UV2: At most 2 UV sets:
+    #id: t2uv2
+
+    The LOD has no more than 2 UV sets.
+
+    Type: On or off. Default: On.
+
+T2-CONTIG: Contiguous mesh:
+    #id: t2contig
+
+    Geometry, shadow and underground LODs: no flipped polygons (shared edges run in opposite directions).
+
+    Type: On or off. Default: On.
+
+T2-TRI: Triangulated:
+    #id: t2tri
+
+    Geometry, shadow and underground LODs: every polygon is a triangle.
+
+    Type: On or off. Default: On.
+
+T2-CONVEX: Convex mesh:
+    #id: t2convex
+
+    Geometry and underground LODs: every shared edge is convex or flat.
+
+    Type: On or off. Default: On.
+
+T2-COMP: Component selections:
+    #id: t2comp
+
+    Geometry and underground LODs: a group called component01, component02, ... exists.
+
+    Type: On or off. Default: On.
+
+T2-MASS: Mass is set:
+    #id: t2mass
+
+    Geometry LOD: the points have a total mass of at least 0.001.
+
+    Type: On or off. Default: On.
+
+T2-MASSALL: Every point has mass:
+    #id: t2massall
+
+    Geometry LOD: every point has a mass of at least 0.001.
+
+    Type: On or off. Default: On.
+
+T2-SHARP: No smooth edges:
+    #id: t2sharp
+
+    Shadow and underground LODs: with smooth polygons, every shared edge is in a3ob_sharp.
+
+    Type: On or off. Default: On.
+
+T2-NOMAT: No materials:
+    #id: t2nomat
+
+    Shadow and underground LODs: no polygon has a texture or material.
+
+    Type: On or off. Default: On.
+
+T2-SHADOWRES: Conventional shadow resolution:
+    #id: t2shadowres
+
+    Shadow LODs: the resolution is 0, 10, 1000, 1010 or 1020.
+
+    Type: On or off. Default: On.
+
+T2-SHADOWOFF: Shadow not disabled:
+    #id: t2shadowoff
+
+    Shadow LODs: no LODNoShadow = 1 property.
+
+    Type: On or off. Default: On.
+
+T2-PC-EDGE: No edges in point clouds:
+    #id: t2pcedge
+
+    Memory, land contact and hit-point LODs: no 2-point primitives.
+
+    Type: On or off. Default: On.
+
+T2-PC-FACE: No faces in point clouds:
+    #id: t2pcface
+
+    Memory, land contact and hit-point LODs: no polygons.
+
+    Type: On or off. Default: On.
+
+T2-RW-FACES: Has polygons:
+    #id: t2rwfaces
+
+    Roadway, ground layer and paths LODs: at least one polygon.
+
+    Type: On or off. Default: On.
+
+T2-RW-LIMIT: Roadway point limit:
+    #id: t2rwlimit
+
+    Roadway LODs: at most 255 points.
+
+    Type: On or off. Default: On.
+
+T2-RW-SOUND: Roadway sound textures:
+    #id: t2rwsound
+
+    Roadway LODs: every polygon has a texture (the sound).
+
+    Type: On or off. Default: On.
+
+T2-GL-UV: Ground layer UV set:
+    #id: t2gluv
+
+    Ground layer LODs: exactly one UV set.
+
+    Type: On or off. Default: On.
+
+T2-GL-UVVALUES: Ground layer UV values:
+    #id: t2gluvvalues
+
+    Ground layer LODs: every UV is (0, 0), (1, 0), (1, 1) or (1, -1).
+
+    Type: On or off. Default: On.
+
+T2-PATH-ENTRY: Path entry points:
+    #id: t2pathentry
+
+    Paths LODs: a group called in01, in02, ... exists.
+
+    Type: On or off. Default: On.
+
+T2-PATH-POS: Path position points:
+    #id: t2pathpos
+
+    Paths LODs: the same test as the entry rule (A3OB's own test, see spec 17.1.1).
+
+    Type: On or off. Default: On.
+
+The full page for this node is docs/user/reference/a3ob_validate.html in the A3OB folder. Open it in a web browser.

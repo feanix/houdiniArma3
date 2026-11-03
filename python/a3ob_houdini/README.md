@@ -31,7 +31,7 @@ the checked-in text files. To change a parameter, change the table in `nodes/<ki
 To add a node: write `nodes/<kind>.py` (`nodes.KINDS` finds it by itself), run `python scripts/build_hdas.py`, and commit
 the generated folder. A test fails when the checked-in files differ from the generated ones.
 
-Every node also needs a user docs page (F1 opens `docs/user/reference/<type name>.html` through the HDA's `HelpUrl`
+Every node also needs a user docs page (the `?` icon of the parameter pane opens the HDA's generated `Help` section; its last line names `docs/user/reference/<type name>.html`
 section). The page is made from the table: run `python scripts/build_user_docs.py` after `build_hdas.py`, add a short
 intro to `NODE_INTRO` in that script, and commit `docs/user/`. A test fails when the pages are out of date.
 

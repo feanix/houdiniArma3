@@ -14,6 +14,7 @@ The layout is the one proven in docs/design/evidence/packaging/spike_v1/hda_src:
         PythonCook                (one line: a call into ``a3ob_houdini.entry``)
         TypePropertiesOptions
         Tools.shelf               (the Tab menu entry under the submenu named in the spec)
+        Help                      (the node's help page in Houdini help wiki markup, made from the table)
         Sections.list
 
 ``render`` makes the files as text, ``write`` puts them on disk, ``differences`` lists files that do not match.
@@ -24,6 +25,8 @@ This module does not import ``hou``.
 import os
 from typing import Dict, List
 
+from .docs_common import (NODE_INTRO, collapse_inputs, default_text, range_text, split_menu_help,
+                          type_text)
 from .params import CALLBACK, MENU_SCRIPT, NodeSpec, Parm
 
 __all__ = ["hda_folder_name", "section_name", "render", "write", "differences"]
@@ -31,9 +34,10 @@ __all__ = ["hda_folder_name", "section_name", "render", "write", "differences"]
 #: Fixed, so that the generated files do not change from day to day.
 MODIFIED = "Mon Nov  3 12:00:00 2026"
 
-#: What F1 opens: the node's page in the user docs. ``%s`` is the type name; the page is
-#: ``docs/user/reference/<type name>.html``. ``$A3OB_HOUDINI`` is set by the package file.
-HELP_URL = "file:///$A3OB_HOUDINI/docs/user/reference/%s.html"
+#: The last line of every Help section. Houdini's help browser does not open file:// pages, so the line only names
+#: the full page (``%s`` is the type name) and is not a link.
+HELP_LAST_LINE = ("The full page for this node is docs/user/reference/%s.html in the A3OB folder. "
+                  "Open it in a web browser.")
 
 _TYPE_PROPERTIES ="""ParmsFromVfl := 0;
 PrefixDroppedParmName := 1;
@@ -187,6 +191,64 @@ def _index_section(spec: NodeSpec) -> str:
         "", ""])
 
 
+def _indent(lines: List[str]) -> List[str]:
+    return [("    " + line) if line else "" for line in lines]
+
+
+def _parm_help(parm: Parm) -> List[str]:
+    """Wiki entry for one parameter: the label as the term, then its facts. A multiparm nests its row parameters."""
+    intro, item_text = split_menu_help(parm) if parm.kind == "menu" and parm.items else (parm.help, {})
+    body = ["#id: " + parm.name.replace("#", ""), ""]
+    if intro:
+        body += [intro, ""]
+    facts = ["Type: " + type_text(parm)]
+    default = default_text(parm)
+    if default is not None:
+        facts.append("Default: " + default)
+    allowed = range_text(parm)
+    if allowed:
+        facts.append("Allowed: " + allowed)
+    if parm.kind == "file" and parm.file_pattern:
+        facts.append("Files: " + parm.file_pattern)
+    body += [". ".join(facts) + ".", ""]
+    if parm.kind == "menu" and not parm.items:
+        body += ["The choices are made when you open the menu, from the geometry or the settings.", ""]
+    for token, label in parm.items if parm.kind == "menu" else ():
+        body += [label + ":", "    " + (item_text.get(token) or "Sets this to " + label + "."), ""]
+    if parm.kind == "multiparm":
+        body += ["Each row has these parameters. The number in the row replaces the # in the name.", ""]
+        for child in parm.children:
+            body += _parm_help(child)
+    while body[-1] == "":
+        body.pop()
+    return [parm.label + ":"] + _indent(body) + [""]
+
+
+def help_text(spec: NodeSpec) -> str:
+    """The "Help" section: Houdini help wiki markup, made from the same node table as the HTML reference.
+
+    Houdini's help server shows it for the node (``hou.helpServerUrl() + "nodes/sop/<type name>"``) and the ``?`` icon
+    of the parameter pane opens it. The last line names the full HTML page; it is not a link."""
+    lines = ["= %s =" % spec.label, "", "#type: node", "#context: sop", "#internal: " + spec.type_name,
+             "#tags: arma, p3d", "", '"""%s"""' % spec.summary.replace('"""', "'''"), ""]
+    for paragraph in NODE_INTRO.get(spec.kind, ()):
+        lines += [paragraph, ""]
+    groups = collapse_inputs(spec)
+    if groups:
+        lines += ["@inputs", ""]
+        for first, last, label in groups:
+            lines.append(label + ":")
+            lines.append("    " + ("Input %d." % first if first == last else "Inputs %d to %d." % (first, last)))
+            lines.append("")
+        if spec.inputs[0] == 0:
+            lines += ["The node also works with no input connected.", ""]
+    lines += ["@parameters", ""]
+    for parm in spec.parms:
+        lines += _parm_help(parm)
+    lines += [HELP_LAST_LINE % spec.type_name, ""]
+    return "\n".join(lines)
+
+
 def _sections_list(entries) -> str:
     return '""\n' + "".join("%s\t%s\n" % entry for entry in entries)
 
@@ -204,11 +266,11 @@ def render(spec: NodeSpec) -> Dict[str, str]:
         section + "/PythonCook": "import a3ob_houdini.entry as e; e.cook(%r, hou.pwd())\n" % spec.kind,
         section + "/TypePropertiesOptions": _TYPE_PROPERTIES,
         section + "/Tools.shelf": _TOOLS_SHELF % {"submenu": spec.submenu},
-        section + "/HelpUrl": HELP_URL % spec.type_name,
+        section + "/Help": help_text(spec),
         section + "/Sections.list": _sections_list([
             ("DialogScript", "DialogScript"), ("PythonCook", "PythonCook"),
             ("TypePropertiesOptions", "TypePropertiesOptions"), ("Tools.shelf", "Tools.shelf"),
-            ("HelpUrl", "HelpUrl")]),
+            ("Help", "Help")]),
     }
 
 

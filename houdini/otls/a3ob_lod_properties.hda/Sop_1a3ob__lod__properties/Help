@@ -1,0 +1,302 @@
+= LOD Properties =
+
+#type: node
+#context: sop
+#internal: a3ob_lod_properties
+#tags: arma, p3d
+
+"""Sets the LOD type, resolution, named properties and LOD copies of a LOD geometry."""
+
+Every LOD has a type (for example Visual or Geometry), a resolution number and a list of named properties. This node sets them on the LOD geometry that comes in.
+
+@inputs
+
+LOD geometry:
+    Input 1.
+
+@parameters
+
+Read from Input:
+    #id: fromin
+
+    Copy the type, resolution, properties and copies of the input into the parameters below. Use it right after Extract LOD.
+
+    Type: Button.
+
+Set Type and Resolution:
+    #id: settype
+
+    Off: leave the input's type and resolution alone and only edit properties and copies.
+
+    Type: On or off. Default: On.
+
+LOD Type:
+    #id: lodtype
+
+    The kind of LOD.
+
+    Type: Menu. Default: Resolution.
+
+    Resolution:
+        Visual resolution
+
+    View - Gunner:
+        Gunner first person view
+
+    View - Pilot:
+        First person view
+
+    View - Cargo:
+        Passenger first person view
+
+    Shadow Volume:
+        Shadow casting geometry
+
+    Edit:
+        Temporary layer
+
+    Geometry:
+        Object collision geometry and occluders
+
+    Geometry Buoyancy:
+        Buoyant object geometry (Displacement for VBS)
+
+    Geometry PhysX:
+        PhysX object collision geometry
+
+    Memory:
+        Hard points and animation axes
+
+    Land Contact:
+        Points of contact with ground
+
+    Roadway:
+        Walkable surfaces
+
+    Paths:
+        AI path finding mesh
+
+    Hit-points:
+        Hit point cloud
+
+    View Geometry:
+        View occlusion for AI
+
+    Fire Geometry:
+        Hitbox geometry
+
+    View - Cargo Geometry:
+        Passenger view collision geometry and occluders
+
+    View - Cargo Fire Geometry:
+        Passenger view hitbox geometry
+
+    View - Commander:
+        Commander first person view
+
+    View - Commander Geometry:
+        Commander view collision geometry and occluders
+
+    View - Commander Fire Geometry:
+        Commander hitbox geometry
+
+    View - Pilot Geometry:
+        First person collision geometry and occluders
+
+    View - Pilot Fire Geometry:
+        First person hitbox geometry
+
+    View - Gunner Geometry:
+        Gunner collision geometry and occluders
+
+    View - Gunner Fire Geometry:
+        Gunner view hitbox geometry
+
+    Sub Parts:
+        Obsolete
+
+    Shadow Volume - Cargo View:
+        Passenger view shadow casting geometry
+
+    Shadow Volume - Pilot View:
+        First person view shadow casting geometry
+
+    Shadow Volume - Gunner View:
+        Gunner view shadow casting geometry
+
+    Wreckage:
+        Vehicle wreckage
+
+    Underground (VBS):
+        Underground volume for VBS (not supported in Arma 3 -> Geometry PhysX Old)
+
+    Groundlayer (VBS):
+        Ground deformation data for VBS (not supported in Arma 3 -> Shadow Volume 3000)
+
+    Navigation (VBS):
+        Navigation data for VBS (not supported in Arma 3 -> Geometry / Resolution 5e+013)
+
+    Unknown:
+        Unknown model layer
+
+Resolution:
+    #id: resolution
+
+    The resolution or index. Only types that carry one use it. For Unknown it is the signature value.
+
+    Type: Number. Default: 1.
+
+Property Mode:
+    #id: propmode
+
+    Add to input: the rows below are added, and a row with the same name (any case) replaces the input's entry. Replace all: only the rows below remain. LOD copies follow the same mode.
+
+    Type: Menu. Default: Add to Input.
+
+    Add to Input:
+        Sets this to Add to Input.
+
+    Replace All:
+        Sets this to Replace All.
+
+Properties:
+    #id: props
+
+    Named properties of the LOD (at most 63 characters each).
+
+    Type: List of rows. Default: 0 rows.
+
+    Each row has these parameters. The number in the row replaces the # in the name.
+
+    Name #:
+        #id: prop_name
+
+        Type: Text. Default: (empty).
+
+    Value #:
+        #id: prop_value
+
+        Type: Text. Default: (empty).
+
+LOD Copies:
+    #id: copies
+
+    The same mesh written again under another signature (A3OB's Copies).
+
+    Type: List of rows. Default: 0 rows.
+
+    Each row has these parameters. The number in the row replaces the # in the name.
+
+    Copy Type #:
+        #id: copy_type
+
+        Type: Menu. Default: Resolution.
+
+        Resolution:
+            Sets this to Resolution.
+
+        View - Gunner:
+            Sets this to View - Gunner.
+
+        View - Pilot:
+            Sets this to View - Pilot.
+
+        View - Cargo:
+            Sets this to View - Cargo.
+
+        Shadow Volume:
+            Sets this to Shadow Volume.
+
+        Edit:
+            Sets this to Edit.
+
+        Geometry:
+            Sets this to Geometry.
+
+        Geometry Buoyancy:
+            Sets this to Geometry Buoyancy.
+
+        Geometry PhysX:
+            Sets this to Geometry PhysX.
+
+        Memory:
+            Sets this to Memory.
+
+        Land Contact:
+            Sets this to Land Contact.
+
+        Roadway:
+            Sets this to Roadway.
+
+        Paths:
+            Sets this to Paths.
+
+        Hit-points:
+            Sets this to Hit-points.
+
+        View Geometry:
+            Sets this to View Geometry.
+
+        Fire Geometry:
+            Sets this to Fire Geometry.
+
+        View - Cargo Geometry:
+            Sets this to View - Cargo Geometry.
+
+        View - Cargo Fire Geometry:
+            Sets this to View - Cargo Fire Geometry.
+
+        View - Commander:
+            Sets this to View - Commander.
+
+        View - Commander Geometry:
+            Sets this to View - Commander Geometry.
+
+        View - Commander Fire Geometry:
+            Sets this to View - Commander Fire Geometry.
+
+        View - Pilot Geometry:
+            Sets this to View - Pilot Geometry.
+
+        View - Pilot Fire Geometry:
+            Sets this to View - Pilot Fire Geometry.
+
+        View - Gunner Geometry:
+            Sets this to View - Gunner Geometry.
+
+        View - Gunner Fire Geometry:
+            Sets this to View - Gunner Fire Geometry.
+
+        Sub Parts:
+            Sets this to Sub Parts.
+
+        Shadow Volume - Cargo View:
+            Sets this to Shadow Volume - Cargo View.
+
+        Shadow Volume - Pilot View:
+            Sets this to Shadow Volume - Pilot View.
+
+        Shadow Volume - Gunner View:
+            Sets this to Shadow Volume - Gunner View.
+
+        Wreckage:
+            Sets this to Wreckage.
+
+        Underground (VBS):
+            Sets this to Underground (VBS).
+
+        Groundlayer (VBS):
+            Sets this to Groundlayer (VBS).
+
+        Navigation (VBS):
+            Sets this to Navigation (VBS).
+
+        Unknown:
+            Sets this to Unknown.
+
+    Copy Resolution #:
+        #id: copy_res
+
+        Type: Number. Default: 1.
+
+The full page for this node is docs/user/reference/a3ob_lod_properties.html in the A3OB folder. Open it in a web browser.

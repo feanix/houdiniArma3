@@ -135,6 +135,8 @@ A sentence about how to open a node's help is wrapped in `<span class="node-help
 
 ## F1 in Houdini
 
-Each A3OB node has a `HelpUrl` section that points at its reference page:
-`file:///$A3OB_HOUDINI/docs/user/reference/<type name>.html`. `scripts/build_hdas.py` writes it, so do not rename a
-reference page by hand. `$A3OB_HOUDINI` is set by the package file `packages/a3ob_houdini.json`.
+Houdini's help browser does not open local `file://` pages, so the nodes do not link to these HTML pages. Each A3OB
+node has a `Help` section (Houdini help wiki markup) inside its HDA. `scripts/build_hdas.py` writes it from the same
+node table as the reference pages here (`python/a3ob_houdini/docs_common.py` holds the shared text helpers). The user
+clicks the `?` icon at the top right of the parameter pane (or presses F1 over the node) to read it. Its last line
+names the full page, `docs/user/reference/<type name>.html` in the A3OB folder, as plain text.

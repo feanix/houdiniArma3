@@ -1,4 +1,4 @@
-"""Tests for the user docs in docs/user: generated pages are up to date, links resolve, F1 reaches a page.
+"""Tests for the user docs in docs/user: generated pages are up to date, links resolve, each HDA carries its Help section.
 
 The first three classes run under plain Python and under hython. The last one needs ``hou`` and skips without it.
 
@@ -176,44 +176,88 @@ class TestReferenceCoverage(unittest.TestCase):
             self.assertIn(os.path.basename(path), index)
 
 
-class TestHelpLink(unittest.TestCase):
-    def test_every_asset_source_carries_the_link(self):
+def all_labels(parms):
+    for parm in parms:
+        yield parm.label
+        for label in all_labels(parm.children):
+            yield label
+
+
+class TestHelpSection(unittest.TestCase):
+    def test_every_asset_source_carries_a_help_section_and_no_help_url(self):
         for spec in nodes.all_specs().values():
             files = hda_source.render(spec)
             section = hda_source.section_name(spec)
-            url = files[section + "/HelpUrl"]
-            self.assertEqual(url, "file:///$A3OB_HOUDINI/docs/user/reference/%s.html" % spec.type_name)
-            self.assertIn("HelpUrl\tHelpUrl", files[section + "/Sections.list"])
+            self.assertNotIn(section + "/HelpUrl", files)
+            self.assertIn("Help\tHelp", files[section + "/Sections.list"])
+            self.assertNotIn("HelpUrl", files[section + "/Sections.list"])
+            text = files[section + "/Help"]
+            self.assertTrue(text.startswith("= %s =\n" % spec.label), spec.type_name)
+            for line in ("#type: node", "#context: sop", "#internal: " + spec.type_name, "@parameters"):
+                self.assertIn(line + "\n", text, spec.type_name)
+            self.assertIn('"""%s"""' % spec.summary, text)
+
+    def test_the_help_names_every_parameter_label_and_menu_choice(self):
+        for spec in nodes.all_specs().values():
+            text = hda_source.render(spec)[hda_source.section_name(spec) + "/Help"]
+            for label in all_labels(spec.parms):
+                self.assertIn(label + ":\n", text, "%s: %s" % (spec.type_name, label))
+
+    def test_the_last_line_names_the_html_page_and_is_not_a_link(self):
+        for spec in nodes.all_specs().values():
+            text = hda_source.render(spec)[hda_source.section_name(spec) + "/Help"]
+            self.assertNotIn("file://", text)
+            last = text.rstrip("\n").split("\n")[-1]
+            self.assertIn("docs/user/reference/%s.html" % spec.type_name, last)
             self.assertTrue(os.path.isfile(os.path.join(DOCS_DIR, "reference", spec.type_name + ".html")))
+
+    def test_the_html_reference_and_the_help_share_their_text(self):
+        builder = load_builder()
+        for spec in nodes.all_specs().values():
+            help_text = hda_source.render(spec)[hda_source.section_name(spec) + "/Help"]
+            _, page = builder.node_page(spec)
+            for parm in spec.parms:
+                if parm.kind == "menu" and parm.items:
+                    intro, _ = builder.split_menu_help(parm)
+                    self.assertIn(intro, help_text)
+                    self.assertIn(builder.esc(intro), page)
 
 
 @unittest.skipUnless(HAS_HOU, "needs hython")
-class TestHelpLinkInHoudini(unittest.TestCase):
+class TestHelpSectionInHoudini(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         install_all_assets()
-        cls.saved = os.environ.get("A3OB_HOUDINI")
 
-    def test_definition_carries_the_url_and_it_resolves_from_the_package_folder(self):
-        # The package file sets A3OB_HOUDINI to the add-on folder (the repository root here).
-        hou.putenv("A3OB_HOUDINI", REPO_ROOT.replace("\\", "/"))
+    def test_definitions_carry_the_help_section_and_no_help_url(self):
+        for spec in nodes.all_specs().values():
+            node_type = hou.nodeType(hou.sopNodeTypeCategory(), spec.type_name)
+            self.assertIsNotNone(node_type, spec.type_name)
+            definition = node_type.definition()
+            self.assertFalse(definition.hasSection("HelpUrl"), spec.type_name)
+            self.assertTrue(definition.hasSection("Help"), spec.type_name)
+            self.assertEqual(node_type.helpUrl(), "", spec.type_name)
+
+    def test_each_help_section_names_every_parameter_label(self):
+        for spec in nodes.all_specs().values():
+            node_type = hou.nodeType(hou.sopNodeTypeCategory(), spec.type_name)
+            text = node_type.definition().sections()["Help"].contents()
+            self.assertIn("#internal: " + spec.type_name, text)
+            for label in all_labels(spec.parms):
+                self.assertIn(label + ":", text, "%s: %s" % (spec.type_name, label))
+
+    def test_the_live_help_server_serves_the_page_when_it_runs(self):
+        import urllib.request
         try:
-            for spec in nodes.all_specs().values():
-                node_type = hou.nodeType(hou.sopNodeTypeCategory(), spec.type_name)
-                self.assertIsNotNone(node_type, spec.type_name)
-                definition = node_type.definition()
-                self.assertTrue(definition.hasSection("HelpUrl"), spec.type_name)
-                url = node_type.helpUrl()
-                self.assertEqual(url, "file:///$A3OB_HOUDINI/docs/user/reference/%s.html" % spec.type_name)
-                expanded = hou.expandString(url)
-                self.assertTrue(expanded.startswith("file:///"), expanded)
-                path = expanded[len("file:///"):]
-                self.assertTrue(os.path.isfile(path), path)
-        finally:
-            if self.saved is None:
-                hou.unsetenv("A3OB_HOUDINI")
-            else:
-                hou.putenv("A3OB_HOUDINI", self.saved)
+            base = hou.helpServerUrl()
+            with urllib.request.urlopen(base + "nodes/sop/a3ob_mass", timeout=10) as response:
+                body = response.read().decode("utf-8", "replace")
+        except Exception as error:  # no help server in this session (for example plain hython): nothing to check
+            self.skipTest("no help server: %s" % error)
+        if "The full page for this node is" not in body:
+            # The server may belong to another Houdini session that has other copies of the assets installed.
+            self.skipTest("the help server does not serve this checkout's assets")
+        self.assertIn("docs/user/reference/a3ob_mass.html", body)
 
 
 if __name__ == "__main__":
