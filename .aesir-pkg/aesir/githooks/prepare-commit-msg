@@ -1,0 +1,13 @@
+#!/bin/sh
+# Adds 'Aesir-Agent: <id> (<model>)' to the commit message. The agent comes from AESIR_AGENT (set by the Aesir
+# Claude Code hooks) or from the worktree it is committing in; plain commits are left alone.
+# Interpreter: $AESIR_PYTHON, then git config aesir.python, then python. Never python3 or py (on Windows they
+# can be an installer stub that pops a window). If none runs, the commit goes through untouched.
+here=$(dirname "$0")
+cfg=$(git config --get aesir.python 2>/dev/null)
+for py in "$AESIR_PYTHON" "$cfg" python; do
+    [ -n "$py" ] || continue
+    command -v "$py" >/dev/null 2>&1 || continue
+    exec "$py" "$here/add_trailer.py" "$@"
+done
+exit 0

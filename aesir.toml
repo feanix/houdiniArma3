@@ -1,0 +1,6 @@
+[project]
+name = "houdiniArma3"
+session_prefix = "armaHou"
+
+[aesir]
+source = "E:/Projects/houdiniArma3/aesir"

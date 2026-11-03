@@ -1,0 +1,19 @@
+[package]
+name = "aesir-audit-rust"
+version = "0.1.0"
+edition = "2021"
+description = "Aesir audit toolkit for Rust: clippy preset, doc coverage, comment-only diff check (findings format v1)"
+publish = false
+
+# Own workspace root: when vendored under a client with a root [workspace], cargo would otherwise
+# refuse this crate as a non-member (aesir-reports#42).
+[workspace]
+
+[dependencies]
+proc-macro2 = { version = "1", features = ["span-locations"] }
+quote = "1"
+serde_json = "1"
+syn = { version = "2", features = ["full", "visit", "visit-mut", "parsing", "printing"] }
+
+[profile.release]
+debug = false

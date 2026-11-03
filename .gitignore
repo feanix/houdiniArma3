@@ -1,0 +1,5 @@
+.aesir/
+__pycache__/
+*.pyc
+/aesir/
+.claude/worktrees/
