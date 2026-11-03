@@ -73,6 +73,9 @@ Type names carry no version suffix yet. A change that old scenes cannot take get
 | `quick_export` | yes | Quick Export without a dialog: `choose_node`, `export_node` (calls `p3d_export.export_geometry` directly). |
 | `quick_export_dialog`, `project_settings_dialog` | GUI only | The `hou.ui` layers of the Quick Export and Project root and presets shelf tools. |
 | `p3d_export` | `collect_lods` and `read_geo` | The exporter core: `collect`, `build`, `to_bytes`, `write_file`, `export_geometry`, `run`. The rest works on plain data (`data`) and runs under CPython. |
+| `new_p3d` | yes | New P3D without a dialog: `build_starter(parent, name)` builds the starter network of ux-tools.md 7.5 (Res 1, Geometry with component and mass, Memory, Assemble LODs, P3D Export). |
+| `batch_convert` | yes | Batch folder convert without a dialog: `convert_folder(input, output, recursive, preset)` re-exports every `.p3d` with a preset into another folder, never into the source folder, and writes `a3ob_batch_report.txt` (identical, different or failed per file). |
+| `new_p3d_dialog`, `batch_convert_dialog` | GUI only | The `hou.ui` layers of the New P3D and Batch folder convert shelf tools. |
 | `nodes/_export_common` | no | Shared parameters, options and error-level policy of Validate and P3D Export. |
 
 The parameter table (`Parm`, one per parameter) knows these kinds: `string`, `file` (with `file_pattern`), `toggle`,
@@ -131,4 +134,4 @@ P3D Export (`nodes/p3d_export.py`) never writes while cooking. **Save to Disk** 
 input again and stops on any error (or on a warning while strict is on), then writes through the temporary file. It
 keeps its messages and cooks the node again, because a node can add messages only while it cooks. Scripts and tests call
 `nodes.load("p3d_export").save(node)`, which raises `UserError` when nothing was written. `OPTION_PARMS` lists the
-parameters a preset has to fill.
+parameters a preset has to fill. The **Preset** menu (`preset`, filled from `settings`) and **Apply** (`apply_preset`) set them; the option parameter names never change. An empty Project Root means the shelf setting, then `P:\`.

@@ -80,6 +80,26 @@
 	help	"How many messages the node shows. The rest are counted in one line and listed in the console."
     }
     parm {
+	name	"preset"
+	label	"Preset"
+	type	string
+	default	{ "Lossless" }
+	menu {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['menu']).menu('p3d_export', 'presets', kwargs)" ]
+	    language python
+	}
+	help	"A saved set of the options below: Lossless, Arma 3 release, or one you saved with the Project root and presets shelf tool. Pick one and press Apply. Choosing does not change anything by itself."
+    }
+    parm {
+	name	"apply"
+	label	"Apply"
+	type	button
+	default	{ "0" }
+	help	"Fill the options below from the chosen preset. Project Root and Keep a .bak stay as they are."
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('p3d_export', 'apply', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+    parm {
 	name	"selmask"
 	label	"Selection Mask"
 	type	string

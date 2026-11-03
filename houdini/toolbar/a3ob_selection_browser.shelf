@@ -6,6 +6,8 @@
   <toolshelf name="a3ob" label="A3OB">
     <memberTool name="a3ob_selection_browser"/>
     <memberTool name="a3ob_quick_export"/>
+    <memberTool name="a3ob_new_p3d"/>
+    <memberTool name="a3ob_batch_convert"/>
     <memberTool name="a3ob_project_settings"/>
     <memberTool name="a3ob_reload"/>
   </toolshelf>
@@ -36,5 +38,19 @@ quick_export_dialog.run(kwargs)]]></script>
     <script scriptType="python"><![CDATA[from a3ob_houdini import project_settings_dialog
 
 project_settings_dialog.run(kwargs)]]></script>
+  </tool>
+
+  <tool name="a3ob_new_p3d" label="New P3D" icon="MISC_python">
+    <helpText><![CDATA[Builds the starter network (Resolution 1, Geometry and Memory LODs, Assemble LODs, P3D Export) in the open SOP network or in a new Geometry object. The work is in a3ob_houdini/new_p3d.py.]]></helpText>
+    <script scriptType="python"><![CDATA[from a3ob_houdini import new_p3d_dialog
+
+new_p3d_dialog.run(kwargs)]]></script>
+  </tool>
+
+  <tool name="a3ob_batch_convert" label="Batch folder convert" icon="MISC_python">
+    <helpText><![CDATA[Re-exports every .p3d in a folder with a preset into an output folder and writes a report: identical, different or failed for each file. The sources are never changed. The work is in a3ob_houdini/batch_convert.py.]]></helpText>
+    <script scriptType="python"><![CDATA[from a3ob_houdini import batch_convert_dialog
+
+batch_convert_dialog.run(kwargs)]]></script>
   </tool>
 </shelfDocument>
