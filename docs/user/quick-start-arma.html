@@ -27,11 +27,226 @@
 </header>
 <main>
 <h1>Quick start: Arma modders</h1>
-<p class="lead">For people who know Arma models and are new to Houdini.</p>
+<p class="lead">You know Arma models and Object Builder. You have not used Houdini before.</p>
 
-<p class="todo">This page is not written yet. It will hold: A short walk from an existing .p3d file to an edited, exported model, explaining each Houdini idea as it comes up.</p>
+<p>This page takes you through two jobs. In job 1 you make a new model and write it as a .p3d file. In job 2 you take an
+existing .p3d file, change one LOD (one version of the model, for example the collision geometry), and write it
+again. Install the add-on first: see <a href="install.html">Install</a>.</p>
 
-<p>In the meantime, the <a href="reference/index.html">reference</a> lists every node and shelf tool.</p>
+<p>Steps that need the Houdini window (shelf buttons and dialogs) are marked <strong>Houdini window</strong>. Steps that
+happen in other programs are marked <strong>Outside Houdini</strong>. Every other step was run in Houdini without a
+window and gave the messages quoted here. Your numbers can differ if your model differs.</p>
+
+<h2>Houdini in ten minutes</h2>
+<p>You only need a handful of ideas. Houdini has many more, and you can ignore them for now.</p>
+<dl>
+<dt>Node</dt>
+<dd>A box on the screen that does one job, such as "read a .p3d file" or "set the mass". Houdini work is a set of nodes
+  joined together instead of one long list of actions.</dd>
+<dt>Wire and network</dt>
+<dd>A wire is a line from the bottom of one node (its output) to the top of another (its input). The data flows down the
+  wire. A set of joined nodes is a <strong>network</strong>. In a network the top nodes make data and the lower nodes
+  change it.</dd>
+<dt>Geometry object and network editor</dt>
+<dd>The <strong>network editor</strong> is the pane where you see nodes and wires. Houdini keeps your scene as objects.
+  A <strong>Geometry object</strong> is an object that holds one model. Double-click it to go inside. Inside, the nodes
+  are called <strong>SOPs</strong> (surface operators): nodes that make or change points and polygons. All A3OB nodes
+  are SOPs.</dd>
+<dt>Tab menu</dt>
+<dd>To add a node, move the pointer over the network editor and press the Tab key. A menu opens. Type a few letters
+  of the node name and press Enter. The A3OB nodes are in a submenu called <strong>A3OB</strong>.</dd>
+<dt>Parameter pane</dt>
+<dd>The pane at the right. It shows the <strong>parameters</strong> (settings) of the selected node. This guide writes a
+  parameter name like <kbd class="ui-parm" data-node="a3ob_p3d_import">File</kbd>. Type in the field, pick a menu entry,
+  or press a button.</dd>
+<dt>Display flag</dt>
+<dd>The viewport shows the result of one node: the one with the <strong>display flag</strong>. It is the blue circle at
+  the right edge of a node. Click it to see that node's result. Nodes that follow the display node are not drawn until
+  you move the flag.</dd>
+<dt>Messages and colours</dt>
+<dd>A node with a problem it cannot work around turns <strong>red</strong> (an error). Nodes below it stop working too.
+  A node with something to look at turns <strong>yellow</strong> (a warning), and the data keeps flowing. The A3OB nodes
+  also write a short summary line when they are fine. Middle-click a node to read its messages.</dd>
+<dt>Help</dt>
+<dd><span class="node-help">Select a node and click the <strong>?</strong> (help) icon at the top right of the parameter pane, or press F1 over the node. Houdini
+  opens the help page of that node, with a summary, the inputs and the parameters. For an A3OB node the page names the full
+  reference page in this documentation by its path in the add-on folder.</span></dd>
+<dt>Bypass</dt>
+<dd>Select a node and press B to switch it off without deleting it. The data passes through it unchanged. Press B again
+  to switch it on.</dd>
+</dl>
+
+<h2>Job 1: make a new model</h2>
+<p>Here is the network you will have after step 1:</p>
+<pre><code>res1_mesh --------- res1_props ----------\
+geometry_mesh - geometry_triangles - geometry_components - geometry_mass - geometry_props --- assemble - export
+memory_points ----- memory_group ---- memory_props -------/</code></pre>
+<p>Each row is one LOD. The three rows join at <code>assemble</code>, which packs them into one model.
+<code>export</code> writes the file.</p>
+
+<h3>Step 1: build the starter network</h3>
+<p class="gui">Click <kbd class="ui-shelf">New P3D</kbd> on the A3OB shelf.</p>
+<p>What you see depends on what the network editor shows:</p>
+<ul>
+<li>If it shows a network of SOPs, a dialog asks
+  <kbd class="ui-dialog">Build the starter network in</kbd> that network, or in a new Geometry object. The buttons are
+  <kbd class="ui-dialog">This network</kbd>, <kbd class="ui-dialog">New object</kbd> and Cancel.</li>
+<li>If you choose a new object (or the editor was not showing SOPs), a second dialog asks
+  <kbd class="ui-dialog">Name of the new Geometry object</kbd>. Type a name with letters, digits and underscores, such as
+  <code>my_crate</code>.</li>
+</ul>
+<p>The status line at the bottom then says <kbd class="ui-dialog">Built the starter network in</kbd> followed by the
+path. Double-click the new object to go inside.</p>
+<p class="note">Without the shelf you can build the same network in the Python shell:
+<code>from a3ob_houdini import new_p3d</code>, then <code>new_p3d.build_starter(None, "my_crate")</code>. This is how
+this page was checked.</p>
+
+<p>The starter network has three LODs. Their nodes are named like this:</p>
+<table>
+<tr><th>LOD</th><th>Nodes</th><th>What is in it</th></tr>
+<tr><td>Resolution 1 (the visual model)</td><td><code>res1_mesh</code>, <code>res1_props</code></td><td>A <kbd class="ui-node">Box</kbd> of size 1 that sits on the ground. This is where your model goes.</td></tr>
+<tr><td>Geometry (collision)</td><td><code>geometry_mesh</code>, <code>geometry_triangles</code>, <code>geometry_components</code>, <code>geometry_mass</code>, <code>geometry_props</code></td><td>A second box, cut into triangles by a <kbd class="ui-node">Divide</kbd> node, a point group (a Houdini selection) named <code>component01</code> made by a <kbd class="ui-node">Group</kbd> node, and 100 kg of mass.</td></tr>
+<tr><td>Memory</td><td><code>memory_points</code>, <code>memory_group</code>, <code>memory_props</code></td><td>One point made by an <kbd class="ui-node">Add</kbd> node, in a group named <code>new_point</code>.</td></tr>
+</table>
+<p>Each <code>_props</code> node is a <kbd class="ui-node">LOD Properties</kbd> node. It says which kind of LOD the
+data is. <code>assemble</code> is an <kbd class="ui-node">Assemble LODs</kbd> node and <code>export</code> is a
+<kbd class="ui-node">P3D Export</kbd> node. A sticky note in the network repeats which three nodes you replace.</p>
+<p>Click <code>export</code> and read its message:
+<samp class="ui-msg">3 LODs, 3 KB if saved now.</samp> The network is already valid, so you could save it now.</p>
+
+<h3>Step 2: put your model in</h3>
+<p>Select <code>res1_mesh</code>. Change its <kbd class="ui-parm" data-node="box">Size</kbd> to, for example, 2, 1, 4.
+The <code>export</code> node already has the display flag, so the viewport shows all three LODs together.</p>
+<p>To use your own model, delete the box and wire your own nodes into the input of <code>res1_props</code>. Use any
+Houdini nodes you like. Two rules come from the file format:</p>
+<ul>
+<li>Every polygon has 3 or 4 points. If a node makes bigger polygons, add a <kbd class="ui-node">Divide</kbd> node after it.</li>
+<li>The collision LOD is checked for triangles, so keep the <code>geometry_triangles</code> Divide node after your
+  collision shape if you replace <code>geometry_mesh</code>.</li>
+</ul>
+<p>Replace <code>memory_points</code> in the same way: move the point to where your hard point should be. To rename its
+group, see the <a href="reference/tool-a3ob_selection_browser.html">Selection browser</a>.</p>
+<p><code>geometry_mass</code> is a <kbd class="ui-node">Mass</kbd> node. Its
+<kbd class="ui-parm" data-node="a3ob_mass">Mode</kbd> is <kbd class="ui-menu">Uniform total</kbd> and its
+<kbd class="ui-parm" data-node="a3ob_mass">Value</kbd> is 100, so the whole object weighs 100 kg. Its message reads
+<samp class="ui-msg">Total 100.0 kg on 8 points.</samp> Change the value to the real mass of your object.
+See the <a href="reference/a3ob_mass.html">Mass reference</a> for the other modes.</p>
+
+<h3>Step 3: check it with Validate</h3>
+<p>Press Tab and add a <kbd class="ui-node">Validate</kbd> node. Wire the output of <code>assemble</code> into it.
+Validate looks for what Arma or Object Builder would complain about, and changes nothing. Its summary line:
+<samp class="ui-msg">3 LODs checked: 0 errors, 0 warnings.</samp></p>
+<p>To see a warning, select <code>geometry_triangles</code> and press B to bypass it. Validate now says:</p>
+<pre><code>Geometry: the mesh is not triangulated: polygon 0 has 4 points ...
+Add a Divide node with Convex Polygons on and Maximum Edges 3.</code></pre>
+<p>That is a <strong>warning</strong>: the node turns yellow, and the sentence after the problem tells you the fix.
+Press B again to switch the node back on.</p>
+<p>For an error, change the <kbd class="ui-parm" data-node="a3ob_lod_properties">LOD Type</kbd> of <code>memory_props</code> to
+<kbd class="ui-menu">Geometry</kbd>. Two LODs now have the same type and resolution, and Validate turns red with
+<samp class="ui-msg">Geometry: another LOD has the same type and resolution.</samp> Set the type back to
+<kbd class="ui-menu">Memory</kbd>.</p>
+<p>Warnings and errors, and the checks behind them, are listed in <a href="concepts.html#validator">Concepts</a>.</p>
+
+<h3>Step 4: write the .p3d file</h3>
+<p>Select <code>export</code>. In the parameter pane set <kbd class="ui-parm" data-node="a3ob_p3d_export">Output File</kbd>
+to where you want the file, for example <code>P:/my_mod/my_crate.p3d</code>. If the name does not end in
+<code>.p3d</code>, the node adds it. Press <kbd class="ui-parm" data-node="a3ob_p3d_export">Save to Disk</kbd>.</p>
+<p>The node checks the model again. If it finds an error it writes nothing and tells you: in the Houdini window a dialog
+starts with <kbd class="ui-dialog">Nothing was written.</kbd> If all is well it writes the file and the node shows
+<samp class="ui-msg">Saved 3 LODs, 3 KB to</samp> followed by the file name. The save goes through a temporary file,
+so a failed save never damages an older file with the same name.</p>
+<p>Cooking the node (just looking at it) never writes a file. Only the button does.</p>
+<p class="note">The default Preset is <kbd class="ui-menu">Lossless</kbd>: the node writes exactly what is in the
+geometry and changes nothing. If you want Object Builder's usual clean-up (lowercase paths, sorted LODs and so on),
+choose <kbd class="ui-menu">Arma 3 release</kbd> in <kbd class="ui-parm" data-node="a3ob_p3d_export">Preset</kbd>
+and press <kbd class="ui-parm" data-node="a3ob_p3d_export">Apply</kbd>. <a href="concepts.html#presets">Concepts</a> lists what each preset does.</p>
+
+<h3>Step 5: open it in Object Builder</h3>
+<p class="outside">Start Object Builder, choose File, then Open, and pick the file you
+wrote. You should see your three LODs in the LOD list. Object Builder is not part of this add-on, so this step is not
+checked by the tests.</p>
+
+<h2>Job 2: change an existing model</h2>
+<p>This job uses the network below. The two ends are the same as in job 1.</p>
+<ol class="network">
+<li>P3D Import</li>
+<li>Extract LOD</li>
+<li class="optional">Your edits</li>
+<li>Assemble LODs</li>
+<li>P3D Export</li>
+</ol>
+<p><kbd class="ui-node">P3D Import</kbd> also goes straight into the first input of
+<kbd class="ui-node">Assemble LODs</kbd>. The example below uses the crate model
+<code>tests/fixtures/p3d/sample_2_crate.p3d</code> from the add-on folder. You can use any .p3d file of your own.</p>
+
+<h3>Step 1: import</h3>
+<p>Inside a Geometry object (make one: go up to the scene level, press Tab and choose <strong>Geometry</strong>, then
+double-click it), add a <kbd class="ui-node">P3D Import</kbd> node. Set its
+<kbd class="ui-parm" data-node="a3ob_p3d_import">File</kbd> to the .p3d file. The node reads the file and shows
+<samp class="ui-msg">7 LODs, 0 packed proxies, 0 inline proxies</samp> (the numbers are the crate's; a proxy is a place
+where Arma puts another model).</p>
+<p>The output is the <strong>P3D geometry</strong>: the whole model, with each LOD packed into one item. You cannot edit
+the points of a packed LOD yet. The next step opens one.</p>
+<p>If you forget to choose a file, the node turns red and says <samp class="ui-msg">P3D Import: no file is chosen. Pick a .p3d file in the File parameter.</samp></p>
+
+<h3>Step 2: take one LOD out</h3>
+<p>Add an <kbd class="ui-node">Extract LOD</kbd> node and wire the import node into it. The
+<kbd class="ui-parm" data-node="a3ob_extract_lod">LOD</kbd> menu lists the LODs of the file. For the crate:</p>
+<ul>
+<li><kbd class="ui-menu">0: Resolution 1</kbd></li>
+<li><kbd class="ui-menu">1: Resolution 2</kbd></li>
+<li><kbd class="ui-menu">2: Shadow Volume 0</kbd></li>
+<li><kbd class="ui-menu">3: Geometry</kbd></li>
+<li><kbd class="ui-menu">4: Geometry Buoyancy</kbd></li>
+<li><kbd class="ui-menu">5: Memory</kbd></li>
+<li><kbd class="ui-menu">6: Roadway</kbd></li>
+</ul>
+<p>Choose <kbd class="ui-menu">3: Geometry</kbd>. The message is
+<samp class="ui-msg">Extracted LOD 3: Geometry, 16 points, 24 polygons.</samp> This is the <strong>LOD geometry</strong>:
+ordinary Houdini points and polygons that you can edit. It still carries what the file said about the LOD (its type,
+properties, selections).</p>
+<p>If you wire something else into Extract LOD, for example a Box, it turns red with
+<samp class="ui-msg">Input is not a P3D geometry (packed LODs). Connect P3D Import or Assemble LODs.</samp></p>
+
+<h3>Step 3: edit it</h3>
+<p>Edit the LOD with any Houdini nodes. As an example add a <kbd class="ui-node">Mass</kbd> node after Extract LOD,
+set <kbd class="ui-parm" data-node="a3ob_mass">Mode</kbd> to <kbd class="ui-menu">Uniform total</kbd> and
+<kbd class="ui-parm" data-node="a3ob_mass">Value</kbd> to 90. The message is
+<samp class="ui-msg">Total 90.0 kg on 16 points.</samp></p>
+<p class="warning">Edit one LOD on one branch. Do not join two extracted LODs with a Merge node: a Merge keeps the LOD
+information of its first input only, and Validate will warn that the LODs look merged. Assemble LODs (next) is the
+right way to put LODs together.</p>
+<p>To edit a second LOD, add a second Extract LOD and edit that branch in the same way.</p>
+
+<h3>Step 4: put it back</h3>
+<p>Add an <kbd class="ui-node">Assemble LODs</kbd> node. Wire the <kbd class="ui-node">P3D Import</kbd> node into its <strong>first</strong>
+input (the base: the original model). Wire your edited branch into its second input. The
+<kbd class="ui-parm" data-node="a3ob_assemble_lods">Replace Matching LODs</kbd> switch is on, so the edited LOD
+replaces the base LOD of the same type and resolution, in the same place. The other LODs pass through untouched. The
+message:</p>
+<p><samp class="ui-msg">1 replaced, 6 passed through, 0 added.</samp></p>
+
+<h3>Step 5: write it</h3>
+<p>Add a <kbd class="ui-node">P3D Export</kbd> node after Assemble LODs. Set the
+<kbd class="ui-parm" data-node="a3ob_p3d_export">Output File</kbd> and press
+<kbd class="ui-parm" data-node="a3ob_p3d_export">Save to Disk</kbd>. The node reports
+<samp class="ui-msg">Saved 7 LODs, 50 KB to</samp> and the file name.</p>
+<p>The crate's Roadway LOD has polygons without a sound texture, so the node also shows a yellow warning that
+contains <samp class="ui-msg">has no sound texture</samp>. A warning does not stop the save. The crate is written as
+it was read.</p>
+<p>Open the file in Object Builder as in job 1.</p>
+<p class="note">A quick check of the whole path: connect P3D Import straight into P3D Export, with no edit, and save.
+With the <kbd class="ui-menu">Lossless</kbd> preset the new file is identical, byte for byte, to the one you read. This
+holds for the two sample files in the add-on folder. <a href="concepts.html#lossless">Concepts</a> says when it can
+differ.</p>
+
+<h2>Where next</h2>
+<ul class="cards">
+<li><a href="concepts.html">Concepts</a><span>How a model is kept in Houdini, presets, and the checks.</span></li>
+<li><a href="reference/index.html">Reference</a><span>Every node and shelf tool, with all parameters.</span></li>
+<li><a href="reference/tool-a3ob_quick_export.html">Quick Export</a><span>Write a .p3d without a P3D Export node.</span></li>
+<li><a href="reference/tool-a3ob_project_settings.html">Project root and presets</a><span>Set your P drive path and save your own presets.</span></li>
+</ul>
 </main>
 <footer class="site">
 <div class="inner">

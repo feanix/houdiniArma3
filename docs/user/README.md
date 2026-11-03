@@ -111,6 +111,28 @@ A grid of links to other pages:
 
 `section.parm` (one parameter) is used only by the generated reference.
 
+`gui` and `outside` mark a step that needs the Houdini window, or a program other than Houdini. They add their own
+lead-in ("Houdini window.", "Outside Houdini."). The tests cannot run such a step.
+
+## Quoted interface text (checked by tests)
+
+When a guide quotes text that the reader will see in Houdini, mark it with one of these tags and classes. `tests/test_user_guides.py`
+finds them and checks each against the real tools, so a rename in the code breaks the test instead of the guide.
+
+| Mark-up | What it quotes | Checked against |
+| ------- | -------------- | --------------- |
+| `<kbd class="ui-node">P3D Import</kbd>` | A node label (A3OB or built-in, such as Box) | The node's label in Houdini (the parameter table for A3OB nodes) |
+| `<code class="ui-type">a3ob_p3d_import</code>` | A node type name | The installed node types |
+| `<kbd class="ui-parm" data-node="a3ob_mass">Mode</kbd>` | A parameter label. `data-node` is the node type name. Leave it out to accept any A3OB node. | The labels of that node's parameters |
+| `<kbd class="ui-menu">Uniform total</kbd>` | A menu entry | The menu labels of the A3OB nodes, including the LOD menu of Extract LOD for the example file |
+| `<kbd class="ui-shelf">New P3D</kbd>` | A shelf tab or shelf tool label | The `.shelf` files in `houdini/toolbar` |
+| `<kbd class="ui-dialog">Name of the new Geometry object</kbd>` | A dialog title, prompt, button or status line (or the fixed start of one) | The text of `python/a3ob_houdini/*_dialog.py` and `nodes/p3d_export.py` |
+| `<samp class="ui-msg">3 LODs checked: 0 errors, 0 warnings.</samp>` | A message on a node (or the fixed start of one) | The messages of the nodes while the test runs the two quick start jobs |
+
+Quote the part of a message that does not change. A message with a time or a file name in it is quoted up to that point.
+A preset table row carries `data-option` and its cells `data-preset`; a test compares them with the built-in presets.
+A sentence about how to open a node's help is wrapped in `<span class="node-help">` so it is easy to find and update.
+
 ## F1 in Houdini
 
 Each A3OB node has a `HelpUrl` section that points at its reference page:
