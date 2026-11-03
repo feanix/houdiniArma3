@@ -395,6 +395,8 @@ Further rules:
 - **Prim groups count only with a partner.** A prim group counts as a face selection only if a point group of the same name exists. The importer creates an empty point group for face-only selections. `a3ob_w_X` / `a3ob_fw_X` without group `X` are ignored with a warning, so stray PolyExtrude prim groups do not leak into the file.
 - **Namespaces.** Point groups, prim groups and point attributes of the same name coexist (T3).
 
+Selections that include proxy points are split between the mesh group and the proxies' embedded groups on import, and export rebuilds them from both places (§13.5, "Selections split between the mesh and packed proxies").
+
 ### 7.3 Name mapping (lossless)
 
 - **Houdini rules.** Attribute and group names must be `[A-Za-z_][A-Za-z0-9_]*`. `-proxies`, `a b`, `x.y`, `1abc`, `proxy:\…` and `ň` all fail `addAttrib` / `createPointGroup` with `OperationFailed` (T2).
@@ -614,6 +616,24 @@ A packed prim that has no proxy path anywhere is an error ("packed prim is neith
 3. Append the 3 points, in embedded point order, after all mesh points. Append the face, whose corners reference those points in the embedded polygon's order (through the §4.3 map), after all mesh faces.
 4. Add the selection `"proxy:" + path + "." + "%03d" % index` with byte 1 on the 3 vertices and the face.
 5. Merge the embedded groups and weights into the LOD's selections.
+
+**Selections split between the mesh and packed proxies (normative; found in the #8 review, kept for M4).** A
+selection that contains proxy points is split on import: its mesh members go to the mesh point group, and its members
+on each packed proxy's triangle go to that proxy's embedded group of the same name. On the character fixture,
+Resolution 1's `head` keeps 597 of 600 members in the mesh, and `injury_hands`, `injury_legs` and `-proxies` are
+**empty** mesh groups whose members all sit inside proxies.
+
+- The importer keeps the mesh group even when it is empty, so the selection's name, weights and `a3ob_tagg_order`
+  token stay in the LOD.
+- Export rebuilds each selection as the **union** of the mesh group members and the embedded group members of every
+  packed proxy, at the vertex and face positions step 3 gives the proxy triangles. Bytes (weights) come from where each
+  member lives: mesh attributes for mesh members, embedded attributes for proxy members.
+- An empty mesh group with no embedded members anywhere still exports as an empty selection (L0: the file had it).
+- The selection keeps its position from `a3ob_tagg_order`; a name found only in embedded groups is appended after the
+  ordered ones.
+- Acceptance for M4: the character fixture round-trips byte for byte (L0) through import and export, which covers
+  `head`, `injury_hands`, `injury_legs` and `-proxies`; plus a test where a proxy is moved, so its members are written at
+  the new vertex positions with their weights.
 
 **Inline proxies** stay where they are in point and prim order and are exported as ordinary triangles. Their
 selection `"proxy:" + path + "." + "%03d" % index` is the union of two things:

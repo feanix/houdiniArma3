@@ -47,14 +47,37 @@ Type names carry no version suffix yet. A change that old scenes cannot take get
 | Module | Needs `hou` | Purpose |
 |---|---|---|
 | `entry` | at cook time | Frozen entry functions called by the assets. |
-| `params` | no | `Parm` (string, file, toggle, button, int, float, menu; vectors by `size`), `NodeSpec`, `read_parms`, `add_spare_parms`. |
+| `params` | no | `Parm` (kinds below), `NodeSpec`, `read_parms`, `add_spare_parms`. |
 | `nodes` | no | One module per node kind; `KINDS`, `load`, `all_specs`. |
 | `hda_source` | no | Makes the HDA text files from a `NodeSpec`. |
 | `messages` | no | `Report`, `message`, `warning`, `error`, text helpers (ux-tools.md section 2). |
 | `errors` | no | `UserError`. |
 | `names` | only the two group-name wrappers | D-STR helpers, `encode_group_name` / `decode_group_name`, `lod_uid`, int32 helpers. |
 | `mass_math` | no | The arithmetic of the Mass node: closed components, volume, colour ramp, centre of mass. |
+| `geo_edit` | at call time | For nodes that edit their input: `copy_input` (output = copy of input 1), detail read, set and remove. |
+| `lod_props` | no | LOD Properties decisions: type menu, signature update (through `a3ob_core`), property and copy merge. |
+| `material_text` | no | Material Assign text rules: slash normalisation, procedural colour text, known endings. |
+| `lod_container` | yes (lazily) | The two shapes of geometry (LOD geometry, P3D geometry): `classify`, `lod_content`, detail copy. Extract LOD and Assemble LODs use it. |
+| `lod_match` | no | The Assemble LODs match rule (spec 3.2) as a pure function, `match_lods`. |
+| `selection_browser` | yes | Selection browser without a dialog: `list_groups`, `create_selection`, `delete_selection`, `rename_selection`. |
+| `selection_browser_dialog` | GUI only | The `hou.ui` layer called by `houdini/toolbar/a3ob_selection_browser.shelf`. |
 | `p3d_import` | `lod_builder` and `import_model` | The importer: `plan` (decisions, no `hou`), `lod_builder` (writes geometry), `proxies`, `lod_filter`. |
+
+The parameter table (`Parm`, one per parameter) knows these kinds: `string`, `file` (with `file_pattern`), `toggle`,
+`button` (needs `action`), `int`, `float`, `menu` and `multiparm`. The fields:
+
+- `name`, `label`, `kind`, `default`, `help` for every kind.
+- `action`: for a button, and for a menu that fills other parameters. It calls `a3ob_houdini.entry.button(kind, action, kwargs)`.
+- `items`: for a menu, `((token, label), ...)`. A menu is a string parameter and its value is the token; `default` is a token.
+- `size`: for `int` and `float`, how many components; `default` is then a tuple and `read_parms` gives a tuple. A float
+  of size 3 is a vector (components `x`, `y`, `z`); other sizes are numbered (a colour of size 4 has `1` to `4`).
+- `minimum`, `maximum`: for `int` and `float`. An end that is given is strict (Houdini clamps to it); an end left out is
+  not, so the artist can type past the slider (0 to 10).
+- `children`: for a multiparm, the parameters of one row, with names ending in `#`. `read_parms` gives a list of row dicts.
+
+`Parm.__post_init__` rejects a wrong combination (unknown kind, button without action, menu without items or with a
+default that is not a token, size on a kind that has none, a tuple default of the wrong length, range on a kind that has
+none, minimum above maximum).
 
 ## The importer in short
 

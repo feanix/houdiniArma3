@@ -32,8 +32,8 @@
 	type	float
 	size	1
 	default	{ "1.0" }
-	range	{ 0! 1000000! }
-	help	"Set on each: kilograms per point. Uniform total: kilograms shared by all the points. From density: kilograms per cubic metre."
+	range	{ 0! 10 }
+	help	"Set on each: kilograms per point. Uniform total: kilograms shared by all the points. From density: kilograms per cubic metre. The value cannot be below 0; there is no upper limit (the slider shows 0 to 10, and you can type more)."
     }
     parm {
 	name	"group"

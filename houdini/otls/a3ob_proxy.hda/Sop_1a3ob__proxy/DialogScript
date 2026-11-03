@@ -37,9 +37,9 @@
 	    "commander_hunter"	"Commander: hunter"
 	    "light_volume_car"	"Light volume: car"
 	}
+	help	"Fill the Path from a list of common proxies."
 	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('proxy', 'fillcommon', kwargs)" }
 	parmtag	{ "script_callback_language" "python" }
-	help	"Fill the Path from a list of common proxies."
     }
     parm {
 	name	"index"
@@ -63,7 +63,6 @@
 	type	vector
 	size	3
 	default	{ "0.0" "0.0" "0.0" }
-	range	{ 0 10 }
 	help	"Where the proxy goes when there is no second input."
     }
     parm {
@@ -72,7 +71,6 @@
 	type	vector
 	size	3
 	default	{ "0.0" "0.0" "0.0" }
-	range	{ 0 10 }
 	help	"Degrees. A proxy has no scale."
     }
     parm {

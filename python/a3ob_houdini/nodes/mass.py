@@ -37,7 +37,7 @@ SPEC = NodeSpec(
     inputs=(1, 1),
     input_labels=("LOD geometry",),
     parms=(
-        Parm("mode", "Mode", "menu", "total", "What to do with the mass.", menu=(
+        Parm("mode", "Mode", "menu", "total", "What to do with the mass.", items=(
             ("each", "Set on each"),
             ("total", "Uniform total"),
             ("density", "From density"),
@@ -47,7 +47,8 @@ SPEC = NodeSpec(
         )),
         Parm("value", "Value", "float", 1.0,
              "Set on each: kilograms per point. Uniform total: kilograms shared by all the points. From density: "
-             "kilograms per cubic metre.", minimum=0, maximum=1000000),
+             "kilograms per cubic metre. The value cannot be below 0; there is no upper limit (the slider shows "
+             "0 to 10, and you can type more).", minimum=0),
         Parm("group", "Group", "string", "", "The points to change. Empty means all points."),
         Parm("visualize", "Visualize", "toggle", False,
              "Write the colour Cd: blue is the least mass, red the most, black no mass. The export ignores Cd."),
@@ -73,7 +74,7 @@ def cook(node, report: Report) -> None:
     elif mode == "copyto":
         _copy_to_mass(geo, selected, report)
     else:
-        if mode in ("each", "total", "density") and not selected:
+        if not selected:
             report.warning(format_problem(NAME, "no point is in the group", "Check the Group parameter"))
         masses = _current(geo, count)
         if mode == "each":
@@ -82,7 +83,7 @@ def cook(node, report: Report) -> None:
         elif mode == "total":
             for number in selected:
                 masses[number] = values["value"] / len(selected)
-        else:
+        elif selected:  # with an empty selection the warning above is all there is to say
             _from_density(geo, positions, selected, masses, values["value"], report)
         _write(geo, ATTRIB, masses)
     _report(geo, positions, report)

@@ -227,6 +227,18 @@ class TestCornerData(unittest.TestCase):
         self.assertEqual([v.point().number() for v in polygons(inner)[1].vertices()], [1, 4])
         self.assertEqual(list(inner.attribValue("a3ob_source_counts")), [6, 2, 6])
 
+    def test_faces_with_fewer_than_three_sides_warn_with_the_lod_name_and_count(self):
+        lod = make_lod()
+        lod.face_sides[0] = 0
+        lod.face_sides[1] = 2
+        _, report, _ = hou_support.import_model(model_of(lod))
+        warnings = report.texts("warning")
+        self.assertEqual(len(warnings), 1, warnings)
+        self.assertEqual(warnings[0], "Resolution 1: 2 faces have fewer than 3 points (faces 0, 1). "
+                                      "They are imported, but the export drops them.")
+        _, report, _ = hou_support.import_model(model_of(make_lod()))
+        self.assertEqual(report.texts("warning"), [])
+
     def test_odd_strings_and_names_go_in_unchanged(self):
         text = binary.decode_string(bytes(range(1, 256)))
         odd_names = ["-proxies", "pos driver", "café €\x81", "xn__abc", "proxy:\\a b.c"]

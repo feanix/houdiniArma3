@@ -55,7 +55,7 @@ SPEC = NodeSpec(
              "and a .p3d ending is removed."),
         Parm("common", "Common Proxies", "menu", "none", "Fill the Path from a list of common proxies.",
              action="fillcommon",
-             menu=(("none", "(choose)"),) + tuple((token, label) for token, label, _ in COMMON)),
+             items=(("none", "(choose)"),) + tuple((token, label) for token, label, _ in COMMON)),
         Parm("index", "Index", "int", 1, "The proxy number, 0 to 999.", minimum=0, maximum=MAX_INDEX),
         Parm("autoindex", "Number From Points", "toggle", True,
              "With a second input: the first proxy gets Index, the next one Index + 1, and so on. "

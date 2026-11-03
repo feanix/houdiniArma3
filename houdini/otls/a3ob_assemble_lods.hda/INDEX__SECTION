@@ -1,0 +1,14 @@
+Operator:     a3ob_assemble_lods
+Label:        Assemble LODs
+Path:         oplib:/Sop/a3ob_assemble_lods?Sop/a3ob_assemble_lods
+Icon:         SOP_python
+Table:        Sop
+License:      
+Extra:        
+User:         
+Inputs:       0 to 32
+Subnet:       false
+Python:       true
+Empty:        false
+Modified:     Mon Nov  3 12:00:00 2026
+

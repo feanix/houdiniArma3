@@ -101,6 +101,12 @@ class TestMassNode(NodeTestCase):
         self.assertEqual(self.masses(node), [1.0] * 8 + [0.0] * 8)
         self.assertEqual(len(result.warnings), 1)
 
+    def test_density_with_an_empty_group_gives_only_the_group_warning(self):
+        node, result = self.run_mass(cube_geometry(), mode="density", value=8, group="@a3ob_none")
+        self.assertEqual(len(result.warnings), 1)
+        self.assertIn("no point is in the group", result.warnings[0])
+        self.assertNotIn("ignored", result.warnings[0])
+
     def test_clear_removes_the_attribute_or_zeroes_a_group(self):
         node, _ = self.run_mass(cube_geometry(), mode="total", value=8)
         clear = self.network.createNode("a3ob_mass")
@@ -194,8 +200,8 @@ class TestMassNode(NodeTestCase):
         node = self.network.createNode("a3ob_mass")
         self.assertEqual([parm.name() for parm in node.parms()], ["mode", "value", "group", "visualize"])
         template = node.parm("value").parmTemplate()
-        self.assertTrue(template.minIsStrict() and template.maxIsStrict())
-        self.assertEqual((template.minValue(), template.maxValue()), (0.0, 1000000.0))
+        self.assertTrue(template.minIsStrict() and not template.maxIsStrict())  # no upper limit
+        self.assertEqual(template.minValue(), 0.0)
         self.assertEqual(node.parm("mode").parmTemplate().menuItems()[:3], ("each", "total", "density"))
         self.assertEqual(node.parm("mode").eval(), "total")
 

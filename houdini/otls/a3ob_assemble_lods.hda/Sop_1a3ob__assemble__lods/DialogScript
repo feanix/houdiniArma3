@@ -1,0 +1,52 @@
+# Dialog script for a3ob_assemble_lods, version 1
+
+{
+    name	a3ob_assemble_lods
+    script	a3ob_assemble_lods
+    label	"Assemble LODs"
+
+    help {
+	"Puts edited LODs back into a P3D geometry. Input 1 is the base; inputs 2 and up are LOD geometries."
+    }
+
+    inputlabel	1	"Base P3D geometry (optional)"
+    inputlabel	2	"LOD geometry (input 2)"
+    inputlabel	3	"LOD geometry (input 3)"
+    inputlabel	4	"LOD geometry (input 4)"
+    inputlabel	5	"LOD geometry (input 5)"
+    inputlabel	6	"LOD geometry (input 6)"
+    inputlabel	7	"LOD geometry (input 7)"
+    inputlabel	8	"LOD geometry (input 8)"
+    inputlabel	9	"LOD geometry (input 9)"
+    inputlabel	10	"LOD geometry (input 10)"
+    inputlabel	11	"LOD geometry (input 11)"
+    inputlabel	12	"LOD geometry (input 12)"
+    inputlabel	13	"LOD geometry (input 13)"
+    inputlabel	14	"LOD geometry (input 14)"
+    inputlabel	15	"LOD geometry (input 15)"
+    inputlabel	16	"LOD geometry (input 16)"
+    inputlabel	17	"LOD geometry (input 17)"
+    inputlabel	18	"LOD geometry (input 18)"
+    inputlabel	19	"LOD geometry (input 19)"
+    inputlabel	20	"LOD geometry (input 20)"
+    inputlabel	21	"LOD geometry (input 21)"
+    inputlabel	22	"LOD geometry (input 22)"
+    inputlabel	23	"LOD geometry (input 23)"
+    inputlabel	24	"LOD geometry (input 24)"
+    inputlabel	25	"LOD geometry (input 25)"
+    inputlabel	26	"LOD geometry (input 26)"
+    inputlabel	27	"LOD geometry (input 27)"
+    inputlabel	28	"LOD geometry (input 28)"
+    inputlabel	29	"LOD geometry (input 29)"
+    inputlabel	30	"LOD geometry (input 30)"
+    inputlabel	31	"LOD geometry (input 31)"
+    inputlabel	32	"LOD geometry (input 32)"
+
+    parm {
+	name	"replace"
+	label	"Replace Matching LODs"
+	type	toggle
+	default	{ "1" }
+	help	"A LOD input replaces the base LOD that has the same stored LOD signature and keeps its position. A LOD with no match is added at the end. Off: every LOD input is added at the end."
+    }
+}

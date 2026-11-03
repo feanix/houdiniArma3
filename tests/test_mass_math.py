@@ -80,7 +80,7 @@ class TestParameterTables(unittest.TestCase):
 
     def test_mass_modes_and_proxy_defaults(self):
         mass = nodes.load("mass").SPEC
-        self.assertEqual([token for token, _ in mass.parm_index["mode"].menu],
+        self.assertEqual([token for token, _ in mass.parm_index["mode"].items],
                          ["each", "total", "density", "clear", "copyfrom", "copyto"])
         self.assertEqual(mass.parm_index["mode"].default, "total")
         spec = nodes.load("proxy").SPEC

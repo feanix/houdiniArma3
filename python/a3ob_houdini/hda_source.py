@@ -24,7 +24,7 @@ This module does not import ``hou``.
 import os
 from typing import Dict, List
 
-from .params import NodeSpec, Parm
+from .params import CALLBACK, NodeSpec, Parm
 
 __all__ = ["hda_folder_name", "section_name", "render", "write", "differences"]
 
@@ -83,12 +83,10 @@ def _quote(text: str) -> str:
 
 def _default_text(parm: Parm) -> str:
     if parm.kind == "toggle":
-        return _quote("1" if parm.default else "0")
+        return "1" if parm.default else "0"
     if parm.kind in ("button",):
-        return _quote("0")
-    if parm.size > 1:
-        return " ".join(_quote(str(value)) for value in parm.default)
-    return _quote(str(parm.default))
+        return "0"
+    return str(parm.default)
 
 
 def _number(value: float) -> str:
@@ -96,42 +94,53 @@ def _number(value: float) -> str:
 
 
 def _range_text(parm: Parm) -> str:
-    """``0! 10``: the slider range; ``!`` after an end means Houdini clamps to it."""
+    """``0! 10``: the slider range; ``!`` after an end means Houdini clamps to it. An end not given is not strict."""
     low = "%s!" % _number(parm.minimum) if parm.minimum is not None else "0"
     high = "%s!" % _number(parm.maximum) if parm.maximum is not None else "10"
     return "%s %s" % (low, high)
 
 
 def _parm_block(spec: NodeSpec, parm: Parm) -> str:
-    """One ``parm { ... }`` block of the DialogScript."""
+    """One ``parm { ... }`` (or ``multiparm { ... }``) block of the DialogScript."""
+    if parm.kind == "multiparm":
+        return _multiparm_block(spec, parm)
     kind = {"string": "string", "file": "file", "toggle": "toggle", "button": "button", "int": "integer",
             "float": "float", "menu": "string"}[parm.kind]
-    if parm.kind == "float" and parm.size > 1:
+    if parm.kind == "float" and parm.size == 3:
         kind = "vector"  # Houdini names the components tx, ty, tz
     lines = ["    parm {", "\tname\t%s" % _quote(parm.name), "\tlabel\t%s" % _quote(parm.label), "\ttype\t%s" % kind]
     if parm.kind in ("int", "float"):
         lines.append("\tsize\t%d" % parm.size)
-    lines.append("\tdefault\t{ %s }" % _default_text(parm))
-    if parm.kind in ("int", "float"):
+    if parm.size > 1:
+        lines.append("\tdefault\t{ %s }" % " ".join(_quote(str(value)) for value in parm.default))
+    else:
+        lines.append("\tdefault\t{ %s }" % _quote(_default_text(parm)))
+    if parm.kind in ("int", "float") and (parm.minimum is not None or parm.maximum is not None):
         lines.append("\trange\t{ %s }" % _range_text(parm))
     if parm.kind == "menu":
         lines.append("\tmenu {")
-        lines.extend("\t    %s\t%s" % (_quote(token), _quote(label)) for token, label in parm.menu)
+        lines.extend("\t    %s\t%s" % (_quote(token), _quote(label)) for token, label in parm.items)
         lines.append("\t}")
-        if parm.action:
-            callback = "import a3ob_houdini.entry as e; e.button(%r, %r, kwargs)" % (spec.kind, parm.action)
-            lines.append("\tparmtag\t{ \"script_callback\" %s }" % _quote(callback))
-            lines.append('\tparmtag\t{ "script_callback_language" "python" }')
     if parm.help:
         lines.append("\thelp\t%s" % _quote(parm.help))
     if parm.kind == "file":
         lines.append('\tparmtag\t{ "filechooser_mode" "read" }')
         if parm.file_pattern:
             lines.append("\tparmtag\t{ \"filechooser_pattern\" %s }" % _quote(parm.file_pattern))
-    if parm.kind == "button":
-        callback = "import a3ob_houdini.entry as e; e.button(%r, %r, kwargs)" % (spec.kind, parm.action)
+    if parm.kind == "button" or (parm.kind == "menu" and parm.action):
+        callback = CALLBACK % (spec.kind, parm.action)
         lines.append("\tparmtag\t{ \"script_callback\" %s }" % _quote(callback))
         lines.append('\tparmtag\t{ "script_callback_language" "python" }')
+    lines.append("    }")
+    return "\n".join(lines)
+
+
+def _multiparm_block(spec: NodeSpec, parm: Parm) -> str:
+    lines = ["    multiparm {", "\tname\t%s" % _quote(parm.name), "\tlabel\t%s" % _quote(parm.label),
+             "\tdefault\t%d" % int(parm.default), '\tparmtag\t{ "multistartoffset" "1" }']
+    for child in parm.children:
+        lines.append("")
+        lines.extend("    " + line if line else line for line in _parm_block(spec, child).split("\n"))
     lines.append("    }")
     return "\n".join(lines)
 
