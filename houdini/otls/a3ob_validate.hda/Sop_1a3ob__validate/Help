@@ -81,7 +81,7 @@ T2-CONTIG: Contiguous mesh:
 T2-TRI: Triangulated:
     #id: t2tri
 
-    Geometry, shadow and underground LODs: every polygon is a triangle.
+    Underground LODs: every polygon is a triangle. Geometry and shadow LODs: triangles and convex quads.
 
     Type: On or off. Default: On.
 
@@ -102,7 +102,7 @@ T2-COMP: Component selections:
 T2-MASS: Mass is set:
     #id: t2mass
 
-    Geometry LOD: the points have a total mass of at least 0.001.
+    Geometry LOD: a note (not a warning) when the points have a total mass below 0.001.
 
     Type: On or off. Default: On.
 
@@ -123,23 +123,23 @@ T2-SHARP: No smooth edges:
 T2-NOMAT: No materials:
     #id: t2nomat
 
-    Shadow and underground LODs: no polygon has a texture or material.
+    Underground LODs: no polygon has a texture or material. Shadow LODs may have them.
 
     Type: On or off. Default: On.
 
 T2-SHADOWRES: Conventional shadow resolution:
     #id: t2shadowres
 
-    Shadow LODs: the resolution is 0, 10, 1000, 1010 or 1020.
+    Shadow LODs: the resolution is 0, 10, 1000, 1010 or 1020. Off by default.
 
-    Type: On or off. Default: On.
+    Type: On or off. Default: Off.
 
 T2-SHADOWOFF: Shadow not disabled:
     #id: t2shadowoff
 
-    Shadow LODs: no LODNoShadow = 1 property.
+    Shadow LODs: no LODNoShadow = 1 property. Off by default.
 
-    Type: On or off. Default: On.
+    Type: On or off. Default: Off.
 
 T2-PC-EDGE: No edges in point clouds:
     #id: t2pcedge

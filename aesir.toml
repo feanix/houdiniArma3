@@ -13,6 +13,12 @@ quick = [
 ]
 # The suite is small, so the merge gate runs the same steps.
 full = [{ profile = "quick" }]
+# D25: Bohemia's Arma 3 Samples, all 34 files (A3OB_SAMPLES_FULL=1; about 71 s under hython). Skips if the Samples are
+# not installed. The env is set per step (inline table with env).
+samples = [
+    { cmd = "python scripts/run_tests.py test_samples_p3d", env = { A3OB_SAMPLES_FULL = "1" } },
+    { cmd = "\"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scripts/run_tests.py test_samples_hou test_real_file_layout", env = { A3OB_SAMPLES_FULL = "1" } },
+]
 
 [machine]
 # D12 (owner): skip the old machine-wide one-gate lock; gates still take a slot in the shared worker budget.

@@ -1,7 +1,11 @@
 # Houdini data model for P3D (M2 spec)
 
-Status: revision 5 (2026-11-03), owner decisions D7-D9 and D14-D17 applied. Normative for M3 (import) and M4 (export). Two
-questions stay open (OQ-5, OQ-11; see [Still open](#still-open)).
+Status: revision 5 (2026-11-03), owner decisions D7-D9 and D14-D17 applied, plus D24 and D25. Normative for M3 (import) and M4 (export). No question is open
+except the F-4 follow-up (see [Still open](#still-open)).
+
+Changes of D24 and D25 (task #38): the tier-2 rules follow Bohemia's own files (§17.1.1: `T2-TRI` allows convex quads in Geometry and
+Shadow LODs, `T2-SHADOWOFF` and `T2-SHADOWRES` are off by default, `T2-NOMAT` allows Shadow LODs, `T2-MASS` is an info note), face flags
+`0x1000` and `0x2000` are known (§5), and OQ-5 and OQ-11 are closed.
 
 Revision 5 changes: D15 (the merge count heuristic runs only for a LOD with no uid; §3.5, §17.1), D16 (T2-MASS and
 T2-MASSALL check the Geometry LOD only; §17.1.1) and D17 (three export options; new §18).
@@ -44,8 +48,8 @@ and changes them where marked **(change)**.
 - **"docs: page"** is the offline Houdini 22.0.466 documentation, read through the `docs` tool.
 - **L0** = byte-identical after import → export with no edits. **L1** = same P3D content, but bytes may differ.
   The goal is L0 on both fixtures.
-- **OQ-n** = owner question. Resolved ones are in the [Resolved (D7-D9)](#resolved-d7-d9) table; OQ-5 and OQ-11 are
-  [still open](#still-open). **D#** = an owner decision record.
+- **OQ-n** = owner question. Resolved ones are in the [Resolved (D7-D9)](#resolved-d7-d9) table; OQ-5 and OQ-11 were closed by D25
+  ([Still open](#still-open)). **D#** = an owner decision record.
 
 ## 1. Terminology
 
@@ -319,7 +323,7 @@ round-trip level (§15).
   - **Why it matters.** An earlier M1 codec (cp1252 + `surrogateescape`) produced lone surrogates, and Houdini cannot take them: `setAttribValue` kills hython 22.0.466 with a segmentation fault (R1: exit 139), and `hou.text.encodeAttrib` raises `TypeError` (V1). M1 no longer does this.
   - **Boundary (in `a3ob_houdini`).** M1 strings go to `hou` **unchanged** on import. On export, hou strings go back through `encode_string`. A character it cannot encode (e.g. an artist typed `ř`) is a **validator error** that names the attribute and element. It is never silently replaced.
   - **Result.** The map from file bytes to hou strings is a bijection. V9 checks all 255 non-NUL bytes for prim strings, detail string arrays and encoded group names (`encodeAttrib` → `createPointGroup` → `decodeAttrib`).
-  - **Display.** Text shows as cp1252: `é`, `ß`, `€`, `Š` look right. The 5 undefined bytes show as C1 control characters. Czech CP1250 text would show as cp1252 look-alikes; the real code page of Arma files is still open (OQ-5, D9).
+  - **Display.** Text shows as cp1252: `é`, `ß`, `€`, `Š` look right. The 5 undefined bytes show as C1 control characters. Czech CP1250 text would show as cp1252 look-alikes; the Samples hold no non-ASCII string, so cp1252 stays (OQ-5 closed, D25).
   - **Scope.** It applies to `a3ob_texture`, `a3ob_material`, `a3ob_prop_names` / `a3ob_prop_values`, selection names (before `encodeAttrib`), `a3ob_proxy_path`, `a3ob_tagg_order` tokens, `a3ob_tagg_unknown_names` and the LOD `name` label. The pure layer stays hou-free.
 - **Paths.** Stored exactly as in the file (backslashes, relative, no forced case). Lowercasing and relative/absolute conversion (`utilities/generic.py:174-216`) are export options, off for a lossless round trip.
   - **Lowercase option (D14, Q-12).** It follows A3OB's `force_lowercase` (`io/data_p3d.py:752-762`, called at `export_p3d.py:720-722`). It lowercases **texture paths** (`a3ob_texture`), **material paths** (`a3ob_material`), **selection names** (so proxy paths and their selections too) and **property names and values**. It changes nothing else. Lowercasing selection names happens on the decoded P3D name, after `decodeAttrib` and before `encode_string`.
@@ -337,7 +341,7 @@ round-trip level (§15).
   - A point shared by a packed proxy and a polygon is exported as an ordinary mesh vertex. Fuse does this with default settings: `fuse::2.0` merged a proxy's pack point at the origin into mesh point 0 (4 → 3 points; V5, R2).
   - A proxy never uses its pack point. It uses only its embedded geometry and `fullTransform()` (§13.5).
   - Validator warning: "point N is shared by proxy prim M and polygons".
-- **Interpolation hazard.** SOPs that interpolate point attributes (Subdivide, Resample, PolyExtrude fills) average int bitfields into meaningless flags. The M4 validator should warn on flag values that are not on the target LOD's known list.
+- **Interpolation hazard.** SOPs that interpolate point attributes (Subdivide, Resample, PolyExtrude fills) average int bitfields into meaningless flags. The M4 validator should warn on flag values that are not on the target LOD's known list. Since D24 and D25 the face flag values `0x1000` and `0x2000` are known: Bohemia's own Samples use them (the male, the plant: 3 321 and 1 291 faces) although A3OB lists them only as vertex fog values (`utilities/data.py` `flags_vertex_fog`; its face tables have no such value).
 
 ## 6. Element order
 
@@ -825,15 +829,15 @@ decoded P3D name (§7.3), case-insensitively, at the **start** of the name (A3OB
 |---|---|---|---|
 | `T2-UV2` | Any | The LOD has no more than 2 UV sets. | `ValidatorComponentLOD.max_two_uvs`, `:133-139` (optional there) |
 | `T2-CONTIG` | Geometry-type, Shadow, VBS Underground | Every edge shared by two polygons is traversed in opposite directions by them, so the surface has no flipped polygons. Skipped for Geometry-type LODs that have an `occluder\d+` group. | `is_contiguous`, `:103-111`; skip: `ValidatorLODGeometry.conditions`, `:297-302`, subtype `:321-326` |
-| `T2-TRI` | Geometry-type, Shadow, VBS Underground | Every polygon is a triangle. For Geometry-type the message says that convexity is then not definite. | `is_triangulated`, `:113-121`, `:222-227` (optional for Geometry-type, strict for Shadow and Underground) |
+| `T2-TRI` | Geometry-type, Shadow, VBS Underground | Underground: every polygon is a triangle. Geometry-type and Shadow (D24): triangles and convex quads; the rule warns for a quad that is not convex (a reflex corner or a bow tie) and for a polygon with 5 or more points. | `is_triangulated`, `:113-121`, `:222-227` (optional for Geometry-type, strict for Shadow and Underground) |
 | `T2-CONVEX` | Geometry-type, VBS Underground | Every edge shared by two polygons is convex, or the two polygons are flat against each other (the dot product of their face normals is within 0.9999 to 1.0001). | `is_convex`, `:229-250` |
 | `T2-COMP` | Geometry-type, VBS Underground | At least one group is named `component<digits>`. Skipped for Geometry-type LODs that have an `occluder\d+` group. | `has_components`, `:252-258` |
-| `T2-MASS` | Geometry only (D16) | `a3ob_mass` exists and the sum of all point masses is at least 0.001. | `has_mass`, `:260-267` |
+| `T2-MASS` | Geometry only (D16) | `a3ob_mass` exists and the sum of all point masses is at least 0.001. Since D24 a failure is an **info note**, not a warning: "This Geometry LOD has no mass. Fine for items such as vests or scopes; physical objects need mass." | `has_mass`, `:260-267` |
 | `T2-MASSALL` | Geometry only (D16) | Every point has an `a3ob_mass` of at least 0.001. | `no_unweighted`, `:269-282` (optional there) |
 | `T2-SHARP` | Shadow, VBS Underground | If any polygon has smooth normals, no edge shared by two polygons may be smooth. In Houdini terms: every such edge must be in the edge group `a3ob_sharp` (§9.2). | `is_sharp`, `:338-352` |
-| `T2-NOMAT` | Shadow, VBS Underground | No polygon has a texture or a material (`a3ob_texture` and `a3ob_material` empty on all polygons). | `no_materials`, `:354-372` |
-| `T2-SHADOWRES` | Shadow | The LOD resolution index is one of 0, 10, 1000, 1010, 1020. | `only_conventional_indices`, `:374-381` (optional there) |
-| `T2-SHADOWOFF` | Shadow | The LOD has no property `LODNoShadow = 1` (name and value trimmed, name compared without case). | `not_disabled`, `:383-391` (optional there) |
+| `T2-NOMAT` | VBS Underground (D24: no longer Shadow, whose foliage volumes carry textures) | No polygon has a texture or a material (`a3ob_texture` and `a3ob_material` empty on all polygons). | `no_materials`, `:354-372` |
+| `T2-SHADOWRES` | Shadow | The LOD resolution index is one of 0, 10, 1000, 1010, 1020. **Off by default** (D24: Bohemia uses other values); the switch stays on the nodes. | `only_conventional_indices`, `:374-381` (optional there) |
+| `T2-SHADOWOFF` | Shadow | The LOD has no property `LODNoShadow = 1` (name and value trimmed, name compared without case). **Off by default** (D24: Bohemia sets it on purpose); the switch stays on the nodes. | `not_disabled`, `:383-391` (optional there) |
 | `T2-PC-EDGE` | Point cloud | The LOD has no open polyline or 2-vertex prim (A3OB: "contains edges"). | `no_edges`, `:433-439` (optional there) |
 | `T2-PC-FACE` | Point cloud | The LOD has no polygon with 3 or more vertices (A3OB: "contains faces"). | `no_faces`, `:441-447` (optional there) |
 | `T2-RW-FACES` | Roadway, VBS Groundlayer, Paths | The LOD has at least one polygon. | `has_faces`, `:470-476`, `:563-569` (strict there) |
@@ -1167,12 +1171,12 @@ already states each choice as normative.
 
 ## Still open
 
-Both stay open. The owner decides the closures. Task #29 ran Bohemia's Arma 3 Samples (D6); the evidence is in `docs/design/evidence/samples/samples_findings.md` and the recommendations are in the last column.
+Closed by D25 after task #29 ran Bohemia's Arma 3 Samples (D6); the evidence is in `docs/design/evidence/samples/samples_findings.md`. Only the F-4 fix remains (its own task): an interleaved-proxy LOD must not keep a count-bound blob that marks other points.
 
 | # | Question | Current state (D9) | Evidence from the Samples (task #29) |
 |---|---|---|---|
-| **OQ-5** | **Code page of Arma P3D strings.** Do real files use CP1250 (Czech) or another code page? | M1 uses cp1252, with C1 code points for the 5 undefined bytes, and §5 passes M1 strings to `hou` unchanged because they are valid Unicode (V9). CP1250 also has 5 undefined bytes and would need the same C1 handling; switching would change only `binary.py`. Keep cp1252 until the Samples files show otherwise. | All 34 Samples files hold 384 104 strings and none is non-ASCII, so they cannot settle the code page. Recommendation: keep cp1252 and close OQ-5 unless the owner has a file with non-ASCII names. |
-| **OQ-11** | **Blob TAGG coverage.** The fixtures contain no unknown or inactive TAGGs, no `#Animation#` / `#Lock#` / `#Hidden#` / `#Selected#`, no interleaved proxies, no non-edge sharp pairs and no duplicate normal values. | The blob path of §11.2 (including M1's `MaskTagg` and `AnimationTagg`) is tested with synthetic files only. Test it against real Object Builder files from the Samples set (D6) when they are available. | Tested on the Samples: the 74 `#Selected#` masks and 6 raw `#Hide#` TAGGs keep their bytes through import and Lossless export. In the 6 LODs with interleaved proxies the mask bytes stay but the points move (the mask is bound to counts, not to the order), see finding F-4. The Samples also hold duplicate normal values (F-1), non-edge and degenerate sharp pairs (F-3) and interleaved proxies (36 LODs), which the fixtures lacked. Recommendation: close OQ-11 for the blob paths and carry F-4 forward. |
+| **OQ-5 (closed, D25)** | **Code page of Arma P3D strings.** Do real files use CP1250 (Czech) or another code page? | M1 uses cp1252, with C1 code points for the 5 undefined bytes, and §5 passes M1 strings to `hou` unchanged because they are valid Unicode (V9). CP1250 also has 5 undefined bytes and would need the same C1 handling; switching would change only `binary.py`. Keep cp1252 until the Samples files show otherwise. | All 34 Samples files hold 384 104 strings and none is non-ASCII, so they cannot settle the code page. Closed: keep cp1252 (D25). |
+| **OQ-11 (closed for the blob paths, D25; F-4 carried to its fix task)** | **Blob TAGG coverage.** The fixtures contain no unknown or inactive TAGGs, no `#Animation#` / `#Lock#` / `#Hidden#` / `#Selected#`, no interleaved proxies, no non-edge sharp pairs and no duplicate normal values. | The blob path of §11.2 (including M1's `MaskTagg` and `AnimationTagg`) is tested with synthetic files only. Test it against real Object Builder files from the Samples set (D6) when they are available. | Tested on the Samples: the 74 `#Selected#` masks and 6 raw `#Hide#` TAGGs keep their bytes through import and Lossless export. In the 6 LODs with interleaved proxies the mask bytes stay but the points move (the mask is bound to counts, not to the order), see finding F-4. The Samples also hold duplicate normal values (F-1), non-edge and degenerate sharp pairs (F-3) and interleaved proxies (36 LODs), which the fixtures lacked. Closed for the blob paths; F-4 is carried to its fix task (D25). |
 
 ## Evidence
 

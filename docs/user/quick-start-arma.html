@@ -147,10 +147,12 @@ See the <a href="reference/a3ob_mass.html">Mass reference</a> for the other mode
 <p>Press Tab and add a <kbd class="ui-node">Validate</kbd> node. Wire the output of <code>assemble</code> into it.
 Validate looks for what Arma or Object Builder would complain about, and changes nothing. Its summary line:
 <samp class="ui-msg">3 LODs checked: 0 errors, 0 warnings.</samp></p>
-<p>To see a warning, select <code>geometry_triangles</code> and press B to bypass it. Validate now says:</p>
-<pre><code>Geometry: the mesh is not triangulated: polygon 0 has 4 points ...
-Add a Divide node with Convex Polygons on and Maximum Edges 3.</code></pre>
-<p>That is a <strong>warning</strong>: the node turns yellow, and the sentence after the problem tells you the fix.
+<p>To see a message, select <code>geometry_mass</code> and press B to bypass it. Validate now says:</p>
+<pre><code>Geometry: this Geometry LOD has no mass. Fine for items such as vests or scopes; physical objects need mass ...
+Geometry: the points have no mass (there is no a3ob_mass) ...
+Use the Mass node.</code></pre>
+<p>The first line is a <strong>note</strong>, not a warning, because some objects have no mass. The second is a
+<strong>warning</strong>: the node turns yellow, and the sentence after the problem tells you the fix.
 Press B again to switch the node back on.</p>
 <p>For an error, change the <kbd class="ui-parm" data-node="a3ob_lod_properties">LOD Type</kbd> of <code>memory_props</code> to
 <kbd class="ui-menu">Geometry</kbd>. Two LODs now have the same type and resolution, and Validate turns red with

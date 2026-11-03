@@ -134,8 +134,10 @@ class TestExportAssets(unittest.TestCase):
         r = self.result
         self.assertTrue(rule_lines(r["validate_crate"]["warnings"], "T2-RW-SOUND"))
         self.assertEqual(rule_lines(r["validate_crate_rules_off"]["warnings"]), [])
-        self.assertTrue(rule_lines(r["validate_no_mass"]["warnings"], "T2-MASS"))
-        self.assertFalse(rule_lines(r["validate_no_mass_mass_off"]["warnings"], "T2-MASS"))
+        # D24: T2-MASS is an info note (the node messages), not a warning.
+        self.assertTrue(rule_lines(r["validate_no_mass"]["messages"], "T2-MASS"))
+        self.assertFalse(rule_lines(r["validate_no_mass"]["warnings"], "T2-MASS"))
+        self.assertFalse(rule_lines(r["validate_no_mass_mass_off"]["messages"], "T2-MASS"))
         self.assertTrue(rule_lines(r["validate_no_mass_mass_off"]["warnings"], "T2-MASSALL"))  # only its own switch
 
     def test_mass_rules_check_the_geometry_lod_only(self):
@@ -144,7 +146,7 @@ class TestExportAssets(unittest.TestCase):
         self.assertEqual(rule_lines(r["validate_crate"]["warnings"], "T2-MASS"), [])
         self.assertEqual(rule_lines(r["validate_crate"]["warnings"], "T2-MASSALL"), [])
         self.assertEqual(rule_lines(r["crate_cook"]["warnings"], "T2-MASS"), [])
-        self.assertEqual(len(rule_lines(r["validate_no_mass"]["warnings"], "T2-MASS")), 1)
+        self.assertEqual(len(rule_lines(r["validate_no_mass"]["messages"], "T2-MASS")), 1)
         self.assertEqual(len(rule_lines(r["validate_no_mass"]["warnings"], "T2-MASSALL")), 1)
 
     def test_warnings_can_count_as_errors(self):
