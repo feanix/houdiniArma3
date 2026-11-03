@@ -20,6 +20,7 @@ from .. import messages
 from .data import Collection
 from .lod_build import build_lod
 from .options import ExportOptions, keeps_uvs
+from .path_map import PathMapper
 from .renames import strip_uvs
 
 __all__ = ["build_model", "to_bytes", "signature_key"]
@@ -35,10 +36,11 @@ def build_model(collection: Collection, options: ExportOptions, report: messages
     if not collection.lods:
         report.error(messages.format_problem(None, "there is no LOD to export", "Connect a P3D geometry or a LOD geometry"))
         return None
+    mapper = PathMapper(options.project_root, options.relative_paths)  # one per export: caches per folder
     entries: List[Tuple[str, LOD]] = []
     dropped: List[str] = []
     for data in collection.lods:
-        lod = build_lod(data, options, report)
+        lod = build_lod(data, options, report, mapper)
         if lod is None:
             continue
         copies = _copies(data, lod, report)
@@ -51,6 +53,7 @@ def build_model(collection: Collection, options: ExportOptions, report: messages
             for label, duplicate, lod_type in copies:
                 if not keeps_uvs(lod_type) and strip_uvs(duplicate):
                     dropped.append(label)
+    mapper.report_to(report)
     if report.has_errors:
         return None
     if dropped:

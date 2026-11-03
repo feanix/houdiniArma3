@@ -56,8 +56,8 @@ SPEC = NodeSpec(
              "The proxy model: pick a .p3d file, or type its game path, for example "
              "\\a3\\data_f\\proxies\\weapon_slots\\top. A picked file such as "
              "P:\\a3\\data_f\\proxies\\weapon_slots\\top.p3d gives the same name as typing it. Slashes become "
-             "backslashes and the .p3d ending is removed. When you export with Relative Paths on, the path is made "
-             "relative to the project root.",
+             "backslashes and the .p3d ending is removed. When you export with Relative Paths on, the path is mapped "
+             "to the in-game path (see the Relative Paths tooltip of P3D Export).",
              file_pattern="*.p3d"),
         Parm("common", "Common Proxies", "menu", "none",
              "Fills Path with the game path of a frequently used proxy, such as a weapon slot or a seat.",

@@ -46,7 +46,8 @@ SPEC = NodeSpec(
              enable_when=_TEX_ON),
         Parm("texture", "Texture File", "file", "",
              "The texture file (.paa, .tga or .png). Slashes are written as backslashes. When you export with "
-             "Relative Paths on, the path is made relative to the project root.",
+             "Relative Paths on, the path is mapped to the in-game path (see the Relative Paths tooltip of "
+             "P3D Export).",
              file_pattern="*.paa *.tga *.png", show_when=(("texsource", ("file",)),), enable_when=_TEX_ON),
         Parm("texcolor", "Color", "color", (1.0, 1.0, 1.0, 1.0),
              "The colour of the generated texture, with alpha (each 0 to 1). Click the swatch to pick one.",
@@ -77,7 +78,8 @@ SPEC = NodeSpec(
              "texture."),
         Parm("material", "Material File", "file", "",
              "The material file (.rvmat). Empty clears the material. Slashes are written as backslashes. When you "
-             "export with Relative Paths on, the path is made relative to the project root.",
+             "export with Relative Paths on, the path is mapped to the in-game path (see the Relative Paths "
+             "tooltip of P3D Export).",
              file_pattern="*.rvmat", enable_when=_MAT_ON),
         Parm("commonmat", "Pick a Common Material", "menu", "none",
              "Copies a frequently used material from the common data file into Material File and switches Set "

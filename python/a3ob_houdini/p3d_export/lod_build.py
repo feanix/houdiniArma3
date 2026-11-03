@@ -23,6 +23,7 @@ from . import flag_check, type_rules
 from .data import LodData
 from .mesh_build import FileMesh, build_file_mesh
 from .options import ExportOptions
+from .path_map import PathMapper
 from .proxy_rebuild import FileProxy, rebuild_proxy
 from .selections import GEOMETRY_TYPES, add_auto_components, collect_selections
 from .renames import apply_name_options
@@ -57,8 +58,13 @@ def signature_for(details) -> float:
     return p3d.encode_signature(details.lod_type, details.resolution)
 
 
-def build_lod(data: LodData, options: ExportOptions, report: messages.Report) -> Optional[LOD]:
-    """The M1 LOD for ``data``, or None when errors were reported for it."""
+def build_lod(data: LodData, options: ExportOptions, report: messages.Report,
+              mapper: Optional[PathMapper] = None) -> Optional[LOD]:
+    """The M1 LOD for ``data``, or None when errors were reported for it.
+
+    ``mapper`` is the path mapper of the whole export (task #51); a lone call gets its own."""
+    if mapper is None:
+        mapper = PathMapper(options.project_root)
     label = data.label
     errors_before = len(report.texts(messages.ERROR))
     try:
@@ -70,7 +76,7 @@ def build_lod(data: LodData, options: ExportOptions, report: messages.Report) ->
         return None
     proxies = _rebuild_proxies(data, label, report)
     file_mesh = build_file_mesh(data, proxies, options, report)
-    _apply_path_options(file_mesh, options)
+    _apply_path_options(file_mesh, options, mapper, label)
     _check_strings(file_mesh, label, report)
     lod = LOD()
     lod.resolution_signature = signature
@@ -81,7 +87,7 @@ def build_lod(data: LodData, options: ExportOptions, report: messages.Report) ->
     selections = collect_selections(data, file_mesh, proxies, options, report)
     if options.auto_components:
         add_auto_components(data, file_mesh, selections, report)
-    items = make_items(data, file_mesh, selections, options, report)
+    items = make_items(data, file_mesh, selections, options, report, mapper)
     ordered = order_item_list(items, data.details.tagg_order, data.details.tagg_active)
     apply_name_options(ordered, options, label, report)
     lod.taggs = [item.tagg for item in ordered]
@@ -112,11 +118,11 @@ def _rebuild_proxies(data: LodData, label: str, report: messages.Report) -> List
     return result
 
 
-def _apply_path_options(file_mesh: FileMesh, options: ExportOptions) -> None:
+def _apply_path_options(file_mesh: FileMesh, options: ExportOptions, mapper: PathMapper, label: str) -> None:
     """Texture and material paths: relative paths, then lowercase (spec 5 "Paths")."""
     if options.relative_paths or options.lowercase:
-        file_mesh.textures = [output_text(text, options) for text in file_mesh.textures]
-        file_mesh.materials = [output_text(text, options) for text in file_mesh.materials]
+        file_mesh.textures = [output_text(text, options, mapper, "texture", label) for text in file_mesh.textures]
+        file_mesh.materials = [output_text(text, options, mapper, "material", label) for text in file_mesh.materials]
 
 
 def _check_strings(file_mesh: FileMesh, label: str, report: messages.Report) -> None:
