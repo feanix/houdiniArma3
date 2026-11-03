@@ -24,7 +24,8 @@ from .. import messages, names
 from ..permutation import Permutation, remap_payload
 from .data import LodData
 from .mesh_build import FileMesh
-from .options import ExportOptions, fold_collisions, keeps_uvs, make_relative, relative_proxy_name
+from .options import ExportOptions, fold_collisions, keeps_uvs
+from .path_map import PathMapper
 from .selections import SelectionEntry
 
 __all__ = ["Item", "make_items", "order_items", "order_item_list", "output_name", "output_text"]
@@ -40,17 +41,19 @@ class Item:
     blob: bool = False
 
 
-def output_text(text: str, options: ExportOptions) -> str:
-    """Texture and material paths: relative first, then lowercase (spec 5 "Paths")."""
+def output_text(text: str, options: ExportOptions, mapper: Optional[PathMapper] = None, kind: str = "texture",
+                label: Optional[str] = None) -> str:
+    """Texture and material paths: mapped to the game path first, then lowercase (spec 5 "Paths", task #51)."""
     if options.relative_paths:
-        text = make_relative(text, options.project_root)
+        text = (mapper or PathMapper(options.project_root)).map_path(text, kind, label)
     return text.lower() if options.lowercase else text
 
 
-def output_name(name: str, options: ExportOptions) -> str:
-    """A selection name as written: the path of a proxy name made relative, then lowercase."""
+def output_name(name: str, options: ExportOptions, mapper: Optional[PathMapper] = None,
+                label: Optional[str] = None) -> str:
+    """A selection name as written: the path of a proxy name mapped to the game path, then lowercase."""
     if options.relative_paths:
-        name = relative_proxy_name(name, options.project_root)
+        name = (mapper or PathMapper(options.project_root)).map_proxy_name(name, label)
     return name.lower() if options.lowercase else name
 
 
@@ -63,7 +66,7 @@ def _decode(text: str, what: str, label: str, report: messages.Report) -> Option
 
 
 def make_items(data: LodData, file_mesh: FileMesh, selections: Sequence[SelectionEntry], options: ExportOptions,
-               report: messages.Report) -> List[Item]:
+               report: messages.Report, mapper: Optional[PathMapper] = None) -> List[Item]:
     """Every TAGG of the LOD in canonical order."""
     items: List[Item] = []
     counts = (len(file_mesh.point_flags), len(file_mesh.polygons), file_mesh.corner_count)
@@ -71,7 +74,7 @@ def make_items(data: LodData, file_mesh: FileMesh, selections: Sequence[Selectio
     items.extend(_uv_items(data, file_mesh))
     items.extend(_property_items(data, options, report))
     items.extend(_mass_items(file_mesh))
-    items.extend(_selection_items(data, selections, options, report))
+    items.extend(_selection_items(data, selections, options, report, mapper))
     items.extend(_blob_items(data, file_mesh, counts, options, report))
     return items
 
@@ -169,12 +172,12 @@ def _mass_items(file_mesh: FileMesh) -> List[Item]:
 
 
 def _selection_items(data: LodData, selections: Sequence[SelectionEntry], options: ExportOptions,
-                     report: messages.Report) -> List[Item]:
+                     report: messages.Report, mapper: Optional[PathMapper] = None) -> List[Item]:
     label = data.label
     items = []
     written: List[str] = []
     for entry in selections:
-        out = output_name(entry.name, options)
+        out = output_name(entry.name, options, mapper, label)
         problem = names.check_encodable(out)
         if problem is not None:
             report.error(messages.format_problem(

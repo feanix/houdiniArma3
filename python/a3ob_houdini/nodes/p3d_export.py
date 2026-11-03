@@ -80,10 +80,17 @@ SPEC = NodeSpec(
         )),
         Parm("tab_paths", "Paths & Names", "folder", folder_type="tabs", children=(
             Parm("relpaths", "Relative Paths", "toggle", False,
-                 "Strip the project root (or at least the drive letter) from texture, material and proxy paths."),
+                 "Write texture, material and proxy files picked with a drive letter as in-game paths. First, the "
+                 "nearest $PBOPREFIX$ file in the file's folder or above it gives the prefix (a file in "
+                 "addons\\props with hyck\\ame\\addons\\props there becomes hyck\\ame\\addons\\props\\...). "
+                 "Second, a HEMTT project (a folder with .hemtt\\project.toml) with the file under addons\\<name> "
+                 "gets the prefix mainprefix\\prefix\\addons\\<name>. Third, the Project Root is cut off, or at least "
+                 "the drive letter (with a warning). Paths without a drive letter are written as typed, so you can "
+                 "also type the in-game path directly."),
             Parm("projectroot", "Project Root", "dir", "",
-                 "The folder that Relative Paths cuts off. Empty means the root from the shelf settings, or P:\\ "
-                 "without one."),
+                 "Used by Relative Paths only when the file has no $PBOPREFIX$ file and is not in a HEMTT addon: "
+                 "this folder is cut off the start of the path. Empty means the root from the shelf settings, or "
+                 "P:\\ without one."),
             Parm("lowercase", "Lowercase", "toggle", False,
                  "Write texture and material paths, selection names (so proxy paths too) and property names and "
                  "values in lower case, as Object Builder does. Warns when two names become equal."),

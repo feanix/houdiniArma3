@@ -155,7 +155,7 @@
 <div class="folder-body">
 <section class="parm" id="relpaths">
 <h3>Relative Paths <code>relpaths</code></h3>
-<p>Strip the project root (or at least the drive letter) from texture, material and proxy paths.</p>
+<p>Write texture, material and proxy files picked with a drive letter as in-game paths. First, the nearest $PBOPREFIX$ file in the file&#x27;s folder or above it gives the prefix (a file in addons\props with hyck\ame\addons\props there becomes hyck\ame\addons\props\...). Second, a HEMTT project (a folder with .hemtt\project.toml) with the file under addons\&lt;name&gt; gets the prefix mainprefix\prefix\addons\&lt;name&gt;. Third, the Project Root is cut off, or at least the drive letter (with a warning). Paths without a drive letter are written as typed, so you can also type the in-game path directly.</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>Off</dd>
@@ -163,7 +163,7 @@
 </section>
 <section class="parm" id="projectroot">
 <h3>Project Root <code>projectroot</code></h3>
-<p>The folder that Relative Paths cuts off. Empty means the root from the shelf settings, or P:\ without one.</p>
+<p>Used by Relative Paths only when the file has no $PBOPREFIX$ file and is not in a HEMTT addon: this folder is cut off the start of the path. Empty means the root from the shelf settings, or P:\ without one.</p>
 <dl>
 <dt>Type</dt><dd>Folder path</dd>
 <dt>Default</dt><dd>(empty)</dd>
