@@ -62,6 +62,7 @@ Type names carry no version suffix yet. A change that old scenes cannot take get
 | `selection_browser` | yes | Selection browser without a dialog: `list_groups`, `create_selection`, `delete_selection`, `rename_selection`. |
 | `selection_browser_dialog` | GUI only | The `hou.ui` layer called by `houdini/toolbar/a3ob_selection_browser.shelf`. |
 | `p3d_import` | `lod_builder` and `import_model` | The importer: `plan` (decisions, no `hou`), `lod_builder` (writes geometry), `proxies`, `lod_filter`. |
+| `p3d_export` | `collect_lods` and `read_geo` | The exporter core: `collect`, `build`, `to_bytes`, `write_file`, `export_geometry`. The rest works on plain data (`data`) and runs under CPython. |
 
 The parameter table (`Parm`, one per parameter) knows these kinds: `string`, `file` (with `file_pattern`), `toggle`,
 `button` (needs `action`), `int`, `float`, `menu` and `multiparm`. The fields:
@@ -86,3 +87,13 @@ what every TAGG becomes (group, attribute, packed proxy or blob) and which point
 `lod_builder.build_lod_geometry` then writes one small function per step: points and polygons (axis map `(x, y, -z)`,
 corner map `[c0, c(n-1), ..., c1]`), vertex and face data, normals, float64 UVs, groups and weights, sharp edges, detail
 attributes, and last the packed proxies. Each LOD is packed into one prim of `geo` with the outer attribute `name`.
+
+## The exporter in short
+
+`p3d_export` mirrors the importer: a `hou` layer reads, a plain-Python layer decides. `collect` (spec 3.2) finds the LODs,
+reads the determinant of each packed LOD prim, opens it with the `unpack` verb and fills `data.LodData` (`read_geo`).
+`build(collection, options, report)` then makes one `a3ob_core` LOD per `LodData` (`lod_build`): signature, `set_mesh`
+first (`mesh_build`: axis map, corner map, first-appearance normal table, UVs), then the TAGGs (`selections` for the bytes,
+`taggs` for the TAGGs and their order), then `structure_errors()` (hard stop) and `check()` (advisory). Packed proxies are
+rebuilt from their embedded triangle and transform (`proxy_rebuild`). `to_bytes` and `write_file` finish; the write goes to a
+temporary file and is renamed. Every problem is a message in the `Report`; nothing the artist can fix raises.
