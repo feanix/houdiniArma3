@@ -103,6 +103,19 @@
 	help	"For Custom. Copied exactly as typed."
     }
     parm {
+	name	"commonproc"
+	label	"Common Procedural"
+	type	string
+	default	{ "none" }
+	menu {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['menu']).menu('material_assign', 'commonproc', kwargs)" ]
+	    language python
+	}
+	help	"Fill Raw Text from the common procedural textures (and switch Texture Source to Custom). Add your own in the common data file of the Project root and presets tool."
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('material_assign', 'fillproc', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+    parm {
 	name	"setmat"
 	label	"Set Material"
 	type	toggle
@@ -115,5 +128,18 @@
 	type	string
 	default	{ "" }
 	help	"The rvmat path. Empty clears the material. Slashes are written as backslashes."
+    }
+    parm {
+	name	"commonmat"
+	label	"Add Common"
+	type	string
+	default	{ "none" }
+	menu {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['menu']).menu('material_assign', 'commonmat', kwargs)" ]
+	    language python
+	}
+	help	"Fill Material File from the common materials (and switch Set Material on). Add your own in the common data file of the Project root and presets tool."
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('material_assign', 'fillmat', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
     }
 }

@@ -68,6 +68,10 @@ Type names carry no version suffix yet. A change that old scenes cannot take get
 | `selection_browser` | yes | Selection browser without a dialog: `list_groups`, `create_selection`, `delete_selection`, `rename_selection`. |
 | `selection_browser_dialog` | GUI only | The `hou.ui` layer called by `houdini/toolbar/a3ob_selection_browser.shelf`. |
 | `p3d_import` | `lod_builder` and `import_model` | The importer: `plan` (decisions, no `hou`), `lod_builder` (writes geometry), `proxies`, `lod_filter`. |
+| `p3d_export` | `collect_lods` and `read_geo` | The exporter core: `collect`, `build`, `to_bytes`, `write_file`, `export_geometry`. The rest works on plain data (`data`) and runs under CPython. |
+| `settings` | no | The user prefs JSON (`A3OB_SETTINGS` overrides its place, `A3OB_PROJECT_ROOT` the root), project root, export presets (`Lossless`, `Arma 3 release`, own ones) mapped onto `ExportOptions`, common data lists. Never raises on a bad file. |
+| `quick_export` | yes | Quick Export without a dialog: `choose_node`, `export_node` (calls `p3d_export.export_geometry` directly). |
+| `quick_export_dialog`, `project_settings_dialog` | GUI only | The `hou.ui` layers of the Quick Export and Project root and presets shelf tools. |
 | `p3d_export` | `collect_lods` and `read_geo` | The exporter core: `collect`, `build`, `to_bytes`, `write_file`, `export_geometry`, `run`. The rest works on plain data (`data`) and runs under CPython. |
 | `nodes/_export_common` | no | Shared parameters, options and error-level policy of Validate and P3D Export. |
 

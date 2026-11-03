@@ -5,6 +5,8 @@
 <shelfDocument>
   <toolshelf name="a3ob" label="A3OB">
     <memberTool name="a3ob_selection_browser"/>
+    <memberTool name="a3ob_quick_export"/>
+    <memberTool name="a3ob_project_settings"/>
     <memberTool name="a3ob_reload"/>
   </toolshelf>
 
@@ -20,5 +22,19 @@ reload.reload_all()]]></script>
     <script scriptType="python"><![CDATA[from a3ob_houdini import selection_browser_dialog
 
 selection_browser_dialog.run(kwargs)]]></script>
+  </tool>
+
+  <tool name="a3ob_quick_export" label="Quick Export" icon="MISC_python">
+    <helpText><![CDATA[Exports the selected SOP node (or the display node of the current network) to a .p3d file with a preset. Adds no node. The work is in a3ob_houdini/quick_export.py.]]></helpText>
+    <script scriptType="python"><![CDATA[from a3ob_houdini import quick_export_dialog
+
+quick_export_dialog.run(kwargs)]]></script>
+  </tool>
+
+  <tool name="a3ob_project_settings" label="Project root and presets" icon="MISC_python">
+    <helpText><![CDATA[Sets the project root, picks, edits and deletes export presets, and sets the common data file. Stored in one JSON file in the Houdini user preferences. Changes nothing in a scene. The work is in a3ob_houdini/settings.py.]]></helpText>
+    <script scriptType="python"><![CDATA[from a3ob_houdini import project_settings_dialog
+
+project_settings_dialog.run(kwargs)]]></script>
   </tool>
 </shelfDocument>

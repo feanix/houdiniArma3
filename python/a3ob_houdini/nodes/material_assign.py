@@ -8,12 +8,12 @@ polygons. Houdini's ``shop_materialpath`` and ``material`` are never touched. Fi
 (D14 Q-6); procedural and custom texture text is copied as typed.
 """
 
-from .. import geo_edit, material_text, names
+from .. import geo_edit, material_text, names, settings
 from ..errors import UserError
 from ..messages import Report, format_problem
 from ..params import NodeSpec, Parm, read_parms
 
-__all__ = ["SPEC", "cook", "BUTTONS"]
+__all__ = ["SPEC", "cook", "BUTTONS", "MENUS"]
 
 NAME = "Material Assign"
 
@@ -39,9 +39,17 @@ SPEC = NodeSpec(
         Parm("colortype", "Color Type", "menu", "CO", "For Color. The kind of procedural texture.",
              items=tuple((token, "%s - %s" % (token, text)) for token, text in material_text.COLOR_TYPES)),
         Parm("raw", "Raw Text", "string", "", "For Custom. Copied exactly as typed."),
+        Parm("commonproc", "Common Procedural", "menu", "none",
+             "Fill Raw Text from the common procedural textures (and switch Texture Source to Custom). "
+             "Add your own in the common data file of the Project root and presets tool.",
+             action="fillproc", menu_action="commonproc"),
         Parm("setmat", "Set Material", "toggle", True, "Off: leave a3ob_material as it is."),
         Parm("material", "Material File", "string", "",
              "The rvmat path. Empty clears the material. Slashes are written as backslashes."),
+        Parm("commonmat", "Add Common", "menu", "none",
+             "Fill Material File from the common materials (and switch Set Material on). "
+             "Add your own in the common data file of the Project root and presets tool.",
+             action="fillmat", menu_action="commonmat"),
     ),
 )
 
@@ -124,4 +132,31 @@ def cook(node, report: Report) -> None:
     report.info("Set on %d polygons." % len(polygons))
 
 
-BUTTONS = {}
+def _common_items(section: str):
+    """Menu items from the settings module: the built-in lists plus the common data file. Never raises."""
+    data, _ = settings.common_data(settings.load()[0])
+    return [("none", "(choose)")] + [(key, key) for key in sorted(data[section], key=str.lower)]
+
+
+def _fill(kwargs, section: str, target: str, switch: str, switch_to) -> None:
+    """A Common menu was changed: copy the chosen entry into ``target``, then show "(choose)" again."""
+    node = kwargs["node"]
+    token = kwargs["parm"].eval()
+    if token != "none":
+        data, _ = settings.common_data(settings.load()[0])
+        if token in data[section]:
+            node.parm(target).set(data[section][token])
+            node.parm(switch).set(switch_to)
+    kwargs["parm"].set("none")
+
+
+def fill_proc(kwargs) -> None:
+    _fill(kwargs, "procedurals", "raw", "texsource", "custom")
+
+
+def fill_mat(kwargs) -> None:
+    _fill(kwargs, "materials", "material", "setmat", 1)
+
+
+BUTTONS = {"fillproc": fill_proc, "fillmat": fill_mat}
+MENUS = {"commonproc": lambda kwargs: _common_items("procedurals"), "commonmat": lambda kwargs: _common_items("materials")}

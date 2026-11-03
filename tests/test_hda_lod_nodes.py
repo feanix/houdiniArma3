@@ -53,7 +53,7 @@ class TestLodNodeAssets(unittest.TestCase):
         self.assertEqual(r["label"], "Material Assign")
         self.assertEqual(r["inputs"], [1, 1])
         self.assertEqual(r["parms"], ["group", "grouptype", "settex", "texsource", "texture", "color", "colortype",
-                                      "raw", "setmat", "material"])
+                                      "raw", "commonproc", "setmat", "material", "commonmat"])
         self.assertEqual(r["submenu"], [["A3OB"]])
         self.assertEqual(r["pythoncook"], "import a3ob_houdini.entry as e; e.cook('material_assign', hou.pwd())")
 
