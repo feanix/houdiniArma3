@@ -142,7 +142,7 @@ def build_starter(parent=None, name: str = "new_p3d"):
     geometry_components = group(geometry_triangles, "geometry_components", "component01")
     geometry_mass = chain(add("a3ob_mass", "geometry_mass"), geometry_components)
     geometry_mass.parm("mode").set("total")
-    geometry_mass.parm("value").set(100.0)
+    geometry_mass.parm("mass_total").set(100.0)
     geometry_props = chain(add("a3ob_lod_properties", "geometry_props"), geometry_mass)
     geometry_props.parm("lodtype").set("geometry")
 

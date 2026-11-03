@@ -19,23 +19,60 @@ LOD geometry:
 Mode:
     #id: mode
 
-    What to do with the mass.
+    How the mass is set. Only the number for the chosen way is shown.
 
     Type: Menu. Default: Uniform total.
 
-    Choices: Set on each, Uniform total, From density, Clear, Copy from mass, Copy to mass.
+    Set on each:
+        Gives every point the same mass, set by Mass per Point.
 
-Value:
+    Uniform total:
+        Sets the mass of the whole object (Total Mass) and shares it equally among the points.
+
+    From density:
+        Works the mass out from the volume of each closed shape and the Density.
+
+    Clear:
+        Removes the mass. With a group, only those points go back to 0.
+
+    Copy from mass:
+        Takes the mass from the point attribute called mass, which you made yourself.
+
+    Copy to mass:
+        Copies the mass into a point attribute called mass, so you can see it or use it elsewhere.
+
+Mass per Point (kg):
+    #id: mass_each
+
+    The mass in kilograms that every point gets. It cannot be below 0. The slider shows 0 to 10, and you can type a larger number.
+
+    Type: Number. Default: 1. Allowed: At least 0; no upper limit. Shown when: Mode is Set on each.
+
+Total Mass (kg):
+    #id: mass_total
+
+    The mass in kilograms of the whole object. It is shared equally among the points. It cannot be below 0. The slider shows 0 to 10, and you can type a larger number.
+
+    Type: Number. Default: 1. Allowed: At least 0; no upper limit. Shown when: Mode is Uniform total.
+
+Density (kg/m³):
+    #id: density
+
+    The mass of one cubic metre of the material, in kilograms. Each closed shape gets its volume times this number. It cannot be below 0. The slider shows 0 to 10, and you can type a larger number.
+
+    Type: Number. Default: 1. Allowed: At least 0; no upper limit. Shown when: Mode is From density.
+
+Value (old scenes):
     #id: value
 
-    Set on each: kilograms per point. Uniform total: kilograms shared by all the points. From density: kilograms per cubic metre. The value cannot be below 0; there is no upper limit (the slider shows 0 to 10, and you can type more).
+    Not shown. Scenes saved before the three mass parameters existed stored the number here. While it is 0 or more and the parameter of the current mode is still 1, the node uses it, so old scenes keep their mass. A new node leaves it at -1.
 
-    Type: Number. Default: 1. Allowed: At least 0; no upper limit.
+    Type: Number. Default: -1.
 
 Group:
     #id: group
 
-    The points to change. Empty means all points.
+    The points to change, as a group name or point numbers (for example 0-3). Empty means all points.
 
     Type: Text. Default: (empty).
 

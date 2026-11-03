@@ -24,23 +24,53 @@
 	    "copyfrom"	"Copy from mass"
 	    "copyto"	"Copy to mass"
 	}
-	help	"What to do with the mass."
+	help	"How the mass is set. Only the number for the chosen way is shown."
     }
     parm {
-	name	"value"
-	label	"Value"
+	name	"mass_each"
+	label	"Mass per Point (kg)"
 	type	float
 	size	1
 	default	{ "1.0" }
 	range	{ 0! 10 }
-	help	"Set on each: kilograms per point. Uniform total: kilograms shared by all the points. From density: kilograms per cubic metre. The value cannot be below 0; there is no upper limit (the slider shows 0 to 10, and you can type more)."
+	help	"The mass in kilograms that every point gets. It cannot be below 0. The slider shows 0 to 10, and you can type a larger number."
+	hidewhen	"{ mode != each }"
+    }
+    parm {
+	name	"mass_total"
+	label	"Total Mass (kg)"
+	type	float
+	size	1
+	default	{ "1.0" }
+	range	{ 0! 10 }
+	help	"The mass in kilograms of the whole object. It is shared equally among the points. It cannot be below 0. The slider shows 0 to 10, and you can type a larger number."
+	hidewhen	"{ mode != total }"
+    }
+    parm {
+	name	"density"
+	label	"Density (kg/m³)"
+	type	float
+	size	1
+	default	{ "1.0" }
+	range	{ 0! 10 }
+	help	"The mass of one cubic metre of the material, in kilograms. Each closed shape gets its volume times this number. It cannot be below 0. The slider shows 0 to 10, and you can type a larger number."
+	hidewhen	"{ mode != density }"
+    }
+    parm {
+	name	"value"
+	label	"Value (old scenes)"
+	type	float
+	size	1
+	default	{ "-1.0" }
+	help	"Not shown. Scenes saved before the three mass parameters existed stored the number here. While it is 0 or more and the parameter of the current mode is still 1, the node uses it, so old scenes keep their mass. A new node leaves it at -1."
+	invisible
     }
     parm {
 	name	"group"
 	label	"Group"
 	type	string
 	default	{ "" }
-	help	"The points to change. Empty means all points."
+	help	"The points to change, as a group name or point numbers (for example 0-3). Empty means all points."
     }
     parm {
 	name	"visualize"

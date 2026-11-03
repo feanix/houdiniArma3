@@ -144,6 +144,8 @@ def _parm_block(spec: NodeSpec, parm: Parm) -> str:
         lines.append("\thelp\t%s" % _quote(parm.help))
     if parm.enable_when:
         lines.append("\tdisablewhen\t%s" % _quote(hide_when_text(parm.enable_when)))
+    if parm.hidden:
+        lines.append("\tinvisible")
     if parm.show_when:
         lines.append("\thidewhen\t%s" % _quote(hide_when_text(parm.show_when)))
     if parm.kind == "file":

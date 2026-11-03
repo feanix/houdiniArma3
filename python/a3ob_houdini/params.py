@@ -86,6 +86,9 @@ class Parm:
     #: For menus: ``((token, text), ...)``: what each choice does, in plain words. A choice without a text is only
     #: listed by name. A menu whose help already reads ``Intro. Label: text; Label: text`` needs none of this.
     item_help: Tuple[Tuple[str, str], ...] = ()
+    #: The parameter is never shown on the node (Houdini ``invisible``). For legacy parameters that old scenes still
+    #: store, so they load; the cook reads them. The docs still list them: the help text says what they are for.
+    hidden: bool = False
 
     def __post_init__(self) -> None:
         if self.kind not in KINDS:
@@ -292,6 +295,8 @@ def _template(spec: NodeSpec, parm: Parm):
     import hou
     template = _template_unconditioned(spec, parm)
     _set_conditions(template, parm)
+    if parm.hidden:
+        template.hide(True)
     return template
 
 

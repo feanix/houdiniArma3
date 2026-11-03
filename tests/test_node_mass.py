@@ -13,6 +13,9 @@ from tests.test_mass_math import CUBE_FACES, cube_points
 from tests.mass_proxy_support import NodeTestCase, cook, make_source
 
 
+MODE_PARM = {"each": "mass_each", "total": "mass_total", "density": "density"}  # the one parameter each mode reads
+
+
 def cube_geometry(side=1.0, offset=(0.0, 0.0, 0.0), extra=None):
     """A closed cube as hou.Geometry (outward faces). ``extra`` may add attributes."""
     geo = hou.Geometry()
@@ -30,7 +33,7 @@ class TestMassNode(NodeTestCase):
         node = self.network.createNode("a3ob_mass")
         node.setInput(0, source)
         for name, value in parms.items():
-            node.parm(name).set(value)
+            node.parm(MODE_PARM[parms["mode"]] if name == "value" else name).set(value)
         return node, cook(node)
 
     def masses(self, node):
@@ -56,11 +59,11 @@ class TestMassNode(NodeTestCase):
         first = self.network.createNode("a3ob_mass")
         first.setInput(0, source)
         first.parm("mode").set("each")
-        first.parm("value").set(2.5)
+        first.parm("mass_each").set(2.5)
         second = self.network.createNode("a3ob_mass")
         second.setInput(0, first)
         second.parm("mode").set("each")
-        second.parm("value").set(7)
+        second.parm("mass_each").set(7)
         second.parm("group").set("1 2")
         cook(second)
         self.assertEqual(self.masses(second), [2.5, 7, 7, 2.5, 2.5, 2.5, 2.5, 2.5])
@@ -196,12 +199,54 @@ class TestMassNode(NodeTestCase):
         result = cook(node)
         self.assertEqual(len(result.errors), 1)
 
+    def test_each_mode_reads_only_its_own_parameter(self):
+        # B3: the two other numbers get values that would change the result if the mode read them
+        wanted = {"each": [3.0] * 8, "total": [3.0] * 8, "density": [3.0 / 8] * 8}
+        number = {"each": 3.0, "total": 24.0, "density": 3.0}
+        for mode, own in MODE_PARM.items():
+            node, _ = self.run_mass(cube_geometry(), mode=mode)
+            node.parm(own).set(number[mode])
+            for name in MODE_PARM.values():
+                if name != own:
+                    node.parm(name).set(555.0)
+            cook(node)
+            self.assertEqual(self.masses(node), wanted[mode], mode)
+
+    def test_a_mode_parameter_is_hidden_unless_its_mode_is_chosen(self):
+        node = self.network.createNode("a3ob_mass")
+        for token, name in MODE_PARM.items():
+            condition = node.parm(name).parmTemplate().conditionals()[hou.parmCondType.HideWhen]
+            self.assertEqual(condition, "{ mode != %s }" % token, name)  # so Clear and the copy modes hide all three
+
+    def test_an_old_scene_keeps_its_mass(self):
+        # B4: a node saved by the old asset stored "value" (now the hidden legacy parameter) and no new parameter
+        for mode, value, expected in (("each", 2.5, [2.5] * 8), ("total", 40.0, [5.0] * 8)):
+            source = make_source(self.network, cube_geometry())
+            node = self.network.createNode("a3ob_mass")
+            node.setInput(0, source)
+            node.parm("mode").set(mode)
+            node.parm("value").set(value)
+            cook(node)
+            self.assertEqual(self.masses(node), expected, mode)
+        node, _ = self.run_mass(cube_geometry(), mode="density")
+        node.parm("value").set(1000.0)
+        cook(node)
+        self.assertEqual(self.masses(node), [1000.0 / 8] * 8)
+        node.parm("density").set(2000.0)  # a value typed in the new parameter wins over the old one
+        cook(node)
+        self.assertEqual(self.masses(node), [2000.0 / 8] * 8)
+
     def test_the_asset_parameters_match_the_table_and_the_value_is_strict(self):
         node = self.network.createNode("a3ob_mass")
-        self.assertEqual([parm.name() for parm in node.parms()], ["mode", "value", "group", "visualize"])
-        template = node.parm("value").parmTemplate()
-        self.assertTrue(template.minIsStrict() and not template.maxIsStrict())  # no upper limit
-        self.assertEqual(template.minValue(), 0.0)
+        self.assertEqual([parm.name() for parm in node.parms()],
+                         ["mode", "mass_each", "mass_total", "density", "value", "group", "visualize"])
+        for name in ("mass_each", "mass_total", "density"):
+            template = node.parm(name).parmTemplate()
+            self.assertTrue(template.minIsStrict() and not template.maxIsStrict(), name)  # no upper limit
+            self.assertEqual(template.minValue(), 0.0)
+            self.assertEqual(node.parm(name).eval(), 1.0)
+        self.assertTrue(node.parm("value").parmTemplate().isHidden())
+        self.assertEqual(node.parm("value").eval(), -1.0)
         self.assertEqual(node.parm("mode").parmTemplate().menuItems()[:3], ("each", "total", "density"))
         self.assertEqual(node.parm("mode").eval(), "total")
 

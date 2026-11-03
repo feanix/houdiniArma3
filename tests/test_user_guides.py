@@ -340,7 +340,7 @@ class TestQuickStartsRunInHoudini(unittest.TestCase):
         mass = geo.createNode("a3ob_mass")
         mass.setFirstInput(extract)
         mass.parm("mode").set("total")
-        mass.parm("value").set(90)
+        mass.parm("mass_total").set(90)
         cls.job2_mass = cls.look(mass)
         assemble = geo.createNode("a3ob_assemble_lods")
         assemble.setInput(0, imp)

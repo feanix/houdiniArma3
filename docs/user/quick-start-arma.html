@@ -139,7 +139,7 @@ Houdini nodes you like. Two rules come from the file format:</p>
 group, see the <a href="reference/tool-a3ob_selection_browser.html">Selection browser</a>.</p>
 <p><code>geometry_mass</code> is a <kbd class="ui-node">Mass</kbd> node. Its
 <kbd class="ui-parm" data-node="a3ob_mass">Mode</kbd> is <kbd class="ui-menu">Uniform total</kbd> and its
-<kbd class="ui-parm" data-node="a3ob_mass">Value</kbd> is 100, so the whole object weighs 100 kg. Its message reads
+<kbd class="ui-parm" data-node="a3ob_mass">Total Mass (kg)</kbd> is 100, so the whole object weighs 100 kg. Its message reads
 <samp class="ui-msg">Total 100.0 kg on 8 points.</samp> Change the value to the real mass of your object.
 See the <a href="reference/a3ob_mass.html">Mass reference</a> for the other modes.</p>
 
@@ -224,7 +224,7 @@ properties, selections).</p>
 <h3>Step 3: edit it</h3>
 <p>Edit the LOD with any Houdini nodes. As an example add a <kbd class="ui-node">Mass</kbd> node after Extract LOD,
 set <kbd class="ui-parm" data-node="a3ob_mass">Mode</kbd> to <kbd class="ui-menu">Uniform total</kbd> and
-<kbd class="ui-parm" data-node="a3ob_mass">Value</kbd> to 90. The message is
+<kbd class="ui-parm" data-node="a3ob_mass">Total Mass (kg)</kbd> to 90. The message is
 <samp class="ui-msg">Total 90.0 kg on 16 points.</samp></p>
 <p class="warning">Edit one LOD on one branch. Do not join two extracted LODs with a Merge node: a Merge keeps the LOD
 information of its first input only, and Validate will warn that the LODs look merged. Assemble LODs (next) is the
