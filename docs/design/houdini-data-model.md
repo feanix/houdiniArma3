@@ -1167,12 +1167,12 @@ already states each choice as normative.
 
 ## Still open
 
-Both stay open until Bohemia's Arma 3 Samples MLOD files are available (D6). Until then M3/M4 use synthetic tests for the blob paths.
+Both stay open. The owner decides the closures. Task #29 ran Bohemia's Arma 3 Samples (D6); the evidence is in `docs/design/evidence/samples/samples_findings.md` and the recommendations are in the last column.
 
-| # | Question | Current state (D9) |
-|---|---|---|
-| **OQ-5** | **Code page of Arma P3D strings.** Do real files use CP1250 (Czech) or another code page? | M1 uses cp1252, with C1 code points for the 5 undefined bytes, and §5 passes M1 strings to `hou` unchanged because they are valid Unicode (V9). CP1250 also has 5 undefined bytes and would need the same C1 handling; switching would change only `binary.py`. Keep cp1252 until the Samples files show otherwise. |
-| **OQ-11** | **Blob TAGG coverage.** The fixtures contain no unknown or inactive TAGGs, no `#Animation#` / `#Lock#` / `#Hidden#` / `#Selected#`, no interleaved proxies, no non-edge sharp pairs and no duplicate normal values. | The blob path of §11.2 (including M1's `MaskTagg` and `AnimationTagg`) is tested with synthetic files only. Test it against real Object Builder files from the Samples set (D6) when they are available. |
+| # | Question | Current state (D9) | Evidence from the Samples (task #29) |
+|---|---|---|---|
+| **OQ-5** | **Code page of Arma P3D strings.** Do real files use CP1250 (Czech) or another code page? | M1 uses cp1252, with C1 code points for the 5 undefined bytes, and §5 passes M1 strings to `hou` unchanged because they are valid Unicode (V9). CP1250 also has 5 undefined bytes and would need the same C1 handling; switching would change only `binary.py`. Keep cp1252 until the Samples files show otherwise. | All 34 Samples files hold 384 104 strings and none is non-ASCII, so they cannot settle the code page. Recommendation: keep cp1252 and close OQ-5 unless the owner has a file with non-ASCII names. |
+| **OQ-11** | **Blob TAGG coverage.** The fixtures contain no unknown or inactive TAGGs, no `#Animation#` / `#Lock#` / `#Hidden#` / `#Selected#`, no interleaved proxies, no non-edge sharp pairs and no duplicate normal values. | The blob path of §11.2 (including M1's `MaskTagg` and `AnimationTagg`) is tested with synthetic files only. Test it against real Object Builder files from the Samples set (D6) when they are available. | Tested on the Samples: the 74 `#Selected#` masks and 6 raw `#Hide#` TAGGs keep their bytes through import and Lossless export. In the 6 LODs with interleaved proxies the mask bytes stay but the points move (the mask is bound to counts, not to the order), see finding F-4. The Samples also hold duplicate normal values (F-1), non-edge and degenerate sharp pairs (F-3) and interleaved proxies (36 LODs), which the fixtures lacked. Recommendation: close OQ-11 for the blob paths and carry F-4 forward. |
 
 ## Evidence
 

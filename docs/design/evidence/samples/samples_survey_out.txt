@@ -1,0 +1,419 @@
+Arma 3 Samples survey, 34 files
+
+== 1. M1 layer ==
+strict read and byte-identical write: 34 of 34 files
+TAGG classes (all LODs): MaskTagg 74, MassTagg 37, PropertyTagg 208, RawTagg 6, SelectionTagg 6480, SharpEdgesTagg 187, UVSetTagg 314
+face flag values that flag_check calls unknown (value: faces, files): 0x00001000: 3321, 2, 0x00002000: 1291, 1
+quads in Geometry-family and Shadow Volume LODs (T2-TRI): 3760 faces in 26 LODs in 20 files
+strings checked (TAGG names, textures, materials, property keys and values): 384104; non-ASCII: 0
+
+== 2. P3D Import -> P3D Export (Lossless) ==
+DIFFERENT  Addons/TemplateRTM/Male.p3d  (7 LODs, import 1.84 s, export 2.44 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 7 of 7; interleaved-proxy LODs: 0; unexplained: 0
+      LOD 0 (Resolution 1): padding; normal table; sharp edge order
+      LOD 1 (Edit 1): padding; normal table; sharp edge order
+      LOD 2 (Edit 2): padding; normal table; sharp edge order
+      LOD 3 (Edit 4): normal table
+      LOD 4 (Edit 5): normal table
+      LOD 5 (Edit 10): padding; normal table; sharp edge order
+      LOD 6 (Memory): signed zero
+IDENTICAL  Addons/TemplateRTM/ManSkeleton_Pivots.p3d  (1 LODs, import 0.00 s, export 0.00 s)
+DIFFERENT  Addons/TemplateRTM/bust.p3d  (4 LODs, import 0.10 s, export 0.19 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 2 of 4; interleaved-proxy LODs: 0; unexplained: 0
+      LOD 0 (Resolution 1): normal table
+      LOD 2 (Shadow Volume 0): normal table
+DIFFERENT  Addons/Test_Animal_01/Test_Animal_01_F.p3d  (7 LODs, import 0.03 s, export 0.04 s) errors=[]
+    first differing byte 54366: LOD 2 (Shadow Volume 0): header
+    LODs that differ: 2 of 7; interleaved-proxy LODs: 0; unexplained: 0
+      LOD 2 (Shadow Volume 0): normal table
+      LOD 6 (Fire Geometry): normal table
+DIFFERENT  Addons/Test_Boat_01/Test_Boat_01.p3d  (11 LODs, import 0.20 s, export 0.42 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 9 of 11; interleaved-proxy LODs: 2; unexplained: 0
+      LOD 0 (Resolution 1): point and face order; normal table
+      LOD 1 (View - Cargo 0): point and face order; normal table
+      LOD 2 (Shadow Volume 0): padding; normal table; sharp edge order
+      LOD 3 (Shadow Volume 10): normal table
+      LOD 4 (Geometry): normal table; sharp edge order
+      LOD 5 (Geometry Buoyancy): normal table
+      LOD 6 (Geometry PhysX): normal table
+      LOD 9 (View Geometry): normal table; sharp edge order
+      LOD 10 (Fire Geometry): normal table
+DIFFERENT  Addons/Test_Car_01/Test_Car_01.p3d  (11 LODs, import 0.21 s, export 0.24 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 8 of 11; interleaved-proxy LODs: 3; unexplained: 0
+      LOD 0 (Resolution 1): point and face order; normal table
+      LOD 1 (View - Cargo 0): content: MaskTagg
+      LOD 2 (Shadow Volume 0): padding; normal table; sharp edge order
+      LOD 3 (Shadow Volume 10): normal table; sharp edge order
+      LOD 4 (Geometry): normal table; sharp edge order
+      LOD 5 (Geometry PhysX): normal table
+      LOD 9 (View Geometry): normal table; sharp edge order
+      LOD 10 (Fire Geometry): content: MaskTagg, SharpEdgesTagg
+DIFFERENT  Addons/Test_Character_01/A3_NewFireGeometryTemplate.p3d  (13 LODs, import 0.09 s, export 0.12 s) errors=[]
+    first differing byte 880: LOD 12 (Fire Geometry): header
+    LODs that differ: 1 of 13; interleaved-proxy LODs: 1; unexplained: 0
+      LOD 12 (Fire Geometry): content: SharpEdgesTagg
+DIFFERENT  Addons/Test_Character_01/A3_character_example.p3d  (12 LODs, import 0.87 s, export 1.21 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 9 of 12; interleaved-proxy LODs: 8; unexplained: 0
+      LOD 0 (Resolution 1): content: MaskTagg
+      LOD 1 (Resolution 2): content: MaskTagg
+      LOD 2 (Resolution 3): content: MaskTagg
+      LOD 3 (Resolution 4): point and face order; normal table
+      LOD 4 (View - Pilot): point and face order; normal table
+      LOD 5 (Shadow Volume 0): normal table
+      LOD 6 (Shadow Volume 10): point and face order; normal table
+      LOD 8 (Memory): point and face order; normal table
+      LOD 11 (Fire Geometry): content: SharpEdgesTagg
+DIFFERENT  Addons/Test_Character_01/A3_character_template.p3d  (12 LODs, import 0.58 s, export 0.86 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 9 of 12; interleaved-proxy LODs: 3; unexplained: 0
+      LOD 0 (Resolution 1): normal table
+      LOD 1 (Resolution 2): normal table
+      LOD 2 (Resolution 3): normal table
+      LOD 3 (Resolution 4): normal table
+      LOD 4 (View - Pilot): normal table
+      LOD 5 (Shadow Volume 0): padding; normal table
+      LOD 6 (Shadow Volume 10): point and face order; normal table
+      LOD 8 (Memory): point and face order; normal table
+      LOD 11 (Fire Geometry): content: SharpEdgesTagg
+DIFFERENT  Addons/Test_Character_01/A3_headgear_NVGslot.p3d  (1 LODs, import 0.01 s, export 0.01 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 0): header
+    LODs that differ: 1 of 1; interleaved-proxy LODs: 0; unexplained: 0
+      LOD 0 (Resolution 0): normal table
+DIFFERENT  Addons/Test_Character_01/A3_headgear_example.p3d  (6 LODs, import 0.01 s, export 0.02 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 4 of 6; interleaved-proxy LODs: 0; unexplained: 0
+      LOD 0 (Resolution 1): normal table
+      LOD 1 (Resolution 2): normal table
+      LOD 2 (Resolution 3): normal table
+      LOD 4 (Shadow Volume 0): normal table
+IDENTICAL  Addons/Test_Character_01/A3_headgear_template.p3d  (6 LODs, import 0.00 s, export 0.00 s)
+DIFFERENT  Addons/Test_Character_01/A3_vest_example.p3d  (7 LODs, import 0.06 s, export 0.12 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 6 of 7; interleaved-proxy LODs: 0; unexplained: 0
+      LOD 0 (Resolution 1): normal table
+      LOD 1 (Resolution 2): normal table
+      LOD 2 (Resolution 3): normal table
+      LOD 3 (Resolution 4): normal table
+      LOD 4 (Resolution 5): normal table
+      LOD 5 (Shadow Volume 0): normal table; sharp edge order
+IDENTICAL  Addons/Test_Character_01/A3_vest_template.p3d  (7 LODs, import 0.00 s, export 0.01 s)
+IDENTICAL  Addons/Test_Heli_01/Main_Rotor_F.p3d  (1 LODs, import 0.00 s, export 0.00 s)
+DIFFERENT  Addons/Test_Heli_01/Tail_Rotor_F.p3d  (1 LODs, import 0.00 s, export 0.00 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 1 of 1; interleaved-proxy LODs: 0; unexplained: 0
+      LOD 0 (Resolution 1): normal table
+DIFFERENT  Addons/Test_Heli_01/Test_Heli_01.p3d  (13 LODs, import 0.52 s, export 0.75 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 10 of 13; interleaved-proxy LODs: 4; unexplained: 0
+      LOD 0 (Resolution 1): content: SharpEdgesTagg
+      LOD 1 (Resolution 2): padding; normal table; sharp edge order
+      LOD 2 (View - Cargo 0): content: SharpEdgesTagg
+      LOD 3 (Shadow Volume 0): content: SharpEdgesTagg
+      LOD 4 (Shadow Volume 10): padding; normal table; sharp edge order
+      LOD 5 (Geometry): normal table; sharp edge order
+      LOD 6 (Geometry PhysX): normal table
+      LOD 10 (View Geometry): normal table
+      LOD 11 (Fire Geometry): content: SharpEdgesTagg
+      LOD 12 (Wreckage): normal table
+DIFFERENT  Addons/Test_Heli_01/Test_Heli_01_Wreck.p3d  (6 LODs, import 0.04 s, export 0.11 s) errors=[]
+    first differing byte 8468: LOD 0 (Resolution 1): normals[253]
+    LODs that differ: 3 of 6; interleaved-proxy LODs: 0; unexplained: 0
+      LOD 0 (Resolution 1): normal table
+      LOD 1 (Shadow Volume 0): padding; normal table
+      LOD 2 (Shadow Volume 10): padding; normal table
+DIFFERENT  Addons/Test_House_01/Test_House_01_F.p3d  (11 LODs, import 0.16 s, export 0.31 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 9 of 11; interleaved-proxy LODs: 0; unexplained: 0
+      LOD 0 (Resolution 1): normal table; sharp edge order
+      LOD 1 (Shadow Volume 0): normal table
+      LOD 2 (Shadow Volume 10): normal table
+      LOD 3 (Geometry): normal table; sharp edge order
+      LOD 4 (Geometry PhysX): normal table; sharp edge order
+      LOD 6 (Roadway): normal table
+      LOD 7 (Paths): normal table; sharp edge order
+      LOD 9 (View Geometry): normal table; sharp edge order
+      LOD 10 (Fire Geometry): normal table; sharp edge order
+DIFFERENT  Addons/Test_House_01/Test_House_01_dam_F.p3d  (9 LODs, import 0.30 s, export 0.48 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 7 of 9; interleaved-proxy LODs: 0; unexplained: 0
+      LOD 0 (Resolution 1): normal table; sharp edge order
+      LOD 1 (Shadow Volume 0): padding; normal table
+      LOD 2 (Shadow Volume 10): normal table
+      LOD 3 (Geometry): normal table; sharp edge order
+      LOD 5 (Roadway): normal table
+      LOD 6 (Paths): normal table; sharp edge order
+      LOD 8 (View Geometry): normal table; sharp edge order
+DIFFERENT  Addons/Test_House_01/Test_House_01_ruins_F.p3d  (7 LODs, import 0.08 s, export 0.18 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 7 of 7; interleaved-proxy LODs: 0; unexplained: 0
+      LOD 0 (Resolution 1): normal table
+      LOD 1 (Shadow Volume 0): normal table; sharp edge order
+      LOD 2 (Shadow Volume 10): normal table
+      LOD 3 (Geometry): normal table; sharp edge order
+      LOD 4 (Roadway): normal table
+      LOD 5 (Paths): normal table
+      LOD 6 (View Geometry): normal table; sharp edge order
+DIFFERENT  Addons/Test_Lamp_01/Test_lamp_01_F.p3d  (8 LODs, import 0.01 s, export 0.02 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 6 of 8; interleaved-proxy LODs: 0; unexplained: 0
+      LOD 0 (Resolution 1): normal table
+      LOD 1 (Shadow Volume 1): normal table
+      LOD 2 (Geometry): normal table
+      LOD 4 (Roadway): normal table
+      LOD 6 (View Geometry): normal table
+      LOD 7 (Fire Geometry): normal table
+DIFFERENT  Addons/Test_Lamp_01/Test_lamp_01_off_F.p3d  (7 LODs, import 0.01 s, export 0.01 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 6 of 7; interleaved-proxy LODs: 0; unexplained: 0
+      LOD 0 (Resolution 1): normal table
+      LOD 1 (Shadow Volume 1): normal table
+      LOD 2 (Geometry): normal table
+      LOD 4 (Roadway): normal table
+      LOD 5 (View Geometry): normal table
+      LOD 6 (Fire Geometry): normal table
+DIFFERENT  Addons/Test_Plane_01/Ejection_Seat_01.p3d  (7 LODs, import 0.01 s, export 0.02 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 0): header
+    LODs that differ: 3 of 7; interleaved-proxy LODs: 0; unexplained: 0
+      LOD 0 (Resolution 0): normal table; sharp edge order
+      LOD 1 (View - Pilot): normal table; sharp edge order
+      LOD 2 (Shadow Volume 10): padding; normal table
+DIFFERENT  Addons/Test_Plane_01/Test_Plane_01.p3d  (16 LODs, import 1.02 s, export 1.66 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 2): header
+    LODs that differ: 14 of 16; interleaved-proxy LODs: 7; unexplained: 0
+      LOD 0 (Resolution 2): content: SharpEdgesTagg
+      LOD 1 (Resolution 3): content: SharpEdgesTagg
+      LOD 2 (Resolution 4): point and face order; normal table
+      LOD 3 (Resolution 5): padding; normal table
+      LOD 4 (Resolution 6): padding; normal table
+      LOD 5 (View - Pilot): point and face order; normal table
+      LOD 6 (Shadow Volume 0): content: SharpEdgesTagg
+      LOD 7 (Shadow Volume 10): padding; normal table; sharp edge order
+      LOD 8 (Geometry): padding; normal table; sharp edge order
+      LOD 9 (Geometry PhysX): normal table; sharp edge order
+      LOD 10 (Memory): point and face order; normal table
+      LOD 13 (View Geometry): normal table; sharp edge order
+      LOD 14 (Fire Geometry): content: SharpEdgesTagg
+      LOD 15 (Wreckage): normal table
+DIFFERENT  Addons/Test_Plane_01/Test_Plane_01_Wreck.p3d  (9 LODs, import 0.02 s, export 0.08 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 7 of 9; interleaved-proxy LODs: 1; unexplained: 0
+      LOD 0 (Resolution 1): padding; normal table; sharp edge order
+      LOD 1 (View - Cargo 0): content: MaskTagg, SharpEdgesTagg
+      LOD 2 (Shadow Volume 0): padding; normal table; sharp edge order
+      LOD 3 (Geometry): normal table
+      LOD 4 (Geometry PhysX): normal table
+      LOD 7 (View Geometry): normal table
+      LOD 8 (Fire Geometry): normal table; sharp edge order
+DIFFERENT  Addons/Test_Plane_01/Test_Plane_01_canopy_F.p3d  (7 LODs, import 0.02 s, export 0.04 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 4 of 7; interleaved-proxy LODs: 0; unexplained: 0
+      LOD 0 (Resolution 1): normal table
+      LOD 3 (Shadow Volume 0): padding; normal table
+      LOD 4 (Geometry): padding; normal table; sharp edge order
+      LOD 6 (Fire Geometry): padding; normal table; sharp edge order
+DIFFERENT  Addons/Test_Plane_01/Test_Plane_01_ejection_seat.p3d  (8 LODs, import 0.01 s, export 0.01 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 0): header
+    LODs that differ: 5 of 8; interleaved-proxy LODs: 3; unexplained: 0
+      LOD 0 (Resolution 0): point and face order; normal table
+      LOD 1 (View - Pilot): point and face order; normal table
+      LOD 2 (Shadow Volume 0): point and face order; normal table
+      LOD 3 (Geometry): normal table
+      LOD 7 (Fire Geometry): normal table
+DIFFERENT  Addons/Test_Plant_F/t_PinusP3s_F.p3d  (10 LODs, import 0.11 s, export 0.17 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 10 of 10; interleaved-proxy LODs: 0; unexplained: 0
+      LOD 0 (Resolution 1): normal table
+      LOD 1 (Resolution 2): padding; normal table
+      LOD 2 (Shadow Volume 0): padding; normal table
+      LOD 3 (Shadow Volume 10): normal table
+      LOD 4 (Shadow Volume 1000): normal table
+      LOD 5 (Shadow Volume 1010): padding; normal table
+      LOD 6 (Geometry): normal table
+      LOD 7 (Geometry PhysX): normal table
+      LOD 8 (View Geometry): normal table
+      LOD 9 (Fire Geometry): normal table
+DIFFERENT  Addons/Test_Tank_01/Test_Tank_01.p3d  (13 LODs, import 0.09 s, export 0.18 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 0): header
+    LODs that differ: 10 of 13; interleaved-proxy LODs: 2; unexplained: 0
+      LOD 0 (Resolution 0): point and face order; normal table
+      LOD 1 (View - Gunner): point and face order; normal table
+      LOD 2 (View - Cargo 0): normal table
+      LOD 3 (Shadow Volume 0): padding; normal table
+      LOD 4 (Shadow Volume 10): padding; normal table
+      LOD 5 (Geometry): padding; normal table
+      LOD 6 (Geometry PhysX): padding; normal table
+      LOD 10 (View Geometry): normal table; sharp edge order
+      LOD 11 (Fire Geometry): padding; normal table; sharp edge order
+      LOD 12 (Wreckage): normal table
+DIFFERENT  Addons/Test_Tank_01/Test_Tank_01_Wreck.p3d  (7 LODs, import 0.02 s, export 0.04 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 0): header
+    LODs that differ: 6 of 7; interleaved-proxy LODs: 0; unexplained: 0
+      LOD 0 (Resolution 0): normal table; sharp edge order
+      LOD 1 (Shadow Volume 0): padding; normal table
+      LOD 2 (Shadow Volume 10): padding; normal table
+      LOD 3 (Geometry): padding; normal table
+      LOD 5 (View Geometry): normal table; sharp edge order
+      LOD 6 (Fire Geometry): padding; normal table
+DIFFERENT  Addons/Test_Weapon_01/test_bipod_01_F.p3d  (4 LODs, import 0.01 s, export 0.01 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 3 of 4; interleaved-proxy LODs: 0; unexplained: 0
+      LOD 0 (Resolution 1): normal table
+      LOD 1 (Shadow Volume 1): normal table; sharp edge order
+      LOD 2 (Geometry): normal table
+DIFFERENT  Addons/Test_Weapon_01/test_weapon_01_F.p3d  (8 LODs, import 0.02 s, export 0.04 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 7 of 8; interleaved-proxy LODs: 2; unexplained: 0
+      LOD 0 (Resolution 1): content: SharpEdgesTagg
+      LOD 1 (View - Pilot): content: SharpEdgesTagg
+      LOD 2 (Shadow Volume 0): normal table; sharp edge order
+      LOD 3 (Shadow Volume 10): normal table; sharp edge order
+      LOD 4 (Geometry): normal table
+      LOD 5 (Geometry Buoyancy): normal table
+      LOD 7 (Fire Geometry): normal table
+DIFFERENT  Addons/Test_scope3D_01/Test_scope3D_01.p3d  (4 LODs, import 0.02 s, export 0.04 s) errors=[]
+    first differing byte 28: LOD 0 (Resolution 1): header
+    LODs that differ: 3 of 4; interleaved-proxy LODs: 0; unexplained: 0
+      LOD 0 (Resolution 1): normal table
+      LOD 1 (View - Pilot): normal table
+      LOD 2 (Geometry): normal table
+
+byte-identical: 4 of 34 files
+LOD differences by class (a LOD can have several): content: MaskTagg 4, content: MaskTagg, SharpEdgesTagg 2, content: SharpEdgesTagg 13, normal table 159, padding 34, point and face order 17, sharp edge order 46, signed zero 1
+LODs with a difference that is not in the known list: 0
+
+== 3. Import -> Extract LOD k (all k) -> Assemble LODs (no edits) -> Lossless ==
+SAME AS DIRECT  Addons/TemplateRTM/Male.p3d  (7 LODs, assemble 0.06 s)
+SAME AS DIRECT  Addons/TemplateRTM/ManSkeleton_Pivots.p3d  (1 LODs, assemble 0.00 s)
+SAME AS DIRECT  Addons/TemplateRTM/bust.p3d  (4 LODs, assemble 0.00 s)
+SAME AS DIRECT  Addons/Test_Animal_01/Test_Animal_01_F.p3d  (7 LODs, assemble 0.00 s)
+SAME AS DIRECT  Addons/Test_Boat_01/Test_Boat_01.p3d  (11 LODs, assemble 0.02 s)
+SAME AS DIRECT  Addons/Test_Car_01/Test_Car_01.p3d  (11 LODs, assemble 0.01 s)
+SAME AS DIRECT  Addons/Test_Character_01/A3_NewFireGeometryTemplate.p3d  (13 LODs, assemble 0.01 s)
+SAME AS DIRECT  Addons/Test_Character_01/A3_character_example.p3d  (12 LODs, assemble 0.02 s)
+SAME AS DIRECT  Addons/Test_Character_01/A3_character_template.p3d  (12 LODs, assemble 0.02 s)
+SAME AS DIRECT  Addons/Test_Character_01/A3_headgear_NVGslot.p3d  (1 LODs, assemble 0.00 s)
+SAME AS DIRECT  Addons/Test_Character_01/A3_headgear_example.p3d  (6 LODs, assemble 0.00 s)
+SAME AS DIRECT  Addons/Test_Character_01/A3_headgear_template.p3d  (6 LODs, assemble 0.00 s)
+SAME AS DIRECT  Addons/Test_Character_01/A3_vest_example.p3d  (7 LODs, assemble 0.01 s)
+SAME AS DIRECT  Addons/Test_Character_01/A3_vest_template.p3d  (7 LODs, assemble 0.00 s)
+SAME AS DIRECT  Addons/Test_Heli_01/Main_Rotor_F.p3d  (1 LODs, assemble 0.00 s)
+SAME AS DIRECT  Addons/Test_Heli_01/Tail_Rotor_F.p3d  (1 LODs, assemble 0.00 s)
+SAME AS DIRECT  Addons/Test_Heli_01/Test_Heli_01.p3d  (13 LODs, assemble 0.02 s)
+SAME AS DIRECT  Addons/Test_Heli_01/Test_Heli_01_Wreck.p3d  (6 LODs, assemble 0.00 s)
+SAME AS DIRECT  Addons/Test_House_01/Test_House_01_F.p3d  (11 LODs, assemble 0.01 s)
+SAME AS DIRECT  Addons/Test_House_01/Test_House_01_dam_F.p3d  (9 LODs, assemble 0.01 s)
+SAME AS DIRECT  Addons/Test_House_01/Test_House_01_ruins_F.p3d  (7 LODs, assemble 0.01 s)
+SAME AS DIRECT  Addons/Test_Lamp_01/Test_lamp_01_F.p3d  (8 LODs, assemble 0.00 s)
+SAME AS DIRECT  Addons/Test_Lamp_01/Test_lamp_01_off_F.p3d  (7 LODs, assemble 0.00 s)
+SAME AS DIRECT  Addons/Test_Plane_01/Ejection_Seat_01.p3d  (7 LODs, assemble 0.00 s)
+SAME AS DIRECT  Addons/Test_Plane_01/Test_Plane_01.p3d  (16 LODs, assemble 0.05 s)
+SAME AS DIRECT  Addons/Test_Plane_01/Test_Plane_01_Wreck.p3d  (9 LODs, assemble 0.01 s)
+SAME AS DIRECT  Addons/Test_Plane_01/Test_Plane_01_canopy_F.p3d  (7 LODs, assemble 0.01 s)
+SAME AS DIRECT  Addons/Test_Plane_01/Test_Plane_01_ejection_seat.p3d  (8 LODs, assemble 0.01 s)
+SAME AS DIRECT  Addons/Test_Plant_F/t_PinusP3s_F.p3d  (10 LODs, assemble 0.01 s)
+SAME AS DIRECT  Addons/Test_Tank_01/Test_Tank_01.p3d  (13 LODs, assemble 0.01 s)
+SAME AS DIRECT  Addons/Test_Tank_01/Test_Tank_01_Wreck.p3d  (7 LODs, assemble 0.00 s)
+SAME AS DIRECT  Addons/Test_Weapon_01/test_bipod_01_F.p3d  (4 LODs, assemble 0.00 s)
+SAME AS DIRECT  Addons/Test_Weapon_01/test_weapon_01_F.p3d  (8 LODs, assemble 0.01 s)
+SAME AS DIRECT  Addons/Test_scope3D_01/Test_scope3D_01.p3d  (4 LODs, assemble 0.00 s)
+same bytes as the direct round trip: 34 of 34
+
+== 4. Arma 3 release export ==
+files exported with no error: 34 of 34
+
+Warnings per rule (count = number of warnings; files = number of files):
+  FLAGS-UNKNOWN            14 warnings in  2 files   e.g. Resolution N: N polygons have aNob_face_flags that Object Builder does not know (prims N (NxN), N (NxN), N (NxN) and N more). Nodes that interpolate i
+  LOWERCASE-COLLISION       1 warnings in  1 files   e.g. Memory: lowercase makes the selection names '<name>' and '<name>' equal. Both are still written.
+  T2-CONTIG                 1 warnings in  1 files   e.g. Shadow Volume N: the mesh is not contiguous: polygons N and N run along their shared edge in the same direction (one of them is flipped). Reverse the
+  T2-CONVEX                 1 warnings in  1 files   e.g. Geometry PhysX: the mesh is not convex: the edge between polygons N and N bends outwards. Split the geometry into convex components.
+  T2-MASS                   6 warnings in  6 files   e.g. Geometry: the LOD has no mass (aNob_mass is missing or adds up to less than N). Use the Mass node.
+  T2-MASSALL                3 warnings in  3 files   e.g. Geometry: point N has no mass (aNob_mass is below N). Use the Mass node on all points.
+  T2-NOMAT                  2 warnings in  1 files   e.g. Shadow Volume N: polygon N has a texture or material. Clear aNob_texture and aNob_material.
+  T2-RW-LIMIT               1 warnings in  1 files   e.g. Roadway: the LOD has N points and animations break above N. Use fewer points.
+  T2-SHADOWOFF              7 warnings in  5 files   e.g. Shadow Volume N: the LOD is disabled by the property LODNoShadow = N. Remove the property to cast shadows.
+  T2-SHADOWRES              3 warnings in  3 files   e.g. Shadow Volume N: the shadow resolution N is unconventional (usual: N, N, N, N, N). Check the resolution of the LOD.
+  T2-TRI                   26 warnings in 20 files   e.g. Geometry: the mesh is not triangulated: polygon N has N points (convexity is not definite). Add a Divide node with Convex Polygons on and Maximum Edge
+
+Warnings per file:
+  Addons/TemplateRTM/Male.p3d: FLAGS-UNKNOWN x4
+  Addons/TemplateRTM/ManSkeleton_Pivots.p3d: no warnings
+  Addons/TemplateRTM/bust.p3d: no warnings
+  Addons/Test_Animal_01/Test_Animal_01_F.p3d: T2-TRI x1
+  Addons/Test_Boat_01/Test_Boat_01.p3d: T2-TRI x1
+  Addons/Test_Car_01/Test_Car_01.p3d: T2-MASSALL x1, T2-TRI x1
+  Addons/Test_Character_01/A3_NewFireGeometryTemplate.p3d: T2-MASS x1
+  Addons/Test_Character_01/A3_character_example.p3d: T2-TRI x1
+  Addons/Test_Character_01/A3_character_template.p3d: T2-TRI x1
+  Addons/Test_Character_01/A3_headgear_NVGslot.p3d: no warnings
+  Addons/Test_Character_01/A3_headgear_example.p3d: T2-MASS x1
+  Addons/Test_Character_01/A3_headgear_template.p3d: T2-MASS x1
+  Addons/Test_Character_01/A3_vest_example.p3d: T2-MASS x1, T2-SHADOWOFF x1
+  Addons/Test_Character_01/A3_vest_template.p3d: T2-MASS x1
+  Addons/Test_Heli_01/Main_Rotor_F.p3d: no warnings
+  Addons/Test_Heli_01/Tail_Rotor_F.p3d: no warnings
+  Addons/Test_Heli_01/Test_Heli_01.p3d: T2-SHADOWOFF x1, T2-TRI x2
+  Addons/Test_Heli_01/Test_Heli_01_Wreck.p3d: T2-TRI x2
+  Addons/Test_House_01/Test_House_01_F.p3d: T2-TRI x2
+  Addons/Test_House_01/Test_House_01_dam_F.p3d: T2-RW-LIMIT x1, T2-TRI x1
+  Addons/Test_House_01/Test_House_01_ruins_F.p3d: T2-TRI x1
+  Addons/Test_Lamp_01/Test_lamp_01_F.p3d: T2-SHADOWRES x1, T2-TRI x1
+  Addons/Test_Lamp_01/Test_lamp_01_off_F.p3d: T2-SHADOWRES x1, T2-TRI x1
+  Addons/Test_Plane_01/Ejection_Seat_01.p3d: T2-TRI x1
+  Addons/Test_Plane_01/Test_Plane_01.p3d: T2-SHADOWOFF x2, T2-TRI x2
+  Addons/Test_Plane_01/Test_Plane_01_Wreck.p3d: T2-CONVEX x1, T2-TRI x2
+  Addons/Test_Plane_01/Test_Plane_01_canopy_F.p3d: T2-SHADOWOFF x1
+  Addons/Test_Plane_01/Test_Plane_01_ejection_seat.p3d: T2-MASSALL x1, T2-TRI x1
+  Addons/Test_Plant_F/t_PinusP3s_F.p3d: FLAGS-UNKNOWN x10, T2-CONTIG x1, T2-NOMAT x2, T2-TRI x1
+  Addons/Test_Tank_01/Test_Tank_01.p3d: LOWERCASE-COLLISION x1
+  Addons/Test_Tank_01/Test_Tank_01_Wreck.p3d: no warnings
+  Addons/Test_Weapon_01/test_bipod_01_F.p3d: T2-SHADOWRES x1, T2-TRI x1
+  Addons/Test_Weapon_01/test_weapon_01_F.p3d: T2-SHADOWOFF x2, T2-TRI x2
+  Addons/Test_scope3D_01/Test_scope3D_01.p3d: T2-MASS x1, T2-MASSALL x1, T2-TRI x1
+
+== 5. OQ-11: opaque TAGGs (Raw = unknown name, Mask = #Hidden# / #Lock# / #Selected#) after the Lossless round trip ==
+  Mask  bytes kept                         74
+  Raw   bytes kept                         6
+LODs whose editor masks kept their bytes but now sit on other points (interleaved proxies): 6
+
+== 6. Time per file (seconds) ==
+  import   1.84  export   2.44  Addons/TemplateRTM/Male.p3d
+  import   0.00  export   0.00  Addons/TemplateRTM/ManSkeleton_Pivots.p3d
+  import   0.10  export   0.19  Addons/TemplateRTM/bust.p3d
+  import   0.03  export   0.04  Addons/Test_Animal_01/Test_Animal_01_F.p3d
+  import   0.20  export   0.42  Addons/Test_Boat_01/Test_Boat_01.p3d
+  import   0.21  export   0.24  Addons/Test_Car_01/Test_Car_01.p3d
+  import   0.09  export   0.12  Addons/Test_Character_01/A3_NewFireGeometryTemplate.p3d
+  import   0.87  export   1.21  Addons/Test_Character_01/A3_character_example.p3d
+  import   0.58  export   0.86  Addons/Test_Character_01/A3_character_template.p3d
+  import   0.01  export   0.01  Addons/Test_Character_01/A3_headgear_NVGslot.p3d
+  import   0.01  export   0.02  Addons/Test_Character_01/A3_headgear_example.p3d
+  import   0.00  export   0.00  Addons/Test_Character_01/A3_headgear_template.p3d
+  import   0.06  export   0.12  Addons/Test_Character_01/A3_vest_example.p3d
+  import   0.00  export   0.01  Addons/Test_Character_01/A3_vest_template.p3d
+  import   0.00  export   0.00  Addons/Test_Heli_01/Main_Rotor_F.p3d
+  import   0.00  export   0.00  Addons/Test_Heli_01/Tail_Rotor_F.p3d
+  import   0.52  export   0.75  Addons/Test_Heli_01/Test_Heli_01.p3d
+  import   0.04  export   0.11  Addons/Test_Heli_01/Test_Heli_01_Wreck.p3d
+  import   0.16  export   0.31  Addons/Test_House_01/Test_House_01_F.p3d
+  import   0.30  export   0.48  Addons/Test_House_01/Test_House_01_dam_F.p3d
+  import   0.08  export   0.18  Addons/Test_House_01/Test_House_01_ruins_F.p3d
+  import   0.01  export   0.02  Addons/Test_Lamp_01/Test_lamp_01_F.p3d
+  import   0.01  export   0.01  Addons/Test_Lamp_01/Test_lamp_01_off_F.p3d
+  import   0.01  export   0.02  Addons/Test_Plane_01/Ejection_Seat_01.p3d
+  import   1.02  export   1.66  Addons/Test_Plane_01/Test_Plane_01.p3d
+  import   0.02  export   0.08  Addons/Test_Plane_01/Test_Plane_01_Wreck.p3d
+  import   0.02  export   0.04  Addons/Test_Plane_01/Test_Plane_01_canopy_F.p3d
+  import   0.01  export   0.01  Addons/Test_Plane_01/Test_Plane_01_ejection_seat.p3d
+  import   0.11  export   0.17  Addons/Test_Plant_F/t_PinusP3s_F.p3d
+  import   0.09  export   0.18  Addons/Test_Tank_01/Test_Tank_01.p3d
+  import   0.02  export   0.04  Addons/Test_Tank_01/Test_Tank_01_Wreck.p3d
+  import   0.01  export   0.01  Addons/Test_Weapon_01/test_bipod_01_F.p3d
+  import   0.02  export   0.04  Addons/Test_Weapon_01/test_weapon_01_F.p3d
+  import   0.02  export   0.04  Addons/Test_scope3D_01/Test_scope3D_01.p3d
+files with an import or export over 10 s: 0
+total import 6.5 s, total export 9.9 s
