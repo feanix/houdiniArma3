@@ -1141,8 +1141,9 @@ Pure Python (no `hou`), in `tests/`; each names what it catches.
 - `sort_lods`: **resolved**. `Arma 3 release` turns it on (A3OB always sorts LODs, `io/export_p3d.py:716`); `Lossless`
   stays off. Built in #21.
 - A3OB generates components for all 14 `lod_geometries` types (`utilities/data.py:132-147`, used at `io/export_p3d.py:295`);
-  the port's `selections.GEOMETRY_TYPES = (6, 7, 8)` covers only three. **Resolved as a follow-up task after #21**, not
-  part of it; noted because the renumber rule above is written for all LOD types.
+  the port covered only three. **Resolved in #22**: `selections.AUTO_COMPONENT_TYPES` is the 14 types. Only
+  auto-components use it; the validator rules and the mass warning keep their own sets (Geometry, Geometry Buoyancy,
+  Geometry PhysX, plus Underground for T2-CONVEX and T2-COMP).
 - The two `propeller` aliases of §18.3: **kept** (D19). English to Czech on export is confirmed.
 
 ## Resolved (D7-D9)

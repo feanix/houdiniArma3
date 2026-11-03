@@ -11,7 +11,7 @@ import os
 import tempfile
 import unittest
 
-from tests.hou_support import HAS_HOU, REPO_ROOT, hou
+from tests.hou_support import HAS_HOU, REPO_ROOT, hou, install_all_assets
 
 Result = collections.namedtuple("Result", "errors warnings messages")
 
@@ -21,15 +21,10 @@ _installed = False
 def install_assets() -> None:
     """Install every generated asset of ``houdini/otls`` into this session (once)."""
     global _installed
-    # Other tests install and uninstall the same files, so look at the session, not only at the flag.
-    category = hou.sopNodeTypeCategory()
-    if _installed and all(hou.nodeType(category, "a3ob_" + kind) is not None
-                          for kind in ("p3d_import", "assemble_lods", "extract_lod", "p3d_export")):
+    if _installed:
         return
-    otls = os.path.join(REPO_ROOT, "houdini", "otls")
-    for name in sorted(os.listdir(otls)):
-        if name.endswith(".hda"):
-            hou.hda.installFile(os.path.join(otls, name).replace("\\", "/"))
+    # hou_support owns installs; this holds the files for the whole run, so other modules cannot uninstall them.
+    install_all_assets()
     _installed = True
 
 

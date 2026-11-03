@@ -18,7 +18,7 @@ from a3ob_houdini.errors import UserError
 from a3ob_houdini.nodes import extract_lod
 from a3ob_houdini.params import NodeSpec, Parm
 
-from tests.hou_support import FIXTURES, HAS_HOU, REPO_ROOT, hou
+from tests.hou_support import FIXTURES, HAS_HOU, REPO_ROOT, hou, install_hdas_for_class, uninstall_hdas
 
 OTLS_DIR = os.path.join(REPO_ROOT, "houdini", "otls")
 
@@ -109,18 +109,15 @@ class TestStaleCode(unittest.TestCase):
 class TestInHython(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.installed = []
-        for kind in ("extract_lod", "assemble_lods", "p3d_import"):
-            path = os.path.join(OTLS_DIR, hda_source.hda_folder_name(nodes.load(kind).SPEC))
-            hou.hda.installFile(path)
-            cls.installed.append(path)
+        paths = [os.path.join(OTLS_DIR, hda_source.hda_folder_name(nodes.load(kind).SPEC))
+                 for kind in ("extract_lod", "assemble_lods", "p3d_import")]
+        cls.installed = install_hdas_for_class(paths)  # only the files not installed already (#22)
         cls.container = hou.node("/obj").createNode("geo", "m3_polish_tests")
 
     @classmethod
     def tearDownClass(cls):
         cls.container.destroy()
-        for path in cls.installed:
-            hou.hda.uninstallFile(path)
+        uninstall_hdas(cls.installed)
 
     def cook(self, node):
         try:

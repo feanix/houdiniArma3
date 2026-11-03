@@ -25,6 +25,47 @@ SOURCE_KEY = "/obj/geo1/p3d_import1"
 _cache = {}
 
 
+OTLS_DIR = os.path.join(REPO_ROOT, "houdini", "otls")
+
+# The one owner of HDA installs for tests (#22). Each file has a count of the test classes that want it. The file is
+# installed on the first request and uninstalled when the last holder lets go, so no module can take away a file
+# another module still needs, whatever order the modules run in.
+_holders = {}
+
+
+def _key(path):
+    return os.path.normcase(os.path.abspath(path))
+
+
+def install_hdas_for_class(paths):
+    """Hold HDA files for a test class (installing those not yet loaded). Pass the result to ``uninstall_hdas``."""
+    held = []
+    for path in paths:
+        path = path.replace("\\", "/")
+        key = _key(path)
+        if not _holders.get(key):
+            hou.hda.installFile(path)
+        _holders[key] = _holders.get(key, 0) + 1
+        held.append(path)
+    return held
+
+
+def uninstall_hdas(paths):
+    """Let go of files held by ``install_hdas_for_class``. A file is uninstalled only when nobody else holds it."""
+    for path in paths:
+        key = _key(path)
+        _holders[key] = _holders.get(key, 1) - 1
+        if _holders[key] <= 0:
+            hou.hda.uninstallFile(path)
+            _holders.pop(key, None)
+
+
+def install_all_assets():
+    """Hold every generated asset of ``houdini/otls`` for the rest of the run (never released)."""
+    names = sorted(name for name in os.listdir(OTLS_DIR) if name.endswith(".hda"))
+    install_hdas_for_class([os.path.join(OTLS_DIR, name) for name in names])
+
+
 def read_fixture(name):
     """The M1 model of a fixture (not cached: tests may edit it)."""
     return p3d.read_p3d_file(os.path.join(FIXTURES, name), strict=False)
