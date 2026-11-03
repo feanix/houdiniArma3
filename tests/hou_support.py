@@ -17,6 +17,11 @@ except ImportError:
     hou = None
     HAS_HOU = False
 
+# A new P3D Export node starts from the active preset in the user's settings file (D26). Point the tests at a file
+# that does not exist, so the owner's own settings never change what a test sees. A test that wants a file sets it.
+if "A3OB_SETTINGS" not in os.environ:
+    os.environ["A3OB_SETTINGS"] = os.path.join(os.path.dirname(os.path.abspath(__file__)), "no_such_settings.json")
+
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIXTURES = os.path.join(REPO_ROOT, "tests", "fixtures", "p3d")
 FIXTURE_NAMES = ("sample_1_character.p3d", "sample_2_crate.p3d")

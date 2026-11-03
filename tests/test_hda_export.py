@@ -57,6 +57,8 @@ class TestExportAssets(unittest.TestCase):
         validate = types["a3ob_validate"]
         self.assertEqual(validate["label"], "Validate")
         self.assertEqual(validate["inputs"], [1, 1])
+        # The tabs are folder templates (Houdini names the later tabs of a row itself): leave them out.
+        validate["parms"] = [name for name in validate["parms"] if not name.startswith("tab_")]
         self.assertEqual(validate["parms"][:4], ["errorlevel", "strict", "dupes", "maxmessages"])
         self.assertEqual(len(validate["parms"]), 4 + 1 + 20)
         self.assertEqual(validate["pythoncook"], "import a3ob_houdini.entry as e; e.cook('validate', hou.pwd())")
@@ -64,7 +66,8 @@ class TestExportAssets(unittest.TestCase):
         export = types["a3ob_p3d_export"]
         self.assertEqual(export["label"], "P3D Export")
         self.assertEqual(export["inputs"], [1, 1])
-        self.assertEqual(export["parms"][:3], ["file", "save", "check"])
+        export["parms"] = [name for name in export["parms"] if not name.startswith("tab_")]
+        self.assertEqual(export["parms"][:4], ["file", "save", "backup", "check"])
         for name in ("errorlevel", "strict", "dupes", "maxmessages", "selmask", "lowercase", "relpaths", "projectroot",
                      "sortsections", "sortlods", "autocomponents", "backup", "typerules", "t2tri"):
             self.assertIn(name, export["parms"])

@@ -30,6 +30,7 @@
 <h1>P3D Export</h1>
 <p class="lead">Checks a P3D geometry or a LOD geometry like Validate and writes it as a .p3d file when Save to Disk is pressed. The output is the input.</p>
 <p>This node is the end of a network. It checks the geometry the way Validate does and, when you press Save to Disk, writes a .p3d file you can use in Arma. The output is the same as the input, so you can keep working after it.</p>
+<p>The options are in tabs. A new node starts from the preset that is active in the Project root and presets tool. In Selection Mask, type group names separated by spaces; a name may use * and ?, and ^ before a name leaves it out. The menu lists the input&#x27;s point groups: picking one adds it to the mask or removes it. The info line on the node says how many selections will be written.</p>
 <table class="facts">
 <tr><th>Houdini name</th><td><code>a3ob_p3d_export</code></td></tr>
 <tr><th>Where to find it</th><td>Tab menu, A3OB, P3D Export</td></tr>
@@ -57,6 +58,18 @@
 <dt>Type</dt><dd>Button</dd>
 </dl>
 </section>
+<section class="parm" id="backup">
+<h3>Keep a .bak <code>backup</code></h3>
+<p>When a file is overwritten, keep the old one as .bak.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>Off</dd>
+</dl>
+</section>
+<section class="folder" id="tab_checking">
+<h3>Error Checking <code>tab_checking</code></h3>
+<p>These parameters are in the Error Checking tab.</p>
+<div class="folder-body">
 <section class="parm" id="check">
 <h3>Check <code>check</code></h3>
 <dl>
@@ -112,9 +125,15 @@
 <dt>Allowed</dt><dd>At least 1; no upper limit</dd>
 </dl>
 </section>
+</div>
+</section>
+<section class="folder" id="tab_presets">
+<h3>Presets <code>tab_presets</code></h3>
+<p>These parameters are in the Presets tab.</p>
+<div class="folder-body">
 <section class="parm" id="preset">
 <h3>Preset <code>preset</code></h3>
-<p>A saved set of the options below: Lossless, Arma 3 release, or one you saved with the Project root and presets shelf tool. Pick one and press Apply. Choosing does not change anything by itself.</p>
+<p>A saved set of the options below: Lossless, Arma 3 release, or one you saved with the Project root and presets shelf tool. A new node starts with the preset that is active there. Pick one and press Apply. Choosing does not change anything by itself.</p>
 <dl>
 <dt>Type</dt><dd>Menu</dd>
 <dt>Default</dt><dd>Lossless</dd>
@@ -128,22 +147,12 @@
 <dt>Type</dt><dd>Button</dd>
 </dl>
 </section>
-<section class="parm" id="selmask">
-<h3>Selection Mask <code>selmask</code></h3>
-<p>Which point groups become selections: names separated by spaces, * and ? match, ^ before a name leaves it out. Groups named in a3ob_tagg_order are always selections.</p>
-<dl>
-<dt>Type</dt><dd>Text</dd>
-<dt>Default</dt><dd>* ^__*</dd>
-</dl>
+</div>
 </section>
-<section class="parm" id="lowercase">
-<h3>Lowercase <code>lowercase</code></h3>
-<p>Write texture and material paths, selection names (so proxy paths too) and property names and values in lower case, as Object Builder does. Warns when two names become equal.</p>
-<dl>
-<dt>Type</dt><dd>On or off</dd>
-<dt>Default</dt><dd>Off</dd>
-</dl>
-</section>
+<section class="folder" id="tab_paths">
+<h3>Paths &amp; Names <code>tab_paths</code></h3>
+<p>These parameters are in the Paths &amp; Names tab.</p>
+<div class="folder-body">
 <section class="parm" id="relpaths">
 <h3>Relative Paths <code>relpaths</code></h3>
 <p>Strip the project root (or at least the drive letter) from texture, material and proxy paths.</p>
@@ -154,39 +163,15 @@
 </section>
 <section class="parm" id="projectroot">
 <h3>Project Root <code>projectroot</code></h3>
-<p>Used with Relative Paths. Empty means the root from the shelf settings, or P:\ without one.</p>
+<p>The folder that Relative Paths cuts off. Empty means the root from the shelf settings, or P:\ without one.</p>
 <dl>
-<dt>Type</dt><dd>Text</dd>
+<dt>Type</dt><dd>Folder path</dd>
 <dt>Default</dt><dd>(empty)</dd>
 </dl>
 </section>
-<section class="parm" id="sortsections">
-<h3>Sort Sections <code>sortsections</code></h3>
-<p>Order the faces by texture and material, as Object Builder does. This changes the face order.</p>
-<dl>
-<dt>Type</dt><dd>On or off</dd>
-<dt>Default</dt><dd>Off</dd>
-</dl>
-</section>
-<section class="parm" id="sortlods">
-<h3>Sort LODs <code>sortlods</code></h3>
-<p>Write the LODs sorted by resolution. Off keeps your order.</p>
-<dl>
-<dt>Type</dt><dd>On or off</dd>
-<dt>Default</dt><dd>Off</dd>
-</dl>
-</section>
-<section class="parm" id="autocomponents">
-<h3>Auto-Components <code>autocomponents</code></h3>
-<p>Geometry LODs without a component selection get one per connected piece.</p>
-<dl>
-<dt>Type</dt><dd>On or off</dd>
-<dt>Default</dt><dd>Off</dd>
-</dl>
-</section>
-<section class="parm" id="renumber">
-<h3>Renumber Components <code>renumber</code></h3>
-<p>Rename every selection that starts with component and digits to component01, component02, ... in the order they are written, per LOD. The name is lowercased and any text after the digits is lost.</p>
+<section class="parm" id="lowercase">
+<h3>Lowercase <code>lowercase</code></h3>
+<p>Write texture and material paths, selection names (so proxy paths too) and property names and values in lower case, as Object Builder does. Warns when two names become equal.</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>Off</dd>
@@ -200,6 +185,59 @@
 <dt>Default</dt><dd>Off</dd>
 </dl>
 </section>
+<section class="parm" id="renumber">
+<h3>Renumber Components <code>renumber</code></h3>
+<p>Rename every selection that starts with component and digits to component01, component02, ... in the order they are written, per LOD. The name is lowercased and any text after the digits is lost.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>Off</dd>
+</dl>
+</section>
+</div>
+</section>
+<section class="folder" id="tab_selections">
+<h3>Selections <code>tab_selections</code></h3>
+<p>These parameters are in the Selections tab.</p>
+<div class="folder-body">
+<section class="parm" id="selmask">
+<h3>Selection Mask <code>selmask</code></h3>
+<p>Which point groups become selections in the file. Leave as is to write all of them except Houdini&#x27;s internal ones (names starting with __).</p>
+<dl>
+<dt>Type</dt><dd>Menu (pick several; each pick adds or removes an entry in the text)</dd>
+<dt>Default</dt><dd>* ^__*</dd>
+</dl>
+<p>The choices are made when you open the menu, from the geometry or the settings.</p>
+</section>
+<section class="parm" id="autocomponents">
+<h3>Auto-Components <code>autocomponents</code></h3>
+<p>Geometry LODs without a component selection get one per connected piece.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>Off</dd>
+</dl>
+</section>
+</div>
+</section>
+<section class="folder" id="tab_layout">
+<h3>File Layout <code>tab_layout</code></h3>
+<p>These parameters are in the File Layout tab.</p>
+<div class="folder-body">
+<section class="parm" id="sortlods">
+<h3>Sort LODs <code>sortlods</code></h3>
+<p>Write the LODs sorted by resolution. Off keeps your order.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>Off</dd>
+</dl>
+</section>
+<section class="parm" id="sortsections">
+<h3>Sort Sections <code>sortsections</code></h3>
+<p>Order the faces by texture and material, as Object Builder does. This changes the face order.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>Off</dd>
+</dl>
+</section>
 <section class="parm" id="dropuvs">
 <h3>Drop UVs <code>dropuvs</code></h3>
 <p>LODs of a type that does not use UVs (Geometry, Memory, Roadway, the fire and view geometry types) are written without UV sets and with zero face UVs, as Object Builder does. The geometry on the node is not changed.</p>
@@ -208,14 +246,12 @@
 <dt>Default</dt><dd>Off</dd>
 </dl>
 </section>
-<section class="parm" id="backup">
-<h3>Keep a .bak <code>backup</code></h3>
-<p>When a file is overwritten, keep the old one as .bak.</p>
-<dl>
-<dt>Type</dt><dd>On or off</dd>
-<dt>Default</dt><dd>Off</dd>
-</dl>
+</div>
 </section>
+<section class="folder" id="tab_rules">
+<h3>LOD Rules <code>tab_rules</code></h3>
+<p>These parameters are in the LOD Rules tab.</p>
+<div class="folder-body">
 <section class="parm" id="typerules">
 <h3>Check LOD-Type Rules <code>typerules</code></h3>
 <p>Warn about what Object Builder&#x27;s validator would: rules for geometry, shadow, roadway and other LOD types. Each rule has its own switch below.</p>
@@ -225,164 +261,166 @@
 </dl>
 </section>
 <section class="parm" id="t2uv2">
-<h3>T2-UV2: At most 2 UV sets <code>t2uv2</code></h3>
-<p>The LOD has no more than 2 UV sets.</p>
+<h3>At most 2 UV sets <code>t2uv2</code></h3>
+<p>The LOD has no more than 2 UV sets. (Rule T2-UV2.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
 </dl>
 </section>
 <section class="parm" id="t2contig">
-<h3>T2-CONTIG: Contiguous mesh <code>t2contig</code></h3>
-<p>Geometry, shadow and underground LODs: no flipped polygons (shared edges run in opposite directions).</p>
+<h3>Contiguous mesh <code>t2contig</code></h3>
+<p>Geometry, shadow and underground LODs: no flipped polygons (shared edges run in opposite directions). (Rule T2-CONTIG.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
 </dl>
 </section>
 <section class="parm" id="t2tri">
-<h3>T2-TRI: Triangulated <code>t2tri</code></h3>
-<p>Underground LODs: every polygon is a triangle. Geometry and shadow LODs: triangles and convex quads.</p>
+<h3>Triangulated <code>t2tri</code></h3>
+<p>Underground LODs: every polygon is a triangle. Geometry and shadow LODs: triangles and convex quads. (Rule T2-TRI.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
 </dl>
 </section>
 <section class="parm" id="t2convex">
-<h3>T2-CONVEX: Convex mesh <code>t2convex</code></h3>
-<p>Geometry and underground LODs: every shared edge is convex or flat.</p>
+<h3>Convex mesh <code>t2convex</code></h3>
+<p>Geometry and underground LODs: every shared edge is convex or flat. (Rule T2-CONVEX.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
 </dl>
 </section>
 <section class="parm" id="t2comp">
-<h3>T2-COMP: Component selections <code>t2comp</code></h3>
-<p>Geometry and underground LODs: a group called component01, component02, ... exists.</p>
+<h3>Component selections <code>t2comp</code></h3>
+<p>Geometry and underground LODs: a group called component01, component02, ... exists. (Rule T2-COMP.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
 </dl>
 </section>
 <section class="parm" id="t2mass">
-<h3>T2-MASS: Mass is set <code>t2mass</code></h3>
-<p>Geometry LOD: a note (not a warning) when the points have a total mass below 0.001.</p>
+<h3>Mass is set <code>t2mass</code></h3>
+<p>Geometry LOD: a note (not a warning) when the points have a total mass below 0.001. (Rule T2-MASS.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
 </dl>
 </section>
 <section class="parm" id="t2massall">
-<h3>T2-MASSALL: Every point has mass <code>t2massall</code></h3>
-<p>Geometry LOD: every point has a mass of at least 0.001.</p>
+<h3>Every point has mass <code>t2massall</code></h3>
+<p>Geometry LOD: every point has a mass of at least 0.001. (Rule T2-MASSALL.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
 </dl>
 </section>
 <section class="parm" id="t2sharp">
-<h3>T2-SHARP: No smooth edges <code>t2sharp</code></h3>
-<p>Shadow and underground LODs: with smooth polygons, every shared edge is in a3ob_sharp.</p>
+<h3>No smooth edges <code>t2sharp</code></h3>
+<p>Shadow and underground LODs: with smooth polygons, every shared edge is in a3ob_sharp. (Rule T2-SHARP.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
 </dl>
 </section>
 <section class="parm" id="t2nomat">
-<h3>T2-NOMAT: No materials <code>t2nomat</code></h3>
-<p>Underground LODs: no polygon has a texture or material. Shadow LODs may have them.</p>
+<h3>No materials <code>t2nomat</code></h3>
+<p>Underground LODs: no polygon has a texture or material. Shadow LODs may have them. (Rule T2-NOMAT.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
 </dl>
 </section>
 <section class="parm" id="t2shadowres">
-<h3>T2-SHADOWRES: Conventional shadow resolution <code>t2shadowres</code></h3>
-<p>Shadow LODs: the resolution is 0, 10, 1000, 1010 or 1020. Off by default.</p>
+<h3>Conventional shadow resolution <code>t2shadowres</code></h3>
+<p>Shadow LODs: the resolution is 0, 10, 1000, 1010 or 1020. Off by default. (Rule T2-SHADOWRES.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>Off</dd>
 </dl>
 </section>
 <section class="parm" id="t2shadowoff">
-<h3>T2-SHADOWOFF: Shadow not disabled <code>t2shadowoff</code></h3>
-<p>Shadow LODs: no LODNoShadow = 1 property. Off by default.</p>
+<h3>Shadow not disabled <code>t2shadowoff</code></h3>
+<p>Shadow LODs: no LODNoShadow = 1 property. Off by default. (Rule T2-SHADOWOFF.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>Off</dd>
 </dl>
 </section>
 <section class="parm" id="t2pcedge">
-<h3>T2-PC-EDGE: No edges in point clouds <code>t2pcedge</code></h3>
-<p>Memory, land contact and hit-point LODs: no 2-point primitives.</p>
+<h3>No edges in point clouds <code>t2pcedge</code></h3>
+<p>Memory, land contact and hit-point LODs: no 2-point primitives. (Rule T2-PC-EDGE.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
 </dl>
 </section>
 <section class="parm" id="t2pcface">
-<h3>T2-PC-FACE: No faces in point clouds <code>t2pcface</code></h3>
-<p>Memory, land contact and hit-point LODs: no polygons.</p>
+<h3>No faces in point clouds <code>t2pcface</code></h3>
+<p>Memory, land contact and hit-point LODs: no polygons. (Rule T2-PC-FACE.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
 </dl>
 </section>
 <section class="parm" id="t2rwfaces">
-<h3>T2-RW-FACES: Has polygons <code>t2rwfaces</code></h3>
-<p>Roadway, ground layer and paths LODs: at least one polygon.</p>
+<h3>Has polygons <code>t2rwfaces</code></h3>
+<p>Roadway, ground layer and paths LODs: at least one polygon. (Rule T2-RW-FACES.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
 </dl>
 </section>
 <section class="parm" id="t2rwlimit">
-<h3>T2-RW-LIMIT: Roadway point limit <code>t2rwlimit</code></h3>
-<p>Roadway LODs: at most 255 points.</p>
+<h3>Roadway point limit <code>t2rwlimit</code></h3>
+<p>Roadway LODs: at most 255 points. (Rule T2-RW-LIMIT.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
 </dl>
 </section>
 <section class="parm" id="t2rwsound">
-<h3>T2-RW-SOUND: Roadway sound textures <code>t2rwsound</code></h3>
-<p>Roadway LODs: every polygon has a texture (the sound).</p>
+<h3>Roadway sound textures <code>t2rwsound</code></h3>
+<p>Roadway LODs: every polygon has a texture (the sound). (Rule T2-RW-SOUND.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
 </dl>
 </section>
 <section class="parm" id="t2gluv">
-<h3>T2-GL-UV: Ground layer UV set <code>t2gluv</code></h3>
-<p>Ground layer LODs: exactly one UV set.</p>
+<h3>Ground layer UV set <code>t2gluv</code></h3>
+<p>Ground layer LODs: exactly one UV set. (Rule T2-GL-UV.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
 </dl>
 </section>
 <section class="parm" id="t2gluvvalues">
-<h3>T2-GL-UVVALUES: Ground layer UV values <code>t2gluvvalues</code></h3>
-<p>Ground layer LODs: every UV is (0, 0), (1, 0), (1, 1) or (1, -1).</p>
+<h3>Ground layer UV values <code>t2gluvvalues</code></h3>
+<p>Ground layer LODs: every UV is (0, 0), (1, 0), (1, 1) or (1, -1). (Rule T2-GL-UVVALUES.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
 </dl>
 </section>
 <section class="parm" id="t2pathentry">
-<h3>T2-PATH-ENTRY: Path entry points <code>t2pathentry</code></h3>
-<p>Paths LODs: a group called in01, in02, ... exists.</p>
+<h3>Path entry points <code>t2pathentry</code></h3>
+<p>Paths LODs: a group called in01, in02, ... exists. (Rule T2-PATH-ENTRY.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
 </dl>
 </section>
 <section class="parm" id="t2pathpos">
-<h3>T2-PATH-POS: Path position points <code>t2pathpos</code></h3>
-<p>Paths LODs: the same test as the entry rule (A3OB&#x27;s own test, see spec 17.1.1).</p>
+<h3>Path position points <code>t2pathpos</code></h3>
+<p>Paths LODs: the same test as the entry rule (as in Object Builder, which tests entry points twice). (Rule T2-PATH-POS.)</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
 </dl>
+</section>
+</div>
 </section>
 </main>
 <footer class="site">

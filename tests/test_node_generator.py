@@ -263,7 +263,8 @@ class TestWikiParsing(unittest.TestCase):
     def test_the_selection_mask_default_renders_as_written(self):
         body = self.parse(nodes.load("p3d_export").SPEC)
         paragraphs = [self.plain(block.get("text")) for block in body if block.get("type") == "para"]
-        self.assertIn("Type: Text. Default: * ^__*.", paragraphs)
+        self.assertIn("Type: Menu (pick several; each pick adds or removes an entry in the text). Default: * ^__*.",
+                      paragraphs)
 
     def test_a_label_with_an_inner_colon_is_one_term(self):
         spec = NodeSpec("x", "X", "s", parms=(Parm("r", "T2-UV2: At most 2 UV sets", "toggle", False, "Rule."),))

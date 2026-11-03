@@ -20,7 +20,7 @@ from ..p3d_export.type_rules import RULES
 from ..params import Parm
 
 __all__ = [
-    "LEVELS", "level_parms", "rule_parms", "rule_parm_name", "options_from", "apply_policy", "is_blocked", "Checked",
+    "LEVELS", "level_parms", "rule_parms", "checking_tab", "rules_tab", "rule_parm_name", "options_from", "apply_policy", "is_blocked", "Checked",
     "run_checks", "input_geometry", "DEFAULT_MAX_MESSAGES",
 ]
 
@@ -58,8 +58,20 @@ def rule_parms() -> Tuple[Parm, ...]:
                   "Warn about what Object Builder's validator would: rules for geometry, shadow, roadway and other "
                   "LOD types. Each rule has its own switch below.")]
     for rule in RULES:
-        parms.append(Parm(rule_parm_name(rule.id), "%s: %s" % (rule.id, rule.label), "toggle", rule.default_on, rule.help))
+        # The rule id is not in the label; it ends the tooltip, and stays in the messages, so it can be searched for.
+        parms.append(Parm(rule_parm_name(rule.id), rule.label, "toggle", rule.default_on,
+                          "%s (Rule %s.)" % (rule.help, rule.id)))
     return tuple(parms)
+
+
+def checking_tab(*first: Parm) -> Parm:
+    """The "Error Checking" tab: ``first`` (P3D Export's Check menu), then the level parameters. Both nodes use it."""
+    return Parm("tab_checking", "Error Checking", "folder", folder_type="tabs", children=tuple(first) + level_parms())
+
+
+def rules_tab() -> Parm:
+    """The "LOD Rules" tab: the master switch and one switch per rule. Both nodes use it."""
+    return Parm("tab_rules", "LOD Rules", "folder", folder_type="tabs", children=rule_parms())
 
 
 def options_from(values: Dict[str, object]) -> ExportOptions:

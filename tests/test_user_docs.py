@@ -178,7 +178,8 @@ class TestReferenceCoverage(unittest.TestCase):
 
 def all_labels(parms):
     for parm in parms:
-        yield parm.label
+        if parm.kind != "folder":  # a folder is a heading in the Help, not a "label:" entry
+            yield parm.label
         for label in all_labels(parm.children):
             yield label
 

@@ -15,10 +15,11 @@ The entry functions for the Validate and P3D Export nodes:
 of ``data`` and runs under plain Python, so the decisions can be tested there.
 """
 
-from dataclasses import dataclass
-from typing import Optional, Sequence
+from dataclasses import dataclass, field
+from typing import List, Optional, Sequence, Tuple
 
 from a3ob_core.p3d import P3DModel
+from a3ob_core.p3d.model import SelectionTagg
 
 from .. import messages
 from .data import Collection
@@ -45,6 +46,8 @@ class BuildResult:
 
     data: Optional[bytes] = None
     lod_count: int = 0
+    #: ``(LOD name, selections written)`` for each LOD, when the file was built.
+    selection_counts: List[Tuple[str, int]] = field(default_factory=list)
 
 
 def run(geometries: Sequence, options: Optional[ExportOptions], report: messages.Report) -> BuildResult:
@@ -57,6 +60,8 @@ def run(geometries: Sequence, options: Optional[ExportOptions], report: messages
     model: Optional[P3DModel] = build(collection, options, report)
     if model is not None:
         result.data = to_bytes(model, report)
+        result.selection_counts = [(lod.name, sum(1 for tagg in lod.taggs if isinstance(tagg, SelectionTagg)))
+                                   for lod in model.lods]
     return result
 
 
