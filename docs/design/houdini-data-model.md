@@ -1022,6 +1022,8 @@ from the table at `utilities/data.py:482-642`.
    (fix: "Rename one of them"). The comparison is case-insensitive, like the lowercase collision warning of D14 Q-12
    (§5 Paths, §17.1); #21 adds the row to the §17.1 warning list beside the lowercase one, after #19's edits to that
    list are merged.
+   Besides warnings, one info line per LOD that translated anything: `LOD 'Memory': translated 4 selection names to
+   Czech` (added in #21; silent when nothing changed, so L0 exports stay quiet).
 3. **Typos in the table (kept, one addition).** Two English values are misspelled in A3OB: `properller_a_axis` and
    `properller_b_axis` (`utilities/data.py:627-628`, Czech keys `osavrtulea` and `osavrtuleb`). Rule: keep the A3OB
    spelling (an A3OB user's file has it), and **add two inverse-only aliases** `propeller_a_axis` and `propeller_b_axis`

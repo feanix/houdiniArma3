@@ -26,6 +26,7 @@ __all__ = ["UV_LOD_TYPES", "keeps_uvs", "renumber_components", "translate_names"
 
 _COMPONENT = re.compile(r"component\d+", re.IGNORECASE)
 
+
 def _live_selections(items: Sequence[Item]) -> List[Item]:
     """Selections made from the Houdini data. Blobs (opaque TAGGs) are never renamed."""
     return [item for item in items if not item.blob and isinstance(item.tagg, p3d.SelectionTagg)
