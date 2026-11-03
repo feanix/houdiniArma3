@@ -7,8 +7,9 @@ The shelf tool is a thin layer (``selection_browser_dialog``) on top of these fu
 exist in hython. Everything here works on a node or a ``hou.Geometry``, so it can be tested headless.
 
 A3OB selections are point groups with encoded names (spec 7.3). ``list_groups`` shows the decoded name next to the
-encoded one. The three actions add one SOP node after the chosen node: Group, Group Delete or Group Rename. They never
-touch cooked geometry.
+encoded one. The three actions insert one SOP node after the chosen node: Group, Group Delete or Group Rename. The nodes that
+read the chosen node read the new one instead, so the export sees the change (D21). They never touch cooked
+geometry.
 """
 
 from dataclasses import dataclass
@@ -24,6 +25,10 @@ __all__ = ["GroupEntry", "list_groups", "describe", "has_packed_lods", "create_s
            "rename_selection"]
 
 TOOL = "Selection browser"
+
+#: One row in the network editor: the gap between stacked nodes. The New P3D LAYOUT steps between stacked nodes are
+#: 0.77, 0.78, 0.82 and 0.95; 0.8 sits in the middle.
+ROW_STEP = 0.8
 
 #: Group SOP "entity" menu: 0 primitive, 1 point. The Group Delete and Group Rename "grouptype" menus: 1 is points.
 _GROUP_ENTITY_POINT = 1
@@ -102,11 +107,47 @@ def _check_name(name: str) -> str:
     return names.encode_group_name(name)
 
 
+def _downstream(node) -> list:
+    """Every node reached from ``node`` through outputs, ``node`` itself left out."""
+    found, todo = {}, list(node.outputs())
+    while todo:
+        out = todo.pop()
+        if out.path() not in found and out.path() != node.path():
+            found[out.path()] = out
+            todo.extend(out.outputs())
+    return list(found.values())
+
+
 def _add_after(node, type_name: str, label: str):
-    new = node.parent().createNode(type_name, "a3ob_" + label)
+    """Create a node and splice it in after ``node`` (D21): the new node reads ``node``, and every node that read
+    ``node`` (at its own input index) reads the new node. Display and render flags move to the new node. The new
+    node sits one row below ``node``; everything downstream moves down one row. Without outputs the new node is a
+    plain branch below ``node``."""
+    network = node.parent()
+    connections = [(c.outputNode(), c.inputIndex()) for c in node.outputConnections()]
+    moved = _downstream(node)
+    display, render = _flag(node, "isDisplayFlagSet"), _flag(node, "isRenderFlagSet")
+    new = network.createNode(type_name, "a3ob_" + label)
     new.setFirstInput(node)
-    new.moveToGoodPosition()
+    for out, index in connections:
+        out.setInput(index, new)
+    if display:
+        new.setDisplayFlag(True)
+    if render:
+        new.setRenderFlag(True)
+    # Positions last: wiring can nudge a node (#23).
+    import hou
+    here = node.position()
+    for out in moved:
+        position = out.position()
+        out.setPosition(hou.Vector2(position[0], position[1] - ROW_STEP))
+    new.setPosition(hou.Vector2(here[0], here[1] - ROW_STEP))
     return new
+
+
+def _flag(node, getter: str) -> bool:
+    check = getattr(node, getter, None)
+    return bool(check()) if check else False
 
 
 def create_selection(node, name: str, expression: str = ""):

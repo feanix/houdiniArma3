@@ -10,6 +10,7 @@ import unittest
 
 from tests import hou_support
 from tests.hou_support import FIXTURE_NAMES, HAS_HOU
+from tests.mass_proxy_support import NodeTestCase
 
 if HAS_HOU:
     import hou
@@ -105,6 +106,7 @@ class TestActions(unittest.TestCase):
             new.cook(force=True)
             self.assertEqual(new.errors(), ())
             self.assertEqual(self.groups(new), {names.encode_group_name(name): [0, 1, 2]})
+            new.destroy()  # the next one would be spliced in front of this one (D21)
 
     def test_create_with_an_empty_expression_takes_all_points(self):
         new = browser.create_selection(self.box, "all")
@@ -148,6 +150,121 @@ class TestActions(unittest.TestCase):
         occupied.cook(force=True)
         with self.assertRaises(UserError):
             browser.rename_selection(occupied, "head", "other")
+
+
+@unittest.skipUnless(HAS_HOU, "needs hou (run under hython)")
+class TestInlineInsert(NodeTestCase):
+    """D21: the new node is spliced in, so the nodes after the chosen one read it and the export sees it.
+
+    Purpose: catch a dead-end branch (the export unchanged), a lost input index on a multi-input node, a lost
+    display flag, and overlapping or upward-pointing positions after the shift."""
+
+    def setUp(self):
+        super().setUp()
+        from a3ob_houdini import new_p3d
+        self.made = new_p3d.build_starter(self.network)
+        self.nodes = self.made.nodes
+
+    def memory_selections(self, path=None):
+        import os
+        import shutil
+        import tempfile
+        from a3ob_houdini.nodes import p3d_export
+        folder = tempfile.mkdtemp(prefix="a3ob_inline_")
+        self.addCleanup(shutil.rmtree, folder, True)
+        file = os.path.join(folder, "x.p3d").replace("\\", "/")
+        export = self.nodes["export"]
+        export.parm("file").set(file)
+        p3d_export.save(export)
+        model = p3d.read_p3d_file(file, strict=False)
+        lods = [lod for lod in model.lods if lod.lod_type == p3d.LodType.MEMORY]
+        self.assertEqual(len(lods), 1)
+        return sorted(t.name for t in lods[0].taggs if isinstance(t, p3d.SelectionTagg))
+
+    def pos(self, node):
+        p = node.position()
+        return p.x(), p.y()
+
+    def test_rename_reaches_the_export(self):
+        group, props = self.nodes["memory_group"], self.nodes["memory_props"]
+        self.assertEqual(self.memory_selections(), ["new_point"])
+        before = self.pos(props)
+        new = browser.rename_selection(group, "new_point", "eye")
+        self.assertEqual(props.inputs(), (new,))
+        self.assertEqual(new.inputs(), (group,))
+        self.assertEqual(group.outputs(), (new,))
+        self.assertEqual(self.memory_selections(), ["eye"])
+        self.assertEqual(self.pos(props)[0], before[0])
+        self.assertAlmostEqual(self.pos(props)[1], before[1] - browser.ROW_STEP, places=4)
+        self.assertAlmostEqual(self.pos(new)[1], self.pos(group)[1] - browser.ROW_STEP, places=4)
+        self.assertEqual(self.pos(new)[0], self.pos(group)[0])
+
+    def test_delete_and_create_reach_the_export(self):
+        group = self.nodes["memory_group"]
+        created = browser.create_selection(group, "second", "0")
+        self.assertEqual(self.nodes["memory_props"].inputs(), (created,))
+        self.assertEqual(self.memory_selections(), ["new_point", "second"])
+        deleted = browser.delete_selection(created, "new_point")
+        self.assertEqual(self.nodes["memory_props"].inputs(), (deleted,))
+        self.assertEqual(self.memory_selections(), ["second"])
+
+    def test_flags_move_to_the_new_node(self):
+        export = self.nodes["export"]
+        new = browser.create_selection(self.nodes["assemble"].inputs()[2].inputs()[0], "late")
+        self.assertTrue(export.isDisplayFlagSet())  # export was not the chosen node
+        self.assertFalse(new.isDisplayFlagSet())
+        head = self.made.network.createNode("box", "head")
+        head.setDisplayFlag(True)
+        tail = self.made.network.createNode("null", "tail2")
+        tail.setFirstInput(head)
+        spliced = browser.create_selection(head, "flagged")
+        self.assertTrue(spliced.isDisplayFlagSet())
+        self.assertFalse(head.isDisplayFlagSet())
+
+    def test_two_downstream_nodes_and_input_indices_are_rewired(self):
+        box = self.made.network.createNode("box", "split")
+        one = self.made.network.createNode("null", "one")
+        two = self.made.network.createNode("null", "two")
+        one.setFirstInput(box)
+        two.setFirstInput(box)
+        merge = self.made.network.createNode("merge", "merge_it")
+        merge.setInput(0, one)
+        merge.setInput(1, box)
+        new = browser.create_selection(box, "both")
+        self.assertEqual(one.inputs(), (new,))
+        self.assertEqual(two.inputs(), (new,))
+        self.assertEqual(merge.inputs(), (one, new))
+        assemble = self.nodes["assemble"]
+        indices = [c.inputIndex() for c in self.nodes["memory_props"].outputConnections()]
+        self.assertEqual(indices, [3])
+        browser.create_selection(self.nodes["memory_props"], "tail")
+        self.assertEqual(assemble.inputs()[3].type().name(), "group")
+        self.assertEqual([n.name() for n in assemble.inputs()[1:3]], ["res1_props", "geometry_props"])
+
+    def test_positions_stay_ordered_and_apart(self):
+        browser.create_selection(self.nodes["geometry_triangles"], "mid")
+        browser.rename_selection(self.nodes["geometry_components"], "component01", "renamed")
+        before = {n.name(): self.pos(n) for n in self.made.network.children()}
+        seen = set()
+        for node in self.made.network.children():
+            position = (round(self.pos(node)[0], 3), round(self.pos(node)[1], 3))
+            self.assertNotIn(position, seen, node.name())
+            seen.add(position)
+            for source in node.inputs():
+                if source is not None:
+                    self.assertLess(self.pos(node)[1], self.pos(source)[1], node.name())
+        self.assertEqual(before["res1_mesh"], (round(before["res1_mesh"][0], 10), before["res1_mesh"][1]))
+        # a node that is not downstream does not move
+        mesh = self.nodes["geometry_mesh"]
+        self.assertEqual(self.pos(mesh), (0.0, 0.0))
+
+    def test_new_p3d_layout_is_not_shifted_by_the_splice(self):
+        from a3ob_houdini import new_p3d
+        origin = self.pos(self.nodes["geometry_mesh"])
+        for key, (dx, dy) in new_p3d.LAYOUT.items():
+            x, y = self.pos(self.nodes[key])
+            self.assertAlmostEqual(x - origin[0], dx, delta=0.01)
+            self.assertAlmostEqual(y - origin[1], dy, delta=0.01)
 
 
 if __name__ == "__main__":
