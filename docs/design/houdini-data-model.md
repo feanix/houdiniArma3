@@ -787,6 +787,7 @@ Export options that change data (lowercase: texture and material paths, selectio
 | Any other M1 `check()` message (index out of range, proxy selection without a triangle) | warning (advisory) | §16 |
 | Flag values not on the LOD type's known list; `a3ob_mass` on a LOD that is not geometry-type (Geometry, Geometry Buoyancy, Geometry PhysX); degenerate proxy triangle | warning | §5, §10, §13.4 |
 | Lowercase option is on and two selection names, or two property names in one LOD, become equal (D14, Q-12) | warning | §5 Paths |
+| Czech names is on and two selection names in one LOD become equal (translation made at least one of them; both are still written, §18.3) | warning | §18.3 |
 | Assemble LODs: duplicate `a3ob_lod_signature` in the base or among the edited LODs | warning | §3.2 |
 | Tier 2: A3OB's per-LOD-type rules (rule ids below) | warning, one switch per rule, default on (D14, Q-3) | §17.1.1 |
 
@@ -880,9 +881,9 @@ HDAs are deferred (D3), so M3/M4 ship Python tools that need no `.hda`:
 
 ## 18. Revision 5: the three export options of D17 (renumber, Czech names, drop UVs)
 
-**Status: normative for task #21 (the build).** Owner decision D17: build all three as export options, off in the
+**Status: normative; built in task #21.** Owner decision D17: build all three as export options, off in the
 `Lossless` preset, on in `Arma 3 release` exactly where A3OB enables them by default. This section is the spec for
-them; nothing here is built yet. It replaces the one-line mentions in §8 (last paragraph) and §16 (last paragraph).
+them. It replaces the one-line mentions in §8 (last paragraph) and §16 (last paragraph).
 Surveys behind it: `docs/design/evidence/d17/d17_survey.py` (output in `d17_survey_out.txt`).
 
 **Source paths.** In this section, `file:line` is relative to `.reference/Arma3ObjectBuilder/Arma3ObjectBuilder/` (A3OB
@@ -899,12 +900,13 @@ v2.5.1 @ 9f2b8bc), as in the rest of the spec. A port path is written `port: pat
 | P3D Export parameter (ux-tools.md 5.9) | `renumber` | `czech` | `dropuvs` |
 | Preset JSON key | `renumber_components` | `czech_names` | `drop_uvs` |
 | `Lossless` | off | off | off |
-| `Arma 3 release` | **off** | **off** | **on** |
+| `Arma 3 release` | **off** | **off** | **on** (D19 also turns `sort_lods` on) |
 
 **Preset mapping (D17 "on where A3OB enables them by default").** A3OB turns exactly one of the three on by default:
 UV dropping, which it does unconditionally. Renumber and Czech translation are plain `BoolProperty`s with no `default`
 (`ui/import_export_p3d.py:298-310`), so they are off. So `Arma 3 release` is the existing four (lowercase, relative
-paths, sort sections, auto-components) **plus `drop_uvs`**, and both other options stay off in both built-in presets.
+paths, sort sections, auto-components) **plus `drop_uvs` and `sort_lods`** (D19), and both other options stay off in both
+built-in presets.
 (This reads D17 literally. The other reading, "all three on in the release preset", is not what A3OB does.)
 
 **Storage.**
@@ -1132,14 +1134,14 @@ Pure Python (no `hou`), in `tests/`; each names what it catches.
 | hou test (skips under CPython): the P3D Export node has the three parms, Apply fills them from `Arma 3 release`, a Lossless export is unchanged | node wiring |
 | Pipeline order: renumber then Czech then lowercase gives `component01`, not a table hit; with the lowercase option on, output equals the output with it off for all names these two options touch | step order |
 
-### 18.6 Open points for the owner or lead (none block #21)
+### 18.6 Open points (resolved by D19)
 
-- `sort_lods` is **off** in `Arma 3 release` today although A3OB always sorts LODs (`io/export_p3d.py:716`, ux-tools.md
-  5.9). D17 does not cover it, so this task leaves it.
+- `sort_lods`: **resolved**. `Arma 3 release` turns it on (A3OB always sorts LODs, `io/export_p3d.py:716`); `Lossless`
+  stays off. Built in #21.
 - A3OB generates components for all 14 `lod_geometries` types (`utilities/data.py:132-147`, used at `io/export_p3d.py:295`);
-  the port's `selections.GEOMETRY_TYPES = (6, 7, 8)` covers only three. Not part of D17; noted because the renumber
-  rule above is written for all LOD types.
-- The two `propeller` aliases of §18.3 are a small addition to A3OB's data; say if you want strict parity.
+  the port's `selections.GEOMETRY_TYPES = (6, 7, 8)` covers only three. **Resolved as a follow-up task after #21**, not
+  part of it; noted because the renumber rule above is written for all LOD types.
+- The two `propeller` aliases of §18.3: **kept** (D19). English to Czech on export is confirmed.
 
 ## Resolved (D7-D9)
 

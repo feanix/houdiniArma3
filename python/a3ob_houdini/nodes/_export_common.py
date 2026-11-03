@@ -78,6 +78,9 @@ def options_from(values: Dict[str, object]) -> ExportOptions:
         sort_lods=bool(values.get("sortlods", False)),
         auto_components=bool(values.get("autocomponents", False)),
         duplicate_lods=str(values.get("dupes", "fail")),
+        renumber_components=bool(values.get("renumber", False)),
+        czech_names=bool(values.get("czech", False)),
+        drop_uvs=bool(values.get("dropuvs", False)),
         rules_off=tuple(rules_off),
     )
 

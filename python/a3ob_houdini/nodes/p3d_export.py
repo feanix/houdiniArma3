@@ -46,7 +46,7 @@ DEFAULT_PROJECT_ROOT = settings_module.DEFAULT_ROOT
 
 #: The parameters that make the exporter options. A preset fills these (except the root and the backup switch).
 OPTION_PARMS = ("selmask", "lowercase", "relpaths", "projectroot", "sortsections", "sortlods", "autocomponents",
-                "dupes", "backup")
+                "renumber", "czech", "dropuvs", "dupes", "backup")
 
 SPEC = NodeSpec(
     kind="p3d_export",
@@ -86,6 +86,16 @@ SPEC = NodeSpec(
         Parm("sortlods", "Sort LODs", "toggle", False, "Write the LODs sorted by resolution. Off keeps your order."),
         Parm("autocomponents", "Auto-Components", "toggle", False,
              "Geometry LODs without a component selection get one per connected piece."),
+        Parm("renumber", "Renumber Components", "toggle", False,
+             "Rename every selection that starts with component and digits to component01, component02, ... in the "
+             "order they are written, per LOD. The name is lowercased and any text after the digits is lost."),
+        Parm("czech", "Translate Names to Czech", "toggle", False,
+             "Rename selections that have an English name from Object Builder's table (body becomes telo, weapon becomes "
+             "zbran) to the Czech name the game uses. Whole name, any case. Warns when two selections end up equal."),
+        Parm("dropuvs", "Drop UVs", "toggle", False,
+             "LODs of a type that does not use UVs (Geometry, Memory, Roadway, the fire and view geometry types) are "
+             "written without UV sets and with zero face UVs, as Object Builder does. The geometry on the node is not "
+             "changed."),
         Parm("backup", "Keep a .bak", "toggle", False, "When a file is overwritten, keep the old one as .bak."),
     ) + common.rule_parms(),
 )
@@ -110,7 +120,8 @@ def preset_values(settings, name: str) -> Dict[str, object]:
     values: Dict[str, object] = {
         "selmask": options.selection_mask, "lowercase": options.lowercase, "relpaths": options.relative_paths,
         "sortsections": options.sort_sections, "sortlods": options.sort_lods,
-        "autocomponents": options.auto_components, "dupes": options.duplicate_lods,
+        "autocomponents": options.auto_components, "renumber": options.renumber_components,
+        "czech": options.czech_names, "dropuvs": options.drop_uvs, "dupes": options.duplicate_lods,
         "typerules": True,
     }
     for rule in RULES:

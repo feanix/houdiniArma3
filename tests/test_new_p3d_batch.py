@@ -165,7 +165,7 @@ class TestExportPreset(NodeTestCase):
         export_node.apply_preset(self.node, sm.RELEASE, self.settings)
         got = self.options()
         self.assertTrue(got["lowercase"] and got["relpaths"] and got["sortsections"] and got["autocomponents"])
-        self.assertFalse(got["sortlods"])
+        self.assertTrue(got["sortlods"])  # D19
         export_node.apply_preset(self.node, sm.LOSSLESS, self.settings)
         self.assertFalse(any(v for k, v in self.options().items() if k not in ("selmask", "dupes")))
 

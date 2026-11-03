@@ -23,10 +23,10 @@ from a3ob_core.p3d import P3DError
 from .. import messages, names
 from .data import LodData
 from .mesh_build import FileMesh
-from .options import ExportOptions, fold_collisions, make_relative, relative_proxy_name
+from .options import ExportOptions, fold_collisions, keeps_uvs, make_relative, relative_proxy_name
 from .selections import SelectionEntry
 
-__all__ = ["Item", "make_items", "order_items", "output_name", "output_text"]
+__all__ = ["Item", "make_items", "order_items", "order_item_list", "output_name", "output_text"]
 
 
 @dataclass
@@ -71,7 +71,7 @@ def make_items(data: LodData, file_mesh: FileMesh, selections: Sequence[Selectio
     items.extend(_property_items(data, options, report))
     items.extend(_mass_items(file_mesh))
     items.extend(_selection_items(data, selections, options, report))
-    items.extend(_blob_items(data, counts, report))
+    items.extend(_blob_items(data, counts, options, report))
     return items
 
 
@@ -206,15 +206,19 @@ def _warn_name_collisions(label: str, original: List[str], written: List[str], o
             % (first, second), "Rename one of them"))
 
 
-def _blob_items(data: LodData, counts, report: messages.Report) -> List[Item]:
-    """Spec 11.2: opaque TAGGs, written unchanged while the counts equal ``a3ob_source_counts``."""
+def _blob_items(data: LodData, counts, options: ExportOptions, report: messages.Report) -> List[Item]:
+    """Spec 11.2: opaque TAGGs, written unchanged while the counts equal ``a3ob_source_counts``.
+
+    With Drop UVs on a type that has no UVs, a ``#UVSet#`` blob is UV data and is dropped without a word (spec 18.4)."""
     details = data.details
     label = data.label
-    total = len(details.unknown_names)
+    drop = options.drop_uvs and not keeps_uvs(details.lod_type)
+    wanted = [i for i, name in enumerate(details.unknown_names) if not (drop and name == p3d.UVSET)]
+    total = len(wanted)
     if total == 0:
         return []
     if details.source_counts != counts:
-        shown = ", ".join(repr(name) for name in details.unknown_names[:5])
+        shown = ", ".join(repr(details.unknown_names[i]) for i in wanted[:5])
         report.warning(messages.format_problem(
             label, "%d opaque TAGGs are dropped because the mesh changed (%s; %s)" % (
                 total, shown, "now %s, it was %s" % (
@@ -222,7 +226,7 @@ def _blob_items(data: LodData, counts, report: messages.Report) -> List[Item]:
             "Data kept from the file only fits the mesh it came with"))
         return []
     items = []
-    for i in range(total):
+    for i in wanted:
         active = details.unknown_active[i] if i < len(details.unknown_active) else 1
         text = details.unknown_data[i] if i < len(details.unknown_data) else ""
         payload = _decode(text, "a3ob_tagg_unknown_data[%d]" % i, label, report)
@@ -239,6 +243,11 @@ def _blob_items(data: LodData, counts, report: messages.Report) -> List[Item]:
 
 def order_items(items: List[Item], hint: Sequence[str], hint_active: Sequence[int]) -> List[p3d.Tagg]:
     """Spec 11.3: tokens named by the hint first, in hint order (each with its raw active byte), then the rest."""
+    return [item.tagg for item in order_item_list(items, hint, hint_active)]
+
+
+def order_item_list(items: List[Item], hint: Sequence[str], hint_active: Sequence[int]) -> List[Item]:
+    """``order_items`` that keeps the items, so the D17 renames can find the live selections (spec 18.1)."""
     waiting: Dict[str, List[Item]] = defaultdict(list)
     for item in items:
         waiting[item.token].append(item)
@@ -254,4 +263,4 @@ def order_items(items: List[Item], hint: Sequence[str], hint_active: Sequence[in
         used.add(id(item))
         ordered.append(item)
     ordered.extend(item for item in items if id(item) not in used)
-    return [item.tagg for item in ordered]
+    return ordered

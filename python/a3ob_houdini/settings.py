@@ -46,13 +46,15 @@ RELEASE = "Arma 3 release"
 PRESET_KEYS = tuple(field.name for field in dataclasses.fields(ExportOptions) if field.name != "project_root")
 
 _ALL_OFF = {"lowercase": False, "relative_paths": False, "sort_sections": False, "sort_lods": False,
-            "auto_components": False}
+            "auto_components": False, "renumber_components": False, "czech_names": False, "drop_uvs": False}
 
-#: Q-5, D14. Lossless is all off (the ExportOptions defaults). Arma 3 release is A3OB's defaults (ux-tools.md 5.9):
-#: relative paths, sort sections, lowercase and generate components on; duplicate LODs stay on Fail.
+#: Q-5, D14, D17. Lossless is all off (the ExportOptions defaults). Arma 3 release is A3OB's defaults (ux-tools.md 5.9):
+#: relative paths, sort sections, sort LODs (D19), lowercase, generate components and drop UVs on (spec 18.1: A3OB drops
+#: UVs always, and has renumber and Czech names off); duplicate LODs stay on Fail.
 BUILTIN_PRESETS: Dict[str, Dict[str, Any]] = {
     LOSSLESS: dict(_ALL_OFF),
-    RELEASE: dict(_ALL_OFF, lowercase=True, relative_paths=True, sort_sections=True, auto_components=True),
+    RELEASE: dict(_ALL_OFF, lowercase=True, relative_paths=True, sort_sections=True, auto_components=True,
+                  sort_lods=True, drop_uvs=True),
 }
 
 #: A3OB ``utilities/data.py`` ``common_data``, as it is used here. Paths keep A3OB's text, including ``P:``.

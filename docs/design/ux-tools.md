@@ -460,7 +460,7 @@ failed save leaves the old file alone.
 | **Relative paths** | `relpaths` | **off** | Makes paths relative to `projectroot`; at least the drive letter is stripped (`utilities/generic.py` lines 174-216). |
 | Project root | `projectroot` | empty = the shelf setting | Falls back to the root from [7.2](#72-project-root-and-presets) (A3OB default `P:\`). Used only when `relpaths` is on. |
 | **Sort sections** | `sortsections` | **off** | Orders faces by texture and material pair (`io/export_p3d.py` line 255). Changes the face order, so a round trip becomes L1. |
-| **Sort LODs** | `sortlods` | **off** | Sorts by signature, as A3OB always does (`io/export_p3d.py` line 716). |
+| **Sort LODs** | `sortlods` | **off** | Sorts by signature, as A3OB always does (`io/export_p3d.py` line 716). On in `Arma 3 release` (D19). |
 | **Auto-components** | `autocomponents` | **off** | For Geometry-type LODs with no `component##` selection, make them (A3OB "Generate Components", `io/export_p3d.py` lines 294-303). Only if none exist. The check counts them as present while this is on (A3OB does the same with a temporary one, line 310). |
 | **Renumber components** | `renumber` | **off** | Rename every selection that starts with `component` and digits to `component01`, `component02`, ... in the order they are written, per LOD, in all LOD types. Case is lowercased and any text after the digits is lost. A3OB "Renumber Components" (`ui/import_export_p3d.py` lines 298-301, `io/data_p3d.py` lines 651-660). Spec §18.2 (D17). |
 | **Translate names to Czech** | `czech` | **off** | Rename selections that have an English name from A3OB's table (for example `body` to `telo`, `weapon` to `zbran`) to the Czech name the game uses. Whole name, any case; other names stay as they are. A3OB "Translate Selections" (`ui/import_export_p3d.py` lines 307-310, `io/export_p3d.py` lines 591-593, table at `utilities/data.py` lines 482-645). Warns when two selections end up with the same name. Spec §18.3 (D17). |
@@ -570,7 +570,7 @@ One dialog with:
 | Setting | Default | Notes |
 |---|---|---|
 | Project root | `P:\` | A3OB default (`__init__.py` line 261). Also read from an environment variable if set (name chosen at build time). Used by relative paths. |
-| Presets | `Lossless`, `Arma 3 release` | Named sets of the P3D Export option parameters (5.9). `Lossless` is the default (all data-changing options off). `Arma 3 release` is A3OB's defaults: relative paths, sort sections, lowercase, auto-components and drop UVs on (renumber components and Czech names stay off, as in A3OB; D17, spec §18.1). Both ship (Q-5, D14). |
+| Presets | `Lossless`, `Arma 3 release` | Named sets of the P3D Export option parameters (5.9). `Lossless` is the default (all data-changing options off). `Arma 3 release` is A3OB's defaults: relative paths, sort sections, sort LODs, lowercase, auto-components and drop UVs on (renumber components and Czech names stay off, as in A3OB; D17, spec §18.1). Both ship (Q-5, D14). |
 | Common data file | none | A JSON file with extra common proxies, named properties, procedural textures and materials. Same idea as A3OB's "custom data" (`__init__.py` line 267, `utilities/data.py` `common_data`). Feeds the "Common" menus. |
 
 Stored in a single JSON file in the user's Houdini preferences folder. The dialog can save the current Export node's

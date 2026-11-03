@@ -69,6 +69,7 @@ Type names carry no version suffix yet. A change that old scenes cannot take get
 | `selection_browser_dialog` | GUI only | The `hou.ui` layer called by `houdini/toolbar/a3ob_selection_browser.shelf`. |
 | `p3d_import` | `lod_builder` and `import_model` | The importer: `plan` (decisions, no `hou`), `lod_builder` (writes geometry), `proxies`, `lod_filter`. |
 | `p3d_export` | `collect_lods` and `read_geo` | The exporter core: `collect`, `build`, `to_bytes`, `write_file`, `export_geometry`. The rest works on plain data (`data`) and runs under CPython. |
+| `p3d_export/renames`, `p3d_export/czech_names` | no | The D17 options (spec 18): `renumber_components`, `translate_names` (table in `czech_names`) act on the ordered selection items of a LOD; `strip_uvs` drops the UVs of a built LOD (also of a LOD copy, by the copy's own type). Fields `renumber_components`, `czech_names`, `drop_uvs`; node parms `renumber`, `czech`, `dropuvs`. |
 | `settings` | no | The user prefs JSON (`A3OB_SETTINGS` overrides its place, `A3OB_PROJECT_ROOT` the root), project root, export presets (`Lossless`, `Arma 3 release`, own ones) mapped onto `ExportOptions`, common data lists. Never raises on a bad file. |
 | `quick_export` | yes | Quick Export without a dialog: `choose_node`, `export_node` (calls `p3d_export.export_geometry` directly). |
 | `quick_export_dialog`, `project_settings_dialog` | GUI only | The `hou.ui` layers of the Quick Export and Project root and presets shelf tools. |

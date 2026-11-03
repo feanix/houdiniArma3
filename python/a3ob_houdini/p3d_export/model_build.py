@@ -19,7 +19,8 @@ from a3ob_core.p3d import LOD, P3DError, P3DModel
 from .. import messages
 from .data import Collection
 from .lod_build import build_lod
-from .options import ExportOptions
+from .options import ExportOptions, keeps_uvs
+from .renames import strip_uvs
 
 __all__ = ["build_model", "to_bytes", "signature_key"]
 
@@ -35,14 +36,25 @@ def build_model(collection: Collection, options: ExportOptions, report: messages
         report.error(messages.format_problem(None, "there is no LOD to export", "Connect a P3D geometry or a LOD geometry"))
         return None
     entries: List[Tuple[str, LOD]] = []
+    dropped: List[str] = []
     for data in collection.lods:
         lod = build_lod(data, options, report)
         if lod is None:
             continue
+        copies = _copies(data, lod, report)
         entries.append((data.label, lod))
-        entries.extend(_copies(data, lod, report))
+        entries.extend((label, duplicate) for label, duplicate, _ in copies)
+        if options.drop_uvs:
+            # Copies were made first, so each one is judged by the type it is written with (spec 18.4).
+            if not keeps_uvs(data.details.lod_type) and strip_uvs(lod):
+                dropped.append(data.label)
+            for label, duplicate, lod_type in copies:
+                if not keeps_uvs(lod_type) and strip_uvs(duplicate):
+                    dropped.append(label)
     if report.has_errors:
         return None
+    if dropped:
+        report.info("Dropped the UVs of %d LODs (%s)" % (len(dropped), ", ".join(dropped)))
     entries = _handle_duplicates(entries, options, report)
     if report.has_errors:
         return None
@@ -52,7 +64,7 @@ def build_model(collection: Collection, options: ExportOptions, report: messages
     return model
 
 
-def _copies(data, lod: LOD, report: messages.Report) -> List[Tuple[str, LOD]]:
+def _copies(data, lod: LOD, report: messages.Report) -> List[Tuple[str, LOD, int]]:
     """LOD copies (spec 3.3): the same mesh again under extra signatures. They always use ``encode_signature``."""
     details = data.details
     types, resolutions = details.copy_types, details.copy_resolutions
@@ -71,7 +83,7 @@ def _copies(data, lod: LOD, report: messages.Report) -> List[Tuple[str, LOD]]:
             continue
         duplicate = copy.deepcopy(lod)
         duplicate.resolution_signature = signature
-        result.append((p3d.format_lod_name(lod_type, resolution), duplicate))
+        result.append((p3d.format_lod_name(lod_type, resolution), duplicate, int(lod_type)))
     return result
 
 
