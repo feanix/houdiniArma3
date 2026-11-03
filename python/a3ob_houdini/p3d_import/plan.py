@@ -119,6 +119,7 @@ def make_plan(lod: LOD, lod_index: int) -> LodPlan:
     """Plan one LOD. Raises ``ValueError`` (with a finished message) when a face points at a missing point."""
     plan = LodPlan(lod=lod, lod_index=lod_index, lod_name=lod.name)
     _check_indices(plan)
+    _check_short_faces(plan)
     plan.corner_start = _corner_starts(lod)
     _classify_taggs(plan)
     _split_mesh(plan)
@@ -145,6 +146,14 @@ def _check_indices(plan: LodPlan) -> None:
         raise ValueError(messages.format_problem(
             plan.lod_name, "%d faces use normals that do not exist (%s)" % (
                 len(bad), messages.list_elements("faces", bad)), "The file is damaged"))
+
+
+def _check_short_faces(plan: LodPlan) -> None:
+    """Spec 5: faces with 0 to 2 sides are imported, but export drops them. Say so on the import."""
+    short = [face for face, sides in enumerate(plan.lod.face_sides) if sides < 3]
+    if short:
+        _warn(plan, "%d faces have fewer than 3 points (%s)" % (len(short), messages.list_elements("faces", short)),
+              "They are imported, but the export drops them")
 
 
 def _corner_starts(lod: LOD) -> List[int]:

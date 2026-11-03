@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- houdiniArma3: the A3OB Selection browser shelf tool (ux-tools.md section 7.3). -->
+<!-- It only calls into python/a3ob_houdini; the work is in selection_browser.py. -->
+<shelfDocument>
+  <toolshelf name="a3ob" label="A3OB">
+    <memberTool name="a3ob_selection_browser"/>
+  </toolshelf>
+
+  <tool name="a3ob_selection_browser" label="Selection browser" icon="MISC_python">
+    <helpText><![CDATA[Lists the point groups of the selected SOP node by their P3D name. Copies an encoded name, or adds a Group, Group Delete or Group Rename node.]]></helpText>
+    <script scriptType="python"><![CDATA[from a3ob_houdini import selection_browser_dialog
+
+selection_browser_dialog.run(kwargs)]]></script>
+  </tool>
+</shelfDocument>

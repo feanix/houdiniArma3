@@ -74,3 +74,31 @@
 {"actor": "lead", "id": 74, "task_id": 7, "text": "queue: merged at 59bee1d", "ts": "2026-11-03T08:42:44Z"}
 {"actor": "lead", "id": 75, "task_id": 8, "text": "gate full PASS ad2ca7af 11.9s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T08:42:58Z"}
 {"actor": "lead", "id": 76, "task_id": 8, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T08:42:58Z"}
+{"actor": "lead", "id": 77, "task_id": 8, "text": "merged by lead (queued by lead)", "ts": "2026-11-03T08:42:59Z"}
+{"actor": "lead", "id": 78, "task_id": 8, "text": "queue: merged at 34db494", "ts": "2026-11-03T08:42:59Z"}
+{"actor": "aesir-hook", "id": 79, "task_id": 9, "text": "status open -> in_progress (started by impl-9-a)", "ts": "2026-11-03T08:45:47Z"}
+{"actor": "aesir-hook", "id": 80, "task_id": 10, "text": "status open -> in_progress (started by impl-10-a)", "ts": "2026-11-03T08:45:51Z"}
+{"actor": "aesir-hook", "id": 81, "task_id": 12, "text": "status open -> in_progress (started by impl-12-a)", "ts": "2026-11-03T08:45:51Z"}
+{"actor": "aesir-hook", "id": 82, "task_id": 11, "text": "status open -> in_progress (started by impl-11-a)", "ts": "2026-11-03T08:45:53Z"}
+{"actor": "advisor", "id": 83, "task_id": 4, "text": "Advisor (requester) verified on main f3e624a: suite OK (173 tests; CPython 34 hou-skips, hython all pass). Accepted.", "ts": "2026-11-03T08:47:38Z"}
+{"actor": "advisor", "id": 84, "task_id": 6, "text": "Advisor (requester) verified on main f3e624a: suite OK (173 tests; CPython 34 hou-skips, hython all pass). Accepted.", "ts": "2026-11-03T08:47:38Z"}
+{"actor": "advisor", "id": 85, "task_id": 7, "text": "Advisor (requester) verified on main f3e624a: suite OK (173 tests; CPython 34 hou-skips, hython all pass). Accepted.", "ts": "2026-11-03T08:47:39Z"}
+{"actor": "advisor", "id": 86, "task_id": 8, "text": "Advisor (requester) verified on main f3e624a: suite OK on both. GUI smoke test in the owner's Houdini 22.0.466 window (session-only install, cleaned up): P3D Import cooked sample_1_character in 0.63 s with no errors/warnings; 9 LODs with A3OB names; 43 packed proxies (file edge lengths 1/2/sqrt5 = the OB proxy triangle); axis map gives toes toward +Z (D7); 24 point groups on Res 1. Accepted. Follow-up to track for M4: selections that include proxy points must be rebuilt from mesh groups + proxy embedded groups.", "ts": "2026-11-03T08:47:39Z"}
+{"actor": "impl-12-a", "id": 87, "task_id": 12, "text": "gate quick PASS b0edf3ae 13.5s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T08:51:57Z"}
+{"actor": "rev-12-a", "id": 88, "task_id": 12, "text": "gate quick PASS b0edf3ae 14.7s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T08:54:45Z"}
+{"actor": "impl-9-a", "id": 89, "task_id": 9, "text": "gate quick PASS a23411de 27.3s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T08:57:54Z"}
+{"actor": "rev-9-a", "id": 90, "task_id": 9, "text": "gate quick PASS a23411de 33.2s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T09:00:04Z"}
+{"actor": "impl-10-a", "id": 91, "task_id": 10, "text": "gate quick PASS f6883e8d 22.7s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T09:02:19Z"}
+{"actor": "impl-11-a", "id": 92, "task_id": 11, "text": "gate quick PASS cf127169 18.3s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T09:04:00Z"}
+{"actor": "rev-10-a", "id": 93, "task_id": 10, "text": "gate quick PASS f6883e8d 23.3s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T09:04:37Z"}
+{"actor": "rev-11-a", "id": 94, "task_id": 11, "text": "gate quick PASS cf127169 18.0s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T09:06:31Z"}
+{"actor": "lead", "id": 95, "task_id": 9, "text": "status in_progress -> in_review (rev-9-a approved (wf_5afa5623-68c))", "ts": "2026-11-03T09:07:47Z"}
+{"actor": "lead", "id": 96, "task_id": 9, "text": "status in_review -> approved (rev-9-a approved (wf_5afa5623-68c))", "ts": "2026-11-03T09:07:48Z"}
+{"actor": "lead", "id": 97, "task_id": 10, "text": "status in_progress -> in_review (rev-10-a approved (wf_5afa5623-68c))", "ts": "2026-11-03T09:07:51Z"}
+{"actor": "lead", "id": 98, "task_id": 10, "text": "status in_review -> approved (rev-10-a approved (wf_5afa5623-68c))", "ts": "2026-11-03T09:07:51Z"}
+{"actor": "lead", "id": 99, "task_id": 11, "text": "status in_progress -> in_review (rev-11-a approved (wf_5afa5623-68c))", "ts": "2026-11-03T09:07:53Z"}
+{"actor": "lead", "id": 100, "task_id": 11, "text": "status in_review -> approved (rev-11-a approved (wf_5afa5623-68c))", "ts": "2026-11-03T09:07:53Z"}
+{"actor": "lead", "id": 101, "task_id": 12, "text": "status in_progress -> in_review (rev-12-a approved (wf_5afa5623-68c))", "ts": "2026-11-03T09:07:54Z"}
+{"actor": "lead", "id": 102, "task_id": 12, "text": "status in_review -> approved (rev-12-a approved (wf_5afa5623-68c))", "ts": "2026-11-03T09:07:55Z"}
+{"actor": "lead", "id": 103, "task_id": 12, "text": "gate full PASS 90d8a410 13.1s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T09:08:13Z"}
+{"actor": "lead", "id": 104, "task_id": 12, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T09:08:14Z"}
