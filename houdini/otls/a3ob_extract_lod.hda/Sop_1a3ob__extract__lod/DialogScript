@@ -16,6 +16,10 @@
 	label	"LOD"
 	type	string
 	default	{ "0" }
-	help	"Which LOD to extract: its position in the P3D geometry (0 is the first), or its name, for example Geometry or Resolution 1."
+	menu {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['menu']).menu('extract_lod', 'lods', kwargs)" ]
+	    language python
+	}
+	help	"Which LOD to extract: pick one from the menu, or type its position in the P3D geometry (0 is the first) or its name, for example Geometry or Resolution 1."
     }
 }

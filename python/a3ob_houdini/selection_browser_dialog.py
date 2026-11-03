@@ -80,7 +80,7 @@ def _act(node, entry, action: str) -> None:
         ok, name = hou.ui.readInput("P3D name of the new selection", buttons=("OK", "Cancel"))
         if ok != 0:
             return
-        ok, expression = hou.ui.readInput("Group expression (empty: all points)", buttons=("OK", "Cancel"))
+        ok, expression = hou.ui.readInput("Point numbers (e.g. 0-9, empty: all points)", buttons=("OK", "Cancel"))
         if ok != 0:
             return
         new = browser.create_selection(node, name, expression)

@@ -13,7 +13,7 @@ from ..errors import UserError
 from ..messages import Report, format_problem
 from ..params import NodeSpec, Parm, read_parms
 
-__all__ = ["SPEC", "cook", "BUTTONS", "resolve_lod"]
+__all__ = ["SPEC", "cook", "BUTTONS", "MENUS", "resolve_lod", "lod_menu_items"]
 
 NAME = "Extract LOD"
 
@@ -24,11 +24,27 @@ SPEC = NodeSpec(
     inputs=(1, 1),
     input_labels=("P3D geometry",),
     parms=(
-        Parm("lod", "LOD", "string", "0",
-             "Which LOD to extract: its position in the P3D geometry (0 is the first), or its name, "
-             "for example Geometry or Resolution 1."),
+        Parm("lod", "LOD", "menu", "0",
+             "Which LOD to extract: pick one from the menu, or type its position in the P3D geometry "
+             "(0 is the first) or its name, for example Geometry or Resolution 1.",
+             menu_action="lods"),
     ),
 )
+
+
+def lod_menu_items(names: Sequence[str]) -> List[tuple]:
+    """``[(token, label)]`` for the LOD menu: the token is the position, the label reads ``0: Resolution 1``."""
+    return [(str(index), "%d: %s" % (index, name)) for index, name in enumerate(names)]
+
+
+def _menu_lods(kwargs) -> List[tuple]:
+    """The menu of the LOD parameter: the LODs of the connected input (empty when there is none)."""
+    from .. import lod_container as lc
+    inputs = kwargs["node"].inputs()
+    source = inputs[0].geometry() if inputs and inputs[0] is not None else None
+    if source is None or lc.classify(source) != lc.P3D:
+        return []
+    return lod_menu_items([lc.prim_name(prim, lc.lod_content(prim)) for prim in source.prims()])
 
 
 def resolve_lod(text: str, names: Sequence[str]) -> int:
@@ -85,3 +101,4 @@ def cook(node, report: Report) -> None:
 
 
 BUTTONS = {}
+MENUS = {"lods": _menu_lods}

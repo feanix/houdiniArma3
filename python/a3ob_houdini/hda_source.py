@@ -24,7 +24,7 @@ This module does not import ``hou``.
 import os
 from typing import Dict, List
 
-from .params import CALLBACK, NodeSpec, Parm
+from .params import CALLBACK, MENU_SCRIPT, NodeSpec, Parm
 
 __all__ = ["hda_folder_name", "section_name", "render", "write", "differences"]
 
@@ -117,7 +117,12 @@ def _parm_block(spec: NodeSpec, parm: Parm) -> str:
         lines.append("\tdefault\t{ %s }" % _quote(_default_text(parm)))
     if parm.kind in ("int", "float") and (parm.minimum is not None or parm.maximum is not None):
         lines.append("\trange\t{ %s }" % _range_text(parm))
-    if parm.kind == "menu":
+    if parm.kind == "menu" and parm.menu_action:
+        lines.append("\tmenu {")
+        lines.append("\t    [ %s ]" % _quote(MENU_SCRIPT % (spec.kind, parm.menu_action)))
+        lines.append("\t    language python")
+        lines.append("\t}")
+    elif parm.kind == "menu":
         lines.append("\tmenu {")
         lines.extend("\t    %s\t%s" % (_quote(token), _quote(label)) for token, label in parm.items)
         lines.append("\t}")

@@ -5,7 +5,15 @@
 <shelfDocument>
   <toolshelf name="a3ob" label="A3OB">
     <memberTool name="a3ob_selection_browser"/>
+    <memberTool name="a3ob_reload"/>
   </toolshelf>
+
+  <tool name="a3ob_reload" label="Reload A3OB" icon="MISC_python">
+    <helpText><![CDATA[Loads the A3OB code again after the package was updated, without restarting Houdini. The work is in a3ob_houdini/reload.py.]]></helpText>
+    <script scriptType="python"><![CDATA[from a3ob_houdini import reload
+
+reload.reload_all()]]></script>
+  </tool>
 
   <tool name="a3ob_selection_browser" label="Selection browser" icon="MISC_python">
     <helpText><![CDATA[Lists the point groups of the selected SOP node by their P3D name. Copies an encoded name, or adds a Group, Group Delete or Group Rename node.]]></helpText>

@@ -134,7 +134,8 @@ def merge_properties(existing: Sequence[Entry], rows: Sequence[Tuple[str, str]],
 
     ``rows`` are ``(name, value)`` from the multiparm. A row with no name and no value is skipped with a warning.
     Add mode: a row replaces the input's entry that has the same name (any case); otherwise it is appended. Replace
-    mode: only the rows remain. A replaced entry loses its raw payload; untouched entries keep theirs."""
+    mode: only the rows remain. A row equal to the input's entry (same name and value)
+    keeps its raw payload; a changed name or value drops it, and untouched entries keep theirs."""
     base = [] if replace_all else [Entry(entry.name, entry.value, entry.raw) for entry in existing]
     fixed = len(base)
     for number, (name, value) in enumerate(rows, start=1):
@@ -146,7 +147,8 @@ def merge_properties(existing: Sequence[Entry], rows: Sequence[Tuple[str, str]],
         check_text(value, "the value of property row %d" % number)
         for index in range(fixed):
             if base[index].name.casefold() == name.casefold():
-                base[index] = Entry(name, value)
+                same = base[index].name == name and base[index].value == value
+                base[index] = Entry(name, value, base[index].raw if same else "")
                 break
         else:
             base.append(Entry(name, value))

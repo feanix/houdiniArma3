@@ -7,6 +7,7 @@ Once a node has shipped, the names and arguments here must not change. Everythin
 
     cook(kind, node)             -- the PythonCook of a node
     button(kind, action, kwargs) -- a button callback
+    menu(kind, name, kwargs)     -- the items of a menu that is made when it opens (flat list: token, label, ...)
 
 ``cook`` turns every exception into a node error: a ``UserError`` shows its own text (already in the ux-tools.md
 section 2 form); any other exception is a bug, so it shows a short text and the traceback goes to the console.
@@ -18,17 +19,29 @@ import traceback
 
 from . import messages, nodes
 from .errors import UserError
+from .messages import format_problem
 
-__all__ = ["cook", "button"]
+__all__ = ["cook", "button", "menu"]
 
 LOGGER = logging.getLogger("a3ob")
+
+
+def _load(kind: str):
+    """The module of a node kind. A kind this session does not know means stale code: say how to fix it."""
+    try:
+        return nodes.load(kind)
+    except KeyError:
+        raise UserError(format_problem(
+            None, "The node kind %r is not in the A3OB code that is loaded in this Houdini session" % kind,
+            "The package was probably updated while Houdini was running. Restart Houdini, or run the "
+            "Reload A3OB shelf tool")) from None
 
 
 def cook(kind: str, node) -> None:
     """Cook a node of the given kind. Errors become node errors; the output is cleared on error."""
     report = messages.Report()
     try:
-        nodes.load(kind).cook(node, report)
+        _load(kind).cook(node, report)
     except UserError as ex:
         report.error(str(ex))
     except Exception as ex:  # a bug in A3OB tools: show it on the node, keep the details on the console
@@ -47,3 +60,12 @@ def button(kind: str, action: str, kwargs) -> None:
         nodes.load(kind).BUTTONS[action](kwargs)
     except Exception:  # Houdini would only print it; put the traceback on the console with our logger
         LOGGER.error("button %s/%s failed:\n%s", kind, action, traceback.format_exc())
+
+
+def menu(kind: str, name: str, kwargs) -> list:
+    """The items of a dynamic menu parameter, flat as Houdini wants them. Never raises: a failure gives no items."""
+    try:
+        return [text for pair in getattr(nodes.load(kind), "MENUS", {})[name](kwargs) for text in pair]
+    except Exception:
+        LOGGER.error("menu %s/%s failed:\n%s", kind, name, traceback.format_exc())
+        return []

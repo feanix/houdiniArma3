@@ -62,6 +62,16 @@ class TestPureRules(unittest.TestCase):
         self.assertEqual([(e.name, e.value, e.raw) for e in replaced], [("only", "1", "")])
         self.assertEqual(lod_props.duplicate_names([("a", "1"), ("A", "2"), ("b", "")]), ["A"])
 
+    def test_a_row_equal_to_an_input_entry_keeps_its_raw_payload(self):
+        existing = [lod_props.Entry("Class", "man", "AAAA"), lod_props.Entry("buoyancy", "1", "BBBB"),
+                    lod_props.Entry("keep", "x", "CCCC")]
+        rows = [("Class", "man"), ("buoyancy", "2"), ("keep", "x")]  # same, changed value, same
+        merged = lod_props.merge_properties(existing, rows, replace_all=False)
+        self.assertEqual([(e.name, e.value, e.raw) for e in merged],
+                         [("Class", "man", "AAAA"), ("buoyancy", "2", ""), ("keep", "x", "CCCC")])
+        renamed = lod_props.merge_properties(existing, [("CLASS", "man")], replace_all=False)
+        self.assertEqual(renamed[0].raw, "")  # a changed key drops it
+
     def test_property_text_limits(self):
         lod_props.check_text("x" * 63, "a value")
         with self.assertRaises(UserError) as caught:
@@ -277,6 +287,16 @@ class TestLodProperties(unittest.TestCase):
         self.assertEqual(detail(out, "a3ob_prop_raw"), ("AAAA", "", ""))
         out, _ = cook("lod_properties", tailed, settype=False, props=[{"prop_name": "AUTOCENTER", "prop_value": "1"}])
         self.assertIsNone(out.findGlobalAttrib("a3ob_prop_raw"))  # the only tail belonged to the replaced entry
+
+    def test_read_from_input_then_an_unedited_cook_keeps_every_raw_payload(self):
+        tailed = hou.Geometry()
+        tailed.copy(self.geometry)
+        geo_edit.set_detail_array(tailed, "a3ob_prop_raw", "string", ["AAAA", "BBBB"])
+        rows = [{"prop_name": name, "prop_value": value} for name, value in zip(
+            detail(tailed, "a3ob_prop_names"), detail(tailed, "a3ob_prop_values"))]  # what Read from Input fills in
+        out, _ = cook("lod_properties", tailed, settype=False, props=rows)
+        self.assertEqual(detail(out, "a3ob_prop_raw"), ("AAAA", "BBBB"))
+        self.assertEqual(detail(out, "a3ob_prop_names"), detail(tailed, "a3ob_prop_names"))
 
     def test_copies_are_written_as_two_parallel_arrays(self):
         rows = [{"copy_type": "visual", "copy_res": 2.0}, {"copy_type": "geometry", "copy_res": 7.0},
