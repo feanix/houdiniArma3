@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proxy - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
+<h1>Proxy</h1>
+<p class="lead">Adds proxies (references to other .p3d files, such as weapon slots or seats) as packed primitives.</p>
+<p>A proxy marks a place where Arma puts another model, such as a weapon on a vehicle or a seat for a crew member. This node adds proxies to a LOD geometry.</p>
+<p>With one input, the node adds a single proxy. With a second input, it adds one proxy for each point of that input.</p>
+<table class="facts">
+<tr><th>Houdini name</th><td><code>a3ob_proxy</code></td></tr>
+<tr><th>Where to find it</th><td>Tab menu, A3OB, Proxy</td></tr>
+<tr><th>Inputs</th><td>1 to 2</td></tr>
+</table>
+<h2>Inputs</h2>
+<ol>
+<li value="1">Input 1: LOD geometry</li>
+<li value="2">Input 2: Points (one proxy per point)</li>
+</ol>
+<h2>Parameters</h2>
+<p>Parameters are in the order they appear on the node.</p>
+<section class="parm" id="path">
+<h3>Path <code>path</code></h3>
+<p>The proxy model path, for example \a3\data_f\proxies\weapon_slots\top. Slashes become backslashes and a .p3d ending is removed.</p>
+<dl>
+<dt>Type</dt><dd>Text</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="common">
+<h3>Common Proxies <code>common</code></h3>
+<p>Fill the Path from a list of common proxies.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>(choose)</dd>
+</dl>
+<p>Choices:</p>
+<ul>
+<li>(choose) <code>none</code></li>
+<li>Weapon: optic <code>weapon_optic</code></li>
+<li>Weapon: pointer <code>weapon_pointer</code></li>
+<li>Weapon: suppressor <code>weapon_suppressor</code></li>
+<li>Weapon: magazine <code>weapon_magazine</code></li>
+<li>Weapon: bipod <code>weapon_bipod</code></li>
+<li>Driver: offroad <code>driver_offroad</code></li>
+<li>Passenger: offroad <code>passenger_offroad</code></li>
+<li>Gunner: hunter <code>gunner_hunter</code></li>
+<li>Commander: hunter <code>commander_hunter</code></li>
+<li>Light volume: car <code>light_volume_car</code></li>
+</ul>
+</section>
+<section class="parm" id="index">
+<h3>Index <code>index</code></h3>
+<p>The proxy number, 0 to 999.</p>
+<dl>
+<dt>Type</dt><dd>Whole number</dd>
+<dt>Default</dt><dd>1</dd>
+<dt>Allowed</dt><dd>From 0 to 999</dd>
+</dl>
+</section>
+<section class="parm" id="autoindex">
+<h3>Number From Points <code>autoindex</code></h3>
+<p>With a second input: the first proxy gets Index, the next one Index + 1, and so on. Off: all get Index.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>On</dd>
+</dl>
+</section>
+<section class="parm" id="t">
+<h3>Translate <code>t</code></h3>
+<p>Where the proxy goes when there is no second input.</p>
+<dl>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
+</dl>
+</section>
+<section class="parm" id="r">
+<h3>Rotate <code>r</code></h3>
+<p>Degrees. A proxy has no scale.</p>
+<dl>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
+</dl>
+</section>
+<section class="parm" id="useorient">
+<h3>Orient From Points <code>useorient</code></h3>
+<p>With a second input: turn each proxy by the orient attribute of its point, if the point has one.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>On</dd>
+</dl>
+</section>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Extract LOD - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
+<h1>Extract LOD</h1>
+<p class="lead">Takes one LOD out of a P3D geometry and outputs it as a LOD geometry that you can edit.</p>
+<p>P3D Import gives you each LOD of a model packed into one primitive. This node unpacks the LOD you pick, so you can edit its points and polygons like any other Houdini geometry.</p>
+<table class="facts">
+<tr><th>Houdini name</th><td><code>a3ob_extract_lod</code></td></tr>
+<tr><th>Where to find it</th><td>Tab menu, A3OB, Extract LOD</td></tr>
+<tr><th>Inputs</th><td>1</td></tr>
+</table>
+<h2>Inputs</h2>
+<ol>
+<li value="1">Input 1: P3D geometry</li>
+</ol>
+<h2>Parameters</h2>
+<p>Parameters are in the order they appear on the node.</p>
+<section class="parm" id="lod">
+<h3>LOD <code>lod</code></h3>
+<p>Which LOD to extract: pick one from the menu, or type its position in the P3D geometry (0 is the first) or its name, for example Geometry or Resolution 1.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>0</dd>
+</dl>
+<p>The choices are made when you open the menu, from the geometry or the settings.</p>
+</section>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

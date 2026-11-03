@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<h1>Reference</h1>
+<p class="lead">Every node and shelf tool, with all of its parameters. Press F1 on a node in Houdini to open its page here.</p>
+<h2>A typical network</h2>
+<p>Most models follow this chain. Import a model, take one LOD out, edit it, put the LODs back together, check them and export.</p>
+<ol class="network">
+<li>P3D Import</li>
+<li>Extract LOD</li>
+<li class="optional">Your edits</li>
+<li>Assemble LODs</li>
+<li>Validate</li>
+<li>P3D Export</li>
+</ol>
+<h2>Nodes</h2>
+<p>Add these from the Tab menu, in the A3OB submenu.</p>
+<ul class="cards">
+<li><a href="a3ob_assemble_lods.html">Assemble LODs</a><span>Puts edited LODs back into a P3D geometry. Input 1 is the base; inputs 2 and up are LOD geometries.</span></li>
+<li><a href="a3ob_extract_lod.html">Extract LOD</a><span>Takes one LOD out of a P3D geometry and outputs it as a LOD geometry that you can edit.</span></li>
+<li><a href="a3ob_lod_properties.html">LOD Properties</a><span>Sets the LOD type, resolution, named properties and LOD copies of a LOD geometry.</span></li>
+<li><a href="a3ob_mass.html">Mass</a><span>Sets the mass of each point of a Geometry LOD (the #Mass# data of the P3D file).</span></li>
+<li><a href="a3ob_material_assign.html">Material Assign</a><span>Sets the texture and the material (rvmat) of the polygons in a group, or of all polygons.</span></li>
+<li><a href="a3ob_p3d_export.html">P3D Export</a><span>Checks a P3D geometry or a LOD geometry like Validate and writes it as a .p3d file when Save to Disk is pressed. The output is the input.</span></li>
+<li><a href="a3ob_p3d_import.html">P3D Import</a><span>Reads an Arma 3 .p3d file (MLOD) and outputs one packed primitive per LOD.</span></li>
+<li><a href="a3ob_proxy.html">Proxy</a><span>Adds proxies (references to other .p3d files, such as weapon slots or seats) as packed primitives.</span></li>
+<li><a href="a3ob_validate.html">Validate</a><span>Checks a P3D geometry or a LOD geometry the way the export does and shows what is wrong. Changes nothing.</span></li>
+</ul>
+<h2>Shelf tools</h2>
+<p>These are the buttons on the A3OB shelf.</p>
+<ul class="cards">
+<li><a href="tool-a3ob_selection_browser.html">Selection browser</a><span>Lists the point groups of the selected SOP node by their P3D name. Copies an encoded name, or adds a Group, Group Delete or Group Rename node.</span></li>
+<li><a href="tool-a3ob_quick_export.html">Quick Export</a><span>Exports the selected SOP node (or the display node of the current network) to a .p3d file with a preset. Adds no node.</span></li>
+<li><a href="tool-a3ob_new_p3d.html">New P3D</a><span>Builds the starter network (Resolution 1, Geometry and Memory LODs, Assemble LODs, P3D Export) in the open SOP network or in a new Geometry object.</span></li>
+<li><a href="tool-a3ob_batch_convert.html">Batch folder convert</a><span>Re-exports every .p3d in a folder with a preset into an output folder and writes a report: identical, different or failed for each file. The sources are never changed.</span></li>
+<li><a href="tool-a3ob_project_settings.html">Project root and presets</a><span>Sets the project root, picks, edits and deletes export presets, and sets the common data file. Stored in one JSON file in the Houdini user preferences. Changes nothing in a scene.</span></li>
+<li><a href="tool-a3ob_reload.html">Reload A3OB</a><span>Loads the A3OB code again after the package was updated, without restarting Houdini.</span></li>
+</ul>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

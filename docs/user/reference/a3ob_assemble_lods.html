@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assemble LODs - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
+<h1>Assemble LODs</h1>
+<p class="lead">Puts edited LODs back into a P3D geometry. Input 1 is the base; inputs 2 and up are LOD geometries.</p>
+<p>A P3D file keeps several LODs (versions of the model for different viewing distances) together. After you edit LODs one at a time, this node puts them back together.</p>
+<p>Input 1 is optional: it takes the original P3D geometry, so that the LODs you did not touch stay as they were. Every other input takes one LOD geometry.</p>
+<table class="facts">
+<tr><th>Houdini name</th><td><code>a3ob_assemble_lods</code></td></tr>
+<tr><th>Where to find it</th><td>Tab menu, A3OB, Assemble LODs</td></tr>
+<tr><th>Inputs</th><td>0 to 32</td></tr>
+</table>
+<h2>Inputs</h2>
+<ol>
+<li value="1">Input 1: Base P3D geometry (optional)</li>
+<li value="2">Inputs 2 to 32: LOD geometry</li>
+</ol>
+<p class="note">The node also works with no input connected.</p>
+<h2>Parameters</h2>
+<p>Parameters are in the order they appear on the node.</p>
+<section class="parm" id="replace">
+<h3>Replace Matching LODs <code>replace</code></h3>
+<p>A LOD input replaces the base LOD that has the same stored LOD signature and keeps its position. A LOD with no match is added at the end. Off: every LOD input is added at the end.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>On</dd>
+</dl>
+</section>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>
