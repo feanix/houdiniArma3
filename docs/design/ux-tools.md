@@ -577,6 +577,10 @@ Stored in a single JSON file in the user's Houdini preferences folder. The dialo
 options as a new preset. The file is in the user folder, and an environment variable overrides its location (Q-7,
 D14). The tool changes nothing in a scene.
 
+Edit preset ends with a Save / Cancel step that names the preset and lists the options that will be on (or "all off").
+Only Save writes. Cancel, or closing any step, writes nothing (task 25). File paths shown in the dialog use the native
+slash; the JSON keeps the text as stored.
+
 ### 7.3 Selection browser
 
 | | |
