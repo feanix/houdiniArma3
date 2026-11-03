@@ -69,7 +69,8 @@ class TestExtensionInHoudini(NodeTestCase):
         report = export_node.save(node)
         self.assertEqual(os.listdir(self.folder), ["noext.p3d"])
         self.assertFalse(os.path.exists(self.folder + "/noext"))
-        self.assertTrue(any(text.endswith("to %s/noext.p3d." % self.folder) for text in report.texts("info")),
+        shown = os.path.normpath(self.folder + "/noext.p3d")  # messages show the native slash (task #30)
+        self.assertTrue(any(text.endswith("to %s." % shown) for text in report.texts("info")),
                         report.texts("info"))
 
     def test_quick_export_without_ending_writes_dot_p3d_only(self):
@@ -79,7 +80,7 @@ class TestExtensionInHoudini(NodeTestCase):
         self.assertTrue(ok, report.items)
         self.assertEqual(os.listdir(self.folder), ["test_20261103_1811.p3d"])
         self.assertEqual(qe.remembered_path(node), path + ".p3d")
-        self.assertIn(path + ".p3d", report.texts("info")[-1])
+        self.assertIn(os.path.normpath(path + ".p3d"), report.texts("info")[-1])
 
 
 if __name__ == "__main__":
