@@ -80,7 +80,8 @@ class TestGeneratedPagesAreCurrent(unittest.TestCase):
                             if os.path.isfile(path))
             self.assertEqual(actual, expected, "files differ; run: %s" % BUILD_COMMAND)
             stale = [name for name in expected
-                     if read_text(os.path.join(copy, name)) != read_text(os.path.join(DOCS_DIR, name))]
+                     if not name.endswith(".png")  # images are copied by hand, not generated
+                     and read_text(os.path.join(copy, name)) != read_text(os.path.join(DOCS_DIR, name))]
             self.assertEqual(stale, [], "docs/user is out of date (%s); run: %s" % (", ".join(stale), BUILD_COMMAND))
 
     def test_the_build_is_deterministic(self):
@@ -113,6 +114,39 @@ class TestSiteLinks(unittest.TestCase):
                 elif parts.fragment and target in ids and parts.fragment not in ids[target]:
                     problems.append("%s: missing anchor: %s" % (os.path.relpath(path, DOCS_DIR), link))
         self.assertEqual(problems, [])
+
+    def test_every_image_is_used_and_has_size_and_alt_text(self):
+        # Every <img src> must resolve (test above), every file in docs/user/img must be shown by some page,
+        # and each <img> needs width, height and a real alt text.
+        images = sorted(glob.glob(os.path.join(DOCS_DIR, "img", "*")))
+        self.assertGreaterEqual(len(images), 2)
+        used = set()
+        problems = []
+
+        class ImageParser(HTMLParser):
+            def handle_starttag(self, tag, attrs):
+                if tag != "img":
+                    return
+                attrs = dict(attrs)
+                src = attrs.get("src") or ""
+                used.add(os.path.normpath(os.path.join(page_dir, src)))
+                for name in ("width", "height"):
+                    if not (attrs.get(name) or "").isdigit():
+                        problems.append("%s: %s has no numeric %s" % (page_name, src, name))
+                if len((attrs.get("alt") or "").split()) < 8:
+                    problems.append("%s: %s has no descriptive alt text" % (page_name, src))
+
+        for path in html_files():
+            page_dir, page_name = os.path.dirname(path), os.path.relpath(path, DOCS_DIR)
+            ImageParser().feed(read_text(path))
+        for image in images:
+            if os.path.normpath(image) not in used:
+                problems.append("image not used by any page: %s" % os.path.relpath(image, DOCS_DIR))
+        self.assertEqual(problems, [])
+
+    def test_the_stylesheet_keeps_images_inside_the_page(self):
+        css = " ".join(read_text(os.path.join(DOCS_DIR, "style.css")).split())
+        self.assertIn("img { max-width: 100%; height: auto; }", css)
 
     def test_every_page_uses_the_stylesheet_and_the_navigation(self):
         for path in html_files():

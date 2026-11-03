@@ -78,19 +78,8 @@ window and gave the messages quoted here. Your numbers can differ if your model 
 
 <h2>Job 1: make a new model</h2>
 <p>Here is the network you will have after step 1:</p>
-<pre><code>                              geometry_mesh
-                                   |
-                              geometry_triangles
-                                   |
-    res1_mesh                 geometry_components               memory_points
-        |                          |                                 |
-        |                     geometry_mass                     memory_group
-        |                          |                                 |
-    res1_props                geometry_props                    memory_props
-        (all three props nodes feed assemble)
-                                assemble
-                                   |
-                                export</code></pre>
+<p><img src="img/new-p3d-network.png" width="1110" height="745"
+ alt="The New P3D starter network. Left column: res1_mesh (Box) into res1_props (LOD Properties). Middle column: geometry_mesh (Box) into geometry_triangles (Divide) into geometry_components (Group) into geometry_mass (Mass) into geometry_props (LOD Properties). Right column: memory_points (Add) into memory_group (Group) into memory_props (LOD Properties). The three props nodes each connect to one input of assemble (Assemble LODs), which connects to export (P3D Export)."></p>
 <p>Each column is one LOD: Resolution 1 on the left, Geometry in the middle, Memory on the right. The three props
 nodes at the bottom of the columns all feed <code>assemble</code>, which packs the LODs into one model.
 <code>export</code> writes the file.</p>
@@ -188,6 +177,12 @@ checked by the tests.</p>
 <li>Assemble LODs</li>
 <li>P3D Export</li>
 </ol>
+<p>Here is the same network as built in the crate example below:</p>
+<p><img src="img/edit-lod-network.png" width="835" height="802"
+ alt="The Job 2 network. p3d_import (P3D Import) connects to extract_lod (Extract LOD) and also straight to the first input of assemble_lods (Assemble LODs). extract_lod connects to mass (Mass), and mass connects to the second input of assemble_lods. assemble_lods connects to p3d_export (P3D Export)."></p>
+<p>In words: <code>p3d_import</code> feeds <code>extract_lod</code>, which feeds <code>mass</code>. Then
+<code>mass</code> goes into the second input of <code>assemble_lods</code>, and <code>p3d_import</code> goes into its first
+input. <code>p3d_export</code> comes last.</p>
 <p><kbd class="ui-node">P3D Import</kbd> also goes straight into the first input of
 <kbd class="ui-node">Assemble LODs</kbd>. The example below uses the crate model
 <code>tests/fixtures/p3d/sample_2_crate.p3d</code> from the add-on folder. You can use any .p3d file of your own.</p>
@@ -237,7 +232,7 @@ input (the base: the original model). Wire your edited branch into its second in
 <kbd class="ui-parm" data-node="a3ob_assemble_lods">Replace Matching LODs</kbd> switch is on, so the edited LOD
 replaces the base LOD of the same type and resolution, in the same place. The other LODs pass through untouched. The
 message:</p>
-<p><samp class="ui-msg">1 replaced, 6 passed through, 0 added.</samp></p>
+<p><samp class="ui-msg">Base: p3d_import (7 LODs). 1 replaced, 6 passed through, 0 added.</samp></p>
 
 <h3>Step 5: write it</h3>
 <p>Add a <kbd class="ui-node">P3D Export</kbd> node after Assemble LODs. Set the
