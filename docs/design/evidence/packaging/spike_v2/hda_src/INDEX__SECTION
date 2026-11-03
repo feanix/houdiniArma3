@@ -1,0 +1,14 @@
+Operator:     a3ob_spike_export
+Label:        A3OB Spike Export
+Path:         oplib:/Sop/a3ob_spike_export?Sop/a3ob_spike_export
+Icon:         SOP_python
+Table:        Sop
+License:      
+Extra:        
+User:         
+Inputs:       1 to 1
+Subnet:       false
+Python:       true
+Empty:        false
+Modified:     Mon Nov  3 12:00:00 2026
+

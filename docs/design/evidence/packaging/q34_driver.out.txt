@@ -1,0 +1,103 @@
+== Q3: Python SOP fallback ==
+
+--- build in v1, save .hip (module v1) ---
+[fallback_build] real packages importable: True True
+[fallback_build] spike module version 1 from E:\Projects\houdiniArma3\.claude\worktrees\task5-pack\docs\design\evidence\packaging\spike_v1\a3ob_spike\nodes.py
+[fallback_build] created /obj/geo1/stable parms: ['tag', 'path', 'save']
+[fallback_build]   stable   errors=none tag='from-stable'
+[fallback_build] created /obj/geo1/naive parms: ['tag', 'path', 'save']
+[fallback_build]   naive    errors=none tag='from-naive'
+[fallback_build]   stable: pressButton -> exists=True {"module_version": 1, "points": 8, "tag": "from-stable"}
+[fallback_build] saved fallback.hip 39933 bytes
+(exit 0)
+
+--- fresh process, same v1 code, load .hip (module v1) ---
+[fallback_load] spike module version 1
+[fallback_load] stable code: import a3ob_spike.entry as e ; e.cook(hou.pwd())
+[fallback_load]   spare parms present: ['tag', 'path', 'save'] tag value: from-stable
+[fallback_load]   stable   errors=none tag='from-stable'
+[fallback_load] naive code: from a3ob_spike.nodes import cook ; cook(hou.pwd())
+[fallback_load]   spare parms present: ['tag', 'path', 'save'] tag value: from-naive
+[fallback_load]   naive    errors=none tag='from-naive'
+[fallback_load]   stable: pressButton -> exists=True {"module_version": 1, "points": 8, "tag": "from-stable"}
+[fallback_load]   naive: pressButton -> exists=True {"module_version": 1, "points": 8, "tag": "from-naive"}
+(exit 0)
+
+--- fresh process, package updated to v2, load the v1 .hip (module v2) ---
+[fallback_load] spike module version 2
+[fallback_load] stable code: import a3ob_spike.entry as e ; e.cook(hou.pwd())
+[fallback_load]   spare parms present: ['tag', 'path', 'save'] tag value: from-stable
+[fallback_load]   stable   cook raised OperationFailed
+[fallback_load]   stable   errors=['Python error: Traceback (most recent call last): |   File "/obj/geo1/stable", line 2, in <module> |   File "E:\\Projects\\houdiniArma3\\.claude\\worktrees\\task5-pack\\docs\\design\\evidence\\packaging\\spike_v2\\a3ob_spike\\entry.py", line 6, in cook |     nodes.run_cook(node) |     ~~~~~~~~~~~~~~^^^^^^ |   File "E:\\Projects\\houdiniArma3\\.claude\\worktrees\\task5-pack\\docs\\design\\evidence\\packaging\\spike_v2\\a3ob_spike\\nodes.py", line 47, in run_cook |     scale = node.evalParm("scale") |   File "E:\\SteamLibrary/steamapps/common/Houdini Indie/houdini/python3.13libs\\hou.py", line 20847, in evalParm |     return _hou.OpNode_evalParm(self, parm_path) |            ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^ | hou.OperationFailed: The attempted operation failed. | Invalid parm name'] tag=None
+[fallback_load] naive code: from a3ob_spike.nodes import cook ; cook(hou.pwd())
+[fallback_load]   spare parms present: ['tag', 'path', 'save'] tag value: from-naive
+[fallback_load]   naive    cook raised OperationFailed
+[fallback_load]   naive    errors=['Python error: Traceback (most recent call last): |   File "/obj/geo1/naive", line 1, in <module> | ImportError: cannot import name \'cook\' from \'a3ob_spike.nodes\' (E:\\Projects\\houdiniArma3\\.claude\\worktrees\\task5-pack\\docs\\design\\evidence\\packaging\\spike_v2\\a3ob_spike\\nodes.py)'] tag=None
+[fallback_load]   stable: pressButton -> exists=True 
+[fallback_load]   naive: pressButton -> exists=True 
+Error running callback:
+Traceback (most recent call last):
+  File "Sop/python/save", line 1, in <module>
+  File "E:\Projects\houdiniArma3\.claude\worktrees\task5-pack\docs\design\evidence\packaging\spike_v2\a3ob_spike\entry.py", line 10, in save
+    return nodes.save(kwargs)
+           ~~~~~~~~~~^^^^^^^^
+  File "E:\Projects\houdiniArma3\.claude\worktrees\task5-pack\docs\design\evidence\packaging\spike_v2\a3ob_spike\nodes.py", line 57, in save
+    json.dump({"module_version": VERSION, "points": len(geo.points()),
+                                                        ^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'points'
+Error running callback:
+Traceback (most recent call last):
+  File "Sop/python/save", line 1, in <module>
+  File "E:\Projects\houdiniArma3\.claude\worktrees\task5-pack\docs\design\evidence\packaging\spike_v2\a3ob_spike\entry.py", line 10, in save
+    return nodes.save(kwargs)
+           ~~~~~~~~~~^^^^^^^^
+  File "E:\Projects\houdiniArma3\.claude\worktrees\task5-pack\docs\design\evidence\packaging\spike_v2\a3ob_spike\nodes.py", line 57, in save
+    json.dump({"module_version": VERSION, "points": len(geo.points()),
+                                                        ^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'points'
+(exit 0)
+
+--- v2: repairs (module v2) ---
+[fallback_repair] repair 1: call entry.upgrade(node) outside a cook
+[fallback_repair]   added parms: ['scale']
+[fallback_repair]   stable   errors=none tag='from-stable'
+[fallback_repair]   tag value (old default stays in the node): from-stable | scale: 1.0
+[fallback_repair] repair 2: naive wrapper needs its stored code rewritten
+[fallback_repair]   naive    errors=none tag='from-naive'
+[fallback_repair] repair 3: self-heal inside the cook (upgrade called from the node code)
+[fallback_repair]   selfheal errors=none tag='hello-v2'
+[fallback_repair]   parms after self-heal attempt: ['tag', 'scale', 'path', 'save']
+[fallback_repair] fresh node from the v2 shelf function: tag default hello-v2
+(exit 0)
+
+
+== Q4 + Q3: HDA built from text, with Save to Disk button ==
+
+--- collapse HDA source v1 (module v1) ---
+[hda_build] collapsed spike_v1 -> spike_v1.hda 1260 bytes
+(exit 0)
+
+--- collapse HDA source v2 (module v2) ---
+[hda_build] collapsed spike_v2 -> spike_v2.hda 1388 bytes
+(exit 0)
+
+--- scene with HDA v1, press button, save .hip (module v1) ---
+[hda_scene] spike module version 1 | HDA found by scan path: ['a3ob_spike_export.hda']
+[hda_scene] definition file: <work>/otls/a3ob_spike_export.hda
+[hda_scene] parms: ['tag', 'path', 'save']
+[hda_scene]   exporter errors=none tag='from-hda'
+[hda_scene]   exporter: pressButton -> exists=True {"module_version": 1, "points": 8, "tag": "from-hda"}
+[hda_scene] saved hda_scene.hip 38468 bytes
+(exit 0)
+
+--- HDA updated to v2 (new parm, new default), load v1 .hip (module v2) ---
+[hda_load] spike module version 2 | HDA found by scan path: ['a3ob_spike_export.hda']
+[hda_load] definition file: <work>/otls/a3ob_spike_export.hda
+[hda_load] parms: ['tag', 'scale', 'path', 'save']
+[hda_load] tag value kept from hip: from-hda | scale (new in v2): 1.0
+[hda_load]   exporter errors=none tag='from-hda'
+[hda_load]   exporter: pressButton -> exists=True {"module_version": 2, "points": 8, "tag": "from-hda"}
+[hda_load] fresh node tag default: hello-v2
+(exit 0)
+
+files written in workdir: ['out_hda_2.json', 'out_hda_build.json', 'out_naive_1.json', 'out_naive_2.json', 'out_stable_1.json', 'out_stable_2.json', 'out_stable_build.json']

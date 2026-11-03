@@ -1,0 +1,41 @@
+before: min/max inputs 1 1
+after : min/max inputs 1 4
+text source: Inputs line in INDEX__SECTION: ['Inputs:       1 to 4']
+DialogScript after change:
+# Dialog script for a3ob_spike_export, version 1
+
+{
+    name	a3ob_spike_export
+    script	a3ob_spike_export
+    label	"A3OB Spike Export"
+
+    help {
+	""
+    }
+
+    inputlabel	1	"Input"
+
+    parm {
+	name	"tag"
+	label	"Tag"
+	type	string
+	default	{ "hello" }
+    }
+    parm {
+	name	"path"
+	label	"File Path"
+	type	file
+	default	{ "" }
+	parmtag	{ "filechooser_mode" "write" }
+    }
+    parm {
+	name	"save"
+	label	"Save to Disk"
+	type	button
+	default	{ "0" }
+	parmtag	{ "script_callback" "import a3ob_spike.entry as e; e.save(kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+}
+
+connected inputs: 3 | max: 4

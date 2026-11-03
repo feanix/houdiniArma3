@@ -1,0 +1,42 @@
+# Dialog script for a3ob_spike_export, version 2 (adds "scale", new "tag" default)
+
+{
+    name	a3ob_spike_export
+    script	a3ob_spike_export
+    label	"A3OB Spike Export"
+
+    help {
+	""
+    }
+
+    inputlabel	1	"Input"
+
+    parm {
+	name	"tag"
+	label	"Tag"
+	type	string
+	default	{ "hello-v2" }
+    }
+    parm {
+	name	"scale"
+	label	"Scale"
+	type	float
+	default	{ "1" }
+	range	{ 0 10 }
+    }
+    parm {
+	name	"path"
+	label	"File Path"
+	type	file
+	default	{ "" }
+	parmtag	{ "filechooser_mode" "write" }
+    }
+    parm {
+	name	"save"
+	label	"Save to Disk"
+	type	button
+	default	{ "0" }
+	parmtag	{ "script_callback" "import a3ob_spike.entry as e; e.save(kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+}

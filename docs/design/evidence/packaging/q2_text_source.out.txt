@@ -1,0 +1,60 @@
+licenseCategory: licenseCategoryType.Indie
+
+== A. expand a SideFX library (commercial file) ==
+  hotl -t oplibsop_t OPlibSop.hda -> exit 0 | (no output)
+
+== B. commercial asset -> Indie collapse -> expand again ==
+  has Contents.mime (network as MIME text): True
+  hotl -l one_t b_collapsed.hda -> exit 0 | (no output)
+  size 14320
+  hotl -V b_collapsed.hda -> exit 0 | Operator type library: <tmp>\b_collapsed.hda
+  hotl -t b_reexpandhda b_collapsed.hda -> exit 0 | (no output)
+  Contents.mime identical after Indie collapse + expand: True (46903 bytes)
+  hotl -l one_t b_collapsed.hdalc -> exit 0 | (no output)
+  size 14320
+  hotl -V b_collapsed.hdalc -> exit 0 | Operator type library: <tmp>\b_collapsed.hdalc
+  hotl -t b_reexpandhdalc b_collapsed.hdalc -> exit 0 | (no output)
+  Contents.mime identical after Indie collapse + expand: True (46903 bytes)
+
+== C. Python SOP HDA authored from text only ==
+  hotl -l (.hdalc)
+  hotl -l src_t c_hotl_-l.hdalc -> exit 0 | (no output)
+   exists: True size: 992
+  hotl -l (.hda)
+  hotl -l src_t c_hotl_-l.hda -> exit 0 | (no output)
+   exists: True size: 992
+  hotl -c (.hda)
+  hotl -c src_t c_hotl_-c.hda -> exit 0 | (no output)
+   exists: True size: 992
+  hou.hda.collapseFromDirectory (.hda)
+   exists: True size: 992
+
+  inspect + cook each collapsed result
+  hotl -l (.hdalc)
+  hotl -V c_hotl_-l.hdalc -> exit 0 | Operator type library: <tmp>\c_hotl_-l.hdalc
+  hotl -t c_hotl_-l.hdalc_x c_hotl_-l.hdalc -> exit 0 | (no output)
+   definitions: ['a3ob_q2_pysop'] sections: ['DialogScript', 'PythonCook', 'TypePropertiesOptions']
+   cooked: points 8 tag = cooked-from-text errors ()
+  hotl -l (.hda)
+  hotl -V c_hotl_-l.hda -> exit 0 | Operator type library: <tmp>\c_hotl_-l.hda
+  hotl -t c_hotl_-l.hda_x c_hotl_-l.hda -> exit 0 | (no output)
+   definitions: ['a3ob_q2_pysop'] sections: ['DialogScript', 'PythonCook', 'TypePropertiesOptions']
+   cooked: points 8 tag = cooked-from-text errors ()
+  hotl -c (.hda)
+  hotl -V c_hotl_-c.hda -> exit 0 | Operator type library: <tmp>\c_hotl_-c.hda
+  hotl -t c_hotl_-c.hda_x c_hotl_-c.hda -> exit 0 | (no output)
+   definitions: ['a3ob_q2_pysop'] sections: ['DialogScript', 'PythonCook', 'TypePropertiesOptions']
+   cooked: points 8 tag = cooked-from-text errors ()
+  hou.hda.collapseFromDirectory (.hda)
+  hotl -V c_hou_hda_collapseFromDirectory.hda -> exit 0 | Operator type library: <tmp>\c_hou_hda_collapseFromDirectory.hda
+  hotl -t c_hou_hda_collapseFromDirectory.hda_x c_hou_hda_collapseFromDirectory.hda -> exit 0 | (no output)
+   definitions: ['a3ob_q2_pysop'] sections: ['DialogScript', 'PythonCook', 'TypePropertiesOptions']
+   cooked: points 8 tag = cooked-from-text errors ()
+
+== D. Indie re-saves the text-authored Python SOP: does it become non-commercial? ==
+  copyToHDAFile -> 992 bytes
+  hotl -V d_resaved_by_indie.hda -> exit 0 | Operator type library: <tmp>\d_resaved_by_indie.hda
+  hotl -t d_resaved_by_indie.hda_x d_resaved_by_indie.hda -> exit 0 | (no output)
+  sections after Indie save: ['DialogScript', 'PythonCook', 'TypePropertiesOptions']
+  bytes identical to the hotl-collapsed file: False
+  sizes 992 vs 992; differing byte offsets: [44, 78, 111, 260, 261] (these are the 4-byte modification-time fields in the section index)
