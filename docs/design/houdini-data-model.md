@@ -319,7 +319,7 @@ round-trip level (§15).
 - **Paths.** Stored exactly as in the file (backslashes, relative, no forced case). Lowercasing and relative/absolute conversion (`utilities/generic.py:174-216`) are export options, off for a lossless round trip.
   - **Lowercase option (D14, Q-12).** It follows A3OB's `force_lowercase` (`io/data_p3d.py:752-762`, called at `export_p3d.py:720-722`). It lowercases **texture paths** (`a3ob_texture`), **material paths** (`a3ob_material`), **selection names** (so proxy paths and their selections too) and **property names and values**. It changes nothing else. Lowercasing selection names happens on the decoded P3D name, after `decodeAttrib` and before `encode_string`.
   - **Collisions.** If lowercasing makes two selection names equal, or two property names in one LOD equal, the validator warns (§17.1). The export still writes both entries, as A3OB does.
-  - **Entry nodes normalise slashes (D14, Q-6).** The Proxy node and the Material Assign node turn every `/` into `\` in the paths they write (`a3ob_proxy_path`, `a3ob_texture`, `a3ob_material`). The Proxy node also removes the `.p3d` ending (§13.1). Nothing else is normalised: the importer, Export and every other node keep path strings exactly as they are.
+  - **Entry nodes normalise slashes (D14, Q-6).** The Proxy node and the Material Assign node turn every `/` into `\` in the paths they write (`a3ob_proxy_path`, `a3ob_texture`, `a3ob_material`). The Proxy node also removes a trailing `.p3d` from the path it writes (ux-tools.md, Proxy node), so Export never strips it. Nothing else is normalised: the importer, Export and every other node keep path strings exactly as they are.
 - **Polygon sides.**
   - P3D faces have 3 or 4 sides; triangles carry a 16-byte zero pad (`data_p3d.py:457-458`, `530-531`). The pad is not stored and is written as zeros; all fixture pads are zero (S2).
   - The exporter rejects polygons with more than 4 vertices, open polygons and non-polygon prims, other than proxy packed prims (validator, M4).
@@ -817,6 +817,8 @@ decoded P3D name (§7.3), case-insensitively, at the **start** of the name (A3OB
 | `T2-GL-UVVALUES` | VBS Groundlayer | Every UV value is one of (0,0), (1,0), (1,1), (1,-1). Not checked when `T2-GL-UV` fails. | `only_valid_uvs`, `:534-547` |
 | `T2-PATH-ENTRY` | Paths | At least one group is named `in<digits>`. | `has_entry`, `:571-577` (strict there) |
 | `T2-PATH-POS` | Paths | The same test as `T2-PATH-ENTRY`, with the message "no position points". | `has_position`, `:579-585` (optional there); see the note below |
+
+Mass rules (`T2-MASS`, `T2-MASSALL`) on Geometry Buoyancy and Geometry PhysX go beyond A3OB, which checks mass only on plain Geometry (`ValidatorLODGeometry`; the subtype validator has no mass rule). They follow D14, Q-3.
 
 **Notes.**
 
