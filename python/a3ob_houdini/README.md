@@ -35,6 +35,16 @@ Every node also needs a user docs page (the `?` icon of the parameter pane opens
 section). The page is made from the table: run `python scripts/build_user_docs.py` after `build_hdas.py`, add a short
 intro to `NODE_INTRO` in that script, and commit `docs/user/`. A test fails when the pages are out of date.
 
+## Testing: which HDAs the suite uses
+
+The hou tests install the HDAs of the checkout under test from `houdini/otls` (`tests/hou_support.py`). A Houdini package
+can load other copies of the same HDAs first (for example one that points `A3OB_HOUDINI` at another checkout). So after
+each install the helper makes the checkout's definition the preferred one (`hou.HDADefinition.setIsPreferred`) and checks
+that the node type resolves to a library inside this checkout. If not, the run stops at once and names the other library.
+`tests/test_hda_preference.py` proves it with a second copy installed first. This makes the suite safe to start from both
+Bash and PowerShell, with or without your package. To run fully clean anyway, set `HOUDINI_PACKAGE_SKIP=1` (no packages)
+or point `HOUDINI_USER_PREF_DIR` at an empty folder before starting hython.
+
 ## Naming convention for nodes
 
 | Thing | Rule | P3D Import |
