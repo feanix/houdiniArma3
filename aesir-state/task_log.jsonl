@@ -184,3 +184,12 @@
 {"actor": "lead", "id": 184, "task_id": 16, "text": "status in_review -> approved (lead: merged main (README union) + rules_off preset fix c1a2300, reviewed by lead)", "ts": "2026-11-03T10:21:21Z"}
 {"actor": "lead", "id": 185, "task_id": 16, "text": "gate full PASS a8ad06c6 48.3s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T10:22:14Z"}
 {"actor": "lead", "id": 186, "task_id": 16, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T10:22:14Z"}
+{"actor": "lead", "id": 187, "task_id": 16, "text": "merged by lead (queued by lead)", "ts": "2026-11-03T10:22:17Z"}
+{"actor": "lead", "id": 188, "task_id": 16, "text": "queue: merged at bb56814", "ts": "2026-11-03T10:22:17Z"}
+{"actor": "aesir-hook", "id": 189, "task_id": 17, "text": "status open -> in_progress (started by impl-17-a)", "ts": "2026-11-03T10:22:52Z"}
+{"actor": "impl-17-a", "id": 190, "task_id": 17, "text": "gate quick PASS ee5d770d 63.0s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T10:34:01Z"}
+{"actor": "rev-17-a", "id": 191, "task_id": 17, "text": "gate quick PASS ee5d770d 56.9s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T10:37:17Z"}
+{"actor": "lead", "id": 192, "task_id": 17, "text": "status in_progress -> in_review (rev-17-a approved (wf_186506be-eb8))", "ts": "2026-11-03T10:37:47Z"}
+{"actor": "lead", "id": 193, "task_id": 17, "text": "status in_review -> approved (rev-17-a approved (wf_186506be-eb8))", "ts": "2026-11-03T10:37:47Z"}
+{"actor": "lead", "id": 194, "task_id": 17, "text": "gate full PASS b30421b7 57.8s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T10:38:49Z"}
+{"actor": "lead", "id": 195, "task_id": 17, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T10:38:49Z"}
