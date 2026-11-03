@@ -1,7 +1,14 @@
 # Houdini data model for P3D (M2 spec)
 
-Status: revision 3 (2026-11-03), owner decisions D7-D9 applied. Normative for M3 (import) and M4 (export). Two
+Status: revision 4 (2026-11-03), owner decisions D7-D9 and D14 applied. Normative for M3 (import) and M4 (export). Two
 questions stay open (OQ-5, OQ-11; see [Still open](#still-open)).
+
+Revision 4 changes (D14, from the UX questions in `docs/design/ux-tools.md`): §17.1 gains A3OB's per-LOD-type
+validation rules as switchable M4 warnings (Q-3); §3.2 gains the normative Assemble LODs match rule, based on the stored
+`a3ob_lod_signature` (Q-4); the export lowercase option now covers texture paths, material paths, selection names and
+property names and values, with a validator warning when lowercasing makes two names equal (Q-12; §5 Paths, §15, §16,
+§17.1); the Proxy and Material Assign nodes normalise `/` to `\` in the paths they write (Q-6; §5 Paths, §13.3). Nothing
+else is normative-new.
 
 Revision 3 changes: the owner decisions D7, D8 and D9 are folded in, so the spec no longer says "recommended" for
 resolved items, and the open-questions table is now a "Resolved (D7-D9)" table plus a short "Still open" table. D8 adds
@@ -94,6 +101,27 @@ A3OB exports every visible, parentless mesh with `is_a3_lod` (`export_p3d.py:26-
 | Packed transform | For a LOD that came from a packed prim:<br>1. Read `det = fullTransform()` 3×3 determinant from the LOD prim **before** unpacking.<br>2. Let the `unpack` verb bake the transform. Run it on a geometry that holds only that LOD prim (or only the fragments of one LOD), with `dotransform = 1` ("Apply Transform", default), `limit_iterations = 1` / `iterations = 1` (defaults, so nested proxies stay packed) and default `detail_attributes`. Unpack drops non-packed prims (docs: `nodes/sop/unpack`), which is one more reason mixed inputs are errors. It already transforms `P`, `N` (as a normal) and the transforms of nested proxy packed prims (V3: translate +5 moved `P`; V4: a nested proxy's `fullTransform()` = `P·T` exactly).<br>3. **The exporter never applies the LOD transform a second time.**<br>4. If `det < 0`, reverse the corner order of every polygon of that LOD when building P3D faces. Unpack does not do this: after a mirror-X, `prim.normal()` flips while `N` does not (V3). Accept a non-identity transform, bake it once, and warn (D7, OQ-10).<br>Nested proxies with `det < 0` are handled in §13.5. |
 | Duplicate signatures | After copies are expanded, a duplicate signature is an error by default. Option: skip or ignore, mirroring A3OB `lod_collisions` (`export_p3d.py:614-622`). |
 | Object transform | Not applied: SOP space = P3D space. This mirrors the P3D origin = object origin rule. |
+
+**Assemble LODs match rule (normative, D14 Q-4).** The Assemble LODs node (`docs/design/ux-tools.md`) builds a P3D
+geometry from a base P3D geometry plus edited LOD geometries. With its `replace` switch on, it matches by the stored
+`a3ob_lod_signature` (§3.3, §3.4):
+
+- **Comparison.** The raw int32 bits are compared as stored, never the decoded `a3ob_lod_type` /
+  `a3ob_lod_resolution`. Two LODs match only if their stored bits are equal.
+- **Match.** An edited LOD replaces the base LOD with the same `a3ob_lod_signature` and **keeps that base LOD's
+  position** in the prim order.
+- **No match.** An edited LOD with no matching base LOD, or without `a3ob_lod_signature`, is **appended** at the end,
+  in input order.
+- **Polygon-less LODs.** The rule reads only the detail attribute, so it works for LODs with no polygons (Memory, Land
+  Contact, Hit-points). `a3ob_lod_uid` cannot do this, because it is a prim attribute (§3.5).
+- **Duplicate signatures in the base.** The edited LOD replaces the **first** base LOD with that signature, in prim
+  order. The other base LODs with the same signature stay as they are. The node warns.
+- **Duplicate signatures among the edited LODs.** The first edited LOD replaces the first unmatched base LOD with that
+  signature. A further edited LOD with the same signature replaces the next base duplicate, if one is left, and is
+  appended otherwise. Each base LOD is replaced at most once. The node warns.
+- **Switch off.** With `replace` off, every edited LOD is appended.
+- **After assembly.** A duplicate signature that remains is caught by the export check ("Duplicate signatures", above
+  and §17.1). The assembly does not sort (OQ-3).
 
 ### 3.3 LOD identity and LOD-level data (detail attributes on the LOD geometry)
 
@@ -288,7 +316,10 @@ round-trip level (§15).
   - **Result.** The map from file bytes to hou strings is a bijection. V9 checks all 255 non-NUL bytes for prim strings, detail string arrays and encoded group names (`encodeAttrib` → `createPointGroup` → `decodeAttrib`).
   - **Display.** Text shows as cp1252: `é`, `ß`, `€`, `Š` look right. The 5 undefined bytes show as C1 control characters. Czech CP1250 text would show as cp1252 look-alikes; the real code page of Arma files is still open (OQ-5, D9).
   - **Scope.** It applies to `a3ob_texture`, `a3ob_material`, `a3ob_prop_names` / `a3ob_prop_values`, selection names (before `encodeAttrib`), `a3ob_proxy_path`, `a3ob_tagg_order` tokens, `a3ob_tagg_unknown_names` and the LOD `name` label. The pure layer stays hou-free.
-- **Paths.** Stored exactly as in the file (backslashes, relative, no forced case). Lowercasing (`export_p3d.py:720-722`) and relative/absolute conversion (`utilities/generic.py:174-216`) are export options, off for a lossless round trip.
+- **Paths.** Stored exactly as in the file (backslashes, relative, no forced case). Lowercasing and relative/absolute conversion (`utilities/generic.py:174-216`) are export options, off for a lossless round trip.
+  - **Lowercase option (D14, Q-12).** It follows A3OB's `force_lowercase` (`io/data_p3d.py:752-762`, called at `export_p3d.py:720-722`). It lowercases **texture paths** (`a3ob_texture`), **material paths** (`a3ob_material`), **selection names** (so proxy paths and their selections too) and **property names and values**. It changes nothing else. Lowercasing selection names happens on the decoded P3D name, after `decodeAttrib` and before `encode_string`.
+  - **Collisions.** If lowercasing makes two selection names equal, or two property names in one LOD equal, the validator warns (§17.1). The export still writes both entries, as A3OB does.
+  - **Entry nodes normalise slashes (D14, Q-6).** The Proxy node and the Material Assign node turn every `/` into `\` in the paths they write (`a3ob_proxy_path`, `a3ob_texture`, `a3ob_material`). The Proxy node also removes a trailing `.p3d` from the path it writes (ux-tools.md, Proxy node), so Export never strips it. Nothing else is normalised: the importer, Export and every other node keep path strings exactly as they are.
 - **Polygon sides.**
   - P3D faces have 3 or 4 sides; triangles carry a 16-byte zero pad (`data_p3d.py:457-458`, `530-531`). The pad is not stored and is written as zeros; all fixture pads are zero (S2).
   - The exporter rejects polygons with more than 4 vertices, open polygons and non-polygon prims, other than proxy packed prims (validator, M4).
@@ -425,7 +456,7 @@ The A3OB rule that drops UVs on non-UV LOD types (`export_p3d.py:275-277`, `util
 
 - **P3D.** `#Mass#` is one f32 per vertex (`data_p3d.py:89-104`); its length is 4·nverts (S3).
 - **A3OB.** Imports and exports it only on the Geometry LOD, as the `a3ob_mass` layer (`import_p3d.py:150-162`, `368`; `export_p3d.py:578-583`).
-- **Port.** Point float32 **`a3ob_mass`**, imported for any LOD that has the TAGG. The TAGG is written iff the attribute exists. The validator warns if it exists on a non-Geometry LOD.
+- **Port.** Point float32 **`a3ob_mass`**, imported for any LOD that has the TAGG. The TAGG is written iff the attribute exists. The validator warns if it exists on a LOD that is not a geometry-type LOD (D14, Q-3: Geometry, Geometry Buoyancy and Geometry PhysX all count as geometry for mass, §17.1).
 - **Why not Houdini `mass`?** It is a simulation attribute: Vellum Configure nodes compute "particle mass" (docs: `nodes/sop/vellumconstraints_grain`, "Physical Attributes"). A stray `mass` from a sim setup would silently emit a `#Mass#` TAGG. A helper copies `a3ob_mass` ↔ `mass` in either direction (D7, OQ-4).
 
 ## 11. Named properties, unknown TAGGs, TAGG order
@@ -512,7 +543,7 @@ The A3OB rule that drops UVs on non-UV LOD types (`export_p3d.py:275-277`, `util
 | Item | Spec |
 |---|---|
 | Prim | `geo.createPacked("PackedGeometry")` + `setEmbeddedGeometry(inner.freeze())` (T7; docs: `hom/hou/PackedPrim`). Created **after** all polygons and loose points, so mesh point numbers stay 0..n−1. Proxy prims are created in **ascending file face index** of their proxy face. That is the order export appends them in (§6), so tail-ordered proxies keep their face and vertex order (L0). |
-| Outer prim attributes | `a3ob_proxy_path` (string, raw M1 string, e.g. `\a3\characters_f\proxies\backpack`); `a3ob_proxy_index` (int32, e.g. 1); `a3ob_proxy_src_P` (float32[9]); `a3ob_proxy_src_N` (float32[9]). The last two are the snap guard (§13.5), defined below. |
+| Outer prim attributes | `a3ob_proxy_path` (string, raw M1 string, e.g. `\a3\characters_f\proxies\backpack`; the Proxy node writes it with `/` turned into `\`, §5 Paths); `a3ob_proxy_index` (int32, e.g. 1); `a3ob_proxy_src_P` (float32[9]); `a3ob_proxy_src_N` (float32[9]). The last two are the snap guard (§13.5), defined below. |
 | Snap-guard values | Both arrays hold **file-space** f32 values, i.e. exactly as stored in the P3D: no axis map, no normal negation.<br>• `a3ob_proxy_src_P` = x, y, z of the 3 proxy vertices, in **ascending file vertex index** (= embedded point order).<br>• `a3ob_proxy_src_N` = x, y, z of the proxy face's corner normals, in **file corner order** (corner 0, 1, 2). |
 | Embedded geometry | 3 points + 1 closed polygon, in proxy-local coordinates. Embedded point order = ascending file vertex index. Polygon vertex order = the §4.3 map of the file corner order.<br>It carries the same attribute scheme as a LOD: `a3ob_vertex_flags`, `N`, `uv*`, `a3ob_face_flags`, `a3ob_texture`, `a3ob_material`, point groups (selections other than the proxy's own) and their weights.<br>It **also** carries prim attributes `a3ob_proxy_path` and `a3ob_proxy_index` on the triangle, with the same values as the outer prim. This is exactly the inline form of §13.6, so unpacking a proxy (Unpack's default `transfer_attributes` is `''`, U5) still yields a valid inline proxy: V4 shows that the embedded values survive a full unpack.<br>It never carries the detail `a3ob_lod_type` (§3.2). |
 | Transform | `prim.setTransform(Matrix4(rows X, Y, Z, C))` (row-vector convention, F9). `setTransform` sets the 3×3 part and the point translation (docs: `hom/hou/PackedPrim`). |
@@ -648,16 +679,16 @@ Lossless order requires the proxy vertices and faces to be the **tail** of the v
 | triangle pad | not stored | zeros | zeros | L1 if the source pad ≠ 0 (fixtures: 0) |
 | face-data UV | `uv` or `a3ob_face_uv` (f64) | `1 − v` → f32 | ✔ | L0 for `v = 0` or `abs(v) ≥ 2⁻³⁰` |
 | face flags | `a3ob_face_flags` | raw | lossy groups | L0 |
-| texture, rvmat | `a3ob_texture`, `a3ob_material` (D-STR: M1 string unchanged) | `encode_string`; a character it cannot encode is a validator error | ✔ ASCII only | L0 for every byte 0x01–0xFF (V9) |
+| texture, rvmat | `a3ob_texture`, `a3ob_material` (D-STR: M1 string unchanged) | `encode_string`; a character it cannot encode is a validator error. Export option lowercase (off by default, §5 Paths) lowercases both | ✔ ASCII only | L0 for every byte 0x01–0xFF (V9); L1 with lowercase on |
 | face order / sections | prim order | prim order | slot-merged option | L0 |
 | `#SharpEdges#` | edge group `a3ob_sharp` (+`a3ob_sharp_extra`) | ordered pairs | ✔ (degenerate dropped; empty always written) | L0 |
-| `#Property#` | `a3ob_prop_names` / `a3ob_prop_values` (+ `a3ob_prop_raw` when the payload has bytes after a NUL) | raw payload while key/value are unchanged; else canonical | ✔ (tail bytes lost) | L0 |
+| `#Property#` | `a3ob_prop_names` / `a3ob_prop_values` (+ `a3ob_prop_raw` when the payload has bytes after a NUL) | raw payload while key/value are unchanged; else canonical. Export option lowercase lowercases name and value (§5 Paths) | ✔ (tail bytes lost) | L0; L1 with lowercase on |
 | `#Mass#` | `a3ob_mass` | per vertex | Geometry LOD only | L0 |
 | `#UVSet#` id k | `uv` / `uv<k+1>` f64 | id from name | ids renumbered | L0 |
 | repeated `#UVSet#` id | first → attribute; later → blob | blob | — | L0 while counts are unchanged; dropped otherwise |
 | selection vertex bytes | point group + `a3ob_w_G` (default 1.0) | encode, clamp 1..255 | byte 255 lost | L0 |
 | selection face bytes | derived, or prim group (+`a3ob_fw_G`, default 1.0) | derived / explicit | dropped, then derived | L0 |
-| selection names | `encodeAttrib` of the M1 name | `decodeAttrib`, then `encode_string` | ✔ (`@proxy_N` placeholders) | L0 |
+| selection names | `encodeAttrib` of the M1 name | `decodeAttrib`, then `encode_string`. Export option lowercase lowercases the name; two names that become equal get a validator warning (§5 Paths, §17.1) | ✔ (`@proxy_N` placeholders) | L0; L1 with lowercase on |
 | selection named `__…` | point group `__…` (unchanged by `encodeAttrib`) | exported because the name is in `a3ob_tagg_order` | ✔ | L0 |
 | empty or exact-duplicate selection name | blob, with a warning | blob | — | L0 while counts are unchanged; dropped otherwise |
 | selection names equal up to case | two groups | two selections, with a warning | ✔ | L0 |
@@ -704,7 +735,7 @@ Lossless order requires the proxy vertices and faces to be the **tail** of the v
 5. **Expand copies**, then check for duplicate signatures.
 6. **Write.** Append `a3ob_file_trailing` if it applies (§3.3). `a3ob_lod_uid` is not written (§3.5).
 
-Export options that change data (lowercase, relative paths, sort sections, sort LODs, auto-components `export_p3d.py:294-303`, renumber components, Czech translation `export_p3d.py:591-593`) all default to off. They are applied in `a3ob_core` after collection.
+Export options that change data (lowercase: texture and material paths, selection names, property names and values, §5 Paths; relative paths, sort sections, sort LODs, auto-components `export_p3d.py:294-303`, renumber components, Czech translation `export_p3d.py:591-593`) all default to off. They are applied in `a3ob_core` after collection.
 
 ## 17. Validator and artist tooling (M3/M4 plan)
 
@@ -729,11 +760,84 @@ Export options that change data (lowercase, relative paths, sort sections, sort 
 | Stale blobs / sharp extras dropped because counts changed | warning | §9.2, §11.2 |
 | Non-empty `LOD.dropped_taggs` after building (a TAGG was added before `set_mesh`); any `structure_errors()` message | error (hard stop; coding or stale-blob bug) | §11.2, §16 |
 | Any other M1 `check()` message (index out of range, proxy selection without a triangle) | warning (advisory) | §16 |
-| Flag values not on the LOD type's known list; `a3ob_mass` on a non-Geometry LOD; degenerate proxy triangle | warning | §5, §10, §13.4 |
+| Flag values not on the LOD type's known list; `a3ob_mass` on a LOD that is not geometry-type (Geometry, Geometry Buoyancy, Geometry PhysX); degenerate proxy triangle | warning | §5, §10, §13.4 |
+| Lowercase option is on and two selection names, or two property names in one LOD, become equal (D14, Q-12) | warning | §5 Paths |
+| Assemble LODs: duplicate `a3ob_lod_signature` in the base or among the edited LODs | warning | §3.2 |
+| Tier 2: A3OB's per-LOD-type rules (rule ids below) | warning, one switch per rule, default on (D14, Q-3) | §17.1.1 |
 
 **Severities (D8).** Both "merged" checks are warnings, never errors. Merging LODs can be deliberate (the first LOD's
 detail wins, and the result is well defined), and legitimate modelling also adds points, so the count heuristic fires on
 innocent edits. The uid check is exact where it applies; the count heuristic stays as a secondary warning.
+
+#### 17.1.1 Per-LOD-type rules (tier 2, D14 Q-3)
+
+These rules come from A3OB's validator, `utilities/validator.py` (A3OB v2.5.1 @ 9f2b8bc; lines below are in that file).
+A3OB calls some of them "strict" (they fail the export) and some "optional". The port makes **all** of them
+**warnings** that the user can switch off one by one (default: on). The user can still raise warnings to errors with the
+warnings-as-errors switch (D14, Q-2). A rule applies only to the LOD types in its column. A LOD whose type is not
+listed gets only the generic rules.
+
+**LOD type groups.** Names are M1 `lod_types.LOD_TYPES` display names. The grouping is A3OB's `setup_lod_specific`
+(`validator.py:695-736`).
+
+| Group | LOD types |
+|---|---|
+| Any | every LOD type |
+| Geometry-type | Geometry, Geometry Buoyancy, Geometry PhysX (D14, Q-3) |
+| Shadow | Shadow Volume, Shadow Volume - Cargo View, Shadow Volume - Pilot View, Shadow Volume - Gunner View |
+| Point cloud | Memory, Land Contact, Hit-points |
+| Roadway | Roadway |
+| Paths | Paths |
+| VBS Underground | Underground (VBS) |
+| VBS Groundlayer | Groundlayer (VBS) |
+
+**Rules.** In the checks, "polygon" means a closed polygon prim, and "group" means a point group, matched by its
+decoded P3D name (§7.3), case-insensitively, at the **start** of the name (A3OB uses `re.match` with `IGNORECASE`,
+`validator.py:141-150`). A3OB returns "no match" for a LOD with no points.
+
+| Id | LOD types | Check, in plain words | A3OB source |
+|---|---|---|---|
+| `T2-UV2` | Any | The LOD has no more than 2 UV sets. | `ValidatorComponentLOD.max_two_uvs`, `:133-139` (optional there) |
+| `T2-CONTIG` | Geometry-type, Shadow, VBS Underground | Every edge shared by two polygons is traversed in opposite directions by them, so the surface has no flipped polygons. Skipped for Geometry-type LODs that have an `occluder\d+` group. | `is_contiguous`, `:103-111`; skip: `ValidatorLODGeometry.conditions`, `:297-302`, subtype `:321-326` |
+| `T2-TRI` | Geometry-type, Shadow, VBS Underground | Every polygon is a triangle. For Geometry-type the message says that convexity is then not definite. | `is_triangulated`, `:113-121`, `:222-227` (optional for Geometry-type, strict for Shadow and Underground) |
+| `T2-CONVEX` | Geometry-type, VBS Underground | Every edge shared by two polygons is convex, or the two polygons are flat against each other (the dot product of their face normals is within 0.9999 to 1.0001). | `is_convex`, `:229-250` |
+| `T2-COMP` | Geometry-type, VBS Underground | At least one group is named `component<digits>`. Skipped for Geometry-type LODs that have an `occluder\d+` group. | `has_components`, `:252-258` |
+| `T2-MASS` | Geometry-type | `a3ob_mass` exists and the sum of all point masses is at least 0.001. | `has_mass`, `:260-267` |
+| `T2-MASSALL` | Geometry-type | Every point has an `a3ob_mass` of at least 0.001. | `no_unweighted`, `:269-282` (optional there) |
+| `T2-SHARP` | Shadow, VBS Underground | If any polygon has smooth normals, no edge shared by two polygons may be smooth. In Houdini terms: every such edge must be in the edge group `a3ob_sharp` (§9.2). | `is_sharp`, `:338-352` |
+| `T2-NOMAT` | Shadow, VBS Underground | No polygon has a texture or a material (`a3ob_texture` and `a3ob_material` empty on all polygons). | `no_materials`, `:354-372` |
+| `T2-SHADOWRES` | Shadow | The LOD resolution index is one of 0, 10, 1000, 1010, 1020. | `only_conventional_indices`, `:374-381` (optional there) |
+| `T2-SHADOWOFF` | Shadow | The LOD has no property `LODNoShadow = 1` (name and value trimmed, name compared without case). | `not_disabled`, `:383-391` (optional there) |
+| `T2-PC-EDGE` | Point cloud | The LOD has no open polyline or 2-vertex prim (A3OB: "contains edges"). | `no_edges`, `:433-439` (optional there) |
+| `T2-PC-FACE` | Point cloud | The LOD has no polygon with 3 or more vertices (A3OB: "contains faces"). | `no_faces`, `:441-447` (optional there) |
+| `T2-RW-FACES` | Roadway, VBS Groundlayer, Paths | The LOD has at least one polygon. | `has_faces`, `:470-476`, `:563-569` (strict there) |
+| `T2-RW-LIMIT` | Roadway | The LOD has no more than 255 points (animations break above that). | `under_limit`, `:462-468` (optional there) |
+| `T2-RW-SOUND` | Roadway | Every polygon has a non-empty `a3ob_texture` (the sound texture). | `has_sound`, `:478-498` (optional there) |
+| `T2-GL-UV` | VBS Groundlayer | The LOD has exactly one UV set. | `has_uv_channel`, `:526-532` |
+| `T2-GL-UVVALUES` | VBS Groundlayer | Every UV value is one of (0,0), (1,0), (1,1), (1,-1). Not checked when `T2-GL-UV` fails. | `only_valid_uvs`, `:534-547` |
+| `T2-PATH-ENTRY` | Paths | At least one group is named `in<digits>`. | `has_entry`, `:571-577` (strict there) |
+| `T2-PATH-POS` | Paths | The same test as `T2-PATH-ENTRY`, with the message "no position points". | `has_position`, `:579-585` (optional there); see the note below |
+
+Mass rules (`T2-MASS`, `T2-MASSALL`) on Geometry Buoyancy and Geometry PhysX go beyond A3OB, which checks mass only on plain Geometry (`ValidatorLODGeometry`; the subtype validator has no mass rule). They follow D14, Q-3.
+
+**Notes.**
+
+- **Generic rules not repeated here.** A3OB's generic set (`ValidatorLODGeneric`, `:199-216`) also has "no n-gons" and
+  four "only ASCII" checks (vertex groups, materials, properties, proxy path). They are already errors in the table
+  above (polygons with more than 4 vertices, §5; characters `encode_string` cannot encode, §5). The port does not add a
+  weaker duplicate.
+- **Information message.** A3OB also reports "distance of farthest point from origin" for Geometry-type, Roadway and
+  VBS Underground LODs (`farthest_point`, `:284-290`, `:500-506`). The Validate node may show it as an info line. It is
+  not a rule and has no switch.
+- **`T2-PATH-POS` copies `T2-PATH-ENTRY`.** A3OB's `has_position` tests the group pattern `in\d+`, the same as
+  `has_entry`, although its message says "position points". This looks like a copy mistake. The port keeps A3OB's test
+  so that the two tools agree. Whether the pattern should be `pos\d+` is not decided here.
+- **Not ported.** A3OB's "Geometry subtype" set (`ValidatorLODGeometrySubtype`, `:314-332`) also covers View Geometry,
+  Fire Geometry and the View - Cargo / Commander / Pilot / Gunner geometry and fire-geometry types. D14 names only
+  Geometry, Geometry Buoyancy and Geometry PhysX, so those other types get no tier-2 rules.
+- **Convexity test.** A3OB uses Blender's edge convexity flag. A Houdini implementation may use any test that gives the
+  same answer on a closed mesh; the 0.9999 to 1.0001 flat-edge tolerance is part of the rule.
+- **Counting.** A rule that fails reports once per LOD, with the first offending element named, as A3OB does.
 
 ### 17.2 Artist tooling (deferred HDAs, D3)
 
