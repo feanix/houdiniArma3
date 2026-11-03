@@ -346,12 +346,12 @@ class TestWriteFile(unittest.TestCase):
         self.assertFalse(report.has_errors)
 
     def test_a_failure_is_reported_and_leaves_no_temporary_file(self):
-        target = os.path.join(self.folder, "taken")
+        target = os.path.join(self.folder, "taken.p3d")
         os.mkdir(target)  # a folder where the file should go: the rename fails
         report = messages.Report()
         self.assertFalse(write_file(target, b"data", report))
         self.assertTrue(any("could not write" in text for text in report.texts(messages.ERROR)))
-        self.assertEqual(os.listdir(self.folder), ["taken"])
+        self.assertEqual(os.listdir(self.folder), ["taken.p3d"])
         self.assertEqual(os.listdir(target), [])
 
     def test_no_path_is_an_error(self):

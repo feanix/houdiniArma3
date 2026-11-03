@@ -13,14 +13,27 @@ from typing import Optional
 
 from .. import messages
 
-__all__ = ["write_file"]
+__all__ = ["write_file", "with_p3d_extension"]
+
+
+def with_p3d_extension(path: str) -> str:
+    """``path`` with ``.p3d`` added unless it already ends in ``.p3d`` (any case). An empty path stays empty.
+
+    Same as Blender's ``ExportHelper.check_extension`` with A3OB's ``filename_ext = ".p3d"``
+    (Arma3ObjectBuilder/ui/import_export_p3d.py:235): ``model`` -> ``model.p3d``, ``model.v2`` -> ``model.v2.p3d``.
+    ``write_file`` applies it, so the backup and temp names follow the final name."""
+    path = os.fspath(path) if path else ""
+    if path and not path.lower().endswith(".p3d"):
+        return path + ".p3d"
+    return path
 
 
 def write_file(path: str, data: bytes, report: messages.Report, backup: bool = False) -> bool:
-    """Write ``data`` to ``path`` through a temporary file. Returns True on success; failures go to ``report``.
+    """Write ``data`` to ``path`` (plus ``.p3d`` when missing) through a temporary file. Returns True on success;
+    failures go to ``report``.
 
     With ``backup`` an existing file is kept as ``<path>.bak`` first (A3OB's "Create Backups")."""
-    path = os.path.abspath(os.path.expandvars(os.fspath(path))) if path else ""
+    path = os.path.abspath(with_p3d_extension(os.path.expandvars(os.fspath(path)))) if path else ""
     if not path:
         report.error(messages.format_problem(None, "no output file is set", "Set the file parameter"))
         return False

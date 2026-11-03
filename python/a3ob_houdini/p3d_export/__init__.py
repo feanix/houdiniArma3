@@ -25,10 +25,10 @@ from .data import Collection
 from .model_build import build_model as build
 from .model_build import to_bytes
 from .options import ExportOptions
-from .write import write_file
+from .write import with_p3d_extension, write_file
 
 __all__ = [
-    "ExportOptions", "Collection", "collect", "build", "to_bytes", "write_file", "export_geometry",
+    "ExportOptions", "Collection", "collect", "build", "to_bytes", "write_file", "with_p3d_extension", "export_geometry",
     "build_bytes", "run", "BuildResult",
 ]
 

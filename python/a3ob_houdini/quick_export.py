@@ -58,8 +58,9 @@ def export_node(node, path: str, preset: Optional[str] = None, settings=None) ->
         return False, report
     ok = p3d_export.export_geometry([geo], path, options, report)
     if ok:
+        path = p3d_export.with_p3d_extension(path)  # the file written has the .p3d ending (task #26)
         node.setUserData(USER_DATA_KEY, path)
-        report.info("Saved %s (%d bytes)." % (path, os.path.getsize(path)))
+        report.info("Saved %s (%d bytes)." % (path, os.path.getsize(os.path.expandvars(path))))
     return ok, report
 
 

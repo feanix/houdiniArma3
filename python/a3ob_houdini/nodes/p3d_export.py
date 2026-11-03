@@ -182,7 +182,7 @@ def run_save(node) -> Report:
         if result.data is None:
             report.error(format_problem(NAME, "nothing could be built", "Please report this"))
             return report
-        path = str(values["file"]).strip()
+        path = p3d_export.with_p3d_extension(str(values["file"]).strip())  # the message names the real file
         if p3d_export.write_file(path, result.data, report, bool(values["backup"])):
             report.info("Saved %d LODs, %s to %s." % (result.lod_count, _size(len(result.data)), path))
     except Exception as ex:  # a bug: a button callback must not raise (Houdini would only print it)
