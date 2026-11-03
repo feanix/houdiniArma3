@@ -52,7 +52,7 @@ class TestLodNodeAssets(unittest.TestCase):
         self.assertTrue(r["library"].endswith("houdini/otls/a3ob_material_assign.hda"), r["library"])
         self.assertEqual(r["label"], "Material Assign")
         self.assertEqual(r["inputs"], [1, 1])
-        self.assertEqual(r["parms"], ["group", "grouptype", "settex", "texsource", "texture", "color", "colortype",
+        self.assertEqual(r["parms"], ["group", "grouptype", "settex", "texsource", "texture", "texcolor", "colortype", "color",
                                       "raw", "commonproc", "setmat", "material", "commonmat"])
         self.assertEqual(r["submenu"], [["A3OB"]])
         self.assertEqual(r["pythoncook"], "import a3ob_houdini.entry as e; e.cook('material_assign', hou.pwd())")

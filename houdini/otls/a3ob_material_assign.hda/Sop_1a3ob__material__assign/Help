@@ -37,78 +37,92 @@ Group Type:
 Set Texture:
     #id: settex
 
-    Off: leave a3ob_texture as it is.
+    On: this node gives the polygons the texture chosen below. Off: the polygons keep the texture they already have (from the file or an earlier node), for example when you only want to change the material.
 
     Type: On or off. Default: On.
 
 Texture Source:
     #id: texsource
 
-    Where the texture text comes from.
+    Where the texture comes from.
 
-    Type: Menu. Default: File.
+    Type: Menu. Default: File. Editable when: Set Texture is on.
 
-    Choices: File, Color, Custom.
+    File:
+        A texture file you pick.
+
+    Color:
+        A plain colour, written as a generated texture line.
+
+    Custom texture text:
+        A texture line you type or pick from the common list.
 
 Texture File:
     #id: texture
 
-    For File. Slashes are written as backslashes.
+    The texture file (.paa, .tga or .png). Slashes are written as backslashes. When you export with Relative Paths on, the path is made relative to the project root.
 
-    Type: Text. Default: (empty).
+    Type: File path. Default: (empty). Files: `*.paa *.tga *.png`. Shown when: Texture Source is File. Editable when: Set Texture is on.
 
 Color:
-    #id: color
+    #id: texcolor
 
-    For Color. Red, green, blue and alpha, 0 to 1.
+    The colour of the generated texture, with alpha (each 0 to 1). Click the swatch to pick one.
 
-    Type: 4 numbers. Default: 1, 1, 1, 1.
+    Type: Colour with alpha. Default: 1, 1, 1, 1 (red, green, blue, alpha). Shown when: Texture Source is Color. Editable when: Set Texture is on.
 
 Color Type:
     #id: colortype
 
-    For Color. The kind of procedural texture.
+    What the colour is used for in the game. The usual choice is CO (colour value); the other choices are texture types such as normal map (NO) or specular map (SM).
 
-    Type: Menu. Default: CO - Color Value.
+    Type: Menu. Default: CO - Color Value. Shown when: Texture Source is Color. Editable when: Set Texture is on.
 
     Choices: CO - Color Value, CA - Texture with Alpha, LCO - Terrain Texture Layer Color, SKY - Sky texture, NO - Normal Map, NS - Normal map specular with Alpha, NOF - Normal map faded, NON - Normal map noise, NOHQ - Normal map High Quality, NOPX - Normal Map with paralax, NOVHQ - two-part DXT5 compression, DT - Detail Texture, CDT - Colored detail texture, MCO - Multiply color, DTSMDI - Detail SMDI map, MC - Macro Texture, AS - Ambient Shadow texture, ADS - Ambient Shadow in Blue, PR - Ambient shadow from directions, SM - Specular Map, SMDI - Specular Map, optimized, MASK - Mask for multimaterial, TI - Thermal imaging map.
 
-Raw Text:
+Color (old scenes):
+    #id: color
+
+    Never shown. It only keeps the colour of scenes saved before Color became a colour picker: if Color is still white and this is not, this one is used. Change Color instead.
+
+    Type: 4 numbers. Default: 1, 1, 1, 1. Shown when: Texture Source is never.
+
+Texture Text:
     #id: raw
 
-    For Custom. Copied exactly as typed.
+    A texture line, copied exactly as typed. It is either a path or a generated texture such as #(argb,8,8,3)color(1,0,0,1,CO), which is a plain red.
 
-    Type: Text. Default: (empty).
+    Type: Text. Default: (empty). Shown when: Texture Source is Custom texture text. Editable when: Set Texture is on.
 
-Common Procedural:
+Pick a Common Texture:
     #id: commonproc
 
-    Fill Raw Text from the common procedural textures (and switch Texture Source to Custom). Add your own in the common data file of the Project root and presets tool.
+    Copies a frequently used texture line from the common data file into Texture Text and switches Texture Source to Custom texture text. Add your own lines in the common data file of the Project root and presets tool.
 
-    Type: Menu. Default: none.
+    Type: Menu. Default: none. Shown when: Texture Source is Custom texture text. Editable when: Set Texture is on.
 
     The choices are made when you open the menu, from the geometry or the settings.
 
 Set Material:
     #id: setmat
 
-    Off: leave a3ob_material as it is.
+    On: this node gives the polygons the material chosen below. Off: the polygons keep the material they already have (from the file or an earlier node), for example when you only want to change the texture.
 
     Type: On or off. Default: On.
 
 Material File:
     #id: material
 
-    The rvmat path. Empty clears the material. Slashes are written as backslashes.
+    The material file (.rvmat). Empty clears the material. Slashes are written as backslashes. When you export with Relative Paths on, the path is made relative to the project root.
 
-    Type: Text. Default: (empty).
+    Type: File path. Default: (empty). Files: `*.rvmat`. Editable when: Set Material is on.
 
-Add Common:
+Pick a Common Material:
     #id: commonmat
 
-    Fill Material File from the common materials (and switch Set Material on). Add your own in the common data file of the Project root and presets tool.
+    Copies a frequently used material from the common data file into Material File and switches Set Material on. Add your own in the common data file of the Project root and presets tool.
 
-    Type: Menu. Default: none.
+    Type: Menu. Default: none. Editable when: Set Material is on.
 
     The choices are made when you open the menu, from the geometry or the settings.
 

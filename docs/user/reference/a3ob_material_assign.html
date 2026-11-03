@@ -63,7 +63,7 @@
 </section>
 <section class="parm" id="settex">
 <h3>Set Texture <code>settex</code></h3>
-<p>Off: leave a3ob_texture as it is.</p>
+<p>On: this node gives the polygons the texture chosen below. Off: the polygons keep the texture they already have (from the file or an earlier node), for example when you only want to change the material.</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
@@ -71,40 +71,48 @@
 </section>
 <section class="parm" id="texsource">
 <h3>Texture Source <code>texsource</code></h3>
-<p>Where the texture text comes from.</p>
+<p>Where the texture comes from.</p>
 <dl>
 <dt>Type</dt><dd>Menu</dd>
 <dt>Default</dt><dd>File</dd>
+<dt>Editable when</dt><dd>Set Texture is on</dd>
 </dl>
 <p>Choices:</p>
 <ul>
-<li>File <code>file</code></li>
-<li>Color <code>color</code></li>
-<li>Custom <code>custom</code></li>
+<li>File <code>file</code>: A texture file you pick.</li>
+<li>Color <code>color</code>: A plain colour, written as a generated texture line.</li>
+<li>Custom texture text <code>custom</code>: A texture line you type or pick from the common list.</li>
 </ul>
 </section>
 <section class="parm" id="texture">
 <h3>Texture File <code>texture</code></h3>
-<p>For File. Slashes are written as backslashes.</p>
+<p>The texture file (.paa, .tga or .png). Slashes are written as backslashes. When you export with Relative Paths on, the path is made relative to the project root.</p>
 <dl>
-<dt>Type</dt><dd>Text</dd>
+<dt>Type</dt><dd>File path</dd>
 <dt>Default</dt><dd>(empty)</dd>
+<dt>Files</dt><dd>*.paa *.tga *.png</dd>
+<dt>Shown when</dt><dd>Texture Source is File</dd>
+<dt>Editable when</dt><dd>Set Texture is on</dd>
 </dl>
 </section>
-<section class="parm" id="color">
-<h3>Color <code>color</code></h3>
-<p>For Color. Red, green, blue and alpha, 0 to 1.</p>
+<section class="parm" id="texcolor">
+<h3>Color <code>texcolor</code></h3>
+<p>The colour of the generated texture, with alpha (each 0 to 1). Click the swatch to pick one.</p>
 <dl>
-<dt>Type</dt><dd>4 numbers</dd>
-<dt>Default</dt><dd>1, 1, 1, 1</dd>
+<dt>Type</dt><dd>Colour with alpha</dd>
+<dt>Default</dt><dd>1, 1, 1, 1 (red, green, blue, alpha)</dd>
+<dt>Shown when</dt><dd>Texture Source is Color</dd>
+<dt>Editable when</dt><dd>Set Texture is on</dd>
 </dl>
 </section>
 <section class="parm" id="colortype">
 <h3>Color Type <code>colortype</code></h3>
-<p>For Color. The kind of procedural texture.</p>
+<p>What the colour is used for in the game. The usual choice is CO (colour value); the other choices are texture types such as normal map (NO) or specular map (SM).</p>
 <dl>
 <dt>Type</dt><dd>Menu</dd>
 <dt>Default</dt><dd>CO - Color Value</dd>
+<dt>Shown when</dt><dd>Texture Source is Color</dd>
+<dt>Editable when</dt><dd>Set Texture is on</dd>
 </dl>
 <p>Choices:</p>
 <ul>
@@ -133,26 +141,39 @@
 <li>TI - Thermal imaging map <code>TI</code></li>
 </ul>
 </section>
+<section class="parm" id="color">
+<h3>Color (old scenes) <code>color</code></h3>
+<p>Never shown. It only keeps the colour of scenes saved before Color became a colour picker: if Color is still white and this is not, this one is used. Change Color instead.</p>
+<dl>
+<dt>Type</dt><dd>4 numbers</dd>
+<dt>Default</dt><dd>1, 1, 1, 1</dd>
+<dt>Shown when</dt><dd>Texture Source is never</dd>
+</dl>
+</section>
 <section class="parm" id="raw">
-<h3>Raw Text <code>raw</code></h3>
-<p>For Custom. Copied exactly as typed.</p>
+<h3>Texture Text <code>raw</code></h3>
+<p>A texture line, copied exactly as typed. It is either a path or a generated texture such as #(argb,8,8,3)color(1,0,0,1,CO), which is a plain red.</p>
 <dl>
 <dt>Type</dt><dd>Text</dd>
 <dt>Default</dt><dd>(empty)</dd>
+<dt>Shown when</dt><dd>Texture Source is Custom texture text</dd>
+<dt>Editable when</dt><dd>Set Texture is on</dd>
 </dl>
 </section>
 <section class="parm" id="commonproc">
-<h3>Common Procedural <code>commonproc</code></h3>
-<p>Fill Raw Text from the common procedural textures (and switch Texture Source to Custom). Add your own in the common data file of the Project root and presets tool.</p>
+<h3>Pick a Common Texture <code>commonproc</code></h3>
+<p>Copies a frequently used texture line from the common data file into Texture Text and switches Texture Source to Custom texture text. Add your own lines in the common data file of the Project root and presets tool.</p>
 <dl>
 <dt>Type</dt><dd>Menu</dd>
 <dt>Default</dt><dd>none</dd>
+<dt>Shown when</dt><dd>Texture Source is Custom texture text</dd>
+<dt>Editable when</dt><dd>Set Texture is on</dd>
 </dl>
 <p>The choices are made when you open the menu, from the geometry or the settings.</p>
 </section>
 <section class="parm" id="setmat">
 <h3>Set Material <code>setmat</code></h3>
-<p>Off: leave a3ob_material as it is.</p>
+<p>On: this node gives the polygons the material chosen below. Off: the polygons keep the material they already have (from the file or an earlier node), for example when you only want to change the texture.</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>
@@ -160,18 +181,21 @@
 </section>
 <section class="parm" id="material">
 <h3>Material File <code>material</code></h3>
-<p>The rvmat path. Empty clears the material. Slashes are written as backslashes.</p>
+<p>The material file (.rvmat). Empty clears the material. Slashes are written as backslashes. When you export with Relative Paths on, the path is made relative to the project root.</p>
 <dl>
-<dt>Type</dt><dd>Text</dd>
+<dt>Type</dt><dd>File path</dd>
 <dt>Default</dt><dd>(empty)</dd>
+<dt>Files</dt><dd>*.rvmat</dd>
+<dt>Editable when</dt><dd>Set Material is on</dd>
 </dl>
 </section>
 <section class="parm" id="commonmat">
-<h3>Add Common <code>commonmat</code></h3>
-<p>Fill Material File from the common materials (and switch Set Material on). Add your own in the common data file of the Project root and presets tool.</p>
+<h3>Pick a Common Material <code>commonmat</code></h3>
+<p>Copies a frequently used material from the common data file into Material File and switches Set Material on. Add your own in the common data file of the Project root and presets tool.</p>
 <dl>
 <dt>Type</dt><dd>Menu</dd>
 <dt>Default</dt><dd>none</dd>
+<dt>Editable when</dt><dd>Set Material is on</dd>
 </dl>
 <p>The choices are made when you open the menu, from the geometry or the settings.</p>
 </section>
