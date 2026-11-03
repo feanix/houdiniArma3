@@ -202,14 +202,14 @@
 	label	"T2-MASS: Mass is set"
 	type	toggle
 	default	{ "1" }
-	help	"Geometry LODs: the points have a total mass of at least 0.001."
+	help	"Geometry LOD: the points have a total mass of at least 0.001."
     }
     parm {
 	name	"t2massall"
 	label	"T2-MASSALL: Every point has mass"
 	type	toggle
 	default	{ "1" }
-	help	"Geometry LODs: every point has a mass of at least 0.001."
+	help	"Geometry LOD: every point has a mass of at least 0.001."
     }
     parm {
 	name	"t2sharp"

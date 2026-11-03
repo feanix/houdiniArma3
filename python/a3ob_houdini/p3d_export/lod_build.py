@@ -149,13 +149,15 @@ def _checks(lod: LOD, data: LodData, file_mesh: FileMesh, options: ExportOptions
 
 
 def _warn_merged(lod: LOD, data: LodData, label: str, report: messages.Report) -> None:
-    """Spec 17.1: the two "looks merged" warnings (uid, and the point and face counts)."""
+    """Spec 17.1 (D15): the uid check, and the point and face count heuristic only for a LOD with no uid."""
     uids = Counter(poly.uid for poly in data.mesh.polys if poly.uid)
     if len(uids) > 1:
         shown = ", ".join("%d (%d polygons)" % (uid, count) for uid, count in list(uids.items())[:3])
         report.warning(messages.format_problem(
             label, "looks like two LODs were merged (uids %s)" % shown,
             "A Merge of unpacked LODs keeps only the first input's LOD data. Pack the LODs with Assemble LODs instead"))
+    if uids:
+        return  # D15: the uid check is exact, so the count heuristic (which an added proxy would trip) is not used
     counts = data.details.source_counts
     if counts is not None and lod.point_count > counts[0] and lod.face_count > counts[1]:
         report.warning(messages.format_problem(

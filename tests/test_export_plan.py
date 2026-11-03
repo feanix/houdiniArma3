@@ -234,6 +234,25 @@ class TestBuildFromPlainData(unittest.TestCase):
         self.assertEqual([t.name for t in model.lods[0].taggs], ["head", "#UVSet#"])
         self.assertTrue(any("opaque TAGGs are dropped" in text for text in report.texts(messages.WARNING)))
 
+    def test_the_count_heuristic_runs_only_for_a_lod_without_a_uid(self):
+        """D15: more points and faces than imported is a warning only when no polygon has a uid."""
+        def merged_warnings(uid):
+            mesh = quad_mesh()
+            for poly in mesh.polys:
+                poly.uid = uid
+            _, report = build_one(lod_data(mesh, source_counts=(3, 1, 3)))
+            return [t for t in report.texts(messages.WARNING) if "merged" in t]
+        self.assertEqual(len(merged_warnings(0)), 1)
+        self.assertEqual(merged_warnings(7), [])
+
+    def test_two_uids_still_warn(self):
+        mesh = quad_mesh()
+        mesh.polys[0].uid, mesh.polys[1].uid = 7, 8
+        _, report = build_one(lod_data(mesh, source_counts=(3, 1, 3)))
+        found = [t for t in report.texts(messages.WARNING) if "merged" in t]
+        self.assertEqual(len(found), 1)
+        self.assertIn("uids", found[0])
+
     def test_inline_proxy_selection_is_the_union_of_group_and_prim_attributes(self):
         mesh = quad_mesh()
         mesh.polys[1].proxy = ("\\a3\\p", 2)
