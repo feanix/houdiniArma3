@@ -119,6 +119,13 @@ def _clean_preset(name: str, raw: Any, problems: List[str]) -> Dict[str, Any]:
             problems.append("The preset %r has an unknown option %r, which was ignored" % (name, key))
             continue
         default = getattr(defaults, key)
+        if isinstance(default, tuple):
+            # Tuple options (rule ids in rules_off) come back from JSON as lists.
+            if isinstance(value, (list, tuple)) and all(isinstance(item, str) for item in value):
+                clean[key] = tuple(value)
+            else:
+                problems.append("The preset %r has a bad value for %r, which was ignored" % (name, key))
+            continue
         if type(value) is not type(default):
             problems.append("The preset %r has a bad value for %r, which was ignored" % (name, key))
             continue

@@ -122,6 +122,17 @@ class TestFileAndEnvironment(Scratch):
         self.assertTrue(sm.options_for(again).lowercase)
         self.assertEqual(sm.preset_names(again), [sm.LOSSLESS, sm.RELEASE, "mine"])
 
+    def test_rule_switches_survive_save_and_load(self):
+        # rules_off is a tuple in ExportOptions and a list in JSON.
+        settings = sm.Settings()
+        sm.save_preset(settings, "quiet", ExportOptions(rules_off=("T2-MASS", "T2-UV2")))
+        sm.set_active_preset(settings, "quiet")
+        path = os.path.join(self.folder.name, "rules.json")
+        sm.save(settings, path)
+        again, problems = sm.load(path)
+        self.assertEqual(problems, [])
+        self.assertEqual(sm.options_for(again).rules_off, ("T2-MASS", "T2-UV2"))
+
     def test_save_into_a_blocked_place_is_a_user_error(self):
         blocker = os.path.join(self.folder.name, "file")
         open(blocker, "w").close()
