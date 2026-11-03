@@ -374,3 +374,9 @@
 {"actor": "lead", "id": 374, "task_id": 29, "text": "status in_review -> approved (rev-29-a approved (wf_9cb9e35a-5b4))", "ts": "2026-11-03T19:08:53Z"}
 {"actor": "lead", "id": 375, "task_id": 29, "text": "gate full PASS ca790a78 57.2s (lock wait 0s; steps: python scripts/run_tests.py -q 3.0s, Houdini Indie/bin/hython.exe\" scripts... 54.3s; run 57.2s) | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T19:09:53Z"}
 {"actor": "lead", "id": 376, "task_id": 29, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T19:09:54Z"}
+{"actor": "lead", "id": 377, "task_id": 29, "text": "merged by lead (queued by lead)", "ts": "2026-11-03T19:09:55Z"}
+{"actor": "lead", "id": 378, "task_id": 29, "text": "queue: merged at 3184940; lock wait 0s; steps: python scripts/run_tests.py -q 3.0s, Houdini Indie/bin/hython.exe\" scripts... 54.3s; run 57.2s", "ts": "2026-11-03T19:09:55Z"}
+{"actor": "lead", "id": 379, "task_id": 30, "text": "status in_progress -> in_review (rev-30-a approved (wf_76f2937b-f43))", "ts": "2026-11-03T19:10:02Z"}
+{"actor": "lead", "id": 380, "task_id": 30, "text": "status in_review -> approved (rev-30-a approved; no changes/ dir in repo so no fragment)", "ts": "2026-11-03T19:10:03Z"}
+{"actor": "lead", "id": 381, "task_id": 30, "text": "gate full PASS 711a6099 61.8s (lock wait 0s; steps: python scripts/run_tests.py -q 3.1s, Houdini Indie/bin/hython.exe\" scripts... 58.7s; run 61.8s) | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T19:11:09Z"}
+{"actor": "lead", "id": 382, "task_id": 30, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T19:11:09Z"}
