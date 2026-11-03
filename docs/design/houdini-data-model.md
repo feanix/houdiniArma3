@@ -1,7 +1,10 @@
 # Houdini data model for P3D (M2 spec)
 
-Status: revision 4 (2026-11-03), owner decisions D7-D9 and D14 applied. Normative for M3 (import) and M4 (export). Two
+Status: revision 5 (2026-11-03), owner decisions D7-D9 and D14-D17 applied. Normative for M3 (import) and M4 (export). Two
 questions stay open (OQ-5, OQ-11; see [Still open](#still-open)).
+
+Revision 5 changes: D15 (the merge count heuristic runs only for a LOD with no uid; §3.5, §17.1), D16 (T2-MASS and
+T2-MASSALL check the Geometry LOD only; §17.1.1) and D17 (three export options; new §18).
 
 Revision 4 changes (D14, from the UX questions in `docs/design/ux-tools.md`): §17.1 gains A3OB's per-LOD-type
 validation rules as switchable M4 warnings (Q-3); §3.2 gains the normative Assemble LODs match rule, based on the stored
@@ -1155,7 +1158,7 @@ already states each choice as normative.
 | OQ-9 | Which point groups export | All except `__*`, with a mask parameter, default `* ^__*` (§7.2). | D7 |
 | OQ-10 | LOD prim with a non-identity transform | Accept, bake once, fix the winding when det < 0, and warn (§3.2). | D7 |
 | OQ-12 | Empty or duplicate selection names, repeated UV-set ids | Keep them as raw blobs: L0 while counts are unchanged, dropped with a warning otherwise (§7.3, §8, §11.2). | D7 |
-| OQ-13 | LOD merge marker | **Changed from the spec's earlier recommendation (heuristic first).** The importer writes the per-prim int `a3ob_lod_uid` on every LOD's polygons now. The validator flags exactly when one LOD geometry holds two or more distinct uids. The count heuristic stays as a secondary warning (§3.5, §17.1). | D8 |
+| OQ-13 | LOD merge marker | **Changed from the spec's earlier recommendation (heuristic first).** The importer writes the per-prim int `a3ob_lod_uid` on every LOD's polygons now. The validator flags exactly when one LOD geometry holds two or more distinct uids. The count heuristic stays as a secondary warning (§3.5, §17.1), but since D15 only for a LOD with no uid. | D8, D15 |
 
 ## Still open
 

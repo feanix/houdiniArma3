@@ -713,7 +713,8 @@ Scenario: a Boolean on the Geometry LOD left some polygons with more than 4 poin
    (triangles are best for a Geometry LOD, A3OB's `is_triangulated` check).
 5. **Recook.** The red nodes clear. Export says: "9 LODs checked: 0 errors, 0 warnings." Save to Disk now works.
 6. **Second case, a warning.** If the artist had used a Merge of two unpacked LODs, Validate would be yellow, with
-   the "looks merged" text from 5.8 and a fix hint: use Assemble LODs. The geometry still flows and the model can still
+   the "looks merged" text from 5.8 and a fix hint: use Assemble LODs. (Imported LODs carry uids, so the uid check
+   catches this; since D15 the count heuristic only runs on hand-built LODs with no uid.) The geometry still flows and the model can still
    be written, because the spec calls this a warning (§17.1, D8). With `strict` on, it would be an error.
 
 ## 9. What belongs to M3 and what to M4
