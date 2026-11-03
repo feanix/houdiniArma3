@@ -17,6 +17,12 @@ __all__ = ["SPEC", "cook", "BUTTONS", "MENUS"]
 
 NAME = "Material Assign"
 
+_TEX_ON = (("settex", ("1",)),)
+_MAT_ON = (("setmat", ("1",)),)
+#: A Texture Source value that does not exist: the old colour parameter is hidden by it, always.
+LEGACY_SOURCE = "never"
+WHITE = (1.0, 1.0, 1.0, 1.0)
+
 SPEC = NodeSpec(
     kind="material_assign",
     label="Material Assign",
@@ -31,26 +37,53 @@ SPEC = NodeSpec(
         Parm("grouptype", "Group Type", "menu", "prims",
              "Primitives: the polygons in the group. Points: the polygons whose points are all in the group.",
              items=(("prims", "Primitives"), ("points", "Points"))),
-        Parm("settex", "Set Texture", "toggle", True, "Off: leave a3ob_texture as it is."),
-        Parm("texsource", "Texture Source", "menu", "file", "Where the texture text comes from.",
-             items=(("file", "File"), ("color", "Color"), ("custom", "Custom"))),
-        Parm("texture", "Texture File", "string", "", "For File. Slashes are written as backslashes."),
-        Parm("color", "Color", "float", (1.0, 1.0, 1.0, 1.0), "For Color. Red, green, blue and alpha, 0 to 1.",
-             size=4),
-        Parm("colortype", "Color Type", "menu", "CO", "For Color. The kind of procedural texture.",
-             items=tuple((token, "%s - %s" % (token, text)) for token, text in material_text.COLOR_TYPES)),
-        Parm("raw", "Raw Text", "string", "", "For Custom. Copied exactly as typed."),
-        Parm("commonproc", "Common Procedural", "menu", "none",
-             "Fill Raw Text from the common procedural textures (and switch Texture Source to Custom). "
-             "Add your own in the common data file of the Project root and presets tool.",
-             action="fillproc", menu_action="commonproc"),
-        Parm("setmat", "Set Material", "toggle", True, "Off: leave a3ob_material as it is."),
-        Parm("material", "Material File", "string", "",
-             "The rvmat path. Empty clears the material. Slashes are written as backslashes."),
-        Parm("commonmat", "Add Common", "menu", "none",
-             "Fill Material File from the common materials (and switch Set Material on). "
-             "Add your own in the common data file of the Project root and presets tool.",
-             action="fillmat", menu_action="commonmat"),
+        Parm("settex", "Set Texture", "toggle", True,
+             "On: this node gives the polygons the texture chosen below. Off: the polygons keep the texture they "
+             "already have (from the file or an earlier node), for example when you only want to change the "
+             "material."),
+        Parm("texsource", "Texture Source", "menu", "file",
+             "Where the texture comes from. File: a texture file you pick. Color: a plain colour, written as a "
+             "generated texture line. Custom texture text: a texture line you type or pick from the common list.",
+             items=(("file", "File"), ("color", "Color"), ("custom", "Custom texture text")),
+             enable_when=_TEX_ON),
+        Parm("texture", "Texture File", "file", "",
+             "The texture file (.paa, .tga or .png). Slashes are written as backslashes. When you export with "
+             "Relative Paths on, the path is made relative to the project root.",
+             file_pattern="*.paa *.tga *.png", show_when=(("texsource", ("file",)),), enable_when=_TEX_ON),
+        Parm("texcolor", "Color", "color", (1.0, 1.0, 1.0, 1.0),
+             "The colour of the generated texture, with alpha (each 0 to 1). Click the swatch to pick one.",
+             show_when=(("texsource", ("color",)),), enable_when=_TEX_ON),
+        Parm("colortype", "Color Type", "menu", "CO",
+             "What the colour is used for in the game. The usual choice is CO (colour value); the other choices "
+             "are texture types such as normal map (NO) or specular map (SM).",
+             items=tuple((token, "%s - %s" % (token, text)) for token, text in material_text.COLOR_TYPES),
+             show_when=(("texsource", ("color",)),), enable_when=_TEX_ON),
+        Parm("color", "Color (old scenes)", "float", (1.0, 1.0, 1.0, 1.0),
+             "Never shown. It only keeps the colour of scenes saved before Color became a colour picker: if Color "
+             "is still white and this is not, this one is used. Change Color instead.",
+             size=4, show_when=(("texsource", (LEGACY_SOURCE,)),)),
+        Parm("raw", "Texture Text", "string", "",
+             "A texture line, copied exactly as typed. It is either a path or a generated texture such as "
+             "#(argb,8,8,3)color(1,0,0,1,CO), which is a plain red.",
+             show_when=(("texsource", ("custom",)),), enable_when=_TEX_ON),
+        Parm("commonproc", "Pick a Common Texture", "menu", "none",
+             "Copies a frequently used texture line from the common data file into Texture Text and switches "
+             "Texture Source to Custom texture text. Add your own lines in the common data file of the Project root "
+             "and presets tool.",
+             action="fillproc", menu_action="commonproc",
+             show_when=(("texsource", ("custom",)),), enable_when=_TEX_ON),
+        Parm("setmat", "Set Material", "toggle", True,
+             "On: this node gives the polygons the material chosen below. Off: the polygons keep the material they "
+             "already have (from the file or an earlier node), for example when you only want to change the "
+             "texture."),
+        Parm("material", "Material File", "file", "",
+             "The material file (.rvmat). Empty clears the material. Slashes are written as backslashes. When you "
+             "export with Relative Paths on, the path is made relative to the project root.",
+             file_pattern="*.rvmat", enable_when=_MAT_ON),
+        Parm("commonmat", "Pick a Common Material", "menu", "none",
+             "Copies a frequently used material from the common data file into Material File and switches Set "
+             "Material on. Add your own in the common data file of the Project root and presets tool.",
+             action="fillmat", menu_action="commonmat", enable_when=_MAT_ON),
     ),
 )
 
@@ -68,14 +101,16 @@ def _texture_text(values) -> str:
     if source == "file":
         return material_text.normalise_path(_check_text(values["texture"], "The texture"))
     if source == "color":
-        color = values["color"]
+        color = tuple(values["texcolor"])
+        if color == WHITE and tuple(values["color"]) != WHITE:  # a scene saved before the colour picker
+            color = tuple(values["color"])
         if any(not 0.0 <= channel <= 1.0 for channel in color):
             raise UserError(format_problem(NAME, "the colour %s has a channel outside 0 to 1" % (tuple(color),),
                                            "Use values from 0 to 1"))
         return material_text.color_texture(color, values["colortype"])
     if source == "custom":
         return _check_text(values["raw"], "The raw texture text")
-    raise UserError(format_problem(NAME, "%r is not a texture source" % source, "Pick File, Color or Custom"))
+    raise UserError(format_problem(NAME, "%r is not a texture source" % source, "Pick File, Color or Custom texture text"))
 
 
 def _polygons(geo, group: str, group_type: str):

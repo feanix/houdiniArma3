@@ -52,19 +52,27 @@ SPEC = NodeSpec(
     input_help=("The LOD that gets the proxy.",
                 "Optional. Each point of this geometry becomes one proxy, placed and turned by that point."),
     parms=(
-        Parm("path", "Path", "string", "",
-             "The proxy model path, for example \\a3\\data_f\\proxies\\weapon_slots\\top. Slashes become backslashes "
-             "and a .p3d ending is removed."),
-        Parm("common", "Common Proxies", "menu", "none", "Fill the Path from a list of common proxies.",
+        Parm("path", "Path", "file", "",
+             "The proxy model: pick a .p3d file, or type its game path, for example "
+             "\\a3\\data_f\\proxies\\weapon_slots\\top. A picked file such as "
+             "P:\\a3\\data_f\\proxies\\weapon_slots\\top.p3d gives the same name as typing it. Slashes become "
+             "backslashes and the .p3d ending is removed. When you export with Relative Paths on, the path is made "
+             "relative to the project root.",
+             file_pattern="*.p3d"),
+        Parm("common", "Common Proxies", "menu", "none",
+             "Fills Path with the game path of a frequently used proxy, such as a weapon slot or a seat.",
              action="fillcommon",
              items=(("none", "(choose)"),) + tuple((token, label) for token, label, _ in COMMON)),
-        Parm("index", "Index", "int", 1, "The proxy number, 0 to 999.", minimum=0, maximum=MAX_INDEX),
+        Parm("index", "Index", "int", 1,
+             "The proxy number, 0 to 999. The game needs a different number for each proxy with the same model "
+             "in one LOD.", minimum=0, maximum=MAX_INDEX),
         Parm("autoindex", "Number From Points", "toggle", True,
              "With a second input: the first proxy gets Index, the next one Index + 1, and so on. "
              "Off: all get Index."),
-        Parm("t", "Translate", "float", (0.0, 0.0, 0.0), "Where the proxy goes when there is no second input.",
-             size=3),
-        Parm("r", "Rotate", "float", (0.0, 0.0, 0.0), "Degrees. A proxy has no scale.", size=3),
+        Parm("t", "Translate", "float", (0.0, 0.0, 0.0),
+             "Where the proxy goes, in metres. Used when there is no second input.", size=3),
+        Parm("r", "Rotate", "float", (0.0, 0.0, 0.0),
+             "How the proxy is turned, in degrees around X, Y and Z. A proxy has no scale.", size=3),
         Parm("useorient", "Orient From Points", "toggle", True,
              "With a second input: turn each proxy by the orient attribute of its point, if the point has one."),
     ),

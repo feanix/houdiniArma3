@@ -92,7 +92,7 @@ def main(crate):
     result["material_material_values"] = sorted(set(out.primStringAttribValues("a3ob_material")))
     result["material_set_count"] = sum(1 for text in textures if text == "a3\\box\\lid_co.paa")
     result["material_detail_type"] = out.attribValue("a3ob_lod_type")
-    material.parmTuple("color").set((0.25, 0.5, 0.75, 1.0))
+    material.parmTuple("texcolor").set((0.25, 0.5, 0.75, 1.0))
     material.parm("texsource").set("color")
     material.parm("colortype").set("CA")
     material.parm("group").set("")

@@ -425,7 +425,7 @@ class TestMaterialAssign(unittest.TestCase):
         self.assertEqual(set(values[1:]), {""})
 
     def test_color_and_custom_sources(self):
-        out, _ = cook("material_assign", self.crate, texsource="color", color=(1.0, 0.5, 0.0, 1.0), colortype="CA",
+        out, _ = cook("material_assign", self.crate, texsource="color", texcolor=(1.0, 0.5, 0.0, 1.0), colortype="CA",
                       setmat=False)
         self.assertEqual(set(self.strings(out, "a3ob_texture")), {"#(argb,8,8,3)color(1.000,0.500,0.000,1.000,CA)"})
         raw = "#(rgb,8,8,3)color(0.5,0.5,0.5,1,CO)/with/slashes"
@@ -433,7 +433,15 @@ class TestMaterialAssign(unittest.TestCase):
         self.assertEqual(set(self.strings(out, "a3ob_texture")), {raw})  # copied as typed, never judged
         self.assertEqual(report.texts("warning"), [])
         with self.assertRaises(UserError):
-            cook("material_assign", self.crate, texsource="color", color=(2.0, 0.0, 0.0, 1.0))
+            cook("material_assign", self.crate, texsource="color", texcolor=(2.0, 0.0, 0.0, 1.0))
+
+    def test_the_old_colour_parameter_still_counts_when_the_picker_is_left_white(self):
+        want = {"#(argb,8,8,3)color(0.250,0.500,0.750,1.000,CO)"}
+        out, _ = cook("material_assign", self.crate, texsource="color", color=(0.25, 0.5, 0.75, 1.0), setmat=False)
+        self.assertEqual(set(self.strings(out, "a3ob_texture")), want)
+        out, _ = cook("material_assign", self.crate, texsource="color", color=(0.9, 0.9, 0.9, 1.0),
+                      texcolor=(0.25, 0.5, 0.75, 1.0), setmat=False)  # the picker wins once it is changed
+        self.assertEqual(set(self.strings(out, "a3ob_texture")), want)
 
     def test_messages(self):
         _, report = cook("material_assign", self.crate, group="9999", texture="x.paa")

@@ -34,7 +34,7 @@
 	label	"Set Texture"
 	type	toggle
 	default	{ "1" }
-	help	"Off: leave a3ob_texture as it is."
+	help	"On: this node gives the polygons the texture chosen below. Off: the polygons keep the texture they already have (from the file or an earlier node), for example when you only want to change the material."
     }
     parm {
 	name	"texsource"
@@ -44,24 +44,32 @@
 	menu {
 	    "file"	"File"
 	    "color"	"Color"
-	    "custom"	"Custom"
+	    "custom"	"Custom texture text"
 	}
-	help	"Where the texture text comes from."
+	help	"Where the texture comes from. File: a texture file you pick. Color: a plain colour, written as a generated texture line. Custom texture text: a texture line you type or pick from the common list."
+	disablewhen	"{ settex != 1 }"
     }
     parm {
 	name	"texture"
 	label	"Texture File"
-	type	string
+	type	file
 	default	{ "" }
-	help	"For File. Slashes are written as backslashes."
+	help	"The texture file (.paa, .tga or .png). Slashes are written as backslashes. When you export with Relative Paths on, the path is made relative to the project root."
+	disablewhen	"{ settex != 1 }"
+	hidewhen	"{ texsource != file }"
+	parmtag	{ "filechooser_mode" "read" }
+	parmtag	{ "filechooser_pattern" "*.paa *.tga *.png" }
     }
     parm {
-	name	"color"
+	name	"texcolor"
 	label	"Color"
-	type	float
+	type	color4
 	size	4
-	default	{ "1.0" "1.0" "1.0" "1.0" }
-	help	"For Color. Red, green, blue and alpha, 0 to 1."
+	default	{ "1" "1" "1" "1" }
+	range	{ 0 1 }
+	help	"The colour of the generated texture, with alpha (each 0 to 1). Click the swatch to pick one."
+	disablewhen	"{ settex != 1 }"
+	hidewhen	"{ texsource != color }"
     }
     parm {
 	name	"colortype"
@@ -93,25 +101,40 @@
 	    "MASK"	"MASK - Mask for multimaterial"
 	    "TI"	"TI - Thermal imaging map"
 	}
-	help	"For Color. The kind of procedural texture."
+	help	"What the colour is used for in the game. The usual choice is CO (colour value); the other choices are texture types such as normal map (NO) or specular map (SM)."
+	disablewhen	"{ settex != 1 }"
+	hidewhen	"{ texsource != color }"
+    }
+    parm {
+	name	"color"
+	label	"Color (old scenes)"
+	type	float
+	size	4
+	default	{ "1.0" "1.0" "1.0" "1.0" }
+	help	"Never shown. It only keeps the colour of scenes saved before Color became a colour picker: if Color is still white and this is not, this one is used. Change Color instead."
+	hidewhen	"{ texsource != never }"
     }
     parm {
 	name	"raw"
-	label	"Raw Text"
+	label	"Texture Text"
 	type	string
 	default	{ "" }
-	help	"For Custom. Copied exactly as typed."
+	help	"A texture line, copied exactly as typed. It is either a path or a generated texture such as #(argb,8,8,3)color(1,0,0,1,CO), which is a plain red."
+	disablewhen	"{ settex != 1 }"
+	hidewhen	"{ texsource != custom }"
     }
     parm {
 	name	"commonproc"
-	label	"Common Procedural"
+	label	"Pick a Common Texture"
 	type	string
 	default	{ "none" }
 	menu {
 	    [ "__import__('a3ob_houdini.entry', fromlist=['menu']).menu('material_assign', 'commonproc', kwargs)" ]
 	    language python
 	}
-	help	"Fill Raw Text from the common procedural textures (and switch Texture Source to Custom). Add your own in the common data file of the Project root and presets tool."
+	help	"Copies a frequently used texture line from the common data file into Texture Text and switches Texture Source to Custom texture text. Add your own lines in the common data file of the Project root and presets tool."
+	disablewhen	"{ settex != 1 }"
+	hidewhen	"{ texsource != custom }"
 	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('material_assign', 'fillproc', kwargs)" }
 	parmtag	{ "script_callback_language" "python" }
     }
@@ -120,25 +143,29 @@
 	label	"Set Material"
 	type	toggle
 	default	{ "1" }
-	help	"Off: leave a3ob_material as it is."
+	help	"On: this node gives the polygons the material chosen below. Off: the polygons keep the material they already have (from the file or an earlier node), for example when you only want to change the texture."
     }
     parm {
 	name	"material"
 	label	"Material File"
-	type	string
+	type	file
 	default	{ "" }
-	help	"The rvmat path. Empty clears the material. Slashes are written as backslashes."
+	help	"The material file (.rvmat). Empty clears the material. Slashes are written as backslashes. When you export with Relative Paths on, the path is made relative to the project root."
+	disablewhen	"{ setmat != 1 }"
+	parmtag	{ "filechooser_mode" "read" }
+	parmtag	{ "filechooser_pattern" "*.rvmat" }
     }
     parm {
 	name	"commonmat"
-	label	"Add Common"
+	label	"Pick a Common Material"
 	type	string
 	default	{ "none" }
 	menu {
 	    [ "__import__('a3ob_houdini.entry', fromlist=['menu']).menu('material_assign', 'commonmat', kwargs)" ]
 	    language python
 	}
-	help	"Fill Material File from the common materials (and switch Set Material on). Add your own in the common data file of the Project root and presets tool."
+	help	"Copies a frequently used material from the common data file into Material File and switches Set Material on. Add your own in the common data file of the Project root and presets tool."
+	disablewhen	"{ setmat != 1 }"
 	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('material_assign', 'fillmat', kwargs)" }
 	parmtag	{ "script_callback_language" "python" }
     }
