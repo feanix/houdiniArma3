@@ -594,7 +594,7 @@ D14). The tool changes nothing in a scene.
 
 ```
  res1_mesh (Box) ---------> res1_props (LOD Properties: Resolution, 1) -----------+
- geometry_mesh (Box) -> geometry_components (Group: point group "component01")    |
+ geometry_mesh (Box) -> geometry_triangles (Divide: 3 sides) -> geometry_components (Group: "component01") |
         -> geometry_mass (Mass: Uniform total, 100 kg) -> geometry_props (Geometry) --+--> assemble --> export
  memory_points (Add: 1 point, group "new_point") -> memory_props (Memory) --------+
 ```
@@ -602,14 +602,14 @@ D14). The tool changes nothing in a scene.
 | Node | Notes |
 |---|---|
 | `res1_mesh` | A Box, size 1, sitting on the ground. This is where the artist puts their model. |
-| `geometry_mesh`, `geometry_components`, `geometry_mass` | A simple box with the point group `component01` that Geometry LODs need (A3OB `has_components`, `utilities/validator.py` line 252), and 100 kg on it. |
+| `geometry_mesh`, `geometry_triangles`, `geometry_components`, `geometry_mass` | A simple box, cut into triangles by a Divide node (Convex Polygons, 3 sides) so rule T2-TRI has nothing to warn about, with the point group `component01` that Geometry LODs need (A3OB `has_components`, `utilities/validator.py` line 252), and 100 kg on it. |
 | `memory_points` | One point at the origin in a point group `new_point`, to be renamed and moved. |
 | `*_props` | LOD Properties: `Resolution` 1, `Geometry`, `Memory`. |
 | `assemble` | Assemble LODs with no base input. |
 | `export` | P3D Export, file `$HIP/<object name>.p3d`, all data-changing options off. |
 
 A sticky note in the network says which three nodes to replace. The network is built to pass every check in spec §17.1
-as it stands (all polygons have 4 points, a component group exists, mass is set), so Save to Disk works on the first
+as it stands (no errors and no warnings: the Geometry box is triangulated, a component group exists, mass is set), so Save to Disk works on the first
 try. A test in M4 builds the template and checks that.
 
 ## 8. Walkthroughs
