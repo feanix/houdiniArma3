@@ -1,0 +1,5 @@
+value '\udc81abc'
+before set
+2952: Fatal error: Segmentation fault
+exit=139
+(thread dump of the crash trimmed)

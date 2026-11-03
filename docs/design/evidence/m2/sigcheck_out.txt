@@ -1,0 +1,6 @@
+S6 fixture LODs: 16 L0: 16
+S6 near-miss 10000002973696.0 decodes GEOMETRY 0.0 encode(type)==sig: False encode(UNKNOWN, sig): raises -> new rule: (True, 'stored')
+S6 near-miss 999999517229056.0 decodes MEMORY 0.0 encode(type)==sig: False encode(UNKNOWN, sig): raises -> new rule: (True, 'stored')
+S6 random f32 bit patterns: 200000 round-trip failures with the new rule: 0 paths: {'stored': 200000}
+S6 of those, encode_signature(decoded type, f32(decoded res)) would NOT give the source bits: 9
+S6 edit Resolution 1 -> 2: (2.0, 'encoded') | type Visual -> Geometry: (9999999827968.0, 'encoded')

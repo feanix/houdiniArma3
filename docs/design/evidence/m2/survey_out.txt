@@ -1,0 +1,141 @@
+E:/Projects/houdiniArma3/tests/fixtures/p3d/sample_2_crate.p3d version 257 lods 7
+LOD 0 res=1.0 (1.000e+00) hdr=b'P3DM' v28.256 flags=0x00000000 nv=96 nn=88 nf=168 sides={3: 168}
+   vflags {'0x2000000': 96} fflags {'0x0': 168}
+   tex/mat unique=1 runs(sections in order)=1 normals referenced=88/88
+   sharp edges pairs 112
+   property b'lodnoshadow' b'1'
+   taggs {'#SharpEdges#': 1, '#UVSet#': 1, '#Property#': 1} uvset ids [0]
+   selections=2 proxies=0 vertex-byte histogram(top)=[(1, 144)] face-bytes!=derived=0 face-bytes-not-0/1=0
+   names illegal as identifiers (0): []
+   sample names: ['lid', 'camo1']
+LOD 1 res=2.0 (2.000e+00) hdr=b'P3DM' v28.256 flags=0x00000000 nv=48 nn=38 nf=72 sides={3: 72}
+   vflags {'0x2000000': 48} fflags {'0x0': 72}
+   tex/mat unique=1 runs(sections in order)=1 normals referenced=38/38
+   sharp edges pairs 56
+   property b'lodnoshadow' b'1'
+   taggs {'#SharpEdges#': 1, '#UVSet#': 1, '#Property#': 1} uvset ids [0]
+   selections=2 proxies=0 vertex-byte histogram(top)=[(1, 72)] face-bytes!=derived=0 face-bytes-not-0/1=0
+   names illegal as identifiers (0): []
+   sample names: ['lid', 'camo1']
+LOD 2 res=10000.0 (1.000e+04) hdr=b'P3DM' v28.256 flags=0x00000000 nv=16 nn=14 nf=24 sides={3: 24}
+   vflags {'0x2000000': 16} fflags {'0x0': 24}
+   tex/mat unique=1 runs(sections in order)=1 normals referenced=14/14
+   sharp edges pairs 36
+   taggs {'#SharpEdges#': 1} uvset ids []
+   selections=1 proxies=0 vertex-byte histogram(top)=[(1, 8)] face-bytes!=derived=0 face-bytes-not-0/1=0
+   names illegal as identifiers (0): []
+   sample names: ['lid']
+LOD 3 res=9999999827968.0 (1.000e+13) hdr=b'P3DM' v28.256 flags=0x00000000 nv=16 nn=16 nf=24 sides={3: 24}
+   vflags {'0x2000000': 16} fflags {'0x0': 24}
+   tex/mat unique=1 runs(sections in order)=1 normals referenced=16/16
+   sharp edges pairs 0
+   property b'autocenter' b'0'
+   property b'buoyancy' b'1'
+   taggs {'#SharpEdges#': 1, '#UVSet#': 1, '#Property#': 2, '#Mass#': 1} uvset ids [0]
+   selections=3 proxies=0 vertex-byte histogram(top)=[(1, 24)] face-bytes!=derived=0 face-bytes-not-0/1=0
+   names illegal as identifiers (0): []
+   sample names: ['component01', 'component02', 'lid']
+LOD 4 res=19999999655936.0 (2.000e+13) hdr=b'P3DM' v28.256 flags=0x00000000 nv=8 nn=8 nf=12 sides={3: 12}
+   vflags {'0x2000000': 8} fflags {'0x0': 12}
+   tex/mat unique=1 runs(sections in order)=1 normals referenced=8/8
+   sharp edges pairs 0
+   taggs {'#SharpEdges#': 1, '#UVSet#': 1} uvset ids [0]
+   selections=1 proxies=0 vertex-byte histogram(top)=[(1, 8)] face-bytes!=derived=0 face-bytes-not-0/1=0
+   names illegal as identifiers (0): []
+   sample names: ['component01']
+LOD 5 res=999999986991104.0 (1.000e+15) hdr=b'P3DM' v28.256 flags=0x00000000 nv=4 nn=0 nf=0 sides={}
+   vflags {'0x2000000': 4} fflags {}
+   tex/mat unique=0 runs(sections in order)=0 normals referenced=0/0
+   sharp edges pairs 0
+   taggs {'#SharpEdges#': 1, '#UVSet#': 1} uvset ids [0]
+   selections=2 proxies=0 vertex-byte histogram(top)=[(1, 4)] face-bytes!=derived=0 face-bytes-not-0/1=0
+   names illegal as identifiers (0): []
+   sample names: ['lid_axis', 'interaction']
+LOD 6 res=3000000028082176.0 (3.000e+15) hdr=b'P3DM' v28.256 flags=0x00000000 nv=8 nn=8 nf=5 sides={4: 5}
+   vflags {'0x2000000': 8} fflags {'0x0': 5}
+   tex/mat unique=1 runs(sections in order)=1 normals referenced=8/8
+   sharp edges pairs 0
+   taggs {'#SharpEdges#': 1, '#UVSet#': 1} uvset ids [0]
+   selections=0 proxies=0 vertex-byte histogram(top)=[] face-bytes!=derived=0 face-bytes-not-0/1=0
+   names illegal as identifiers (0): []
+   sample names: []
+trailing bytes after last LOD: 0 b''
+E:/Projects/houdiniArma3/tests/fixtures/p3d/sample_1_character.p3d version 257 lods 9
+LOD 0 res=1.0 (1.000e+00) hdr=b'P3DM' v28.256 flags=0x00000000 nv=5379 nn=5351 nf=10699 sides={3: 10699}
+   vflags {'0x0': 5043, '0x2000000': 336} fflags {'0x0': 10699}
+   tex/mat unique=2 runs(sections in order)=2 normals referenced=5351/5351
+   sharp edges pairs 0
+   property b'lodnoshadow' b'1'
+   taggs {'#SharpEdges#': 1, '#UVSet#': 1, '#Property#': 1} uvset ids [0]
+   selections=35 proxies=11 vertex-byte histogram(top)=[(1, 8267), (255, 304), (254, 184), (253, 180)] face-bytes!=derived=376 face-bytes-not-0/1=0
+   names illegal as identifiers (12): ['-proxies', 'proxy:\\a3\\characters_f\\proxies\\backpack.001', 'proxy:\\a3\\characters_f\\proxies\\binoculars.001', 'proxy:\\a3\\characters_f\\heads\\bysta.001', 'proxy:\\a3\\characters_f\\proxies\\equipment.001', 'proxy:\\a3\\characters_f\\proxies\\flag.001', 'proxy:\\a3\\characters_f\\proxies\\glasses.001', 'proxy:\\a3\\characters_f\\proxies\\headgear.001']
+   sample names: ['head', 'hip', 'spine1', 'spine2', 'rightshoulder', 'rightarmupper', 'rightarmlower', 'righthand', 'leftshoulder', 'leftarmupper', 'leftarmlower', 'lefthand']
+LOD 1 res=2.0 (2.000e+00) hdr=b'P3DM' v28.256 flags=0x00000000 nv=1371 nn=1343 nf=2683 sides={3: 2683}
+   vflags {'0x0': 1035, '0x2000000': 336} fflags {'0x0': 2683}
+   tex/mat unique=2 runs(sections in order)=2 normals referenced=1343/1343
+   sharp edges pairs 0
+   property b'lodnoshadow' b'1'
+   taggs {'#SharpEdges#': 1, '#UVSet#': 1, '#Property#': 1} uvset ids [0]
+   selections=35 proxies=11 vertex-byte histogram(top)=[(1, 2231), (128, 68), (255, 49), (253, 39)] face-bytes!=derived=38 face-bytes-not-0/1=0
+   names illegal as identifiers (12): ['-proxies', 'proxy:\\a3\\characters_f\\proxies\\backpack.001', 'proxy:\\a3\\characters_f\\proxies\\binoculars.001', 'proxy:\\a3\\characters_f\\heads\\bysta.001', 'proxy:\\a3\\characters_f\\proxies\\equipment.001', 'proxy:\\a3\\characters_f\\proxies\\flag.001', 'proxy:\\a3\\characters_f\\proxies\\glasses.001', 'proxy:\\a3\\characters_f\\proxies\\headgear.001']
+   sample names: ['head', 'hip', 'spine1', 'spine2', 'rightshoulder', 'rightarmupper', 'rightarmlower', 'righthand', 'leftshoulder', 'leftarmupper', 'leftarmlower', 'lefthand']
+LOD 2 res=1100.0 (1.100e+03) hdr=b'P3DM' v28.256 flags=0x00000000 nv=5376 nn=5351 nf=10698 sides={3: 10698}
+   vflags {'0x0': 5040, '0x2000000': 336} fflags {'0x0': 10698}
+   tex/mat unique=2 runs(sections in order)=2 normals referenced=5351/5351
+   sharp edges pairs 0
+   property b'lodnoshadow' b'1'
+   taggs {'#SharpEdges#': 1, '#UVSet#': 1, '#Property#': 1} uvset ids [0]
+   selections=34 proxies=10 vertex-byte histogram(top)=[(1, 8207), (255, 304), (254, 184), (253, 180)] face-bytes!=derived=376 face-bytes-not-0/1=0
+   names illegal as identifiers (11): ['-proxies', 'proxy:\\a3\\characters_f\\proxies\\backpack.001', 'proxy:\\a3\\characters_f\\proxies\\binoculars.001', 'proxy:\\a3\\characters_f\\heads\\bysta.001', 'proxy:\\a3\\characters_f\\proxies\\equipment.001', 'proxy:\\a3\\characters_f\\proxies\\flag.001', 'proxy:\\a3\\characters_f\\proxies\\headgear.001', 'proxy:\\a3\\characters_f\\proxies\\hmd.001']
+   sample names: ['head', 'hip', 'spine1', 'spine2', 'rightshoulder', 'rightarmupper', 'rightarmlower', 'righthand', 'leftshoulder', 'leftarmupper', 'leftarmlower', 'lefthand']
+LOD 3 res=10000.0 (1.000e+04) hdr=b'P3DM' v28.256 flags=0x00000000 nv=691 nn=1342 nf=1343 sides={3: 1343}
+   vflags {'0x0': 504, '0x2000000': 187} fflags {'0x0': 1343}
+   tex/mat unique=1 runs(sections in order)=1 normals referenced=1342/1342
+   sharp edges pairs 2004
+   taggs {'#SharpEdges#': 1} uvset ids []
+   selections=29 proxies=7 vertex-byte histogram(top)=[(1, 1015), (255, 44), (253, 29), (254, 21)] face-bytes!=derived=79 face-bytes-not-0/1=0
+   names illegal as identifiers (8): ['-proxies', 'proxy:\\a3\\characters_f\\proxies\\backpack.001', 'proxy:\\a3\\characters_f\\proxies\\equipment.001', 'proxy:\\a3\\characters_f\\proxies\\flag.001', 'proxy:\\a3\\characters_f\\proxies\\hmd.001', 'proxy:\\a3\\characters_f\\proxies\\launcher.001', 'proxy:\\a3\\characters_f\\proxies\\pistol.001', 'proxy:\\a3\\characters_f\\proxies\\weapon.001']
+   sample names: ['head', 'hip', 'spine1', 'spine2', 'rightshoulder', 'rightarmupper', 'rightarmlower', 'righthand', 'leftshoulder', 'leftarmupper', 'leftarmlower', 'lefthand']
+LOD 4 res=9999999827968.0 (1.000e+13) hdr=b'P3DM' v28.256 flags=0x00000000 nv=34 nn=34 nf=64 sides={3: 64}
+   vflags {'0x2000000': 34} fflags {'0x0': 64}
+   tex/mat unique=1 runs(sections in order)=1 normals referenced=34/34
+   sharp edges pairs 0
+   property b'class' b'man'
+   taggs {'#SharpEdges#': 1, '#Property#': 1, '#Mass#': 1} uvset ids []
+   selections=1 proxies=0 vertex-byte histogram(top)=[(1, 34)] face-bytes!=derived=0 face-bytes-not-0/1=0
+   names illegal as identifiers (0): []
+   sample names: ['component01']
+LOD 5 res=999999986991104.0 (1.000e+15) hdr=b'P3DM' v28.256 flags=0x00000000 nv=36 nn=4 nf=4 sides={3: 4}
+   vflags {'0x2000000': 24, '0x0': 12} fflags {'0x0': 4}
+   tex/mat unique=1 runs(sections in order)=1 normals referenced=4/4
+   sharp edges pairs 0
+   property b'autocenter' b'0'
+   taggs {'#SharpEdges#': 1, '#Property#': 1} uvset ids []
+   selections=42 proxies=4 vertex-byte histogram(top)=[(1, 78)] face-bytes!=derived=0 face-bytes-not-0/1=0
+   names illegal as identifiers (5): ['-proxies', 'proxy:\\a3\\characters_f\\proxies\\binoculars.001', 'proxy:\\a3\\characters_f\\proxies\\launcher.001', 'proxy:\\a3\\characters_f\\proxies\\pistol.001', 'proxy:\\a3\\characters_f\\proxies\\weapon.001']
+   sample names: ['footstepleft', 'footsteprright', 'kneeleft', 'kneeright', 'kneeleft_axis', 'kneeright_axis', 'femurleft', 'femurright', 'wristleft', 'wristright', 'elbowleft', 'elbowright']
+LOD 6 res=1999999973982208.0 (2.000e+15) hdr=b'P3DM' v28.256 flags=0x00000000 nv=0 nn=0 nf=0 sides={}
+   vflags {} fflags {}
+   tex/mat unique=0 runs(sections in order)=0 normals referenced=0/0
+   sharp edges pairs 0
+   taggs {'#SharpEdges#': 1} uvset ids []
+   selections=0 proxies=0 vertex-byte histogram(top)=[] face-bytes!=derived=0 face-bytes-not-0/1=0
+   names illegal as identifiers (0): []
+   sample names: []
+LOD 7 res=5000000136282112.0 (5.000e+15) hdr=b'P3DM' v28.256 flags=0x00000000 nv=31 nn=0 nf=0 sides={}
+   vflags {'0x2000000': 31} fflags {}
+   tex/mat unique=0 runs(sections in order)=0 normals referenced=0/0
+   sharp edges pairs 0
+   taggs {'#SharpEdges#': 1} uvset ids []
+   selections=22 proxies=0 vertex-byte histogram(top)=[(1, 80)] face-bytes!=derived=0 face-bytes-not-0/1=0
+   names illegal as identifiers (0): []
+   sample names: ['legs', 'leg_left', 'leg_right', 'body', 'femur_hit_left', 'femur_hit_right', 'arms', 'hand_left', 'hand_right', 'head_hit', 'head', 'leftarmupper']
+LOD 8 res=6999999976046592.0 (7.000e+15) hdr=b'P3DM' v28.256 flags=0x00000000 nv=226 nn=226 nf=380 sides={3: 380}
+   vflags {'0x2000000': 226} fflags {'0x0': 380}
+   tex/mat unique=1 runs(sections in order)=1 normals referenced=226/226
+   sharp edges pairs 0
+   taggs {'#SharpEdges#': 1} uvset ids []
+   selections=29 proxies=0 vertex-byte histogram(top)=[(1, 452)] face-bytes!=derived=0 face-bytes-not-0/1=0
+   names illegal as identifiers (0): []
+   sample names: ['head', 'spine2', 'spine1', 'hip', 'leftlegupper', 'rightlegupper', 'leftleglower', 'rightleglower', 'leftfoot', 'rightfoot', 'leftshoulder', 'rightshoulder']
+trailing bytes after last LOD: 0 b''

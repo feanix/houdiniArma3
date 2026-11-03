@@ -1,0 +1,53 @@
+houdini 22.0.466 python 3.13.10
+T1 prim.normal() for vertex order 0,1,2 (algebraic cross +Z): (0.0, 0.0, -1.0)
+T1 prim.normal() for vertex order 0,2,1: (0.0, 0.0, 1.0)
+T1b Normal SOP N on add-polygon '0 1 2': (0.0, 0.0, 0.0)
+T1c Reverse SOP vertex order: [2, 1, 0]
+T2 'head' | attrib OK as 'head'; ptgroup OK as 'head'; encodeAttrib='head' decode_ok=True
+T2 'pos_driver' | attrib OK as 'pos_driver'; ptgroup OK as 'pos_driver'; encodeAttrib='pos_driver' decode_ok=True
+T2 '-proxies' | attrib FAIL OperationFailed; ptgroup FAIL OperationFailed; encodeAttrib='xn__proxies_cka' decode_ok=True
+T2 'a b' | attrib FAIL OperationFailed; ptgroup FAIL OperationFailed; encodeAttrib='xn__ab_yca' decode_ok=True
+T2 'x.y' | attrib FAIL OperationFailed; ptgroup FAIL OperationFailed; encodeAttrib='xn__xy_5da' decode_ok=True
+T2 '1abc' | attrib FAIL OperationFailed; ptgroup FAIL OperationFailed; encodeAttrib='xn__1abc_' decode_ok=True
+T2 'proxy:\\a3\\characters_f\\proxies\\backpack.001' | attrib FAIL OperationFailed; ptgroup FAIL OperationFailed; encodeAttrib='xn__proxya3characters_fproxiesbackpack001_3ob25bk9bcamh' decode_ok=True
+T2 'Component01' | attrib OK as 'Component01'; ptgroup OK as 'Component01'; encodeAttrib='Component01' decode_ok=True
+T2 'xn__abc' | attrib OK as 'xn__abc'; ptgroup OK as 'xn__abc'; encodeAttrib='xn__xn__abc_' decode_ok=True
+T2 'ň' | attrib FAIL OperationFailed; ptgroup FAIL OperationFailed; encodeAttrib='xn__mja' decode_ok=True
+T2 long name len 264 encoded len 276 group created: True decode ok True
+T3 same-name point+prim group + point attrib: spine1 spine1 ['P', 'spine1']
+T4 dict: {'lodnoshadow': '1'} str[]: ('autocenter', 'autocenter', 'buoyancy') int[]: (0, 255, 2147483647)
+T4 float detail precision: attribData.Float  value back 9999999827968.0
+T4 int store 0x2000000 -> 33554432
+T4 int store 0xfe000000 -> -33554432
+T4 int store 0xffffffff -> -1
+T4 int store signed -33554432 -> -33554432 &0xffffffff = 0xfe000000
+T4 int store signed -1 -> -1 &0xffffffff = 0xffffffff
+T4b attribcreate parms with 'prec': ['precision1']
+T4b FAIL OperationFailed The attempted operation failed.
+Invalid menu item
+T4c f32 storage: v != f32(1-f32(1-v)) for 33388 of 100000 random v in [0,1)
+T4c f64 storage: mismatches 0 of 100000
+T5 vertex N typeinfo:  isTransformedAsNormal False | uv qualifier: 
+T5 point mass created ok: mass
+T6 edge groups after bgeo reload: [('a3ob_sharp', 1)]
+T6 edge groups after xform: [('a3ob_sharp', 1)]
+T6 edge groups after fuse::2.0: [('a3ob_sharp', 1)]
+T6 edge groups after polyextrude::2.0: [('a3ob_sharp', 1)]
+T7 createPacked('PackedGeometry') ok; prim type: primType.PackedGeometry typename intrinsic: PackedGeometry
+T7 fullTransform: (6.123233995736766e-17, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 6.123233995736766e-17, 0.0, 1.0, 2.0, 3.0, 1.0)
+T7 embedded detail attr survives: 999999986991104.0 groups ['spine3']
+T7 intrinsic names: ['typename', 'pivot', 'transform', 'packedlocaltransform', 'packedfulltransform', 'pointinstancetransform']
+T7 Unpack SOP: detail attribs ['a3ob_lod_signature'] point groups ['spine3'] P0 (1.0, 2.0, 3.0)
+T7 Unpack parms: ['group', 'limit_iterations', 'iterations', 'detail_attributes', 'transfer_attributes', 'transfer_groups', 'apply_style_sheets', 'scene_style_sheet', 'obj_style_sheet', 'dotransform', 'convertpolysoup']
+T7b Pack SOP prim: PackedGeometry embedded detail: ['a3ob_lod_resolution'] pivot (0.0, 0.0, 0.0) fullTransform==identity: True
+T7c Merge of two unpacked LODs: detail a3ob_lod_resolution = 1.0 (second input's value lost)
+T7d Merge of two packed LODs: embedded values [1.0, 2.0]
+T7e Unpack of Pack(box with detail attr): detail attribs ['a3ob_lod_resolution']
+T8 Vector3(1,0,0) * buildTranslate(0,0,5) = (1.0, 0.0, 5.0) (row-vector convention: translation in last row)
+T8 Vector3(0,0,0) * Matrix4 rows X,Y,Z,T(7,8,9) = (7.0, 8.0, 9.0)
+T9 '-proxies' -> xn__proxies_cka
+T9 'proxy:\\a3\\characters_f\\proxies\\backpack.001' -> xn__proxya3characters_fproxiesbackpack001_3ob25bk9bcamh
+T9 'Component01' -> Component01
+T9 'pos driver' -> xn__posdriver_7ia
+T9 'Light_L' -> Light_L
+T9 'zbytek' -> zbytek

@@ -1,0 +1,25 @@
+U1 Geometry attrib-creating methods: ['addArrayAttrib', 'addAttrib']
+U1 addAttrib doc head:  addAttrib(self, type, name, default_value, transform_as_normal=False, create_local_variable=False) -> hou.Attrib      Create a new point, primitive, vertex, or global (a.k.a. detail)     attribute. Returns a hou.Attrib object describing the newly created     attribute. You would typically call this
+U1 numericData members: ['Float16', 'Float32', 'Float64', 'Int16', 'Int32', 'Int64', 'Int8', 'UInt8', 'thisown']
+U2 attribcreate precision1 menu: ('8', '16', '32', '64', 'auto') ('8-bit', '16-bit', '32-bit', '64-bit', 'Auto')
+U2 attribcreate uv: numericData.Float64 value 0.1
+U2 python SOP write into 64-bit uv: numericData.Float64 0.8999999985098839 exact double? True
+U2 python addAttrib float default precision: numericData.Float32
+U2 after xform uv precision: numericData.Float64
+U2 bgeo reload uv precision: numericData.Float64 0.8999999985098839
+U2 hou.Geometry.merge keeps precision: numericData.Float64
+U3 Normal SOP parms type menu: ('typepoint', 'typevertex', 'typeprim', 'typedetail')
+U3 Normal SOP type=typepoint -> attribType.Point (0.0, 0.0, -1.0)
+U3 Normal SOP type=typevertex -> attribType.Vertex (0.0, 0.0, -1.0)
+U3 Normal SOP type=typeprim -> attribType.Prim (0.0, 0.0, -1.0)
+U3 Normal SOP parm names: ['group', 'grouptype', 'overridenormal', 'normalattrib', 'construct', 'docompute', 'type', 'cuspangle', 'method', 'origifzero', 'modify', 'normalize', 'reverse']
+U4 edge group insertion [(2, 1), (0, 3), (1, 0)] -> read back [(2, 1), (0, 3), (1, 0)]
+U4 after bgeo reload: [(2, 1), (0, 3), (1, 0)]
+U4 findEdge for non-edge pair (0,2): None
+U5 unpack detail_attributes default: 0 transfer_attributes: '' transfer_groups: ''
+U5 HOM-created N qualifier: 'Normal' transformAsNormal True | uv qualifier: '' options {}
+U5 uv after setOption type=texturecoord: 'Texture Coord' {'type': 'texturecoord'}
+U6 Vector3(0,0,-1)*M: (0.0, 2.0, 3.0) Vector3(0,2,0)*M: (1.0, 4.0, 3.0)
+U7 verb attribcreate -> uv: (attribType.Vertex, 3, numericData.Float64)
+U7 exact double stored: True
+U8 unpack detail_attributes menu: parmTemplateType.Menu ('Promote to Primitive if Different', 'Promote to Primitive Attributes', 'Promote to Point Attributes', 'Promote to Vertex Attributes')

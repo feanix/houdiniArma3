@@ -1,0 +1,98 @@
+E:/Projects/houdiniArma3/tests/fixtures/p3d/sample_2_crate.p3d
+LOD 0 1.000e+00 TAGG order: [['#SharpEdges#', 1], ['#UVSet#', 1], ['#Property#', 1], ['sel', 2]] inactive=0 tri-pad-nonzero=0
+   normals: nn=88 unique=88 dupvalues=0 rebuilt_first_appearance_equal=True
+   normal length min/max 1.000000 1.000000
+   dot(cross(v1-v0,v2-v0), stored normal) >0: 168  <0: 0
+   uvset0 tagg == face uv: True (n=504)
+   uv v range 0.0114..0.9886, min |v|>0: 0.0113747
+LOD 1 2.000e+00 TAGG order: [['#SharpEdges#', 1], ['#UVSet#', 1], ['#Property#', 1], ['sel', 2]] inactive=0 tri-pad-nonzero=0
+   normals: nn=38 unique=38 dupvalues=0 rebuilt_first_appearance_equal=True
+   normal length min/max 1.000000 1.000000
+   dot(cross(v1-v0,v2-v0), stored normal) >0: 72  <0: 0
+   uvset0 tagg == face uv: True (n=216)
+   uv v range 0.0114..0.9886, min |v|>0: 0.0113747
+LOD 2 1.000e+04 TAGG order: [['#SharpEdges#', 1], ['sel', 1]] inactive=0 tri-pad-nonzero=0
+   normals: nn=14 unique=14 dupvalues=0 rebuilt_first_appearance_equal=True
+   normal length min/max 1.000000 1.000000
+   dot(cross(v1-v0,v2-v0), stored normal) >0: 24  <0: 0
+LOD 3 1.000e+13 TAGG order: [['#SharpEdges#', 1], ['#UVSet#', 1], ['#Property#', 2], ['#Mass#', 1], ['sel', 3]] inactive=0 tri-pad-nonzero=0
+   normals: nn=16 unique=16 dupvalues=0 rebuilt_first_appearance_equal=True
+   normal length min/max 1.000000 1.000000
+   dot(cross(v1-v0,v2-v0), stored normal) >0: 24  <0: 0
+   uvset0 tagg == face uv: True (n=72)
+   uv v range 0.0000..1.0000, min |v|>0: 0.25
+LOD 4 2.000e+13 TAGG order: [['#SharpEdges#', 1], ['#UVSet#', 1], ['sel', 1]] inactive=0 tri-pad-nonzero=0
+   normals: nn=8 unique=8 dupvalues=0 rebuilt_first_appearance_equal=True
+   normal length min/max 1.000000 1.000000
+   dot(cross(v1-v0,v2-v0), stored normal) >0: 12  <0: 0
+   uvset0 tagg == face uv: True (n=36)
+   uv v range 0.0000..1.0000, min |v|>0: 0.25
+LOD 5 1.000e+15 TAGG order: [['#SharpEdges#', 1], ['#UVSet#', 1], ['sel', 2]] inactive=0 tri-pad-nonzero=0
+   normals: nn=0 unique=0 dupvalues=0 rebuilt_first_appearance_equal=True
+   dot(cross(v1-v0,v2-v0), stored normal) >0: 0  <0: 0
+   uvset0 tagg == face uv: True (n=0)
+LOD 6 3.000e+15 TAGG order: [['#SharpEdges#', 1], ['#UVSet#', 1]] inactive=0 tri-pad-nonzero=0
+   normals: nn=8 unique=8 dupvalues=0 rebuilt_first_appearance_equal=True
+   normal length min/max 1.000000 1.000000
+   dot(cross(v1-v0,v2-v0), stored normal) >0: 5  <0: 0
+   uvset0 tagg == face uv: True (n=20)
+   uv v range 0.0000..1.0000, min |v|>0: 1
+
+E:/Projects/houdiniArma3/tests/fixtures/p3d/sample_1_character.p3d
+LOD 0 1.000e+00 TAGG order: [['#SharpEdges#', 1], ['#UVSet#', 1], ['#Property#', 1], ['sel', 35]] inactive=0 tri-pad-nonzero=0
+   normals: nn=5351 unique=5351 dupvalues=0 rebuilt_first_appearance_equal=True
+   normal length min/max 0.999952 1.000000
+   dot(cross(v1-v0,v2-v0), stored normal) >0: 2000  <0: 0
+   uvset0 tagg == face uv: True (n=32097)
+   uv v range 0.0303..1.0000, min |v|>0: 0.0302799
+   face-byte mismatches: [(('spine2', 'face=1,derived=0'), 102), (('rightarmupper', 'face=1,derived=0'), 75), (('leftarmupper', 'face=1,derived=0'), 75), (('hip', 'face=1,derived=0'), 68), (('spine1', 'face=1,derived=0'), 28), (('rightfoot', 'face=1,derived=0'), 11)]
+   proxy proxy:\a3\characters_f\proxies\backpack.001 verts=[5346, 5347, 5348] faces=[10688] flags=['0x0', '0x0', '0x0']
+LOD 1 2.000e+00 TAGG order: [['#SharpEdges#', 1], ['#UVSet#', 1], ['#Property#', 1], ['sel', 35]] inactive=0 tri-pad-nonzero=0
+   normals: nn=1343 unique=1343 dupvalues=0 rebuilt_first_appearance_equal=True
+   normal length min/max 0.999954 1.000000
+   dot(cross(v1-v0,v2-v0), stored normal) >0: 2000  <0: 0
+   uvset0 tagg == face uv: True (n=8049)
+   uv v range 0.0303..1.0000, min |v|>0: 0.0302799
+   face-byte mismatches: [(('spine2', 'face=1,derived=0'), 16), (('rightarmupper', 'face=1,derived=0'), 8), (('leftarmupper', 'face=1,derived=0'), 8), (('hip', 'face=1,derived=0'), 6)]
+LOD 2 1.100e+03 TAGG order: [['#SharpEdges#', 1], ['#UVSet#', 1], ['#Property#', 1], ['sel', 34]] inactive=0 tri-pad-nonzero=0
+   normals: nn=5351 unique=5351 dupvalues=0 rebuilt_first_appearance_equal=True
+   normal length min/max 0.999952 1.000000
+   dot(cross(v1-v0,v2-v0), stored normal) >0: 2000  <0: 0
+   uvset0 tagg == face uv: True (n=32094)
+   uv v range 0.0303..1.0000, min |v|>0: 0.0302799
+   face-byte mismatches: [(('spine2', 'face=1,derived=0'), 102), (('rightarmupper', 'face=1,derived=0'), 75), (('leftarmupper', 'face=1,derived=0'), 75), (('hip', 'face=1,derived=0'), 68), (('spine1', 'face=1,derived=0'), 28), (('rightfoot', 'face=1,derived=0'), 11)]
+LOD 3 1.000e+04 TAGG order: [['#SharpEdges#', 1], ['sel', 29]] inactive=0 tri-pad-nonzero=0
+   normals: nn=1342 unique=1342 dupvalues=0 rebuilt_first_appearance_equal=True
+   normal length min/max 1.000000 1.000000
+   dot(cross(v1-v0,v2-v0), stored normal) >0: 1343  <0: 0
+   face-byte mismatches: [(('spine2', 'face=1,derived=0'), 19), (('spine1', 'face=1,derived=0'), 16), (('rightarmupper', 'face=1,derived=0'), 9), (('leftarmupper', 'face=1,derived=0'), 8), (('hip', 'face=1,derived=0'), 5), (('rightfoot', 'face=1,derived=0'), 4)]
+LOD 4 1.000e+13 TAGG order: [['#SharpEdges#', 1], ['#Property#', 1], ['#Mass#', 1], ['sel', 1]] inactive=0 tri-pad-nonzero=0
+   normals: nn=34 unique=34 dupvalues=0 rebuilt_first_appearance_equal=True
+   normal length min/max 1.000000 1.000000
+   dot(cross(v1-v0,v2-v0), stored normal) >0: 64  <0: 0
+LOD 5 1.000e+15 TAGG order: [['#SharpEdges#', 1], ['#Property#', 1], ['sel', 42]] inactive=0 tri-pad-nonzero=0
+   normals: nn=4 unique=4 dupvalues=0 rebuilt_first_appearance_equal=True
+   normal length min/max 1.000000 1.000000
+   dot(cross(v1-v0,v2-v0), stored normal) >0: 4  <0: 0
+   proxy proxy:\a3\characters_f\proxies\binoculars.001 verts=[24, 25, 26] faces=[0] flags=['0x0', '0x0', '0x0']
+      tex/mat [('', '')] coords [(0.6358, -0.0295, 0.0776), (2.6102, -0.3295, -0.0317), (0.6828, -0.0837, 1.075)]
+   footstepleft: [(0.186, -0.996, 0.023), (-0.186, -0.996, 0.023)]
+   footsteprright: []
+   kneeleft: [(0.153, -0.537, 0.004)]
+   kneeright: [(-0.153, -0.537, 0.004)]
+   wristleft: [(0.593, 0.065, 0.068)]
+   wristright: [(-0.593, 0.065, 0.068)]
+   pilot: [(0.0, 0.707, -0.1)]
+   head: [(0.0, 0.707, -0.1)]
+LOD 6 2.000e+15 TAGG order: [['#SharpEdges#', 1]] inactive=0 tri-pad-nonzero=0
+   normals: nn=0 unique=0 dupvalues=0 rebuilt_first_appearance_equal=True
+   dot(cross(v1-v0,v2-v0), stored normal) >0: 0  <0: 0
+LOD 7 5.000e+15 TAGG order: [['#SharpEdges#', 1], ['sel', 22]] inactive=0 tri-pad-nonzero=0
+   normals: nn=0 unique=0 dupvalues=0 rebuilt_first_appearance_equal=True
+   dot(cross(v1-v0,v2-v0), stored normal) >0: 0  <0: 0
+   head: [(0.0, 0.58, 0.01), (0.0, 0.708, -0.112), (0.0, 0.804, -0.029)]
+LOD 8 7.000e+15 TAGG order: [['#SharpEdges#', 1], ['sel', 29]] inactive=0 tri-pad-nonzero=0
+   normals: nn=226 unique=226 dupvalues=0 rebuilt_first_appearance_equal=True
+   normal length min/max 1.000000 1.000000
+   dot(cross(v1-v0,v2-v0), stored normal) >0: 380  <0: 0
+

@@ -1,0 +1,13 @@
+E:/Projects/houdiniArma3/tests/fixtures/p3d/sample_2_crate.p3d
+  LOD 0 1.000e+00 sharp pairs=112 real-edges=112 degenerate=0 duplicates=0 matches-a->b-in-a-face=112
+  LOD 1 2.000e+00 sharp pairs=56 real-edges=56 degenerate=0 duplicates=0 matches-a->b-in-a-face=56
+  LOD 2 1.000e+04 sharp pairs=36 real-edges=36 degenerate=0 duplicates=0 matches-a->b-in-a-face=36
+  LOD 3 mass tagg len=64 nv*4=64
+E:/Projects/houdiniArma3/tests/fixtures/p3d/sample_1_character.p3d
+  LOD 0 backpack.001 -> other selections on its verts: [('-proxies', 1), ('injury_hands', 1), ('injury_legs', 1)]; faces sharing its verts: 0
+  LOD 1 backpack.001 -> other selections on its verts: [('-proxies', 1), ('injury_hands', 1), ('injury_legs', 1)]; faces sharing its verts: 0
+  LOD 2 backpack.001 -> other selections on its verts: [('-proxies', 1)]; faces sharing its verts: 0
+  LOD 3 1.000e+04 sharp pairs=2004 real-edges=2004 degenerate=0 duplicates=0 matches-a->b-in-a-face=2004
+  LOD 3 backpack.001 -> other selections on its verts: [('-proxies', 1)]; faces sharing its verts: 0
+  LOD 4 mass tagg len=136 nv*4=136
+  LOD 5 binoculars.001 -> other selections on its verts: [('-proxies', 1), ('lefthand', 1)]; faces sharing its verts: 0
