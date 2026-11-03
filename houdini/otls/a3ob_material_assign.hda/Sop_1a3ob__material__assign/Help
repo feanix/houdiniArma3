@@ -1,0 +1,189 @@
+= Material Assign =
+
+#type: node
+#context: sop
+#internal: a3ob_material_assign
+#tags: arma, p3d
+
+"""Sets the texture and the material (rvmat) of the polygons in a group, or of all polygons."""
+
+A polygon in a P3D file has a texture and a material (an rvmat file). This node sets them for the polygons in a group, or for all polygons.
+
+@inputs
+
+LOD geometry:
+    Input 1.
+
+@parameters
+
+Group:
+    #id: group
+
+    Which polygons to set. Empty means all polygons. Normal Houdini group syntax; a selection with an encoded name is easiest to pick in the Selection browser.
+
+    Type: Text. Default: (empty).
+
+Group Type:
+    #id: grouptype
+
+    Type: Menu. Default: Primitives.
+
+    Primitives:
+        the polygons in the group.
+
+    Points:
+        the polygons whose points are all in the group.
+
+Set Texture:
+    #id: settex
+
+    Off: leave a3ob_texture as it is.
+
+    Type: On or off. Default: On.
+
+Texture Source:
+    #id: texsource
+
+    Where the texture text comes from.
+
+    Type: Menu. Default: File.
+
+    File:
+        Sets this to File.
+
+    Color:
+        Sets this to Color.
+
+    Custom:
+        Sets this to Custom.
+
+Texture File:
+    #id: texture
+
+    For File. Slashes are written as backslashes.
+
+    Type: Text. Default: (empty).
+
+Color:
+    #id: color
+
+    For Color. Red, green, blue and alpha, 0 to 1.
+
+    Type: 4 numbers. Default: 1, 1, 1, 1.
+
+Color Type:
+    #id: colortype
+
+    For Color. The kind of procedural texture.
+
+    Type: Menu. Default: CO - Color Value.
+
+    CO - Color Value:
+        Sets this to CO - Color Value.
+
+    CA - Texture with Alpha:
+        Sets this to CA - Texture with Alpha.
+
+    LCO - Terrain Texture Layer Color:
+        Sets this to LCO - Terrain Texture Layer Color.
+
+    SKY - Sky texture:
+        Sets this to SKY - Sky texture.
+
+    NO - Normal Map:
+        Sets this to NO - Normal Map.
+
+    NS - Normal map specular with Alpha:
+        Sets this to NS - Normal map specular with Alpha.
+
+    NOF - Normal map faded:
+        Sets this to NOF - Normal map faded.
+
+    NON - Normal map noise:
+        Sets this to NON - Normal map noise.
+
+    NOHQ - Normal map High Quality:
+        Sets this to NOHQ - Normal map High Quality.
+
+    NOPX - Normal Map with paralax:
+        Sets this to NOPX - Normal Map with paralax.
+
+    NOVHQ - two-part DXT5 compression:
+        Sets this to NOVHQ - two-part DXT5 compression.
+
+    DT - Detail Texture:
+        Sets this to DT - Detail Texture.
+
+    CDT - Colored detail texture:
+        Sets this to CDT - Colored detail texture.
+
+    MCO - Multiply color:
+        Sets this to MCO - Multiply color.
+
+    DTSMDI - Detail SMDI map:
+        Sets this to DTSMDI - Detail SMDI map.
+
+    MC - Macro Texture:
+        Sets this to MC - Macro Texture.
+
+    AS - Ambient Shadow texture:
+        Sets this to AS - Ambient Shadow texture.
+
+    ADS - Ambient Shadow in Blue:
+        Sets this to ADS - Ambient Shadow in Blue.
+
+    PR - Ambient shadow from directions:
+        Sets this to PR - Ambient shadow from directions.
+
+    SM - Specular Map:
+        Sets this to SM - Specular Map.
+
+    SMDI - Specular Map, optimized:
+        Sets this to SMDI - Specular Map, optimized.
+
+    MASK - Mask for multimaterial:
+        Sets this to MASK - Mask for multimaterial.
+
+    TI - Thermal imaging map:
+        Sets this to TI - Thermal imaging map.
+
+Raw Text:
+    #id: raw
+
+    For Custom. Copied exactly as typed.
+
+    Type: Text. Default: (empty).
+
+Common Procedural:
+    #id: commonproc
+
+    Fill Raw Text from the common procedural textures (and switch Texture Source to Custom). Add your own in the common data file of the Project root and presets tool.
+
+    Type: Menu. Default: none.
+
+    The choices are made when you open the menu, from the geometry or the settings.
+
+Set Material:
+    #id: setmat
+
+    Off: leave a3ob_material as it is.
+
+    Type: On or off. Default: On.
+
+Material File:
+    #id: material
+
+    The rvmat path. Empty clears the material. Slashes are written as backslashes.
+
+    Type: Text. Default: (empty).
+
+Add Common:
+    #id: commonmat
+
+    Fill Material File from the common materials (and switch Set Material on). Add your own in the common data file of the Project root and presets tool.
+
+    Type: Menu. Default: none.
+
+    The choices are made when you open the menu, from the geometry or the settings.
+
+The full page for this node is docs/user/reference/a3ob_material_assign.html in the A3OB folder. Open it in a web browser.

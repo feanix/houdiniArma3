@@ -1,0 +1,106 @@
+= Proxy =
+
+#type: node
+#context: sop
+#internal: a3ob_proxy
+#tags: arma, p3d
+
+"""Adds proxies (references to other .p3d files, such as weapon slots or seats) as packed primitives."""
+
+A proxy marks a place where Arma puts another model, such as a weapon on a vehicle or a seat for a crew member. This node adds proxies to a LOD geometry.
+
+With one input, the node adds a single proxy. With a second input, it adds one proxy for each point of that input.
+
+@inputs
+
+LOD geometry:
+    Input 1.
+
+Points (one proxy per point):
+    Input 2.
+
+@parameters
+
+Path:
+    #id: path
+
+    The proxy model path, for example \a3\data_f\proxies\weapon_slots\top. Slashes become backslashes and a .p3d ending is removed.
+
+    Type: Text. Default: (empty).
+
+Common Proxies:
+    #id: common
+
+    Fill the Path from a list of common proxies.
+
+    Type: Menu. Default: (choose).
+
+    (choose):
+        Sets this to (choose).
+
+    Weapon: optic:
+        Sets this to Weapon: optic.
+
+    Weapon: pointer:
+        Sets this to Weapon: pointer.
+
+    Weapon: suppressor:
+        Sets this to Weapon: suppressor.
+
+    Weapon: magazine:
+        Sets this to Weapon: magazine.
+
+    Weapon: bipod:
+        Sets this to Weapon: bipod.
+
+    Driver: offroad:
+        Sets this to Driver: offroad.
+
+    Passenger: offroad:
+        Sets this to Passenger: offroad.
+
+    Gunner: hunter:
+        Sets this to Gunner: hunter.
+
+    Commander: hunter:
+        Sets this to Commander: hunter.
+
+    Light volume: car:
+        Sets this to Light volume: car.
+
+Index:
+    #id: index
+
+    The proxy number, 0 to 999.
+
+    Type: Whole number. Default: 1. Allowed: From 0 to 999.
+
+Number From Points:
+    #id: autoindex
+
+    With a second input: the first proxy gets Index, the next one Index + 1, and so on. Off: all get Index.
+
+    Type: On or off. Default: On.
+
+Translate:
+    #id: t
+
+    Where the proxy goes when there is no second input.
+
+    Type: 3 numbers. Default: 0, 0, 0.
+
+Rotate:
+    #id: r
+
+    Degrees. A proxy has no scale.
+
+    Type: 3 numbers. Default: 0, 0, 0.
+
+Orient From Points:
+    #id: useorient
+
+    With a second input: turn each proxy by the orient attribute of its point, if the point has one.
+
+    Type: On or off. Default: On.
+
+The full page for this node is docs/user/reference/a3ob_proxy.html in the A3OB folder. Open it in a web browser.

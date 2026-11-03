@@ -1,0 +1,65 @@
+= Mass =
+
+#type: node
+#context: sop
+#internal: a3ob_mass
+#tags: arma, p3d
+
+"""Sets the mass of each point of a Geometry LOD (the #Mass# data of the P3D file)."""
+
+Arma needs a mass for each point of a Geometry LOD to work out how a vehicle or object moves. This node sets that mass in one of several ways.
+
+@inputs
+
+LOD geometry:
+    Input 1.
+
+@parameters
+
+Mode:
+    #id: mode
+
+    What to do with the mass.
+
+    Type: Menu. Default: Uniform total.
+
+    Set on each:
+        Sets this to Set on each.
+
+    Uniform total:
+        Sets this to Uniform total.
+
+    From density:
+        Sets this to From density.
+
+    Clear:
+        Sets this to Clear.
+
+    Copy from mass:
+        Sets this to Copy from mass.
+
+    Copy to mass:
+        Sets this to Copy to mass.
+
+Value:
+    #id: value
+
+    Set on each: kilograms per point. Uniform total: kilograms shared by all the points. From density: kilograms per cubic metre. The value cannot be below 0; there is no upper limit (the slider shows 0 to 10, and you can type more).
+
+    Type: Number. Default: 1. Allowed: At least 0; no upper limit.
+
+Group:
+    #id: group
+
+    The points to change. Empty means all points.
+
+    Type: Text. Default: (empty).
+
+Visualize:
+    #id: visualize
+
+    Write the colour Cd: blue is the least mass, red the most, black no mass. The export ignores Cd.
+
+    Type: On or off. Default: Off.
+
+The full page for this node is docs/user/reference/a3ob_mass.html in the A3OB folder. Open it in a web browser.

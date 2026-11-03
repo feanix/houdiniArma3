@@ -1,0 +1,42 @@
+= P3D Import =
+
+#type: node
+#context: sop
+#internal: a3ob_p3d_import
+#tags: arma, p3d
+
+"""Reads an Arma 3 .p3d file (MLOD) and outputs one packed primitive per LOD."""
+
+Use this node to bring an existing Arma 3 model into Houdini. A P3D file holds one or more LODs (versions of the model for different viewing distances). The node outputs one packed primitive for each LOD. Wire it into Extract LOD to edit one of them.
+
+@parameters
+
+File:
+    #id: file
+
+    The .p3d file to read. Must be an MLOD file, not a binarized one.
+
+    Type: File path. Default: (empty). Files: *.p3d.
+
+Reload:
+    #id: reload
+
+    Read the file again, even if nothing changed.
+
+    Type: Button.
+
+LODs:
+    #id: lods
+
+    Which LODs to import, by position in the file: * for all, or numbers and ranges like 0 2-4.
+
+    Type: Text. Default: *.
+
+Explicit Face Groups:
+    #id: facegroups
+
+    Always make a primitive group for every selection, not only where the face data needs one.
+
+    Type: On or off. Default: Off.
+
+The full page for this node is docs/user/reference/a3ob_p3d_import.html in the A3OB folder. Open it in a web browser.
