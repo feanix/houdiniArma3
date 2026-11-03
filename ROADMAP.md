@@ -4,4 +4,4 @@ Generated from the Aesir database, do not edit. A plan, not a promise: it change
 
 ## Unplaced
 
-- #013 [open] M3 polish: review minors from #9-#12
+- #013 [in_progress] M3 polish: review minors from #9-#12
