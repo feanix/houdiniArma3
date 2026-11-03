@@ -62,3 +62,7 @@
 {"actor": "lead", "id": 62, "task_id": 7, "text": "status in_review -> approved (rev-7-b approved; lead nits ebd0648)", "ts": "2026-11-03T08:42:17Z"}
 {"actor": "lead", "id": 63, "task_id": 4, "text": "gate full PASS 66af2b40 4.0s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T08:42:25Z"}
 {"actor": "lead", "id": 64, "task_id": 4, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T08:42:25Z"}
+{"actor": "lead", "id": 65, "task_id": 4, "text": "merged by lead (queued by lead)", "ts": "2026-11-03T08:42:27Z"}
+{"actor": "lead", "id": 66, "task_id": 4, "text": "queue: merged at c691ff3", "ts": "2026-11-03T08:42:27Z"}
+{"actor": "lead", "id": 67, "task_id": 6, "text": "gate full PASS 4c60cbc0 3.6s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T08:42:33Z"}
+{"actor": "lead", "id": 68, "task_id": 6, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T08:42:33Z"}
