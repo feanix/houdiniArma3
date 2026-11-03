@@ -4,6 +4,5 @@ Generated from the Aesir database, do not edit. A plan, not a promise: it change
 
 ## Unplaced
 
-- #009 [approved] M3 step 2: Extract LOD + Assemble LODs nodes
-- #010 [approved] M3 step 3a: LOD Properties + Material Assign nodes
+- #010 [changes_requested] M3 step 3a: LOD Properties + Material Assign nodes
 - #011 [approved] M3 step 3b: Mass + Proxy nodes

@@ -102,3 +102,19 @@
 {"actor": "lead", "id": 102, "task_id": 12, "text": "status in_review -> approved (rev-12-a approved (wf_5afa5623-68c))", "ts": "2026-11-03T09:07:55Z"}
 {"actor": "lead", "id": 103, "task_id": 12, "text": "gate full PASS 90d8a410 13.1s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T09:08:13Z"}
 {"actor": "lead", "id": 104, "task_id": 12, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T09:08:14Z"}
+{"actor": "lead", "id": 105, "task_id": 12, "text": "merged by lead (queued by lead)", "ts": "2026-11-03T09:08:15Z"}
+{"actor": "lead", "id": 106, "task_id": 12, "text": "queue: merged at b84187d", "ts": "2026-11-03T09:08:15Z"}
+{"actor": "lead", "id": 107, "task_id": 9, "text": "status approved -> changes_requested (merge conflict with main: python/a3ob_houdini/README.md)", "ts": "2026-11-03T09:08:17Z"}
+{"actor": "lead", "id": 108, "task_id": 9, "text": "queue output:\nAuto-merging python/a3ob_houdini/README.md\nCONFLICT (content): Merge conflict in python/a3ob_houdini/README.md\nAutomatic merge failed; fix conflicts and then commit the result.", "ts": "2026-11-03T09:08:17Z"}
+{"actor": "lead", "id": 109, "task_id": 10, "text": "status approved -> changes_requested (merge conflict with main: python/a3ob_houdini/README.md)", "ts": "2026-11-03T09:08:19Z"}
+{"actor": "lead", "id": 110, "task_id": 10, "text": "queue output:\nAuto-merging python/a3ob_houdini/README.md\nCONFLICT (content): Merge conflict in python/a3ob_houdini/README.md\nAutomatic merge failed; fix conflicts and then commit the result.", "ts": "2026-11-03T09:08:19Z"}
+{"actor": "lead", "id": 111, "task_id": 9, "text": "gate quick PASS 87dc254b 21.6s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T09:09:33Z"}
+{"actor": "lead", "id": 112, "task_id": 9, "text": "status changes_requested -> in_progress (lead merged main (README union))", "ts": "2026-11-03T09:09:34Z"}
+{"actor": "lead", "id": 113, "task_id": 9, "text": "status in_progress -> in_review (head 87dc254 = evidence head a23411d + merge of main (README module-table union only); quick gate PASS on 87dc254) [evidence skipped]", "ts": "2026-11-03T09:09:45Z"}
+{"actor": "lead", "id": 114, "task_id": 9, "text": "status in_review -> approved (rev-9-a approved)", "ts": "2026-11-03T09:09:46Z"}
+{"actor": "lead", "id": 115, "task_id": 9, "text": "status approved -> changes_requested (branch head 87dc254b is not the sha its evidence was recorded at (a23411de); commits added after review are not merged unreviewed)", "ts": "2026-11-03T09:09:49Z"}
+{"actor": "lead", "id": 116, "task_id": 9, "text": "status changes_requested -> in_progress (evidence re-recorded on 87dc254)", "ts": "2026-11-03T09:11:12Z"}
+{"actor": "lead", "id": 117, "task_id": 9, "text": "status in_progress -> in_review (evidence re-recorded on 87dc254)", "ts": "2026-11-03T09:11:13Z"}
+{"actor": "lead", "id": 118, "task_id": 9, "text": "status in_review -> approved (evidence re-recorded on 87dc254)", "ts": "2026-11-03T09:11:14Z"}
+{"actor": "lead", "id": 119, "task_id": 9, "text": "gate full PASS db61ad36 20.6s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T09:11:38Z"}
+{"actor": "lead", "id": 120, "task_id": 9, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T09:11:38Z"}
