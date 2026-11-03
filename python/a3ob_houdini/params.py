@@ -180,6 +180,9 @@ def _template(spec: NodeSpec, parm: Parm):
             parm.name, parm.label, 1, default_value=(str(parm.default),), menu_type=hou.menuType.Normal,
             item_generator_script=MENU_SCRIPT % (spec.kind, parm.menu_action),
             item_generator_script_language=hou.scriptLanguage.Python)
+        if parm.action:  # a dynamic menu that also fills other parameters (Material Assign "Common" menus)
+            template.setScriptCallback(CALLBACK % (spec.kind, parm.action))
+            template.setScriptCallbackLanguage(hou.scriptLanguage.Python)
     elif parm.kind == "menu":
         template = hou.StringParmTemplate(
             parm.name, parm.label, 1, default_value=(str(parm.default),),
