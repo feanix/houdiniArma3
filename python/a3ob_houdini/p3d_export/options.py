@@ -39,10 +39,14 @@ class ExportOptions:
     sort_lods: bool = False
     auto_components: bool = False
     duplicate_lods: str = "fail"
+    #: Ids of the tier-2 per-LOD-type rules that are switched off (spec 17.1.1, for example ``"T2-TRI"``). All are on by
+    #: default. They only change which warnings appear, never the bytes.
+    rules_off: Tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if self.duplicate_lods not in DUPLICATES:
             raise ValueError("duplicate_lods must be one of %s, got %r" % (", ".join(DUPLICATES), self.duplicate_lods))
+        self.rules_off = tuple(self.rules_off)
 
 
 def matches_mask(mask: str, encoded_name: str) -> bool:

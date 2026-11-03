@@ -19,6 +19,7 @@ from a3ob_core import p3d
 from a3ob_core.p3d import LOD, P3DError
 
 from .. import messages, names
+from . import flag_check, type_rules
 from .data import LodData
 from .mesh_build import FileMesh, build_file_mesh
 from .options import ExportOptions
@@ -81,7 +82,7 @@ def build_lod(data: LodData, options: ExportOptions, report: messages.Report) ->
         add_auto_components(data, file_mesh, selections, report)
     items = make_items(data, file_mesh, selections, options, report)
     lod.taggs = order_items(items, data.details.tagg_order, data.details.tagg_active)
-    _checks(lod, data, file_mesh, label, report)
+    _checks(lod, data, file_mesh, options, label, report)
     if len(report.texts(messages.ERROR)) > errors_before:
         return None
     return lod
@@ -125,7 +126,8 @@ def _set_mesh(lod: LOD, file_mesh: FileMesh, label: str, report: messages.Report
     return True
 
 
-def _checks(lod: LOD, data: LodData, file_mesh: FileMesh, label: str, report: messages.Report) -> None:
+def _checks(lod: LOD, data: LodData, file_mesh: FileMesh, options: ExportOptions, label: str,
+            report: messages.Report) -> None:
     """Spec 16 step 3.3 and 4, and the Houdini-side warnings of 17.1 that need the built counts."""
     if lod.dropped_taggs:
         report.error(messages.format_problem(
@@ -142,6 +144,8 @@ def _checks(lod: LOD, data: LodData, file_mesh: FileMesh, label: str, report: me
             report.warning(messages.format_problem(label, text))
     _warn_merged(lod, data, label, report)
     _warn_mass(data, label, report)
+    flag_check.check_flags(data, report)
+    type_rules.check_lod_rules(data, options, report)
 
 
 def _warn_merged(lod: LOD, data: LodData, label: str, report: messages.Report) -> None:

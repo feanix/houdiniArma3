@@ -72,6 +72,8 @@ Type names carry no version suffix yet. A change that old scenes cannot take get
 | `settings` | no | The user prefs JSON (`A3OB_SETTINGS` overrides its place, `A3OB_PROJECT_ROOT` the root), project root, export presets (`Lossless`, `Arma 3 release`, own ones) mapped onto `ExportOptions`, common data lists. Never raises on a bad file. |
 | `quick_export` | yes | Quick Export without a dialog: `choose_node`, `export_node` (calls `p3d_export.export_geometry` directly). |
 | `quick_export_dialog`, `project_settings_dialog` | GUI only | The `hou.ui` layers of the Quick Export and Project root and presets shelf tools. |
+| `p3d_export` | `collect_lods` and `read_geo` | The exporter core: `collect`, `build`, `to_bytes`, `write_file`, `export_geometry`, `run`. The rest works on plain data (`data`) and runs under CPython. |
+| `nodes/_export_common` | no | Shared parameters, options and error-level policy of Validate and P3D Export. |
 
 The parameter table (`Parm`, one per parameter) knows these kinds: `string`, `file` (with `file_pattern`), `toggle`,
 `button` (needs `action`), `int`, `float`, `menu` and `multiparm`. The fields:
@@ -110,3 +112,23 @@ first (`mesh_build`: axis map, corner map, first-appearance normal table, UVs), 
 `taggs` for the TAGGs and their order), then `structure_errors()` (hard stop) and `check()` (advisory). Packed proxies are
 rebuilt from their embedded triangle and transform (`proxy_rebuild`). `to_bytes` and `write_file` finish; the write goes to a
 temporary file and is renamed. Every problem is a message in the `Report`; nothing the artist can fix raises.
+
+`p3d_export.run(geometries, options, report)` is `collect` + `build` + `to_bytes` in one call and returns a `BuildResult`
+(`data`, `lod_count`). It is the one place the **Validate** and **P3D Export** nodes get their messages, so both say the
+same for the same input. `build_lod` also runs `flag_check` (flag values Object Builder does not know) and `type_rules`
+(the 20 tier-2 per-LOD-type rules of spec 17.1.1; `ExportOptions.rules_off` holds the ids that are switched off). Packed
+proxies with a collapsed or isosceles triangle are warned about in `proxy_rebuild`.
+
+### The Validate and P3D Export nodes
+
+Both nodes build their parameters from `nodes/_export_common.py`: `level_parms` (Errors Show As, Warnings Count As
+Errors, Duplicate LODs, Max Messages), `rule_parms` (a master switch and one toggle per tier-2 rule, named `t2<id>`,
+for example `t2tri`) and `options_from` (parameter values to `ExportOptions`). `apply_policy` turns errors into
+warnings (level `Warning`, text starts with `Error:`) and warnings into errors (strict). A node cooks to its input
+unchanged; only the messages are new.
+
+P3D Export (`nodes/p3d_export.py`) never writes while cooking. **Save to Disk** is `save_button`: `run_save` checks the
+input again and stops on any error (or on a warning while strict is on), then writes through the temporary file. It
+keeps its messages and cooks the node again, because a node can add messages only while it cooks. Scripts and tests call
+`nodes.load("p3d_export").save(node)`, which raises `UserError` when nothing was written. `OPTION_PARMS` lists the
+parameters a preset has to fill.

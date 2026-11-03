@@ -158,3 +158,19 @@
 {"actor": "lead", "id": 158, "task_id": 13, "text": "status in_review -> approved (rev-13-a approved (wf_f98b859e-737))", "ts": "2026-11-03T09:50:23Z"}
 {"actor": "lead", "id": 159, "task_id": 13, "text": "gate full PASS 16eda84e 40.2s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T09:51:11Z"}
 {"actor": "lead", "id": 160, "task_id": 13, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T09:51:11Z"}
+{"actor": "lead", "id": 161, "task_id": 13, "text": "merged by lead (queued by lead)", "ts": "2026-11-03T09:51:13Z"}
+{"actor": "lead", "id": 162, "task_id": 13, "text": "queue: merged at 1bd10b9", "ts": "2026-11-03T09:51:13Z"}
+{"actor": "aesir-hook", "id": 163, "task_id": 15, "text": "status open -> in_progress (started by impl-15-a)", "ts": "2026-11-03T09:53:21Z"}
+{"actor": "aesir-hook", "id": 164, "task_id": 16, "text": "status open -> in_progress (started by impl-16-a)", "ts": "2026-11-03T09:53:23Z"}
+{"actor": "advisor", "id": 165, "task_id": 14, "text": "Advisor (requester) verified on main b3473ce: suite OK on both. Independent check in the owner's Houdini: fresh import_model -> build_bytes gives sha256-identical bytes for both fixtures (440ce841..., a2fb2989...). The edited network (Material on Res 1, +1 proxy, Mass on Geometry, Assemble) exports with no errors; LOD 0 has 10700 faces (+1 proxy) and the new proxy selection, Geometry has #Mass#, and the 7 untouched LODs are byte-identical to the source. Accepted. UX note: the 'LOD looks merged' count heuristic fires after adding one proxy (expected per D8, but noisy); raised with the owner.", "ts": "2026-11-03T09:55:19Z"}
+{"actor": "advisor", "id": 166, "task_id": 13, "text": "Advisor (requester) verified on main b3473ce: suite OK on both. Accepted.", "ts": "2026-11-03T09:55:19Z"}
+{"actor": "impl-16-a", "id": 167, "task_id": 16, "text": "gate quick PASS 429d5b6f 29.2s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T10:03:49Z"}
+{"actor": "rev-16-a", "id": 168, "task_id": 16, "text": "gate quick PASS 429d5b6f 36.9s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T10:06:45Z"}
+{"actor": "impl-15-a", "id": 169, "task_id": 15, "text": "gate quick PASS 06226137 39.5s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T10:10:21Z"}
+{"actor": "rev-15-a", "id": 170, "task_id": 15, "text": "gate quick PASS 06226137 44.7s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T10:12:26Z"}
+{"actor": "lead", "id": 171, "task_id": 15, "text": "status in_progress -> in_review (rev-15-a approved (wf_9f8fe1ab-72d))", "ts": "2026-11-03T10:14:26Z"}
+{"actor": "lead", "id": 172, "task_id": 15, "text": "status in_review -> approved (rev-15-a approved (wf_9f8fe1ab-72d))", "ts": "2026-11-03T10:14:27Z"}
+{"actor": "lead", "id": 173, "task_id": 16, "text": "status in_progress -> in_review (rev-16-a approved (wf_9f8fe1ab-72d))", "ts": "2026-11-03T10:14:31Z"}
+{"actor": "lead", "id": 174, "task_id": 16, "text": "status in_review -> approved (rev-16-a approved (wf_9f8fe1ab-72d))", "ts": "2026-11-03T10:14:32Z"}
+{"actor": "lead", "id": 175, "task_id": 15, "text": "gate full PASS cdc7e2c8 47.4s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T10:15:24Z"}
+{"actor": "lead", "id": 176, "task_id": 15, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T10:15:25Z"}

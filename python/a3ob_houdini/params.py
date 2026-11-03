@@ -44,6 +44,8 @@ class Parm:
     help: str = ""
     #: For file parameters: the file chooser pattern, for example ``*.p3d``.
     file_pattern: str = ""
+    #: For file parameters: ``read`` (the chooser picks an existing file) or ``write`` (it may name a new one).
+    file_mode: str = "read"
     #: For buttons, and for menus that fill other parameters: the action name. It calls
     #: ``a3ob_houdini.entry.button(kind, action, kwargs)``.
     action: str = ""
@@ -71,6 +73,8 @@ class Parm:
             raise ValueError("button %r needs an action name" % self.name)
         if self.action and self.kind not in ("button", "menu"):
             raise ValueError("parameter %r: only a button or a menu has an action" % self.name)
+        if self.file_mode not in ("read", "write"):
+            raise ValueError("parameter %r: file_mode must be read or write" % self.name)
         if self.menu_action and self.kind != "menu":
             raise ValueError("parameter %r: only a menu has a menu_action" % self.name)
         if self.kind == "menu" and self.menu_action:
@@ -175,6 +179,8 @@ def _template(spec: NodeSpec, parm: Parm):
         template = hou.StringParmTemplate(parm.name, parm.label, 1, default_value=(str(parm.default),))
         if parm.kind == "file":
             template.setStringType(hou.stringParmType.FileReference)
+            if parm.file_mode == "write":
+                template.setTags({"filechooser_mode": "write"})
     elif parm.kind == "menu" and parm.menu_action:
         template = hou.StringParmTemplate(
             parm.name, parm.label, 1, default_value=(str(parm.default),), menu_type=hou.menuType.Normal,

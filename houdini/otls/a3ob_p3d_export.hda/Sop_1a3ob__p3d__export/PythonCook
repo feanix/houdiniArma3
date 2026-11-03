@@ -1,0 +1,1 @@
+import a3ob_houdini.entry as e; e.cook('p3d_export', hou.pwd())
