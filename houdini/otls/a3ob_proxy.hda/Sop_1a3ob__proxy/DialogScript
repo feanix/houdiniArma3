@@ -1,0 +1,85 @@
+# Dialog script for a3ob_proxy, version 1
+
+{
+    name	a3ob_proxy
+    script	a3ob_proxy
+    label	"Proxy"
+
+    help {
+	"Adds proxies (references to other .p3d files, such as weapon slots or seats) as packed primitives."
+    }
+
+    inputlabel	1	"LOD geometry"
+    inputlabel	2	"Points (one proxy per point)"
+
+    parm {
+	name	"path"
+	label	"Path"
+	type	string
+	default	{ "" }
+	help	"The proxy model path, for example \\a3\\data_f\\proxies\\weapon_slots\\top. Slashes become backslashes and a .p3d ending is removed."
+    }
+    parm {
+	name	"common"
+	label	"Common Proxies"
+	type	string
+	default	{ "none" }
+	menu {
+	    "none"	"(choose)"
+	    "weapon_optic"	"Weapon: optic"
+	    "weapon_pointer"	"Weapon: pointer"
+	    "weapon_suppressor"	"Weapon: suppressor"
+	    "weapon_magazine"	"Weapon: magazine"
+	    "weapon_bipod"	"Weapon: bipod"
+	    "driver_offroad"	"Driver: offroad"
+	    "passenger_offroad"	"Passenger: offroad"
+	    "gunner_hunter"	"Gunner: hunter"
+	    "commander_hunter"	"Commander: hunter"
+	    "light_volume_car"	"Light volume: car"
+	}
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('proxy', 'fillcommon', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+	help	"Fill the Path from a list of common proxies."
+    }
+    parm {
+	name	"index"
+	label	"Index"
+	type	integer
+	size	1
+	default	{ "1" }
+	range	{ 0! 999! }
+	help	"The proxy number, 0 to 999."
+    }
+    parm {
+	name	"autoindex"
+	label	"Number From Points"
+	type	toggle
+	default	{ "1" }
+	help	"With a second input: the first proxy gets Index, the next one Index + 1, and so on. Off: all get Index."
+    }
+    parm {
+	name	"t"
+	label	"Translate"
+	type	vector
+	size	3
+	default	{ "0.0" "0.0" "0.0" }
+	range	{ 0 10 }
+	help	"Where the proxy goes when there is no second input."
+    }
+    parm {
+	name	"r"
+	label	"Rotate"
+	type	vector
+	size	3
+	default	{ "0.0" "0.0" "0.0" }
+	range	{ 0 10 }
+	help	"Degrees. A proxy has no scale."
+    }
+    parm {
+	name	"useorient"
+	label	"Orient From Points"
+	type	toggle
+	default	{ "1" }
+	help	"With a second input: turn each proxy by the orient attribute of its point, if the point has one."
+    }
+}

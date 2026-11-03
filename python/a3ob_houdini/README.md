@@ -19,6 +19,10 @@ lives in the asset. `entry.cook` turns every exception into a node error (a `Use
 exception shows a short "bug" text and the traceback goes to the console). If the HDA route is ever dropped,
 `params.add_spare_parms` builds the same parameters on a Python SOP that calls the same entry function.
 
+A Python-type SOP starts with a copy of its first input, so a node that edits its input writes straight into
+`node.geometry()` (Mass and Proxy do) and must not merge the input again. A node module imports `hou` only inside a
+`try`, because the parameter tables are also read under plain Python.
+
 To add a node: write `nodes/<kind>.py` (`nodes.KINDS` finds it by itself), run `python scripts/build_hdas.py`, and commit
 the generated folder. A test fails when the checked-in files differ from the generated ones.
 
@@ -43,12 +47,13 @@ Type names carry no version suffix yet. A change that old scenes cannot take get
 | Module | Needs `hou` | Purpose |
 |---|---|---|
 | `entry` | at cook time | Frozen entry functions called by the assets. |
-| `params` | no | `Parm`, `NodeSpec`, `read_parms`, `add_spare_parms`. |
+| `params` | no | `Parm` (string, file, toggle, button, int, float, menu; vectors by `size`), `NodeSpec`, `read_parms`, `add_spare_parms`. |
 | `nodes` | no | One module per node kind; `KINDS`, `load`, `all_specs`. |
 | `hda_source` | no | Makes the HDA text files from a `NodeSpec`. |
 | `messages` | no | `Report`, `message`, `warning`, `error`, text helpers (ux-tools.md section 2). |
 | `errors` | no | `UserError`. |
 | `names` | only the two group-name wrappers | D-STR helpers, `encode_group_name` / `decode_group_name`, `lod_uid`, int32 helpers. |
+| `mass_math` | no | The arithmetic of the Mass node: closed components, volume, colour ramp, centre of mass. |
 | `p3d_import` | `lod_builder` and `import_model` | The importer: `plan` (decisions, no `hou`), `lod_builder` (writes geometry), `proxies`, `lod_filter`. |
 
 ## The importer in short

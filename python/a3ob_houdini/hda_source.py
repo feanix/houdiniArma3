@@ -83,20 +83,45 @@ def _quote(text: str) -> str:
 
 def _default_text(parm: Parm) -> str:
     if parm.kind == "toggle":
-        return "1" if parm.default else "0"
+        return _quote("1" if parm.default else "0")
     if parm.kind in ("button",):
-        return "0"
-    return str(parm.default)
+        return _quote("0")
+    if parm.size > 1:
+        return " ".join(_quote(str(value)) for value in parm.default)
+    return _quote(str(parm.default))
+
+
+def _number(value: float) -> str:
+    return "%d" % value if float(value) == int(value) else repr(float(value))
+
+
+def _range_text(parm: Parm) -> str:
+    """``0! 10``: the slider range; ``!`` after an end means Houdini clamps to it."""
+    low = "%s!" % _number(parm.minimum) if parm.minimum is not None else "0"
+    high = "%s!" % _number(parm.maximum) if parm.maximum is not None else "10"
+    return "%s %s" % (low, high)
 
 
 def _parm_block(spec: NodeSpec, parm: Parm) -> str:
     """One ``parm { ... }`` block of the DialogScript."""
     kind = {"string": "string", "file": "file", "toggle": "toggle", "button": "button", "int": "integer",
-            "float": "float"}[parm.kind]
+            "float": "float", "menu": "string"}[parm.kind]
+    if parm.kind == "float" and parm.size > 1:
+        kind = "vector"  # Houdini names the components tx, ty, tz
     lines = ["    parm {", "\tname\t%s" % _quote(parm.name), "\tlabel\t%s" % _quote(parm.label), "\ttype\t%s" % kind]
     if parm.kind in ("int", "float"):
-        lines.append("\tsize\t1")
-    lines.append("\tdefault\t{ %s }" % _quote(_default_text(parm)))
+        lines.append("\tsize\t%d" % parm.size)
+    lines.append("\tdefault\t{ %s }" % _default_text(parm))
+    if parm.kind in ("int", "float"):
+        lines.append("\trange\t{ %s }" % _range_text(parm))
+    if parm.kind == "menu":
+        lines.append("\tmenu {")
+        lines.extend("\t    %s\t%s" % (_quote(token), _quote(label)) for token, label in parm.menu)
+        lines.append("\t}")
+        if parm.action:
+            callback = "import a3ob_houdini.entry as e; e.button(%r, %r, kwargs)" % (spec.kind, parm.action)
+            lines.append("\tparmtag\t{ \"script_callback\" %s }" % _quote(callback))
+            lines.append('\tparmtag\t{ "script_callback_language" "python" }')
     if parm.help:
         lines.append("\thelp\t%s" % _quote(parm.help))
     if parm.kind == "file":

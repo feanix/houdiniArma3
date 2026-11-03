@@ -16,12 +16,12 @@ This module does not import ``hou`` at import time.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 __all__ = ["Parm", "NodeSpec", "type_name", "read_parms", "add_spare_parms", "KINDS"]
 
 #: The parameter kinds the table and the generators know.
-KINDS = ("string", "file", "toggle", "button", "int", "float")
+KINDS = ("string", "file", "toggle", "button", "int", "float", "menu")
 
 TYPE_PREFIX = "a3ob_"
 
@@ -37,14 +37,32 @@ class Parm:
     help: str = ""
     #: For file parameters: the file chooser pattern, for example ``*.p3d``.
     file_pattern: str = ""
-    #: For buttons: the action name. The button calls ``a3ob_houdini.entry.button(kind, action, kwargs)``.
+    #: For buttons, and for menus that fill other parameters: the action name. It calls
+    #: ``a3ob_houdini.entry.button(kind, action, kwargs)``.
     action: str = ""
+    #: For menus: ``((token, label), ...)``. The parameter value is the token (a string); ``default`` is a token.
+    menu: Tuple[Tuple[str, str], ...] = ()
+    #: For int and float parameters: how many components (a vector has ``size`` 3; its Houdini names are ``name`` +
+    #: ``x``, ``y``, ``z``). ``default`` is then a tuple.
+    size: int = 1
+    #: For int and float parameters: the allowed range. Values outside it are clamped by Houdini.
+    minimum: Optional[float] = None
+    maximum: Optional[float] = None
 
     def __post_init__(self) -> None:
         if self.kind not in KINDS:
             raise ValueError("parameter %r has unknown kind %r" % (self.name, self.kind))
         if self.kind == "button" and not self.action:
             raise ValueError("button %r needs an action name" % self.name)
+        if self.kind == "menu":
+            if not self.menu:
+                raise ValueError("menu %r needs entries" % self.name)
+            if self.default not in [token for token, _ in self.menu]:
+                raise ValueError("menu %r: the default %r is not one of its tokens" % (self.name, self.default))
+        if self.size != 1 and self.kind not in ("int", "float"):
+            raise ValueError("parameter %r: only int and float can have a size" % self.name)
+        if self.size > 1 and len(self.default) != self.size:
+            raise ValueError("parameter %r needs a default with %d numbers" % (self.name, self.size))
 
 
 @dataclass(frozen=True)
@@ -87,6 +105,10 @@ def read_parms(node, spec: NodeSpec) -> Dict[str, Any]:
     for parm in spec.parms:
         if parm.kind == "button":
             continue
+        if parm.size > 1:
+            found = node.parmTuple(parm.name)
+            values[parm.name] = parm.default if found is None else tuple(found.eval())
+            continue
         found = node.parm(parm.name)
         values[parm.name] = parm.default if found is None else found.eval()
     return values
@@ -96,17 +118,35 @@ def add_spare_parms(node, spec: NodeSpec) -> None:
     """Python SOP fallback: add the table's parameters to a node as spare parameters."""
     import hou
     group = node.parmTemplateGroup()
+    callback = "import a3ob_houdini.entry as e; e.button(%r, %r, kwargs)"
     for parm in spec.parms:
         if parm.kind in ("string", "file"):
             template = hou.StringParmTemplate(parm.name, parm.label, 1, default_value=(str(parm.default),))
             if parm.kind == "file":
                 template.setStringType(hou.stringParmType.FileReference)
+        elif parm.kind == "menu":
+            tokens = [token for token, _ in parm.menu]
+            template = hou.MenuParmTemplate(parm.name, parm.label, tokens, [label for _, label in parm.menu],
+                                            default_value=tokens.index(parm.default), menu_type=hou.menuType.Normal)
+            if parm.action:
+                template.setScriptCallback(callback % (spec.kind, parm.action))
+                template.setScriptCallbackLanguage(hou.scriptLanguage.Python)
         elif parm.kind == "toggle":
             template = hou.ToggleParmTemplate(parm.name, parm.label, default_value=bool(parm.default))
         elif parm.kind == "int":
-            template = hou.IntParmTemplate(parm.name, parm.label, 1, default_value=(int(parm.default),))
+            default = parm.default if parm.size > 1 else (parm.default,)
+            template = hou.IntParmTemplate(parm.name, parm.label, parm.size, default_value=tuple(int(v) for v in default),
+                                           min=int(parm.minimum or 0), max=int(parm.maximum or 10),
+                                           min_is_strict=parm.minimum is not None,
+                                           max_is_strict=parm.maximum is not None)
         elif parm.kind == "float":
-            template = hou.FloatParmTemplate(parm.name, parm.label, 1, default_value=(float(parm.default),))
+            default = parm.default if parm.size > 1 else (parm.default,)
+            template = hou.FloatParmTemplate(parm.name, parm.label, parm.size,
+                                             default_value=tuple(float(v) for v in default),
+                                             min=float(parm.minimum or 0.0), max=float(parm.maximum or 10.0),
+                                             min_is_strict=parm.minimum is not None,
+                                             max_is_strict=parm.maximum is not None,
+                                             naming_scheme=hou.parmNamingScheme.XYZW)
         else:
             template = hou.ButtonParmTemplate(
                 parm.name, parm.label, script_callback="import a3ob_houdini.entry as e; e.button(%r, %r, kwargs)"
