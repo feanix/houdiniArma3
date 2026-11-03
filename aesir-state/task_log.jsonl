@@ -482,3 +482,7 @@
 {"actor": "lead", "id": 482, "task_id": 41, "text": "queue: merged at fcae2c2; lock wait 0s; steps: python scripts/run_tests.py -q 4.4s, Houdini Indie/bin/hython.exe\" scripts... 90.1s; run 94.5s", "ts": "2026-11-03T20:37:44Z"}
 {"actor": "lead", "id": 483, "task_id": 42, "text": "gate full PASS 66389c1b 89.4s (lock wait 0s; steps: python scripts/run_tests.py -q 4.4s, Houdini Indie/bin/hython.exe\" scripts... 84.9s; run 89.4s) | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T20:39:17Z"}
 {"actor": "lead", "id": 484, "task_id": 42, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T20:39:17Z"}
+{"actor": "lead", "id": 485, "task_id": 42, "text": "merged by lead (queued by lead)", "ts": "2026-11-03T20:39:19Z"}
+{"actor": "lead", "id": 486, "task_id": 42, "text": "queue: merged at f57a081; lock wait 0s; steps: python scripts/run_tests.py -q 4.4s, Houdini Indie/bin/hython.exe\" scripts... 84.9s; run 89.4s", "ts": "2026-11-03T20:39:19Z"}
+{"actor": "lead", "id": 487, "task_id": 43, "text": "gate full PASS 1717bf36 95.5s (lock wait 0s; steps: python scripts/run_tests.py -q 4.8s, Houdini Indie/bin/hython.exe\" scripts... 90.7s; run 95.5s) | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T20:40:58Z"}
+{"actor": "lead", "id": 488, "task_id": 43, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T20:40:59Z"}
