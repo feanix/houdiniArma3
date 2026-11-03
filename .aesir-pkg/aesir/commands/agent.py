@@ -1,7 +1,7 @@
 """agent spawn/list/end/show; spawn-context (#125): the SubagentStart context on demand, for Workflow-spawned agents."""
 import os
 
-from .. import agenthook, db, scratch, service as S
+from .. import agenthook, db, gates, scratch, service as S
 from ..rolenames import agent_role
 from ._common import out, out_list, hint, line, add, grp, paging, client_cmd, steer_line
 
@@ -76,18 +76,58 @@ def agent_bind(c, a):
     hint(a, f"python -m aesir task show {a.task}", f"python -m aesir agent show {a.id}")
 
 
+def _prebind_scratch_line(c, a):
+    """#275 c7: the scratch line for an agent with no bound row yet, so it knows its path and lifetime before its first
+    write. The folder is keyed by the agent id, which is --name when the spawn would take it (same test as the row
+    allocation: well-formed, this task's number, not taken, #248); else the id is not known and the path is the form."""
+    root = db.project_root(None)
+    hours = scratch.keep_hours(root)
+    nm = S.name_allowed(c, a.name, a.agent_type, a.agent_type) if a.name else None
+    if nm and int(nm.group(2)) == int(a.task) and not c.execute(
+            "SELECT 1 FROM agents WHERE agent_id=?", (a.name,)).fetchone():
+        return scratch.context_line(scratch.ensure(root, a.name), hours, a.task, scratch.keep_bound_days(root))
+    line = scratch.context_line(scratch.base(root) / "<your Agent name>", hours, a.task, scratch.keep_bound_days(root))
+    return line + (f" (--name {a.name!r} would not be used as an agent id: taken, wrong task or reserved prefix)"
+                   if a.name else " Pass --name <agent name> to get the exact path.")
+
+
+def _gate_state_line(c, task_id):
+    """#224: the reviewer's gate state at the task branch head, so it need not look it up: 'quick gate PASS at <sha>
+    (gate run <id>)' or 'no gate at head <sha>'. The head is resolved like in_review does (origin when local lags,
+    #204). '' for a task with no branch or an unresolvable head (the context is only a convenience)."""
+    t = S.get_task(c, task_id)
+    if not t["branch"]:
+        return ""
+    try:
+        sha = S.resolve_branch_head(db.project_root(None), t["branch"])[1]
+    except (S.AesirError, OSError):
+        return ""
+    hit = gates.passed_at_head(c, task_id, sha, "quick")
+    if hit is None:
+        return f"Gate state: no gate at head {sha[:8]}"
+    return f"Gate state: quick gate PASS at {sha[:8]} (gate run {hit['id']}, {hit['profile']})"
+
+
 def spawn_context(c, a):
     """Print what SubagentStart would inject for <agent-type> on --task. Claude Code drops that hook's additionalContext
     for Workflow-spawned agents, which cannot know their own id, so the bound running row (most recent) is looked up."""
     rows = [r for r in c.execute("SELECT * FROM agents WHERE ended='' AND task_id=? ORDER BY id DESC", (a.task,))
             if agent_role(r) == a.agent_type]  # #248: the type, the id prefix only for rows with no known type
-    row = next((r for r in rows if r["bound"]), None)  # a bound row is a live spawn; unbound ones may be stale
+    if a.name:  # c7: --name names one agent; never answer with another live agent's id and folder
+        row = next((r for r in rows if r["bound"] and r["agent_id"] == a.name), None)
+    else:
+        row = next((r for r in rows if r["bound"]), None)  # a bound row is a live spawn; unbound ones may be stale
     if row is None:
         row = {"agent_id": "", "task_id": a.task, "worktree": "", "agent_type": a.agent_type}
     text = agenthook.subagent_context_text(c, row)
     if not row["agent_id"]:
         text = (f"(no bound running {a.agent_type} agent for task #{a.task:03d}; context below has no agent id, "
                 "so your commands are not attributed to an agent row)\n" + text)
+    if not row["agent_id"]:
+        text += "\n" + _prebind_scratch_line(c, a)
+    if a.agent_type == "reviewer":
+        gate_line = _gate_state_line(c, a.task)
+        text += ("\n" + gate_line) if gate_line else ""
     text = agenthook.spawn_header(a.task, a.agent_type) + "\n" + text  # fixed first line, even with no agent row (#128)
     text += "\n" + steer_line()  # #172
     out(a, {"agent_id": row["agent_id"], "context": text}, lambda d: print(d["context"]))
@@ -113,7 +153,8 @@ def whoami(c, a):
     def render(g):
         print(f"Aesir agent id: {g['agent_id']}")
         if g["scratch"]:
-            print(f"Scratch folder: {g['scratch']}")
+            print(scratch.context_line(g["scratch"], scratch.keep_hours(db.project_root(g["worktree"] or None)),
+                                       g["task"], scratch.keep_bound_days(db.project_root(g["worktree"] or None))))
         print(f"task: {g['task'] or '-'}  type: {g['agent_type'] or '-'}  running: {'yes' if g['running'] else 'no'}")
     out(a, d, render)
 
@@ -121,7 +162,8 @@ def whoami(c, a):
 def register(sub):
         add(sub, "whoami", whoami)
         add(sub, "spawn-context", spawn_context, ("agent_type", {"help": "implementer, reviewer, runner or researcher"}),
-            ("--task", {"type": int, "required": True}))
+            ("--task", {"type": int, "required": True}),
+            ("--name", {"default": "", "help": "the Agent name the spawn prompt gives: names the exact scratch folder"}))
         g = grp(sub, "agent")
         add(g, "spawn", agent_spawn, ("role", {"help": "implementer, reviewer, runner, researcher, ..."}),
             ("--task", {"type": int, "required": True}), ("--model", {"help": "default by role"}),

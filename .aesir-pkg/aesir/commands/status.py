@@ -276,27 +276,33 @@ def skew_flags(c):
     return res
 
 
-def stale_worktrees(c, root):
-    """[(task id, path)] of worktrees `worktrees prune` would remove whose task is merged, verified or wontfix (#164).
-    Clean, unlocked and agent-free is already decided by worktrees.scan; a git failure shows nothing, not a crash."""
+def worktree_rows(c, root):
+    """worktrees.scan rows for the worktrees of merged/verified/wontfix tasks, the only ones the report can show (#272);
+    [] on a git failure. Taken once per collect and shared by stale_worktrees and wontfix_worktrees."""
     from .. import worktrees
+    names = {r["branch"] for r in c.execute(
+        "SELECT branch FROM tasks WHERE status IN ('merged','verified','wontfix') AND branch!=''")}
     try:
-        rows = [r for r in worktrees.scan(c, root) if r["action"] == "remove" and r["branch"]]
+        return worktrees.scan(c, root, branches=names) if names else []
     except (AesirError, OSError):
         return []
+
+
+def stale_worktrees(c, root, rows=None):
+    """[(task id, path)] of worktrees `worktrees prune` would remove whose task is merged, verified or wontfix (#164).
+    Clean, unlocked and agent-free is already decided by worktrees.scan; a git failure shows nothing, not a crash.
+    rows: worktree_rows already taken (None: scan here)."""
+    rows = [r for r in (worktree_rows(c, root) if rows is None else rows) if r["action"] == "remove" and r["branch"]]
     done = {r["branch"]: r["id"] for r in c.execute(
         "SELECT id, branch FROM tasks WHERE status IN ('merged','verified','wontfix') AND branch!=''")}
     return [(done[r["branch"]], r["path"]) for r in rows if r["branch"] in done]
 
 
-def wontfix_worktrees(c, root):
+def wontfix_worktrees(c, root, rows=None):
     """[(task id, path)] of clean, unlocked, agent-free worktrees of wontfix tasks whose branch was never merged:
-    `worktrees prune` keeps them ("branch not merged"), so they need `git worktree remove` (#164)."""
-    from .. import worktrees
-    try:
-        rows = [r for r in worktrees.scan(c, root) if r["why"] == "branch not merged" and r["branch"]]
-    except (AesirError, OSError):
-        return []
+    `worktrees prune` keeps them ("branch not merged"), so they need `git worktree remove` (#164). rows: as above."""
+    rows = [r for r in (worktree_rows(c, root) if rows is None else rows)
+            if r["why"] == "branch not merged" and r["branch"]]
     wf = {r["branch"]: r["id"] for r in c.execute("SELECT id, branch FROM tasks WHERE status='wontfix' AND branch!=''")}
     return [(wf[r["branch"]], r["path"]) for r in rows if r["branch"] in wf]
 
@@ -399,9 +405,10 @@ def collect(c, root, cfg, at=None, db_arg=None):
              "python -m aesir export", "lead", "", "", events=lag[0], minutes=int(_age(lag[1], at)))
     try:
         mcfg = metrics.load_config(root)
-        warns = metrics.session_warnings(mcfg, at=at.strftime(FMT), active=active_agents(c, cfg, at))
+        rows = metrics.persistent_sessions(mcfg)  # one transcript scan for the warnings and the sessions list (#272)
+        warns = metrics.session_warnings(mcfg, at=at.strftime(FMT), active=active_agents(c, cfg, at), rows=rows)
         sessions = [{k: r[k] for k in ("role", "startup", "current")}
-                    for r in metrics.current_sessions(mcfg, at.strftime(FMT))]
+                    for r in metrics.current_sessions(mcfg, at.strftime(FMT), rows=rows)]
     except AesirError:
         warns, sessions = [], []
     for w in warns:
@@ -443,12 +450,13 @@ def collect(c, root, cfg, at=None, db_arg=None):
     if ahead:
         flag("unpushed_main", f"main is {ahead} commit(s) ahead of origin", "python -m aesir queue run", "lead", "", ahead,
              commits=ahead)
-    stale = stale_worktrees(c, root)
+    wt_rows = worktree_rows(c, root)  # one scan for both worktree sections (#272)
+    stale = stale_worktrees(c, root, wt_rows)
     if stale:  # #164: finished tasks whose clean, unlocked worktree is still on disk
         flag("stale_worktrees", f"{len(stale)} clean worktree(s) of finished tasks: "
              + ", ".join(f"#{i:03d}" for i in sorted({x[0] for x in stale})), "python -m aesir worktrees prune", "lead", "",
              len(stale), count=len(stale), paths=[x[1] for x in stale])
-    wont = wontfix_worktrees(c, root)
+    wont = wontfix_worktrees(c, root, wt_rows)
     if wont:  # #164: unmerged, so prune keeps them; each needs an explicit remove
         flag("wontfix_worktrees", f"{len(wont)} clean worktree(s) of wontfix tasks: "
              + ", ".join(f"#{i:03d}" for i in sorted({x[0] for x in wont})), f"git worktree remove {wont[0][1]}", "lead", "",

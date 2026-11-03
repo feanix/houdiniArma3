@@ -588,20 +588,22 @@ def persistent_sessions(cfg):
     return sorted(out, key=lambda r: r["last"])
 
 
-def current_sessions(cfg, at=None, own=None):
+def current_sessions(cfg, at=None, own=None, rows=None):
     """The newest session per role that was active within SESSION_STALE_H (older ones are dead, not current).
-    own: a session id; only that session's row (none while its transcript has no assistant message)."""
+    own: a session id; only that session's row (none while its transcript has no assistant message).
+    rows: persistent_sessions already read (None: read here); callers needing both views read once (#272)."""
     at = at or now()
-    latest = {r["role"]: r for r in persistent_sessions(cfg) if own is None or r["session"] == own}
+    latest = {r["role"]: r for r in (persistent_sessions(cfg) if rows is None else rows) if own is None or r["session"] == own}
     return [r for r in latest.values() if (_t(at) - _t(r["last"])).total_seconds() <= SESSION_STALE_H * 3600]
 
 
-def session_warnings(cfg, role=None, at=None, active=(), session=None):
+def session_warnings(cfg, role=None, at=None, active=(), session=None, rows=None):
     """Current lead/advisor sessions whose context passes [sessions] restart_tokens: dicts with role, session,
     current, limit and the text that names the fix. `active`: ids of agents still running with recent transcript
     activity (#195); the text names them and says to restart only after they end (none: text unchanged).
     `session`: the id of the session asking (SessionStart, reports#100): only that transcript is measured, and one
-    with no usage record yet gives no warning (never the newest other session of the role). None: newest per role."""
+    with no usage record yet gives no warning (never the newest other session of the role). None: newest per role.
+    rows: persistent_sessions already read (None: read here)."""
     tail = (f"; agents still running with recent activity: {', '.join(active)}: restart only after they end"
             if active else "")
     limit = (cfg.get("sessions") or DEFAULT_SESSIONS)["restart_tokens"]
@@ -609,7 +611,7 @@ def session_warnings(cfg, role=None, at=None, active=(), session=None):
              "text": client_cmd(f"{r['role']} session context is {r['current']} tokens (restart_tokens {limit}): write a handoff "
                      f"(`python -m aesir --as {r['role']} role note {r['role']} \"<handoff>\"`), then restart the "
                      "session at a safe point" + tail)}
-            for r in current_sessions(cfg, at, own=session) if r["current"] > limit and role in (None, r["role"])]
+            for r in current_sessions(cfg, at, own=session, rows=rows) if r["current"] > limit and role in (None, r["role"])]
 
 
 def _agent_tok(r):

@@ -37,6 +37,7 @@ def gate_run(c, a):
 
     def render(r):
         print(f"gate {r['profile']} {'PASS' if r['passed'] else 'FAIL'} {r['duration']}s {r['sha'][:8]}")
+        print(r["timing"])
         if r["bootstrap"]:
             print(gates.BOOTSTRAP_MARK.format(r["profile"]))
         if len(r["steps"]) > 1 or any(x["result"] == "skipped" for x in r["steps"]):
@@ -71,6 +72,18 @@ def gate_long(c, a):
     if r["status"] == "running":  # streamed log so far (#112)
         r["log"], r["tail"] = str(longrun.log_path(c, r["id"])), longrun.partial(c, r)
     out(a, r, lambda r: (render_long(r), print(f"log: {r['log']}") if r["log"] else None))
+
+
+def gate_lock_stats(c, a):
+    """gate lock-stats: per-project summary of the recorded gate-lock waits and give-ups. Its own subcommand (not a
+    section of status): the numbers are for judging lock contention across projects, asked for on purpose."""
+    rows = gates.lock_stats(c, a.since or "")
+
+    def mins(sec):
+        return f"{sec / 60:.1f}m"
+    out(a, rows, lambda rs: [print(f"{r['project']}: {r['waits']} waits, {r['gave_up']} gave up, total wait "
+                                   f"{mins(r['total_wait_s'])}, longest wait {mins(r['longest_wait_s'])}, longest hold seen "
+                                   f"{mins(r['longest_hold_s'])}") for r in rs] or print("no gate lock waits recorded"))
 
 
 def _parse_levels(text):
@@ -124,6 +137,7 @@ def register(sub):
             ("--criterion", {"type": int, "help": "long run: record the result as evidence for this criterion of --task"}),
             ("--wait", {"action": "store_true", "help": "long run: stay in the foreground until it ends (default: detached); blocks the caller, so only under a Monitor (docs/supervision.md); otherwise follow with `wait --task N`"}),
             ("--dir", {"help": "run in this checkout (e.g. a worktree) instead of the cwd; config comes from the main checkout"}))
+        add(gt, "lock-stats", gate_lock_stats, ("--since", {"help": "YYYY-MM-DD or full timestamp (UTC)"}))
         add(gt, "long", gate_long, ("id", {"nargs": "?", "type": int}))
         add(gt, "timing", gate_timing,
             ("--with", {"dest": "with_", "help": "timing pair: path of the other project (this directory is the first)"}),

@@ -38,6 +38,8 @@ def queue_run(c, a):
         if len(steps) > 1 or any(x["result"] == "skipped" for x in steps):  # every check and its result (#154)
             for x in steps:
                 print(f"  #{r['task']:03d} gate step {x['result']}: {x['step']}" + (f" ({x['why']})" if x["why"] else ""))
+        if r.get("timing"):  # #244: whether the full gate was reused or run, and where the time went
+            print(f"  #{r['task']:03d} gate {'reused (run ' + str(r['reused']) + ')' if r.get('reused') else 'run'}: {r['timing']}")
         if r.get("hint"):
             print(r["hint"])
         for n in r.get("notes", []):  # #269: cleanup notes (e.g. an empty folder left) are not problems

@@ -155,15 +155,36 @@ def _running(conn, path):
     return False
 
 
-def scan(conn, root, sizes=False, pushed=True):
+def merged_branches(root):
+    """Names of local branches whose tip is an ancestor of main, from one git call (not a merge-base per worktree);
+    None when git fails."""
+    r = _git(root, "for-each-ref", f"--merged={MAIN}", "--format=%(refname:short)", "refs/heads", check=False)
+    return set(r.stdout.split()) if r.returncode == 0 else None
+
+
+def scan(conn, root, sizes=False, pushed=True, branches=None):
     """One row per worktree under .claude/worktrees: path, branch, action ('remove' or 'keep'), why (text) and code
     (stable reason: locked, missing, running, dirty, main, unmerged, detached, pushed, merged). pushed=False ignores
-    remote branches (stale after a failed fetch). sizes=True adds 'size' bytes (a disk walk, slow on big caches)."""
+    remote branches (stale after a failed fetch). sizes=True adds 'size' bytes (a disk walk, slow on big caches).
+    branches: a set of branch names; only those worktrees are examined at all (status needs a few, and each examined
+    worktree costs git calls that crawl under gate load, #272)."""
     base = Path(root) / ".claude" / "worktrees"
     rows = []
+    merged_set = []  # filled on first use; one for-each-ref then answers every worktree
+
+    def is_merged(w):
+        if w["branch"]:
+            if not merged_set:
+                merged_set.append(merged_branches(root))
+            if merged_set[0] is not None:
+                return w["branch"] in merged_set[0]
+        return _merged(root, w["branch"] or w["head"])
+
     for w in _parse(root):
         p = Path(w["path"])
         if _norm(p) == _norm(root) or not _inside(p, base):
+            continue
+        if branches is not None and w["branch"] not in branches:
             continue
         row = {"path": str(p), "branch": w["branch"], "head": w["head"][:8], "action": "keep", "why": "",
                "code": ""}
@@ -177,7 +198,7 @@ def scan(conn, root, sizes=False, pushed=True):
             row["why"], row["code"] = "dirty", "dirty"
         elif w["branch"] == MAIN:
             row["why"], row["code"] = "on main", "main"
-        elif not _merged(root, w["branch"] or w["head"]):
+        elif not is_merged(w):
             rb = pushed_in(root, w["head"]) if pushed else ""  # clean and fully on a remote: removing loses nothing
             if rb:
                 row["action"], row["why"], row["code"] = "remove", f"pushed in {rb}", "pushed"

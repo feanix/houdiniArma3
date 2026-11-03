@@ -30,11 +30,11 @@ Visibility: to learn what the program does, use the project's digest tools (`[ob
 
 Evidence: `python .aesir-pkg/aesir_run.py evidence list <task>`; check each entry actually measures its criterion's claim (command, exit, excerpt). Wrong thing measured, or claimed evidence where the criterion needs execution = changes_requested. For each [RAN] criterion (exit 0, no specific expect) quote the output line that shows it is met; a `warning:` that evidence does not contain the cited command needs an explanation or changes_requested. A test that reads or asserts a `changes/<id>.md` fragment = changes_requested (`release` deletes them); the check belongs in an evidence command (#260).
 
-Gate: do not run the suite ad hoc. From the main checkout of the project, run the quick gate on the branch head in a temp worktree, then remove it, as three separate commands:
+Gate: do not run the suite ad hoc. Decide the verdict from the code, tests and evidence first. Run the quick gate only when the verdict is APPROVE and no passing quick gate exists at the branch head: spawn-context prints `Gate state:` (`quick gate PASS at <sha>` or `no gate at head <sha>`), and `task show N` lists the gate runs. If `task show N` already lists a passing quick gate at the branch head, do not run another; run one only when none exists at the head or the brief asks for it. A brief that scopes the review to reading means no gate run. Report the existing gate run id when reusing. When one is needed, from the main checkout of the project run it on the branch head in a temp worktree, then remove it, as three separate commands:
 `git worktree add --detach <tmp> <branch>`
 `python E:/Projects/houdiniArma3/.aesir-pkg/aesir_run.py gate run quick --task N --dir <tmp>`
 `git worktree remove --force <tmp>`
-(main code only, never worktree code against the live db; it records the gate_runs row the lead's in_review needs). Report the gate result line verbatim; a red gate is a blocker.
+(main code only, never worktree code against the live db; it records the gate_runs row the lead's in_review needs). Report the gate result line verbatim (or the reused gate run id); a red gate is a blocker.
 
 Output: verdict `approve` or `changes_requested`, then numbered findings with severity blocker/should/nit. Only blockers justify `changes_requested`. Concrete findings only; no general advice.
 

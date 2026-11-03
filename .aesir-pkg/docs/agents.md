@@ -28,8 +28,9 @@ Put project-specific instructions (for example an extra reviewer checklist item)
   marks claims no source gives, and reports sources it could not read. The lead commits its files.
 - The scope hook treats it like an implementer (task scope) and also refuses Write/Edit outside `docs/` whatever the
   scope says; its own scratch folder and same-project session scratchpads stay allowed (#173).
-- `spawn-context researcher --task N` works as for the other types. The agent has no shell, so paste the output into
-  its spawn prompt (header line included).
+- `spawn-context researcher --task N --name <agent name>` works as for the other types (`--name` gives the scratch
+  path before the agent exists, see below). The agent has no shell, so paste the output into its spawn prompt (header
+  line included).
 
 ## Waiting, rounds, respawns (#156)
 
@@ -65,9 +66,10 @@ task branch is checked out in the old one, so it cannot commit to it.
   advisor whose recorded checkin is older than the newest file in `.claude/agents`. Subagents use new defs at their
   next spawn.
 - Workflow-spawned agents get no SubagentStart `additionalContext` (Claude Code drops it, though the hook still
-  creates and binds the agent row). `python -m aesir spawn-context <agent-type> --task N`, run from the main
-  checkout, prints the same context: it uses the most recent bound running agent of that type on the task; with none
-  it prints the context without an id and says so.
+  creates and binds the agent row). `python -m aesir spawn-context <agent-type> --task N [--name <agent name>]`, run
+  from the main checkout, prints the same context: it uses the most recent bound running agent of that type on the
+  task (with `--name`, only the row of that name, never another live agent's); with none it prints the context without
+  an id and says so.
 - Header (#128): `spawn-context` output always opens with `Aesir spawn-context v1 task <N> type <T>`, bound row or
   not. A lead can run it before spawning and paste the output into the spawn prompt; the implementer, reviewer and
   runner defs tell an agent to run `spawn-context` only when its prompt has no line starting `Aesir spawn-context v1`.
@@ -83,10 +85,18 @@ task branch is checked out in the old one, so it cannot commit to it.
 
 - Every bound agent gets `<system temp>/aesir/<project name>/<agent id>/` (project name from `aesir.toml` `[project]`,
   else the directory name; `AESIR_SCRATCH_ROOT` replaces `<system temp>/aesir`, used by tests), created at SubagentStart and by `spawn-context` when it finds the bound row. Its context
-  has a `Scratch folder:` line naming it. A Workflow agent's pasted context predates its spawn and has no such line, so the agent defs tell it to run `python -m aesir whoami` (which ensures the folder and prints `Scratch folder:`).
-- At SubagentStop the folder is deleted when the agent succeeded, i.e. its final message has the required `deviation:`
-  report line; otherwise it is kept (empty folders are removed at once) and swept after `[scratch] keep_failed_hours`
-  (default 24) by the next spawn or stop. Fail-open: a problem here is a hook_failure friction event, never a block.
+  has a `Scratch folder:` line naming it and its lifetime. `spawn-context --name <agent name>` (the spawn prompt's
+  Agent name) creates the exact folder before the agent is bound, so a Workflow agent (pasted context predates its
+  spawn) knows path and lifetime before its first write; the name is normalised as at binding (#248, e.g.
+  `implementer-332a`). Without `--name` the line shows the form `<temp>/aesir/<project>/<your Agent name>/`. `python -m
+  aesir whoami` also ensures the folder and prints the same line.
+- At SubagentStop an unbound agent's folder is deleted when it succeeded, i.e. its final message has the required
+  `deviation:` report line; otherwise it is kept (empty folders are removed at once) and swept after `[scratch]
+  keep_failed_hours` (default 24) by the next spawn or stop. A task-bound agent's folder (#275) is kept even after a
+  clean finish, until its task is merged, verified or wontfix, at most `[scratch] keep_bound_days` (default 14, D234)
+  so a task that never closes cannot keep it; a failed bound agent also waits out `keep_failed_hours`. A task row that
+  is missing or unreadable gives the `keep_failed_hours` rule. A running agent's folder is never swept. Put outputs a
+  later agent needs in the task's `docs/`, not the scratch folder. Fail-open: a problem here is a hook_failure friction event, never a block.
 - A gate, `evidence run`, the merge queue or a long run refused for a dirty tree lists each file with its modified
   time and the agents the registry says were running then, to find the writer.
 - Friction `stray_write`: a worktree agent's Bash/PowerShell command redirecting (`>`, `>>`, `tee`, `Out-File`) to an

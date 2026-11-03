@@ -1117,12 +1117,20 @@ def supersede_earlier(conn, actor, new_id, role, task):
     return done
 
 
+def _scratch_end(conn, a, ok, start):
+    """#275: finish this agent's scratch folder (kept when bound to a task), then sweep folders whose time is up."""
+    from . import scratch
+    root = _project_root(a["worktree"] or start)
+    scratch.finish(root, a["agent_id"], ok, bound=bool(a["task_id"]))
+    running = {r[0] for r in conn.execute("SELECT agent_id FROM agents WHERE ended=''")}
+    scratch.sweep(root, running, conn)
+
+
 def _end_cleanup(conn, actor, a, ok, start):
     """Fail open, loudly (D115): a cleanup problem must not undo or block the end."""
     from . import friction, messages, scratch
     for what, fn in (("steering notes not expired", lambda: messages.expire_notes(conn, "aesir-hook", a["agent_id"])),
-                     ("scratch folder not cleaned", lambda: scratch.finish(
-                         _project_root(a["worktree"] or start), a["agent_id"], ok))):
+                     ("scratch folder not cleaned", lambda: _scratch_end(conn, a, ok, start))):
         try:
             fn()
         except (AesirError, OSError, sqlite3.Error, ValueError) as e:

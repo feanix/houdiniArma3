@@ -297,7 +297,7 @@ def _schema_gate(conn, actor, root, t, force_reason):
     return None
 
 
-def process(conn, actor, root, t, push=True):
+def process(conn, actor, root, t, push=True, waited=0.0):
     """Merge the reviewed branch head as it is: a merge commit built in a detached worktree is scope-checked and
     gated, then main fast-forwards to it. The task branch is only read, never rebased, reset or pushed (D154)."""
     branch = t["branch"]
@@ -332,7 +332,20 @@ def process(conn, actor, root, t, push=True):
     bad = S.branch_out_of_scope(root, merge_sha, scope, main_sha)
     if bad:
         return _fail(conn, actor, t, f"outside scope ({scope}): {', '.join(bad[:10])}")
-    g = gates.run_profile(conn, actor, "full", tmp, t["id"], config_root=root, locked=True, changed_base=main_sha)
+    # #244: a merge commit whose tree already passed the full gate (same or higher tier) is not gated again
+    t_reuse = time.monotonic()
+    tree = _git(tmp, "rev-parse", f"{merge_sha}^{{tree}}").stdout.strip()
+    scan = {}
+    prior = gates.passing_run_on_tree(conn, "full", tree, tmp, scan)
+    if prior:
+        g = gates.record_reused(conn, actor, "full", t["id"], merge_sha, MAIN, prior, tree, waited,
+                                time.monotonic() - t_reuse)
+        # one log line per reuse: record_reused wrote it to the task log (run id, tree, elapsed)
+    else:
+        if scan.get("capped"):  # no silent cap: older passing runs were not compared
+            S.log_task(conn, actor, t["id"], f"queue: running full gate: tree {tree[:12]} not among the newest {scan['capped']} passing runs (older ones not scanned)")
+        g = gates.run_profile(conn, actor, "full", tmp, t["id"], config_root=root, locked=True, changed_base=main_sha,
+                             waited=waited)
     if not g["passed"]:
         bad = next((x for x in g["steps"] if x["result"] == "FAIL"), None)
         why = f"full gate failed on {g['sha'][:8]}" + (f": step {bad['step']} ({bad['why']})" if bad else "")
@@ -360,7 +373,8 @@ def process(conn, actor, root, t, push=True):
     if _git(root, "status", "--porcelain", "--untracked-files=no").stdout.strip():
         _git(root, "commit", "-qm", f"Merge #{t['id']:03d} {t['title']}; state export")
     sha = _git(root, "rev-parse", "--short", "HEAD").stdout.strip()
-    res = {"task": t["id"], "result": "merged", "sha": sha, "pushed": False, "steps": g["steps"]}
+    res = {"task": t["id"], "result": "merged", "sha": sha, "pushed": False, "steps": g["steps"], "timing": g["timing"],
+           "reused": g.get("reused")}
     notes = []
     problems = _cleanup(conn, actor, root, t, wt, head, notes) + export_problems
     if push and not _has_origin(root):
@@ -383,7 +397,7 @@ def process(conn, actor, root, t, push=True):
         res["problems"] = problems
         S.log_task(conn, actor, t["id"], f"queue: merged at {sha}; " + "; ".join(problems)[-TAIL:])
     else:
-        S.log_task(conn, actor, t["id"], f"queue: merged at {sha}{', pushed' if res['pushed'] else ''}{', ' + NO_ORIGIN if res.get('reason') == NO_ORIGIN else ''}")
+        S.log_task(conn, actor, t["id"], f"queue: merged at {sha}{', pushed' if res['pushed'] else ''}{', ' + NO_ORIGIN if res.get('reason') == NO_ORIGIN else ''}; {g['timing']}")
     return res
 
 
@@ -397,6 +411,24 @@ def settings(root):
     if not isinstance(push, bool):
         raise AesirError("bad aesir.toml: [queue] push must be true or false")
     return {"push": push}
+
+
+PROGRESS_SECS = 60  # a waiting queue run says where it stands at most this often (a Monitor on its output is not flooded)
+
+
+def lock_wait_setting(root):
+    """[queue] lock_wait in aesir.toml: seconds a queue run waits for the gate lock; unset or 0 = no limit (D239). The
+    queue holds PRIO_QUEUE tickets, so it is served before plain gate runs and waiting is its normal state; [gate]
+    lock_wait (for ad-hoc gate runs) does not apply to it."""
+    try:
+        v = gates.load_config(root).get("queue", {}).get("lock_wait")
+    except (AesirError, OSError, ValueError):
+        return None
+    if v is None:
+        return None
+    if isinstance(v, bool) or not isinstance(v, (int, float)) or v < 0:
+        raise AesirError("bad aesir.toml: [queue] lock_wait must be a number of seconds (0 = no limit)")
+    return v or None
 
 
 def _has_origin(root):
@@ -419,9 +451,10 @@ def _ahead(root):
 
 
 def run(conn, actor, root, once=False, push=True, lock_wait=None, force_schema_hold=None):
-    """lock_wait: seconds to wait for the machine gate lock before an item (default aesir.toml [gate] lock_wait).
-    The lock is taken before the item's merge worktree, so a busy lock leaves it queued and untouched; the run
-    then stops with a 'busy' result. force_schema_hold: lead-only reason text that merges a schema-bump task despite
+    """lock_wait: seconds to wait for the machine gate lock before an item (explicit cap; default aesir.toml [queue]
+    lock_wait, else unbounded: the run waits its turn and prints a progress line a minute). Every wait and give-up is
+    recorded as an event. The lock is taken before the item's merge worktree, so a give-up leaves the item queued and
+    untouched; the run then stops with a 'busy' result. force_schema_hold: lead-only reason text that merges a schema-bump task despite
     running agents on an older schema (#266); without it such a task is 'held': it stays queued in its place, is listed in
     the results with its reason, and the run goes on with the next queue row (D218)."""
     if not _runner(conn, actor):
@@ -432,7 +465,7 @@ def run(conn, actor, root, once=False, push=True, lock_wait=None, force_schema_h
             raise AesirError("--force-schema-hold needs a --reason")
     root = Path(root)
     if lock_wait is None:
-        lock_wait = gates.gate_settings(root)[0]
+        lock_wait = lock_wait_setting(root)
     push = push and settings(root)["push"]
     acquire(conn, actor)
     results = []
@@ -459,9 +492,12 @@ def run(conn, actor, root, once=False, push=True, lock_wait=None, force_schema_h
                 skipped.append(t["id"])
                 continue
             try:
-                with gates.gate_lock(f"{gates.project_name(root)} task {t['id']}", wait=lock_wait, key=root,
-                                    prio=gates.PRIO_QUEUE):
-                    res = process(conn, actor, root, t, push)
+                project = gates.project_name(root)
+                t_lock = time.monotonic()
+                with gates.gate_lock(f"{project} task {t['id']}", wait=lock_wait, key=root, prio=gates.PRIO_QUEUE,
+                                    progress_every=PROGRESS_SECS,
+                                    on_wait=lambda i: gates.record_lock_wait(conn, actor, project, f"queue task {t['id']}", i)):
+                    res = process(conn, actor, root, t, push, waited=time.monotonic() - t_lock)
             except gates.GateLockBusy as e:
                 results.append({"task": t["id"], "result": "busy", "reason": str(e)})
                 break

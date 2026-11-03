@@ -23,7 +23,15 @@ CLAIM_OK_RE = re.compile(r"owner[- ]sensor|manual(?:ly)?\s+(?:observation|check|
 GENERIC_EXPECT_RE = re.compile(r"^\s*(ok|pass(ed)?|success(ful)?|exit(\s+code)?\s*0|done)\s*[.!]?\s*$", re.I)
 # Command or tool names a criterion cites: `backticked`, "double quoted" or 'single quoted' (not apostrophes in words).
 NAMED_RE = re.compile(r"`([^`]+)`|\"([^\"]+)\"|(?<!\w)'([^']+)'(?!\w)")
-OK_STATES = ("met", "ran", "claimed")  # states that satisfy the in_review check
+# A criterion that cites a gate tier ("full tier", "quick gate", "full suite"): a passing gate run of that tier at the
+# branch head is its evidence, so in_review does not demand a second run of the same tier (#245).
+_TIER_NOUN = r"(?:tier|gate|(?:test\s+)?suite)"
+# a tier counts only when the criterion cites it as passing ("the full tier passes", "passes the quick gate"); a bare
+# mention ("test lives in the quick tier", "no full suite rerun") does not (#245)
+TIER_RE = re.compile(rf"\b(full|quick)\s+{_TIER_NOUN}\s+(?:passes|pass|is\s+(?:green|clean|passing)|green|clean)\b"
+                     rf"|\bpass(?:es)?\s+(?:the\s+)?(?:(full|quick)\s+{_TIER_NOUN})\b", re.I)
+MUST_FAIL_RE = re.compile(r"\b(?:fail|fails|failing|must[- ]fail|mutant|mutation)\b", re.I)
+OK_STATES = ("met", "ran", "claimed", "gate")  # states that satisfy the in_review check
 EXCERPT = 600
 TIMEOUT = 600
 # Exit codes aesir itself assigns when the command never produced a trustworthy result (127 = shell "not found").
@@ -356,6 +364,57 @@ def add(conn, actor, tid, criterion, note, ref="", cwd=None):
     return get(conn, cur.lastrowid)
 
 
+def reuse(conn, actor, tid, criterion, source, repo, expect=""):
+    """Record an executed row for `criterion` copying a run that already passed at the task's current head (#245,
+    reports#159), so one run backs several criteria without a rerun. `source` is an evidence id ('E12', '12') of this
+    task or 'gate:<gate run id>'. Refused when the source's sha is not the branch head (both shas named), when it
+    did not pass (exit 0), or is a note or a must-fail run (its failure is not a pass for an ordinary criterion).
+    The source's own expect/MET is never copied: the row is RAN only unless `expect` (this criterion's own text) is
+    found in the source's full output, in which case it is stored as the row's expect and the row is MET; a miss is
+    refused. The note names the origin ('reused from E<id>|gate:<id>')."""
+    t = get_task(conn, tid)
+    _check_criterion(t, criterion)
+    hr = head_ref(t, repo)
+    if not hr:
+        raise AesirError(f"task {t['id']} has no resolvable branch head to compare the reused run against")
+    head = hr[1]
+    src = str(source).strip()
+    if src.lower().startswith("gate:"):
+        g = conn.execute("SELECT * FROM gate_runs WHERE id=? AND task_id=?", (src[5:].strip() or 0, t["id"])).fetchone()
+        if not g:
+            raise AesirError(f"no gate run {src[5:]!r} for task {t['id']}")
+        label, sha, code = f"gate:{g['id']}", g["sha"], 0 if g["passed"] else 1
+        cmd, excerpt, ref, full = f"gate {g['profile']} (gate run {g['id']})", g["tail"] or "", "", g["tail"] or ""
+    else:
+        m = re.fullmatch(r"[Ee]?(\d+)", src)
+        e = conn.execute("SELECT * FROM evidence WHERE id=? AND task_id=?", (int(m.group(1)), t["id"])).fetchone() if m else None
+        if not e:
+            raise AesirError(f"no evidence {src!r} for task {t['id']} (give E<id> or gate:<gate run id>)")
+        if e["kind"] != "executed":
+            raise AesirError(f"E{e['id']} is a claimed note, not an executed run: only executed runs can be reused")
+        if e["expect_fail"]:
+            raise AesirError(f"E{e['id']} is a must-fail run: its failure is not a pass for another criterion, rerun it there")
+        label, sha, code = f"E{e['id']}", e["sha"], e["exit_code"]
+        cmd, excerpt, ref = e["cmd"], e["excerpt"], e["output_ref"]
+        full = excerpt
+        if ref and Path(ref).is_file():
+            full = Path(ref).read_text(encoding="utf-8", errors="replace")
+    if sha != head:
+        raise AesirError(f"{label} ran at {sha[:8] or '-'} but the {hr[0]} head is {head[:8]}: rerun it at the head")
+    if code != 0:
+        raise AesirError(f"{label} did not pass (exit {code}): not reusable")
+    if expect and expect not in full:
+        raise AesirError(f"expected text not found in {label}'s output: {expect}")
+    with tx(conn):
+        cur = conn.execute(
+            "INSERT INTO evidence (task_id, criterion, kind, cmd, exit_code, excerpt, expect, sha, branch, actor, ts,"
+            " expect_fail, output_ref, note) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (t["id"], criterion, "executed", cmd, 0, excerpt, expect, sha, t["branch"] or "", actor, now(),
+             "", ref or "", f"reused from {label} (same head {head[:8]}, no rerun)"))
+        event(conn, actor, "evidence", cur.lastrowid, "reuse", {"task": t["id"], "criterion": criterion, "source": label})
+    return get(conn, cur.lastrowid)
+
+
 def get(conn, eid):
     return dict(conn.execute("SELECT * FROM evidence WHERE id=?", (eid,)).fetchone())
 
@@ -396,14 +455,17 @@ def _passes(e, ui):
 
 def status(conn, t, head=None):
     """Per criterion: {n, text, state, warnings, entries}. state: met (executed at head, criterion-specific --expect
-    matched), ran (executed at head, exit 0 only or a generic expect), claimed (allowed by the criterion's
-    wording), stale (only older shas), missing. `head` None = do not compare shas (no branch to resolve)."""
+    matched), ran (executed at head, exit 0 only or a generic expect), gate (the criterion cites a tier that passed at
+    head), claimed (allowed by the criterion's wording), stale (only older shas), missing.
+    `head` None = do not compare shas (no branch to resolve); no gate evidence counts then."""
     ui = observe.is_ui(t)
     rows = [dict(r) for r in conn.execute("SELECT * FROM evidence WHERE task_id=? ORDER BY id", (t["id"],))]
     res = []
     for n, text in criteria(t["spec"]):
         es = [e for e in rows if e["criterion"] == n]
         cur = [e for e in es if head is None or e["sha"] == head]
+        tier = cited_tier(text)
+        gate_ok = bool(head) and bool(tier) and not ui and gates.passed_at_head(conn, t["id"], head, tier) is not None
         allow = bool(CLAIM_OK_RE.search(text))
         if any(_passes(e, ui) and (e["expect_fail"] or is_specific(e["expect"])) for e in cur):
             # a failed expect makes the run exit 1, so a recorded specific expect with exit 0 did match; a must-fail
@@ -411,6 +473,8 @@ def status(conn, t, head=None):
             st = "met"
         elif any(_passes(e, ui) for e in cur):
             st = "ran"
+        elif gate_ok:
+            st = "gate"
         elif allow and any(e["kind"] == "claimed" for e in cur):
             st = "claimed"
         elif any(_passes(e, ui) or (allow and e["kind"] == "claimed") for e in es):
@@ -423,6 +487,14 @@ def status(conn, t, head=None):
         res.append({"n": n, "text": text, "state": st, "warnings": command_warnings(text, es), "entries": es,
                     "must_fail": bool(mf), "dirty": dirty})
     return res
+
+
+def cited_tier(text):
+    """The gate tier ('quick' or 'full'; full wins) a criterion's text cites, or None."""
+    if MUST_FAIL_RE.search(text):  # a mutation/must-fail criterion is never met by a passing gate
+        return None
+    tiers = {(m.group(1) or m.group(2)).lower() for m in TIER_RE.finditer(text)}
+    return "full" if "full" in tiers else ("quick" if tiers else None)
 
 
 def state_tag(c):
@@ -474,6 +546,17 @@ def notes(sts):
     return out
 
 
+def _moved_gate(conn, t, c, hr):
+    """For a criterion citing a tier whose pass predates the head: ' [full gate passed at A but the head moved to B: rerun it]'."""
+    tier = cited_tier(c["text"])
+    if not (tier and hr):
+        return ""
+    for r in conn.execute("SELECT sha, profile FROM gate_runs WHERE task_id=? AND passed=1 ORDER BY id DESC", (t["id"],)):
+        if r["profile"] in gates.SATISFIES[tier]:
+            return f" [{tier} gate passed at {r['sha'][:8]} but the head moved to {hr[1][:8]}: rerun it]"
+    return ""
+
+
 def check_in_review(conn, t, repo):
     """Raise unless every numbered criterion has evidence at the branch head sha. Returns non-blocking notes."""
     hr = head_ref(t, repo)
@@ -483,7 +566,8 @@ def check_in_review(conn, t, repo):
         if c["state"] in OK_STATES:
             continue
         newest = c["entries"][-1]["sha"][:8] if c["entries"] else ""
-        bad.append(f"{c['n']} ({c['state']})" + (f" [newest evidence at {newest}]" if c["state"] == "stale" else ""))
+        bad.append(f"{c['n']} ({c['state']})" + (f" [newest evidence at {newest}]" if c["state"] == "stale" else "")
+                   + _moved_gate(conn, t, c, hr))
     if bad:
         at = f"{hr[0]} head {hr[1][:8]}" if hr else "the branch head"
         raise AesirError(f"task {t['id']} lacks executed evidence at {at} for criteria: {', '.join(bad)}; "

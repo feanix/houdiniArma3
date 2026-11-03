@@ -16,6 +16,8 @@ def fmt(e):
     if e["expect"]:
         ls.append(f"    expect: {e['expect']}")
     ls.append("    excerpt: " + e["excerpt"].replace("\n", "\n             ")[:400])
+    if e["note"]:  # a reused row names its source (#245)
+        ls.append(f"    note: {e['note']}")
     if e["output_ref"]:
         ls.append(f"    full output: {e['output_ref']}")
     return ls
@@ -40,6 +42,14 @@ def evidence_run(c, a):
 
 
 def evidence_add(c, a):
+    if a.reuse:  # copy a passing run at the current head (#245); a note is not needed then
+        if a.note:
+            raise ValueError("--reuse and --note are exclusive")
+        e = evidence.reuse(c, a.actor, a.task, a.criterion, a.reuse, db.project_root(),
+                           a.expect or "")
+        return out(a, e, lambda e: print(f"E{e['id']} recorded (executed, {e['note']})"))
+    if not a.note:
+        raise ValueError("give --note <text>, or --reuse <E-id|gate:<gate run id>>")
     e = evidence.add(c, a.actor, a.task, a.criterion, a.note, a.ref or "", Path.cwd())
     out(a, e, lambda e: print(f"E{e['id']} recorded (claimed, not executed)"))
 
@@ -60,6 +70,8 @@ def register(sub):
         ("--dir", {"help": "run in this checkout (e.g. a worktree) and record its head sha; db and config come from the invoking checkout"}),
         ("command", {"nargs": "*", "help": "-- <command to execute>: 2+ arguments run directly with no shell (^ ( ) & < > | stay literal); ONE argument is a command string run through the shell (cmd.exe on Windows, /bin/sh elsewhere). To keep shell features (&&, |, >, ;) pass the whole command as ONE quoted string. On Windows bash, sh and .sh run through Git for Windows bash"}))
     add(g, "add", evidence_add, ("task", {"type": int}), ("--criterion", {"type": int, "required": True}),
-        ("--note", {"required": True, "help": "what was observed, for evidence that cannot be executed"}),
+        ("--note", {"help": "what was observed, for evidence that cannot be executed"}),
+        ("--reuse", {"help": "back this criterion with a run that already passed at the task's current head: E<id> of this task or gate:<gate run id>; refused at a moved head or for a failed run"}),
+        ("--expect", {"help": "with --reuse: text this criterion needs, checked against the source run's full output; without it the reused row is RAN only, never MET"}),
         ("--ref", {"help": "pointer: file, url, message id"}))
     add(g, "list", evidence_list, ("task", {"type": int}))

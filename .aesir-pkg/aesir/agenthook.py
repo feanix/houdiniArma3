@@ -281,7 +281,7 @@ def _late_task(conn, row, d, root):
     """#207: a row bound with no task learns it from evidence that appears later: the spawn-context header the agent
     read, or its worktree's branch task/N-*. Best-effort; the row is returned refreshed."""
     cwd = d.get("cwd") or ""
-    wt = row["worktree"] or (cwd if cwd and root and _norm(cwd) != _norm(str(root)) else "")
+    wt = row["worktree"] or _cwd_worktree(d)
     task, why = worktree_branch_task(wt), "worktree branch"
     if task is None:
         path = row["transcript_path"] or _known_path(_subagent_transcript(d))
@@ -343,7 +343,7 @@ def ensure_bound(conn, d, wait=0.0, reopen=False):
                 conn.execute("UPDATE agents SET model=? WHERE id=?", (model, row["id"]))
                 row = S.find_agent(conn, harness)
         if not row["task_id"]:
-            root = db.project_root(d["cwd"]) if d.get("cwd") else None
+            root = _proj(d)
             row = _late_prompt(conn, row, d, root)
         if not row["task_id"]:
             row = _late_task(conn, row, d, root)
@@ -358,8 +358,7 @@ def ensure_bound(conn, d, wait=0.0, reopen=False):
             break
         time.sleep(0.2)
     cwd = d.get("cwd") or ""
-    root = db.project_root(cwd) if cwd else None
-    wt = cwd if cwd and root and _norm(cwd) != _norm(str(root)) else ""
+    wt = _cwd_worktree(d)
     adopt = None if inst or not prompt else _adoption(prompt, d.get("agent_type") or "")
     if adopt:
         role, task, atype = adopt
@@ -394,7 +393,7 @@ def _spawn(conn, d):
     t = TASK_RE.search(prompt)
     name = prompt_name(prompt)  # #248: the prompt's 'Agent name:' names the row here too, as for a Workflow agent
     task = name_task(name) or (int(t.group(1)) if t else None)
-    model = ti.get("model") or agent_def_model(db.project_root(d.get("cwd") or None), stype)
+    model = ti.get("model") or agent_def_model(_proj(d), stype)
     g = S.spawn_agent(conn, "aesir-hook", role, task, name=name,
                       parent=os.environ.get("AESIR_ROLE") or "lead", model=model, agent_type=stype,
                       tool_use_id=tuid, strict=False)
@@ -894,7 +893,7 @@ def _refuse_head_move(conn, row, d, resp):
     if not cwd or not resp or "updatedInput" not in resp["hookSpecificOutput"] or "git" not in cmd:
         return resp
     try:
-        main = _norm(db.project_root(cwd))
+        main = _norm(_proj(d, wt))
         parsed = _segments(cmd)
         if parsed is None:
             return resp
@@ -1207,7 +1206,7 @@ def _refuse_kill(conn, row, d, resp):
         if any(k == "unknown" for k, _ in found):
             return deny("cannot tell which process this kill targets (a variable, job or substitution instead of a "
                         "literal PID). Use a literal PID, or `$(cat run.pid)` of the file you wrote. " + _KILL_ALT)
-        root = db.project_root(cwd)
+        root = _proj(d, wt)
         main = _norm(root)
         try:
             mine = scratch.path(root, row["agent_id"])
@@ -1265,7 +1264,7 @@ def _flag_stray_redirect(conn, row, d, resp):
     if not cwd or not resp or "updatedInput" not in resp["hookSpecificOutput"]:  # refused already: skip
         return resp
     try:
-        root = db.project_root(cwd)
+        root = _proj(d, wt)
         main = _norm(root)
         try:
             mine = scratch.path(root, row["agent_id"])
@@ -1366,7 +1365,7 @@ def _scope_rel(fp, base, row, d):
     any worktree of this repository, keeps the old rule (relative to the agent's cwd/worktree; '../' = denied)."""
     p = fp if os.path.isabs(fp) or not base else os.path.join(base, fp)
     top, common = _worktree_of(os.path.dirname(os.path.abspath(p)))
-    main = db.project_root(row["worktree"] or d.get("cwd") or None)
+    main = _proj(d, row["worktree"])
     pcommon = _worktree_of(main)[1]
     if top and pcommon and common == pcommon and top != _norm(main):
         try:
@@ -1434,7 +1433,7 @@ def _scope_deny(conn, d, row):
         return None
     try:
         t = S.get_task(conn, row["task_id"])
-        scope = tracks.effective_scope(t, db.project_root(row["worktree"] or d.get("cwd") or None)).strip()
+        scope = tracks.effective_scope(t, _proj(d, row["worktree"])).strip()
     except Exception as e:  # fail open (D115) but loudly (#130)
         _degraded(conn, "scope guard disabled for this edit", e)
         return None
@@ -1443,7 +1442,7 @@ def _scope_deny(conn, d, row):
     if (not scope and not researcher) or not isinstance(fp, str) or not fp:
         return None
     base = row["worktree"] or d.get("cwd") or ""
-    root = db.project_root(row["worktree"] or d.get("cwd") or None)
+    root = _proj(d, row["worktree"])
     for allowed in (lambda: _scratchpad(fp, base, d, root), lambda: _own_scratch(fp, base, row, root)):
         try:
             if allowed():
@@ -1496,7 +1495,7 @@ def session_role(conn, d):
     checked-in role and prefix is the project's session prefix (or, when the rest is a known role, any prefix).
     Else ''."""
     try:
-        prefix = session_prefix(db.project_root(d.get("cwd") or None))
+        prefix = session_prefix(_proj(d))
     except Exception as e:
         _degraded(conn, "session prefix defaulted to 'aesir'", e)
         prefix = "aesir"
@@ -1514,7 +1513,7 @@ def _ctx(ev, text):
 def _is_aesir_repo(d, conn=None):
     """True in the Aesir source repo itself (package at the root), not in a client with the vendored copy."""
     try:
-        root = db.project_root(d.get("cwd") or None)
+        root = _proj(d)
     except Exception as e:
         _degraded(conn, "project root unknown, treated as not the Aesir repo", e)
         return False
@@ -1526,7 +1525,7 @@ def _record_session_name(conn, d, role):
     try:
         name = _session_name(d)
         try:
-            prefix = session_prefix(db.project_root(d.get("cwd") or None))
+            prefix = session_prefix(_proj(d))
         except Exception as e:
             _degraded(conn, "session prefix defaulted to 'aesir'", e)
             prefix = "aesir"
@@ -1629,8 +1628,9 @@ def subagent_context_text(conn, row, cwd=None):
         try:  # #138: the agent's own scratch folder; fail open
             sroot = db.project_root(row["worktree"] or cwd or None)
             running = {r[0] for r in conn.execute("SELECT agent_id FROM agents WHERE ended=''")}
-            scratch.sweep(sroot, running)
-            lines.append(scratch.context_line(scratch.ensure(sroot, aid), scratch.keep_hours(sroot)))
+            scratch.sweep(sroot, running, conn)
+            lines.append(scratch.context_line(scratch.ensure(sroot, aid), scratch.keep_hours(sroot), row["task_id"],
+                                              scratch.keep_bound_days(sroot)))
         except Exception as e:
             _degraded(conn, "scratch folder not created", e)
     tid = row["task_id"]
@@ -1713,7 +1713,7 @@ def _flag_missing_header(conn, d, row):
 
 
 def _subagent_context(conn, row, d=None):
-    return _ctx("SubagentStart", subagent_context_text(conn, row, (d or {}).get("cwd")))
+    return _ctx("SubagentStart", subagent_context_text(conn, row, str(_proj(d)) if d else None))
 
 
 def _msg_text(ti):
@@ -1730,7 +1730,7 @@ def _capture_send(conn, d):
         ti = d.get("tool_input") or {}
         to = ti.get("to") or ti.get("recipient") or ""
         if role and isinstance(to, str):
-            prefix = session_prefix(db.project_root(d.get("cwd") or None))
+            prefix = session_prefix(_proj(d))
             messages.capture_direct(conn, role, to, _msg_text(ti), prefix)
     except Exception as e:  # best-effort; the send must go through
         print(f"aesir hook: message capture: {e}", file=sys.stderr)
@@ -1753,7 +1753,7 @@ def _prompt_submit(conn, d):
     p = d.get("prompt") or ""
     pay = {"session": d.get("session_id") or "", "length": len(p)}  # the event ts is the timestamp
     try:
-        if ownerwait.load_config(db.project_root(d.get("cwd") or None))["record_text"]:  # opt-in only (#86)
+        if ownerwait.load_config(_proj(d))["record_text"]:  # opt-in only (#86)
             pay["text"] = p
     except Exception as e:  # a bad config must not lose the count
         _warn("owner-wait config unreadable, text not recorded", e)
@@ -1764,7 +1764,7 @@ def _prompt_submit(conn, d):
 
 def _capture_friction(conn, row, tp, last, d):
     try:
-        cfg = friction.load_config(db.project_root(d.get("cwd") or None))
+        cfg = friction.load_config(_proj(d))
         with db.tx(conn):
             friction.capture_stop(conn, "aesir-hook", row, _records(tp) if tp else [], last, cfg)
     except Exception as e:  # best-effort; never lose the stop itself
@@ -1917,6 +1917,54 @@ def handle(d, conn, db_file):
     return None
 
 
+def _env_root():
+    """The session's project root from the hook process environment: Claude Code sets CLAUDE_PROJECT_DIR for every hook
+    command (our own HOOK_CMD relies on it) to the directory the session started in, whatever cwd the tool call's shell
+    has moved to. A linked worktree maps to its main checkout. None when unset or not a directory."""
+    v = os.environ.get("CLAUDE_PROJECT_DIR")
+    return db.project_root(v) if v and os.path.isdir(v) else None
+
+
+def _own_root(d):
+    """The project this hook belongs to (#279): CLAUDE_PROJECT_DIR first, else the payload cwd. The payload cwd follows
+    the agent's shell, so a `cd` into a temp or foreign project must not change which db and project are judged."""
+    return _env_root() or db.project_root(d.get("cwd") or None)
+
+
+def _proj(d, wt=None):
+    """Main-checkout root for a guard. `wt`: the agent's bound worktree (maps to its main checkout), else the own
+    project root `run` resolved (kept in d['_aesir_root']), never the cwd the shell wandered to. Where the command RUNS
+    still comes from the payload cwd; only "which project" comes from here."""
+    if wt:
+        return db.project_root(wt)
+    return Path(d["_aesir_root"]) if d.get("_aesir_root") else _own_root(d)
+
+
+def _cwd_worktree(d):
+    """The payload cwd when it is inside a linked worktree of the own project (not the main checkout, not another
+    project), else ''. Used to learn an agent's worktree: a cwd in a temp project is not its worktree."""
+    cwd = d.get("cwd") or ""
+    if not cwd:
+        return ""
+    top = db.project_root(cwd)
+    own = _proj(d)
+    return cwd if _norm(top) == _norm(own) and _norm(cwd) != _norm(own) else ""
+
+
+def _no_db_deny(d, path):
+    """A subagent whose own project db cannot be found must not run unguarded (#279 fail closed): deny its shell and
+    edit tools with the cause and fix. None for anything else (persistent sessions may run outside a project)."""
+    if not d.get("agent_id") or d.get("hook_event_name") != "PreToolUse":
+        return None
+    if d.get("tool_name") not in ("Bash", "PowerShell") + tuple(EDIT_TOOLS):
+        return None
+    return {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
+            "permissionDecisionReason": f"Aesir: no database at {path}, so this subagent's guards cannot run and the call "
+                                        "is refused. Cause: the hook found no Aesir project for this session "
+                                        "(CLAUDE_PROJECT_DIR unset or its .aesir/aesir.db missing). Fix: start the session "
+                                        "in the Aesir project, or pass --db / set AESIR_DB."}}
+
+
 def run(text, db_arg=None):
     """Process one hook payload; returns the JSON-able response or None."""
     d = json.loads(text)
@@ -1928,9 +1976,11 @@ def run(text, db_arg=None):
                     "permissionDecisionReason": "Aesir: .aesir-pkg is the pinned Aesir copy and is read-only. "
                                                 "Edit your own project files instead; report the problem upstream "
                                                 "(`report-upstream`), versions change with `upgrade`."}}
-    path = db.db_path(db_arg, start=d.get("cwd") or None)
+    root = _own_root(d)
+    d["_aesir_root"] = str(root)
+    path = db.db_path(db_arg, start=root)  # --db / AESIR_DB win inside db_path
     if not path.exists():
-        return None
+        return _no_db_deny(d, path)
     conn = db.connect(path, migrate_db=False, busy_ms=1500)  # fast; a db behind on schema is left alone
     try:
         if db._version(conn) > len(db.MIGRATIONS):  # #178: this code is older than the db; never silent

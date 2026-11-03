@@ -5,6 +5,7 @@ import contextlib
 import hashlib
 import json
 import os
+import re
 import sqlite3
 import subprocess
 import sys
@@ -415,12 +416,67 @@ class _Line:
         return (mine[0] + 1 if mine else 1), max(len(live), 1)
 
 
+def _holder_info(held):
+    """Holder of a lock from its 'pid label @since' text as {project, task, pid, held_s}. The label is
+    '<project> task N' or '<project> <profile> gate' (see run_profile / queue.run); anything else is kept whole."""
+    if not held:
+        return {"project": "", "task": None, "pid": None, "held_s": None}
+    who, hpid, age = _describe(held)
+    m = re.match(r"^(.*?) task (\d+)$", who)
+    project, task = (m.group(1), int(m.group(2))) if m else (re.sub(r" \S+ gate$", "", who), None)
+    return {"project": project, "task": task, "pid": int(hpid) if hpid.isdigit() else None, "held_s": age}
+
+
+def record_lock_wait(conn, actor, project, what, info):
+    """One event per gate-lock wait or give-up (entity gate/lock, action wait; no schema change). `what` names the
+    waiter ('full gate task 12' or 'queue task 12'); `info` is _held_lock's report: waited_s, outcome and the holder.
+    Never raises: a locked or full db must not fail the gate that just waited."""
+    try:
+        with tx(conn):
+            event(conn, actor, "gate", "lock", "wait", {"project": project, "what": what, **info})
+    except (sqlite3.Error, OSError, AesirError) as e:  # recording is best effort
+        print(f"gate lock: wait not recorded ({e})", file=sys.stderr)
+
+
+def lock_stats(conn, since=""):
+    """Per-project summary of the recorded lock waits (events gate/lock/wait) at or after `since` (YYYY-MM-DD or
+    timestamp, UTC): waits, give-ups, total and longest wait of the project as a waiter, and the longest hold seen
+    of its gate runs (the held_s a waiter saw, so a lower bound of the real hold). Sorted by total wait."""
+    rows = conn.execute("SELECT payload FROM events WHERE entity='gate' AND entity_id='lock' AND action='wait' AND ts >= ?",
+                        (since,)).fetchall()
+    stats = {}
+
+    def of(project):
+        return stats.setdefault(project or "?", {"project": project or "?", "waits": 0, "gave_up": 0, "total_wait_s": 0.0,
+                                                 "longest_wait_s": 0.0, "longest_hold_s": 0})
+    for r in rows:
+        try:
+            p = json.loads(r["payload"])
+        except ValueError:
+            continue
+        w = of(p.get("project"))
+        w["waits"] += 1
+        w["gave_up"] += p.get("outcome") == "gave_up"
+        w["total_wait_s"] = round(w["total_wait_s"] + float(p.get("waited_s") or 0), 1)
+        w["longest_wait_s"] = max(w["longest_wait_s"], float(p.get("waited_s") or 0))
+        if p.get("held_s") is not None and p.get("holder_project"):
+            h = of(p["holder_project"])
+            h["longest_hold_s"] = max(h["longest_hold_s"], int(p["held_s"]))
+    return sorted(stats.values(), key=lambda w: -w["total_wait_s"])
+
+
 @contextlib.contextmanager
-def _held_lock(lockfile, what, poll, say, deadline, claim=None, legacy_path=None, line=None):
+def _held_lock(lockfile, what, poll, say, deadline, claim=None, legacy_path=None, line=None, on_wait=None,
+               progress_every=None):
     """Wait for the OS lock on `lockfile` (printing the holder once), hold it for the block, then release. Raises
     GateLockBusy at `deadline`. `legacy_path`: the pid file of the legacy protocol, removed on release. `line`: a
-    _Line; only the waiter first in it tries the lock, the rest wait their turn."""
+    _Line; only the waiter first in it tries the lock, the rest wait their turn. `on_wait(info)`: called once if we
+    had to wait (not when the lock was free), on acquire or give-up, with waited_s, outcome and the holder.
+    `progress_every`: seconds; say a progress line (place, holder, waited) at most that often, not only on change."""
     told = None
+    t_wait = None  # monotonic time of the first refusal; None = never had to wait
+    last = None  # holder text last seen
+    last_say = None
     if line:
         try:
             line.join()
@@ -428,6 +484,13 @@ def _held_lock(lockfile, what, poll, say, deadline, claim=None, legacy_path=None
             print(f"gate lock: cannot queue in arrival order ({e}); contending unordered", file=sys.stderr)
             line.leave()
             line = None
+
+    def report(outcome):
+        if on_wait and t_wait is not None:
+            h = _holder_info(last)
+            on_wait({"outcome": outcome, "waited_s": round(time.monotonic() - t_wait, 1), "holder_project": h["project"],
+                     "holder_task": h["task"], "holder_pid": h["pid"], "held_s": h["held_s"]})
+
     try:
         while True:
             pos, total = line.position() if line else (1, 1)
@@ -437,19 +500,31 @@ def _held_lock(lockfile, what, poll, say, deadline, claim=None, legacy_path=None
                     break
             else:
                 handle, held = None, _read_label(lockfile) or _read_label(legacy_path or lockfile)
+            if t_wait is None:
+                t_wait = time.monotonic()
+            last = held or last
             who, hpid, age = _describe(held) if held else ("", "", None)
             if deadline is not None and time.monotonic() >= deadline:
+                report("gave_up")
                 raise GateLockBusy(f"gate lock busy: held by {who} (pid {hpid})" + (f" for {age}s" if age is not None else "")
                                    if held else "gate lock busy")
             where = f"; position {pos} of {total}" if line else ""
             mark = (held, pos) if line else held
-            if held and mark != told:
+            now = time.monotonic()
+            if progress_every is not None:
+                if last_say is None or now - last_say >= progress_every:
+                    last_say = now
+                    say("waiting for gate lock" + (f": position {pos} of {total}" if line else "") + "; "
+                        + (f"held by {who} (pid {hpid}{'' if age is None else f', held {age}s'})" if held else "holder unknown")
+                        + f"; waited {int(now - t_wait)}s")
+            elif held and mark != told:
                 told = mark
                 say(f"waiting for gate lock held by {who} (pid {hpid}{'' if age is None else f', held {age}s'})" + where)
             time.sleep(poll)
     finally:
         if line:
             line.leave()
+    report("acquired")
     try:
         yield
     finally:
@@ -459,7 +534,7 @@ def _held_lock(lockfile, what, poll, say, deadline, claim=None, legacy_path=None
 
 
 @contextlib.contextmanager
-def gate_lock(label, poll=0.5, say=None, wait=None, key=None, prio=PRIO_GATE):
+def gate_lock(label, poll=0.5, say=None, wait=None, key=None, prio=PRIO_GATE, on_wait=None, progress_every=None):
     """Admission for one gate run. Takes, in order: the slot lock of the working tree `key` (default cwd; one gate per
     tree), the legacy machine lock %TEMP%/aesir-gate.lock when [machine] legacy_lock is true (the default: one gate
     at a time per machine, what older Aesir releases expect), then a place in the machine worker budget (budget.py).
@@ -469,6 +544,8 @@ def gate_lock(label, poll=0.5, say=None, wait=None, key=None, prio=PRIO_GATE):
     (that read+unlink raced on Windows: aesir-reports#20). After `wait` seconds raises GateLockBusy.
     Waiters for the machine lock are served in arrival order via tickets in <lock>.tickets/ (class `prio`: the merge
     queue passes PRIO_QUEUE and goes first; see _Line); older Aesir ignores tickets and contends as before (#180).
+    `on_wait(info)` hears every wait and give-up on the tree or machine lock (see _held_lock; callers record it);
+    `progress_every` makes waiting say a progress line at most that often (the queue: once a minute).
     Concurrent runs exhaust Windows process resources (STATUS_DLL_INIT_FAILED): hence the budget."""
     say = say or (lambda m: print(m, flush=True))
     key = Path(key or os.getcwd())
@@ -486,12 +563,13 @@ def gate_lock(label, poll=0.5, say=None, wait=None, key=None, prio=PRIO_GATE):
     with contextlib.ExitStack() as stack:
         slot = slot_path(key)
         slot.parent.mkdir(parents=True, exist_ok=True)
-        stack.enter_context(_held_lock(slot, label, poll, say, deadline))
+        stack.enter_context(_held_lock(slot, label, poll, say, deadline, on_wait=on_wait,
+                                          progress_every=progress_every))
         if cfg["legacy_lock"]:
             stack.enter_context(_held_lock(
                 _os_lock_path(legacy), label, poll, say, deadline,
                 claim=lambda: _claim_legacy(legacy, f"{os.getpid()} {label} @{int(time.time())}"), legacy_path=legacy,
-                line=_Line(legacy, label, prio)))
+                line=_Line(legacy, label, prio), on_wait=on_wait, progress_every=progress_every))
         try:
             stack.enter_context(budget.gate_slot(label, cfg, deadline, poll, say))
         except budget.BudgetBusy as e:
@@ -662,12 +740,21 @@ def format_steps(steps):
     return "; ".join(f"{s['result']}: {s['step']}" + (f" ({s['why']})" if s.get("why") else "") for s in steps)
 
 
+def timing_line(waited, steps, run):
+    """'lock wait 812s; steps: fmt 4.1s, test 690.0s; run 995.3s': where a gate run's wall time went (lock wait apart
+    from run time; `steps` is [(label, seconds)] of the steps that ran). One line, also in the tail and the task log."""
+    def name(c):  # '"C:\x\python.exe" -m foo' -> 'python.exe -m foo': the directory is noise in a one-line summary
+        return _label(re.sub(r'^"?(?:[^"\s]*[\\/])?([^"\s]+)"?', r"\1", c.strip()), 40)
+    parts = ", ".join(f"{name(c)} {sec:.1f}s" for c, sec in steps)
+    return f"lock wait {int(round(waited))}s; steps: {parts or 'none'}; run {run:.1f}s"
+
+
 def run_profile(conn, actor, profile, cwd, task=None, agent_id=None, config_root=None, lock_wait=None,
-                locked=False, step_timeout=None, changed_base=None):
+                locked=False, step_timeout=None, changed_base=None, waited=0.0):
     """Run every step (stop at first failure), record one gate_runs row, return it as a dict.
     A dirty tree records a FAIL ('dirty tree') without running anything: the sha would not describe what ran.
     lock_wait: give up with GateLockBusy (nothing recorded) after that many seconds; default from aesir.toml [gate].
-    locked: the caller already holds the gate lock (the merge queue does).
+    locked: the caller already holds the gate lock (the merge queue does); `waited` is then the seconds it waited.
     A step with when_changed runs only if the commit changes a matching path vs changed_base (default: merge-base with
     main); else it is reported skipped. The result's `steps` lists every step as pass, FAIL, skipped or not run (#154).
     A step running over step_timeout (default [gate] step_timeout) is killed with its tree and the gate records FAIL."""
@@ -691,8 +778,13 @@ def run_profile(conn, actor, profile, cwd, task=None, agent_id=None, config_root
         ok = False
         out = "dirty tree: commit or stash first\n" + "\n".join(dirty_detail(conn, cwd, dirty)) + "\n"
     what = f"task {task}" if task is not None else f"{profile} gate"
-    with contextlib.nullcontext() if dirty or locked else gate_lock(f"{project_name(root)} {what}", wait=lock_wait, key=cwd):
+    t_lock = time.monotonic()
+    step_secs = []  # (command, wall seconds incl. an infra retry) of each step that ran
+    with contextlib.nullcontext() if dirty or locked else gate_lock(
+            f"{project_name(root)} {what}", wait=lock_wait, key=cwd,
+            on_wait=lambda i: record_lock_wait(conn, actor, project_name(root), what if task is None else f"{profile} gate {what}", i)):
         t0 = time.monotonic()  # after the lock wait: duration is run time only
+        waited = waited if locked else t0 - t_lock
         base[budget.GATE_DIR_ENV] = str(budget.gate_dir())  # steps (paratest) lease from the same budget
         if HOLDER_ENV in os.environ:  # set by gate_lock after `base` was built; nested gates in steps need it
             base[HOLDER_ENV] = os.environ[HOLDER_ENV]
@@ -705,6 +797,7 @@ def run_profile(conn, actor, profile, cwd, task=None, agent_id=None, config_root
             report[i] = {"step": _label(cmd), "result": "FAIL", "why": ""}
             if env.get("AESIR_DB") == "":  # placeholder of audit_step: read the findings of the db being gated
                 env = {**env, "AESIR_DB": _db_file(conn)}
+            t_step = time.monotonic()
             for attempt in (0, 1):
                 rc, text, timed_out = run_step(cmd, cwd, {**base, **env}, step_timeout)
                 sig = flaky_signature(rc, text) if rc and not timed_out else None
@@ -713,6 +806,7 @@ def run_profile(conn, actor, profile, cwd, task=None, agent_id=None, config_root
                     out += f"$ {cmd}\n{text}[exit {rc}] infra failure ({sig}), retrying once\n"
                     continue
                 break
+            step_secs.append((cmd, time.monotonic() - t_step))
             if timed_out:
                 ok = False
                 report[i]["why"] = "timeout"
@@ -728,6 +822,8 @@ def run_profile(conn, actor, profile, cwd, task=None, agent_id=None, config_root
         for sig in flaky:  # last lines, so the tail cut keeps them
             out += f"flaky-retry: {sig}\n"
         dur = round(time.monotonic() - t0, 1)
+        timing = timing_line(waited, step_secs, dur)
+        out += timing + "\n"  # last line, so the tail cut keeps it
     tail = out[-TAIL:]
     # recorded in the existing tail text and task log: no schema change
     stored = BOOTSTRAP_MARK.format(profile) + "\n" + tail if bootstrap else tail
@@ -742,7 +838,7 @@ def run_profile(conn, actor, profile, cwd, task=None, agent_id=None, config_root
             event(conn, actor, "gate", cur.lastrowid, "flaky", {"task": task, "profile": profile, "signature": sig})
         if task is not None:
             conn.execute("INSERT INTO task_log (task_id, ts, actor, text) VALUES (?,?,?,?)",
-                         (int(task), now(), actor, f"gate {profile} {'PASS' if ok else 'FAIL'} {sha[:8]} {dur}s"
+                         (int(task), now(), actor, f"gate {profile} {'PASS' if ok else 'FAIL'} {sha[:8]} {dur}s ({timing})"
                          + (" (bootstrap gate: branch profile)" if bootstrap else "")
                          + (f" | steps: {format_steps(report)}" if len(report) > 1 or any(r["result"] == "skipped" for r in report) else "")))
     if ok or flaky:
@@ -753,15 +849,69 @@ def run_profile(conn, actor, profile, cwd, task=None, agent_id=None, config_root
             if ok:
                 friction.false_red(conn, actor, task, profile, sha)
     return {"id": cur.lastrowid, "task": task, "profile": profile, "sha": sha, "branch": branch,
-            "passed": ok, "duration": dur, "tail": tail, "bootstrap": bootstrap, "steps": report}
+            "passed": ok, "duration": dur, "tail": tail, "bootstrap": bootstrap, "steps": report,
+            "lock_wait": round(waited, 1), "step_secs": [[c, round(x, 1)] for c, x in step_secs], "timing": timing}
 
 
 # profiles that satisfy a requirement (full includes quick)
 SATISFIES = {"quick": ("quick", "full"), "full": ("full",)}
 
 
-def has_pass(conn, task, profile, sha) -> bool:
-    ps = SATISFIES[profile]
+def passed_at_head(conn, task_id, sha, tier):
+    """The newest passing gate_runs row of the task at exactly `sha` whose profile is `tier` or higher (a passing full
+    gate satisfies a quick requirement), as a sqlite Row; None when there is none. Matches the sha exactly, so a
+    later commit never reuses an older pass. Callers decide what a hit means (skip a re-run, accept a tier)."""
+    ps = SATISFIES[tier]
     return conn.execute(
-        f"SELECT 1 FROM gate_runs WHERE task_id=? AND sha=? AND passed=1 AND profile IN ({','.join('?' * len(ps))})",
-        (int(task), sha, *ps)).fetchone() is not None
+        f"SELECT * FROM gate_runs WHERE task_id=? AND sha=? AND passed=1 AND profile IN ({','.join('?' * len(ps))}) "
+        "ORDER BY id DESC LIMIT 1", (int(task_id), sha, *ps)).fetchone()
+
+
+def has_pass(conn, task, profile, sha) -> bool:
+    return passed_at_head(conn, task, sha, profile) is not None
+
+
+REUSE_SCAN = 60  # newest passing runs looked at for a tree match (one git call each)
+
+
+def passing_run_on_tree(conn, profile, tree, cwd, info=None):
+    """#244: the newest recorded passing gate run that satisfies `profile` (same or higher tier, SATISFIES) and whose
+    sha has git tree `tree`, else None. A gate result is a function of the tree it ran on, so the queue need not
+    rerun it for a merge commit with an identical tree. Bootstrap runs (they used the branch's own profile) and shas
+    git cannot resolve are not candidates. When the scan reads REUSE_SCAN rows without a match and `info` is a dict,
+    sets info["capped"] = REUSE_SCAN so the caller can say older runs were not looked at."""
+    ps = SATISFIES[profile]
+    rows = conn.execute(
+        f"SELECT id, profile, sha FROM gate_runs WHERE passed=1 AND profile IN ({','.join('?' * len(ps))})"
+        " AND tail NOT LIKE ? ORDER BY id DESC LIMIT ?",
+        (*ps, BOOTSTRAP_MARK.split("{")[0] + "%", REUSE_SCAN)).fetchall()
+    seen = {}
+    for r in rows:
+        if r["sha"] not in seen:
+            try:
+                seen[r["sha"]] = git(cwd, "rev-parse", r["sha"] + "^{tree}")
+            except AesirError:
+                seen[r["sha"]] = None
+        if seen[r["sha"]] == tree:
+            return dict(r)
+    if info is not None and len(rows) >= REUSE_SCAN:
+        info["capped"] = REUSE_SCAN
+    return None
+
+
+def record_reused(conn, actor, profile, task, sha, branch, prior, tree, waited=0.0, elapsed=0.0):
+    """Record a passing `profile` run on `sha` that reused run `prior` (same tree): has_pass and --carried-by see it like
+    a real run. Returns the run dict in run_profile's shape, `steps` empty and `reused` naming the prior run."""
+    timing = (f"lock wait {int(round(waited))}s; reused gate run {prior['id']} ({prior['profile']}, "
+              f"tree {tree[:12]}); run {elapsed:.1f}s")
+    with tx(conn):
+        cur = conn.execute(
+            "INSERT INTO gate_runs (task_id, profile, sha, branch, passed, duration, tail, agent_id, ts)"
+            " VALUES (?,?,?,?,1,?,?,NULL,?)", (task, profile, sha, branch, round(elapsed, 1), timing, now()))
+        event(conn, actor, "gate", cur.lastrowid, "reused",
+              {"task": task, "profile": profile, "sha": sha, "tree": tree, "reused_run": prior["id"]})
+        conn.execute("INSERT INTO task_log (task_id, ts, actor, text) VALUES (?,?,?,?)",
+                     (int(task), now(), actor, f"gate {profile} PASS {sha[:8]} reused ({timing})"))
+    return {"id": cur.lastrowid, "task": task, "profile": profile, "sha": sha, "branch": branch, "passed": True,
+            "duration": round(elapsed, 1), "tail": timing, "bootstrap": False, "steps": [], "lock_wait": round(waited, 1),
+            "step_secs": [], "timing": timing, "reused": prior["id"], "tree": tree}
