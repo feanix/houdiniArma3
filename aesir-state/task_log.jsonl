@@ -40,3 +40,25 @@
 {"actor": "lead", "id": 40, "task_id": 5, "text": "status in_review -> approved (lead reran q2b; advisor accepted; owner D13)", "ts": "2026-11-03T08:08:40Z"}
 {"actor": "lead", "id": 41, "task_id": 5, "text": "gate full PASS acae0d7c 3.5s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T08:08:47Z"}
 {"actor": "lead", "id": 42, "task_id": 5, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T08:08:48Z"}
+{"actor": "lead", "id": 43, "task_id": 5, "text": "merged by lead (queued by lead)", "ts": "2026-11-03T08:08:49Z"}
+{"actor": "lead", "id": 44, "task_id": 5, "text": "queue: merged at 5e2719e", "ts": "2026-11-03T08:08:49Z"}
+{"actor": "aesir-hook", "id": 45, "task_id": 7, "text": "status open -> in_progress (started by impl-7-b)", "ts": "2026-11-03T08:11:05Z"}
+{"actor": "aesir-hook", "id": 46, "task_id": 4, "text": "status open -> in_progress (started by impl-4-b)", "ts": "2026-11-03T08:11:05Z"}
+{"actor": "aesir-hook", "id": 47, "task_id": 8, "text": "status open -> in_progress (started by impl-8-b)", "ts": "2026-11-03T08:11:07Z"}
+{"actor": "impl-4-b", "id": 48, "task_id": 4, "text": "gate quick PASS f1692e66 4.6s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T08:13:40Z"}
+{"actor": "impl-6-b", "id": 49, "task_id": 6, "text": "gate quick PASS 360adcb2 5.3s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T08:13:40Z"}
+{"actor": "impl-7-b", "id": 50, "task_id": 7, "text": "gate quick PASS 675db720 5.3s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T08:14:05Z"}
+{"actor": "impl-8-b", "id": 51, "task_id": 8, "text": "gate quick PASS 40db9f42 15.1s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T08:33:12Z"}
+{"actor": "lead", "id": 52, "task_id": 7, "text": "gate quick PASS ebd0648c 4.1s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T08:41:47Z"}
+{"actor": "lead", "id": 53, "task_id": 4, "text": "status in_progress -> in_review (rev-4-b approved (wf_e9e08f82-9ef); lead review)", "ts": "2026-11-03T08:41:48Z"}
+{"actor": "lead", "id": 54, "task_id": 4, "text": "status in_review -> approved (rev-4-b approved (wf_e9e08f82-9ef); lead review)", "ts": "2026-11-03T08:41:49Z"}
+{"actor": "lead", "id": 55, "task_id": 6, "text": "status in_progress -> in_review (rev-6-b approved (wf_e9e08f82-9ef); lead review)", "ts": "2026-11-03T08:41:50Z"}
+{"actor": "lead", "id": 56, "task_id": 6, "text": "docs-only branch: code gate not needed", "ts": "2026-11-03T08:41:50Z"}
+{"actor": "lead", "id": 57, "task_id": 6, "text": "status in_review -> approved (rev-6-b approved (wf_e9e08f82-9ef); lead review)", "ts": "2026-11-03T08:41:51Z"}
+{"actor": "lead", "id": 58, "task_id": 8, "text": "status in_progress -> in_review (rev-8-b approved (wf_e9e08f82-9ef); lead review)", "ts": "2026-11-03T08:41:53Z"}
+{"actor": "lead", "id": 59, "task_id": 8, "text": "status in_review -> approved (rev-8-b approved (wf_e9e08f82-9ef); lead review)", "ts": "2026-11-03T08:41:53Z"}
+{"actor": "lead", "id": 60, "task_id": 7, "text": "status in_progress -> in_review (rev-7-b approved; lead nits ebd0648)", "ts": "2026-11-03T08:42:17Z"}
+{"actor": "lead", "id": 61, "task_id": 7, "text": "docs-only branch: code gate not needed", "ts": "2026-11-03T08:42:17Z"}
+{"actor": "lead", "id": 62, "task_id": 7, "text": "status in_review -> approved (rev-7-b approved; lead nits ebd0648)", "ts": "2026-11-03T08:42:17Z"}
+{"actor": "lead", "id": 63, "task_id": 4, "text": "gate full PASS 66af2b40 4.0s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T08:42:25Z"}
+{"actor": "lead", "id": 64, "task_id": 4, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T08:42:25Z"}
