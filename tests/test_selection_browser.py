@@ -242,9 +242,14 @@ class TestInlineInsert(NodeTestCase):
         self.assertEqual([n.name() for n in assemble.inputs()[1:3]], ["res1_props", "geometry_props"])
 
     def test_positions_stay_ordered_and_apart(self):
+        # These nodes are not downstream of either insert, so they must not move.
+        still = ("res1_mesh", "res1_props", "memory_points", "memory_group", "memory_props",
+                 "geometry_mesh", "geometry_triangles")
+        before = {key: self.pos(self.nodes[key]) for key in still}
         browser.create_selection(self.nodes["geometry_triangles"], "mid")
         browser.rename_selection(self.nodes["geometry_components"], "component01", "renamed")
-        before = {n.name(): self.pos(n) for n in self.made.network.children()}
+        for key in still:
+            self.assertEqual(self.pos(self.nodes[key]), before[key], key)
         seen = set()
         for node in self.made.network.children():
             position = (round(self.pos(node)[0], 3), round(self.pos(node)[1], 3))
@@ -253,10 +258,6 @@ class TestInlineInsert(NodeTestCase):
             for source in node.inputs():
                 if source is not None:
                     self.assertLess(self.pos(node)[1], self.pos(source)[1], node.name())
-        self.assertEqual(before["res1_mesh"], (round(before["res1_mesh"][0], 10), before["res1_mesh"][1]))
-        # a node that is not downstream does not move
-        mesh = self.nodes["geometry_mesh"]
-        self.assertEqual(self.pos(mesh), (0.0, 0.0))
 
     def test_new_p3d_layout_is_not_shifted_by_the_splice(self):
         from a3ob_houdini import new_p3d
