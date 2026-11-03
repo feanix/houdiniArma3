@@ -1,0 +1,200 @@
+# Dialog script for a3ob_validate, version 1
+
+{
+    name	a3ob_validate
+    script	a3ob_validate
+    label	"Validate"
+
+    help {
+	"Checks a P3D geometry or a LOD geometry the way the export does and shows what is wrong. Changes nothing."
+    }
+
+    inputlabel	1	"P3D geometry or LOD geometry"
+
+    parm {
+	name	"errorlevel"
+	label	"Errors Show As"
+	type	string
+	default	{ "error" }
+	menu {
+	    "error"	"Error (stop here)"
+	    "warning"	"Warning (keep geometry)"
+	}
+	help	"Error (stop here): the node turns red and the nodes below it stop. Warning (keep geometry): the node turns yellow and the geometry keeps flowing; the text still starts with Error:. Saving stops on errors either way."
+    }
+    parm {
+	name	"strict"
+	label	"Warnings Count As Errors"
+	type	toggle
+	default	{ "0" }
+	help	"Treat every warning as an error. Off by default: a warning can be what you meant."
+    }
+    parm {
+	name	"dupes"
+	label	"Duplicate LODs"
+	type	string
+	default	{ "fail" }
+	menu {
+	    "fail"	"Fail"
+	    "skip"	"Skip"
+	    "ignore"	"Ignore"
+	}
+	help	"What to do with a LOD whose type and resolution were already written: Fail, Skip the later one, or Ignore and write both."
+    }
+    parm {
+	name	"maxmessages"
+	label	"Max Messages"
+	type	integer
+	size	1
+	default	{ "25" }
+	range	{ 1! 10 }
+	help	"How many messages the node shows. The rest are counted in one line and listed in the console."
+    }
+    parm {
+	name	"typerules"
+	label	"Check LOD-Type Rules"
+	type	toggle
+	default	{ "1" }
+	help	"Warn about what Object Builder's validator would: rules for geometry, shadow, roadway and other LOD types. Each rule has its own switch below."
+    }
+    parm {
+	name	"t2uv2"
+	label	"T2-UV2: At most 2 UV sets"
+	type	toggle
+	default	{ "1" }
+	help	"The LOD has no more than 2 UV sets."
+    }
+    parm {
+	name	"t2contig"
+	label	"T2-CONTIG: Contiguous mesh"
+	type	toggle
+	default	{ "1" }
+	help	"Geometry, shadow and underground LODs: no flipped polygons (shared edges run in opposite directions)."
+    }
+    parm {
+	name	"t2tri"
+	label	"T2-TRI: Triangulated"
+	type	toggle
+	default	{ "1" }
+	help	"Geometry, shadow and underground LODs: every polygon is a triangle."
+    }
+    parm {
+	name	"t2convex"
+	label	"T2-CONVEX: Convex mesh"
+	type	toggle
+	default	{ "1" }
+	help	"Geometry and underground LODs: every shared edge is convex or flat."
+    }
+    parm {
+	name	"t2comp"
+	label	"T2-COMP: Component selections"
+	type	toggle
+	default	{ "1" }
+	help	"Geometry and underground LODs: a group called component01, component02, ... exists."
+    }
+    parm {
+	name	"t2mass"
+	label	"T2-MASS: Mass is set"
+	type	toggle
+	default	{ "1" }
+	help	"Geometry LODs: the points have a total mass of at least 0.001."
+    }
+    parm {
+	name	"t2massall"
+	label	"T2-MASSALL: Every point has mass"
+	type	toggle
+	default	{ "1" }
+	help	"Geometry LODs: every point has a mass of at least 0.001."
+    }
+    parm {
+	name	"t2sharp"
+	label	"T2-SHARP: No smooth edges"
+	type	toggle
+	default	{ "1" }
+	help	"Shadow and underground LODs: with smooth polygons, every shared edge is in a3ob_sharp."
+    }
+    parm {
+	name	"t2nomat"
+	label	"T2-NOMAT: No materials"
+	type	toggle
+	default	{ "1" }
+	help	"Shadow and underground LODs: no polygon has a texture or material."
+    }
+    parm {
+	name	"t2shadowres"
+	label	"T2-SHADOWRES: Conventional shadow resolution"
+	type	toggle
+	default	{ "1" }
+	help	"Shadow LODs: the resolution is 0, 10, 1000, 1010 or 1020."
+    }
+    parm {
+	name	"t2shadowoff"
+	label	"T2-SHADOWOFF: Shadow not disabled"
+	type	toggle
+	default	{ "1" }
+	help	"Shadow LODs: no LODNoShadow = 1 property."
+    }
+    parm {
+	name	"t2pcedge"
+	label	"T2-PC-EDGE: No edges in point clouds"
+	type	toggle
+	default	{ "1" }
+	help	"Memory, land contact and hit-point LODs: no 2-point primitives."
+    }
+    parm {
+	name	"t2pcface"
+	label	"T2-PC-FACE: No faces in point clouds"
+	type	toggle
+	default	{ "1" }
+	help	"Memory, land contact and hit-point LODs: no polygons."
+    }
+    parm {
+	name	"t2rwfaces"
+	label	"T2-RW-FACES: Has polygons"
+	type	toggle
+	default	{ "1" }
+	help	"Roadway, ground layer and paths LODs: at least one polygon."
+    }
+    parm {
+	name	"t2rwlimit"
+	label	"T2-RW-LIMIT: Roadway point limit"
+	type	toggle
+	default	{ "1" }
+	help	"Roadway LODs: at most 255 points."
+    }
+    parm {
+	name	"t2rwsound"
+	label	"T2-RW-SOUND: Roadway sound textures"
+	type	toggle
+	default	{ "1" }
+	help	"Roadway LODs: every polygon has a texture (the sound)."
+    }
+    parm {
+	name	"t2gluv"
+	label	"T2-GL-UV: Ground layer UV set"
+	type	toggle
+	default	{ "1" }
+	help	"Ground layer LODs: exactly one UV set."
+    }
+    parm {
+	name	"t2gluvvalues"
+	label	"T2-GL-UVVALUES: Ground layer UV values"
+	type	toggle
+	default	{ "1" }
+	help	"Ground layer LODs: every UV is (0, 0), (1, 0), (1, 1) or (1, -1)."
+    }
+    parm {
+	name	"t2pathentry"
+	label	"T2-PATH-ENTRY: Path entry points"
+	type	toggle
+	default	{ "1" }
+	help	"Paths LODs: a group called in01, in02, ... exists."
+    }
+    parm {
+	name	"t2pathpos"
+	label	"T2-PATH-POS: Path position points"
+	type	toggle
+	default	{ "1" }
+	help	"Paths LODs: the same test as the entry rule (A3OB's own test, see spec 17.1.1)."
+    }
+}

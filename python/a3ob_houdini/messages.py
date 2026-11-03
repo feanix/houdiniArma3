@@ -59,6 +59,8 @@ class Report:
 
     def __init__(self) -> None:
         self.items: List[Tuple[str, str]] = []
+        #: How many messages ``show_on_node`` shows. Validate and Export set it from their ``maxmessages`` parameter.
+        self.max_messages: int = MAX_MESSAGES
 
     def info(self, text: str) -> None:
         self.items.append((INFO, text))
@@ -76,10 +78,12 @@ class Report:
     def has_errors(self) -> bool:
         return any(kind == ERROR for kind, _ in self.items)
 
-    def lines(self, max_messages: int = MAX_MESSAGES) -> List[Tuple[str, str]]:
+    def lines(self, max_messages: Optional[int] = None) -> List[Tuple[str, str]]:
         """The messages to show: errors first, then warnings, then info, cut to ``max_messages``.
 
         When messages are cut, a last info line says how many."""
+        if max_messages is None:
+            max_messages = self.max_messages
         rank = {ERROR: 0, WARNING: 1, INFO: 2}
         ordered = sorted(self.items, key=lambda item: rank[item[0]])  # stable: keeps the order inside a kind
         if len(ordered) <= max_messages:
@@ -90,8 +94,11 @@ class Report:
         return shown
 
 
-def show_on_node(node, report: Report, max_messages: int = MAX_MESSAGES) -> None:
-    """Put the report on a Houdini node and the full list on the console."""
+def show_on_node(node, report: Report, max_messages: Optional[int] = None) -> None:
+    """Put the report on a Houdini node and the full list on the console. The limit is ``report.max_messages``
+    unless one is given."""
+    if max_messages is None:
+        max_messages = report.max_messages
     for kind, text in report.items:
         level = {INFO: logging.INFO, WARNING: logging.WARNING, ERROR: logging.ERROR}[kind]
         LOGGER.log(level, "%s: %s", node.path(), text)
