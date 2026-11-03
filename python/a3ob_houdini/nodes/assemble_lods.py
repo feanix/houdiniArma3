@@ -48,9 +48,23 @@ def cook(node, report: Report) -> None:
     values = read_parms(node, SPEC)
     inputs = [node.inputGeometry(number) for number in range(len(node.inputs()))]
     base = inputs[0] if inputs else None
+    base_name = None
+    misplaced = None
     if base is not None:
-        _check_base(base, lc)
+        if lc.classify(base) == lc.LOD:
+            # A single LOD in the base slot is almost always inputs dragged in the wrong order.
+            misplaced, base = base, None
+            inputs[0] = None
+        else:
+            _check_base(base, lc)
+            base_name = node.inputs()[0].name()
     edited = _read_edited(inputs, lc)
+    if misplaced is not None:
+        edited.insert(0, (1, misplaced, lc.detail_int(misplaced, lc.SIGNATURE_ATTRIB), lc.lod_name_of(misplaced)))
+        report.warning(format_problem(
+            None, "Input 1 is a single LOD geometry, not a P3D geometry",
+            "The base goes in input 1 and LODs in input 2 and up. Check the input order. "
+            "Input 1 was treated as an extra LOD, with no base"))
     base_prims = base.prims() if base is not None else []
     base_content = [lc.lod_content(prim) for prim in base_prims]
     base_signatures = [lc.detail_int(content, lc.SIGNATURE_ATTRIB) for content in base_content]
@@ -77,8 +91,9 @@ def cook(node, report: Report) -> None:
         _put(out.createPacked("PackedGeometry"), edited[number], reset_transform=False)
 
     _warn(report, match, edited, base_signatures, lc)
-    report.info("%d replaced, %d passed through, %d added." % (
-        len(match.replaced), len(base_prims) - len(match.replaced), len(match.appended)))
+    head = "No base." if base_name is None else "Base: %s (%d LODs)." % (base_name, len(base_prims))
+    report.info("%s %d replaced, %d passed through, %d added." % (
+        head, len(match.replaced), len(base_prims) - len(match.replaced), len(match.appended)))
 
 
 def _check_base(base, lc) -> None:

@@ -155,10 +155,14 @@ Property Mode:
 
     Choices: Add to Input, Replace All.
 
+== Properties == (props_box)
+
+These parameters are in the Properties group box.
+
 Properties:
     #id: props
 
-    Named properties of the LOD (at most 63 characters each).
+    Named properties of the LOD, such as autocenter or lodnoshadow. Each name and value can be up to 63 characters.
 
     Type: List of rows. Default: 0 rows.
 
@@ -167,17 +171,25 @@ Properties:
     Name #:
         #id: prop_name
 
+        The property name. Up to 63 characters.
+
         Type: Text. Default: (empty).
 
     Value #:
         #id: prop_value
 
+        The property value. Up to 63 characters.
+
         Type: Text. Default: (empty).
+
+== LOD Copies == (copies_box)
+
+These parameters are in the LOD Copies group box.
 
 LOD Copies:
     #id: copies
 
-    The same mesh written again under another signature (A3OB's Copies).
+    The same mesh written again under another type and resolution. Add one row for each extra copy.
 
     Type: List of rows. Default: 0 rows.
 
@@ -186,12 +198,116 @@ LOD Copies:
     Copy Type #:
         #id: copy_type
 
+        The kind of LOD the copy is written as.
+
         Type: Menu. Default: Resolution.
 
-        Choices: Resolution, View - Gunner, View - Pilot, View - Cargo, Shadow Volume, Edit, Geometry, Geometry Buoyancy, Geometry PhysX, Memory, Land Contact, Roadway, Paths, Hit-points, View Geometry, Fire Geometry, View - Cargo Geometry, View - Cargo Fire Geometry, View - Commander, View - Commander Geometry, View - Commander Fire Geometry, View - Pilot Geometry, View - Pilot Fire Geometry, View - Gunner Geometry, View - Gunner Fire Geometry, Sub Parts, Shadow Volume - Cargo View, Shadow Volume - Pilot View, Shadow Volume - Gunner View, Wreckage, Underground (VBS), Groundlayer (VBS), Navigation (VBS), Unknown.
+        Resolution:
+            Visual resolution
+
+        View - Gunner:
+            Gunner first person view
+
+        View - Pilot:
+            First person view
+
+        View - Cargo:
+            Passenger first person view
+
+        Shadow Volume:
+            Shadow casting geometry
+
+        Edit:
+            Temporary layer
+
+        Geometry:
+            Object collision geometry and occluders
+
+        Geometry Buoyancy:
+            Buoyant object geometry (Displacement for VBS)
+
+        Geometry PhysX:
+            PhysX object collision geometry
+
+        Memory:
+            Hard points and animation axes
+
+        Land Contact:
+            Points of contact with ground
+
+        Roadway:
+            Walkable surfaces
+
+        Paths:
+            AI path finding mesh
+
+        Hit-points:
+            Hit point cloud
+
+        View Geometry:
+            View occlusion for AI
+
+        Fire Geometry:
+            Hitbox geometry
+
+        View - Cargo Geometry:
+            Passenger view collision geometry and occluders
+
+        View - Cargo Fire Geometry:
+            Passenger view hitbox geometry
+
+        View - Commander:
+            Commander first person view
+
+        View - Commander Geometry:
+            Commander view collision geometry and occluders
+
+        View - Commander Fire Geometry:
+            Commander hitbox geometry
+
+        View - Pilot Geometry:
+            First person collision geometry and occluders
+
+        View - Pilot Fire Geometry:
+            First person hitbox geometry
+
+        View - Gunner Geometry:
+            Gunner collision geometry and occluders
+
+        View - Gunner Fire Geometry:
+            Gunner view hitbox geometry
+
+        Sub Parts:
+            Obsolete
+
+        Shadow Volume - Cargo View:
+            Passenger view shadow casting geometry
+
+        Shadow Volume - Pilot View:
+            First person view shadow casting geometry
+
+        Shadow Volume - Gunner View:
+            Gunner view shadow casting geometry
+
+        Wreckage:
+            Vehicle wreckage
+
+        Underground (VBS):
+            Underground volume for VBS (not supported in Arma 3 -> Geometry PhysX Old)
+
+        Groundlayer (VBS):
+            Ground deformation data for VBS (not supported in Arma 3 -> Shadow Volume 3000)
+
+        Navigation (VBS):
+            Navigation data for VBS (not supported in Arma 3 -> Geometry / Resolution 5e+013)
+
+        Unknown:
+            Unknown model layer
 
     Copy Resolution #:
         #id: copy_res
+
+        The resolution or index of the copy. Only types that carry one use it.
 
         Type: Number. Default: 1.
 

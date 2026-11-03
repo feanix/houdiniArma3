@@ -279,7 +279,7 @@ class TestNodesInHython(unittest.TestCase):
                                     "geo.addAttrib(hou.attribType.Global, 'edited_marker', 1)\n")
         assemble = self.assemble(imported, edited)
         self.assertEqual(self.cook(assemble), [])
-        self.assertEqual(assemble.messages()[0], "1 replaced, 8 passed through, 0 added.")
+        self.assertTrue(assemble.messages()[0].endswith("1 replaced, 8 passed through, 0 added."))
         result = p3d_fingerprint(assemble.geometry())
         self.assertEqual(len(result[0]), len(base[0]))
         for position, (before, after) in enumerate(zip(base[0], result[0])):
@@ -301,7 +301,7 @@ class TestNodesInHython(unittest.TestCase):
         bare = self.edit(extract, "geo.findGlobalAttrib('a3ob_lod_signature').destroy()\n")
         assemble = self.assemble(imported, new, bare)
         self.assertEqual(self.cook(assemble), [])
-        self.assertEqual(assemble.messages()[0], "0 replaced, 9 passed through, 2 added.")
+        self.assertTrue(assemble.messages()[0].endswith("0 replaced, 9 passed through, 2 added."))
         self.assertEqual(self.names(assemble)[:9], self.names(imported))
         self.assertEqual(self.names(assemble)[9:], ["Resolution 7", "Geometry"])
         original = p3d_fingerprint(imported.geometry())[0]
@@ -316,7 +316,7 @@ class TestNodesInHython(unittest.TestCase):
         self.assertEqual(sum(1 for p in extract.geometry().prims() if isinstance(p, hou.Polygon)), 0)
         assemble = self.assemble(imported, extract)
         self.assertEqual(self.cook(assemble), [])
-        self.assertEqual(assemble.messages()[0], "1 replaced, 8 passed through, 0 added.")
+        self.assertTrue(assemble.messages()[0].endswith("1 replaced, 8 passed through, 0 added."))
         self.assertEqual(self.names(assemble), names)
         self.assertEqual(p3d_fingerprint(assemble.geometry()), p3d_fingerprint(imported.geometry()))
         # An edit on it lands on the Memory slot and nowhere else.
@@ -339,11 +339,11 @@ class TestNodesInHython(unittest.TestCase):
         self.assertEqual(self.cook(off), [])
         count = len(imported.geometry().prims())
         self.assertEqual(len(off.geometry().prims()), count + 1)
-        self.assertEqual(off.messages()[0], "0 replaced, %d passed through, 1 added." % count)
+        self.assertTrue(off.messages()[0].endswith("0 replaced, %d passed through, 1 added." % count))
         fresh = self.assemble(None, extract)
         self.assertEqual(self.cook(fresh), [])
         self.assertEqual(self.names(fresh), [self.names(imported)[0]])
-        self.assertEqual(fresh.messages()[0], "0 replaced, 0 passed through, 1 added.")
+        self.assertTrue(fresh.messages()[0].endswith("0 replaced, 0 passed through, 1 added."))
 
     def test_duplicate_signatures_follow_the_spec_and_warn(self):
         imported = self.importer("sample_2_crate.p3d")
@@ -357,7 +357,7 @@ class TestNodesInHython(unittest.TestCase):
         # A base with the signature twice: the edited LOD replaces the first and the node warns.
         replaced = self.assemble(twice, marked)
         self.assertEqual(self.cook(replaced), [])
-        self.assertEqual(replaced.messages()[0], "1 replaced, 1 passed through, 0 added.")
+        self.assertTrue(replaced.messages()[0].endswith("1 replaced, 1 passed through, 0 added."))
         self.assertTrue(any("the base has 2 LODs with the same signature" in text for text in replaced.warnings()))
         contents = [p.getEmbeddedGeometry() for p in replaced.geometry().prims()]
         self.assertIsNotNone(contents[0].findGlobalAttrib("edited_marker"))
@@ -365,11 +365,11 @@ class TestNodesInHython(unittest.TestCase):
         # Two edited LODs and a base with two: the second one takes the next base duplicate.
         both = self.assemble(twice, marked, marked)
         self.assertEqual(self.cook(both), [])
-        self.assertEqual(both.messages()[0], "2 replaced, 0 passed through, 0 added.")
+        self.assertTrue(both.messages()[0].endswith("2 replaced, 0 passed through, 0 added."))
         # Three edited LODs and a base with two: the third is appended.
         three = self.assemble(twice, marked, marked, marked)
         self.assertEqual(self.cook(three), [])
-        self.assertEqual(three.messages()[0], "2 replaced, 0 passed through, 1 added.")
+        self.assertTrue(three.messages()[0].endswith("2 replaced, 0 passed through, 1 added."))
         self.assertEqual(len(three.geometry().prims()), 3)
 
     def test_assemble_input_errors(self):
@@ -380,8 +380,32 @@ class TestNodesInHython(unittest.TestCase):
         self.assertIn("Input 3 has no LOD type. Add a LOD Properties node", self.cook(no_type)[0])
         packed_in_slot = self.assemble(imported, imported)
         self.assertIn("Input 2 is already a P3D geometry. Use it as the base input", self.cook(packed_in_slot)[0])
-        lod_as_base = self.assemble(extract)
-        self.assertIn("Input 1 is a LOD geometry", self.cook(lod_as_base)[0])
+
+    def test_the_info_line_names_the_base(self):
+        imported = self.importer("sample_1_character.p3d")
+        extract = self.extract(imported, 4)
+        assemble = self.assemble(imported, extract)
+        self.assertEqual(self.cook(assemble), [])
+        self.assertEqual(assemble.messages()[0],
+                         "Base: %s (9 LODs). 1 replaced, 8 passed through, 0 added." % imported.name())
+        self.assertEqual(assemble.warnings(), ())
+        fresh = self.assemble(None, extract)
+        self.assertEqual(self.cook(fresh), [])
+        self.assertEqual(fresh.messages()[0], "No base. 0 replaced, 0 passed through, 1 added.")
+
+    def test_a_single_lod_in_the_base_slot_warns_about_the_input_order(self):
+        imported = self.importer("sample_2_crate.p3d")
+        extract = self.extract(imported, 0)
+        swapped = self.assemble(extract)
+        self.assertEqual(self.cook(swapped), [])
+        self.assertTrue(any("Input 1 is a single LOD geometry" in text and "input order" in text
+                            for text in swapped.warnings()), swapped.warnings())
+        self.assertEqual(swapped.messages()[0], "No base. 0 replaced, 0 passed through, 1 added.")
+        self.assertEqual(len(swapped.geometry().prims()), 1)
+        # The right order gives no warning.
+        right = self.assemble(imported, extract)
+        self.assertEqual(self.cook(right), [])
+        self.assertEqual(right.warnings(), ())
 
 
 if __name__ == "__main__":
