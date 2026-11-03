@@ -583,7 +583,7 @@ D14). The tool changes nothing in a scene.
 |---|---|
 | Does | Lists the point groups of the selected node's geometry by **decoded** name (`-proxies`, not `xn__proxies_cka`) with: member count, "weighted" if `a3ob_w_<enc>` exists, "faces" if a prim group of the same name exists, "proxy" if the name is a proxy name. A filter box narrows the list. |
 | Actions | **Copy name**: puts the encoded group name on the clipboard, ready to paste into a group field. **Create selection**: asks for a P3D name and the point numbers (for example `0-9`; empty: all points), and adds a Group node that makes the encoded point group. **Delete selection**: adds a Group Delete node. **Rename**: adds a Group Rename node. |
-| Creates | Nothing unless an action is chosen. Create, delete, and rename add one SOP node after the selected node (Group, Group Delete, Group Rename; all three exist, checked) and set its parameters. |
+| Creates | Nothing unless an action is chosen. Create, delete, and rename insert one SOP node inline after the selected node (Group, Group Delete, Group Rename; all three exist, checked) and set its parameters. Every node that read the selected node reads the new one instead (same input index), display and render flags move to it, and it sits one row below with the nodes after it shifted down one row (D21). |
 | Edits geometry? | Never directly: cooked geometry is read-only. |
 | Version 1 form | A list dialog (`hou.ui.selectFromList`) and an input dialog. A real Python Panel comes after M4 (Q-9, D14). |
 
