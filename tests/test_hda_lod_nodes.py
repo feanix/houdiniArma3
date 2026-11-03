@@ -44,7 +44,8 @@ class TestLodNodeAssets(unittest.TestCase):
         self.assertTrue(r["library"].endswith("houdini/otls/a3ob_lod_properties.hda"), r["library"])
         self.assertEqual(r["label"], "LOD Properties")
         self.assertEqual(r["inputs"], [1, 1])
-        self.assertEqual(r["parms"], ["fromin", "settype", "lodtype", "resolution", "propmode", "props", "copies"])
+        self.assertEqual(r["parms"], ["fromin", "settype", "lodtype", "resolution", "propmode",
+                                       "props_box", "props", "copies_box", "copies"])
         self.assertEqual(r["submenu"], [["A3OB"]])
         self.assertEqual(r["pythoncook"], "import a3ob_houdini.entry as e; e.cook('lod_properties', hou.pwd())")
         r = self.result["material_assign"]
@@ -96,7 +97,7 @@ class TestLodNodeAssets(unittest.TestCase):
         self.assertTrue(r["fromin_same_signature"])
 
     def test_python_sop_fallback_builds_menus_and_multiparms(self):
-        self.assertEqual(self.result["fallback_parms"], ["lodtype", "propmode", "props", "copies"])
+        self.assertEqual(self.result["fallback_parms"], ["lodtype", "propmode", "props_box", "copies_box"])
         self.assertTrue(self.result["fallback_multiparm_row"])
         self.assertEqual(self.result["fallback_read"], "memory")
 

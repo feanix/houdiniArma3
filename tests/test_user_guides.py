@@ -416,7 +416,7 @@ class TestQuickStartsRunInHoudini(unittest.TestCase):
                                                "4: Geometry Buoyancy", "5: Memory", "6: Roadway"])
         self.assertIn("Extracted LOD 3: Geometry, 16 points, 24 polygons.", self.job2_extract[2])
         self.assertIn("Total 90.0 kg on 16 points.", self.job2_mass[2][0])
-        self.assertIn("1 replaced, 6 passed through, 0 added.", self.job2_assemble[2])
+        self.assertTrue(self.job2_assemble[2][0].endswith("1 replaced, 6 passed through, 0 added."))
         self.assertTrue(any(m.startswith("Saved 7 LODs, ") for m in self.job2_saved[2]), self.job2_saved)
         self.assertTrue(any("has no sound texture" in w for w in self.job2_saved[1]), self.job2_saved)
         self.assertEqual(self.job2_saved[0], ())

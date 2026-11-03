@@ -46,17 +46,25 @@ SPEC = NodeSpec(
              "Add to input: the rows below are added, and a row with the same name (any case) replaces the input's "
              "entry. Replace all: only the rows below remain. LOD copies follow the same mode.",
              items=(("add", "Add to Input"), ("replace", "Replace All"))),
-        Parm("props", "Properties", "multiparm", 0, "Named properties of the LOD (at most 63 characters each).",
-             children=(
-                 Parm("prop_name#", "Name #", "string", ""),
-                 Parm("prop_value#", "Value #", "string", ""),
-             )),
-        Parm("copies", "LOD Copies", "multiparm", 0,
-             "The same mesh written again under another signature (A3OB's Copies).",
-             children=(
-                 Parm("copy_type#", "Copy Type #", "menu", "visual", "", items=lod_props.TYPE_ITEMS),
-                 Parm("copy_res#", "Copy Resolution #", "float", 1.0),
-             )),
+        Parm("props_box", "Properties", "folder", folder_type="simple", children=(
+            Parm("props", "Properties", "multiparm", 0,
+                 "Named properties of the LOD, such as autocenter or lodnoshadow. Each name and value can be up to "
+                 "63 characters.",
+                 children=(
+                     Parm("prop_name#", "Name #", "string", "", "The property name. Up to 63 characters."),
+                     Parm("prop_value#", "Value #", "string", "", "The property value. Up to 63 characters."),
+                 )),
+        )),
+        Parm("copies_box", "LOD Copies", "folder", folder_type="simple", children=(
+            Parm("copies", "LOD Copies", "multiparm", 0,
+                 "The same mesh written again under another type and resolution. Add one row for each extra copy.",
+                 children=(
+                     Parm("copy_type#", "Copy Type #", "menu", "visual",
+                          "The kind of LOD the copy is written as. " + _TYPE_HELP, items=lod_props.TYPE_ITEMS),
+                     Parm("copy_res#", "Copy Resolution #", "float", 1.0,
+                          "The resolution or index of the copy. Only types that carry one use it."),
+                 )),
+        )),
     ),
 )
 

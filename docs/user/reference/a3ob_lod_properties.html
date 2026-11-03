@@ -122,9 +122,13 @@
 <li>Replace All <code>replace</code></li>
 </ul>
 </section>
+<section class="folder" id="props_box">
+<h3>Properties <code>props_box</code></h3>
+<p>These parameters are in the Properties group box.</p>
+<div class="folder-body">
 <section class="parm" id="props">
 <h3>Properties <code>props</code></h3>
-<p>Named properties of the LOD (at most 63 characters each).</p>
+<p>Named properties of the LOD, such as autocenter or lodnoshadow. Each name and value can be up to 63 characters.</p>
 <dl>
 <dt>Type</dt><dd>List of rows</dd>
 <dt>Default</dt><dd>0 rows</dd>
@@ -133,6 +137,7 @@
 <div class="rows">
 <section class="parm" id="props-prop_name">
 <h3>Name # <code>prop_name#</code></h3>
+<p>The property name. Up to 63 characters.</p>
 <dl>
 <dt>Type</dt><dd>Text</dd>
 <dt>Default</dt><dd>(empty)</dd>
@@ -140,6 +145,7 @@
 </section>
 <section class="parm" id="props-prop_value">
 <h3>Value # <code>prop_value#</code></h3>
+<p>The property value. Up to 63 characters.</p>
 <dl>
 <dt>Type</dt><dd>Text</dd>
 <dt>Default</dt><dd>(empty)</dd>
@@ -147,9 +153,15 @@
 </section>
 </div>
 </section>
+</div>
+</section>
+<section class="folder" id="copies_box">
+<h3>LOD Copies <code>copies_box</code></h3>
+<p>These parameters are in the LOD Copies group box.</p>
+<div class="folder-body">
 <section class="parm" id="copies">
 <h3>LOD Copies <code>copies</code></h3>
-<p>The same mesh written again under another signature (A3OB&#x27;s Copies).</p>
+<p>The same mesh written again under another type and resolution. Add one row for each extra copy.</p>
 <dl>
 <dt>Type</dt><dd>List of rows</dd>
 <dt>Default</dt><dd>0 rows</dd>
@@ -158,54 +170,58 @@
 <div class="rows">
 <section class="parm" id="copies-copy_type">
 <h3>Copy Type # <code>copy_type#</code></h3>
+<p>The kind of LOD the copy is written as.</p>
 <dl>
 <dt>Type</dt><dd>Menu</dd>
 <dt>Default</dt><dd>Resolution</dd>
 </dl>
 <p>Choices:</p>
 <ul>
-<li>Resolution <code>visual</code></li>
-<li>View - Gunner <code>view_gunner</code></li>
-<li>View - Pilot <code>view_pilot</code></li>
-<li>View - Cargo <code>view_cargo</code></li>
-<li>Shadow Volume <code>shadow</code></li>
-<li>Edit <code>edit</code></li>
-<li>Geometry <code>geometry</code></li>
-<li>Geometry Buoyancy <code>geometry_buoy</code></li>
-<li>Geometry PhysX <code>geometry_physx</code></li>
-<li>Memory <code>memory</code></li>
-<li>Land Contact <code>landcontact</code></li>
-<li>Roadway <code>roadway</code></li>
-<li>Paths <code>paths</code></li>
-<li>Hit-points <code>hitpoints</code></li>
-<li>View Geometry <code>view_geometry</code></li>
-<li>Fire Geometry <code>fire_geometry</code></li>
-<li>View - Cargo Geometry <code>view_cargo_geometry</code></li>
-<li>View - Cargo Fire Geometry <code>view_cargo_fire_geometry</code></li>
-<li>View - Commander <code>view_commander</code></li>
-<li>View - Commander Geometry <code>view_commander_geometry</code></li>
-<li>View - Commander Fire Geometry <code>view_commander_fire_geometry</code></li>
-<li>View - Pilot Geometry <code>view_pilot_geometry</code></li>
-<li>View - Pilot Fire Geometry <code>view_pilot_fire_geometry</code></li>
-<li>View - Gunner Geometry <code>view_gunner_geometry</code></li>
-<li>View - Gunner Fire Geometry <code>view_gunner_fire_geometry</code></li>
-<li>Sub Parts <code>subparts</code></li>
-<li>Shadow Volume - Cargo View <code>shadow_view_cargo</code></li>
-<li>Shadow Volume - Pilot View <code>shadow_view_pilot</code></li>
-<li>Shadow Volume - Gunner View <code>shadow_view_gunner</code></li>
-<li>Wreckage <code>wreckage</code></li>
-<li>Underground (VBS) <code>underground</code></li>
-<li>Groundlayer (VBS) <code>groundlayer</code></li>
-<li>Navigation (VBS) <code>navigation</code></li>
-<li>Unknown <code>unknown</code></li>
+<li>Resolution <code>visual</code>: Visual resolution</li>
+<li>View - Gunner <code>view_gunner</code>: Gunner first person view</li>
+<li>View - Pilot <code>view_pilot</code>: First person view</li>
+<li>View - Cargo <code>view_cargo</code>: Passenger first person view</li>
+<li>Shadow Volume <code>shadow</code>: Shadow casting geometry</li>
+<li>Edit <code>edit</code>: Temporary layer</li>
+<li>Geometry <code>geometry</code>: Object collision geometry and occluders</li>
+<li>Geometry Buoyancy <code>geometry_buoy</code>: Buoyant object geometry (Displacement for VBS)</li>
+<li>Geometry PhysX <code>geometry_physx</code>: PhysX object collision geometry</li>
+<li>Memory <code>memory</code>: Hard points and animation axes</li>
+<li>Land Contact <code>landcontact</code>: Points of contact with ground</li>
+<li>Roadway <code>roadway</code>: Walkable surfaces</li>
+<li>Paths <code>paths</code>: AI path finding mesh</li>
+<li>Hit-points <code>hitpoints</code>: Hit point cloud</li>
+<li>View Geometry <code>view_geometry</code>: View occlusion for AI</li>
+<li>Fire Geometry <code>fire_geometry</code>: Hitbox geometry</li>
+<li>View - Cargo Geometry <code>view_cargo_geometry</code>: Passenger view collision geometry and occluders</li>
+<li>View - Cargo Fire Geometry <code>view_cargo_fire_geometry</code>: Passenger view hitbox geometry</li>
+<li>View - Commander <code>view_commander</code>: Commander first person view</li>
+<li>View - Commander Geometry <code>view_commander_geometry</code>: Commander view collision geometry and occluders</li>
+<li>View - Commander Fire Geometry <code>view_commander_fire_geometry</code>: Commander hitbox geometry</li>
+<li>View - Pilot Geometry <code>view_pilot_geometry</code>: First person collision geometry and occluders</li>
+<li>View - Pilot Fire Geometry <code>view_pilot_fire_geometry</code>: First person hitbox geometry</li>
+<li>View - Gunner Geometry <code>view_gunner_geometry</code>: Gunner collision geometry and occluders</li>
+<li>View - Gunner Fire Geometry <code>view_gunner_fire_geometry</code>: Gunner view hitbox geometry</li>
+<li>Sub Parts <code>subparts</code>: Obsolete</li>
+<li>Shadow Volume - Cargo View <code>shadow_view_cargo</code>: Passenger view shadow casting geometry</li>
+<li>Shadow Volume - Pilot View <code>shadow_view_pilot</code>: First person view shadow casting geometry</li>
+<li>Shadow Volume - Gunner View <code>shadow_view_gunner</code>: Gunner view shadow casting geometry</li>
+<li>Wreckage <code>wreckage</code>: Vehicle wreckage</li>
+<li>Underground (VBS) <code>underground</code>: Underground volume for VBS (not supported in Arma 3 -&gt; Geometry PhysX Old)</li>
+<li>Groundlayer (VBS) <code>groundlayer</code>: Ground deformation data for VBS (not supported in Arma 3 -&gt; Shadow Volume 3000)</li>
+<li>Navigation (VBS) <code>navigation</code>: Navigation data for VBS (not supported in Arma 3 -&gt; Geometry / Resolution 5e+013)</li>
+<li>Unknown <code>unknown</code>: Unknown model layer</li>
 </ul>
 </section>
 <section class="parm" id="copies-copy_res">
 <h3>Copy Resolution # <code>copy_res#</code></h3>
+<p>The resolution or index of the copy. Only types that carry one use it.</p>
 <dl>
 <dt>Type</dt><dd>Number</dd>
 <dt>Default</dt><dd>1</dd>
 </dl>
+</section>
+</div>
 </section>
 </div>
 </section>

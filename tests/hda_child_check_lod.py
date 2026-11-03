@@ -117,7 +117,7 @@ def main(crate):
     python_sop = container.createNode("python", "fallback")
     params.add_spare_parms(python_sop, nodes.load("lod_properties").SPEC)
     result["fallback_parms"] = [template.name() for template in python_sop.parmTemplateGroup().entries()
-                                if template.name() in ("lodtype", "props", "copies", "propmode")]
+                                if template.name() in ("lodtype", "props_box", "copies_box", "propmode")]
     python_sop.parm("lodtype").set("memory")
     python_sop.parm("props").set(1)
     result["fallback_multiparm_row"] = python_sop.parm("prop_name1") is not None

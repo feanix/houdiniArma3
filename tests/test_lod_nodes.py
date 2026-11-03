@@ -13,6 +13,7 @@ from a3ob_core.p3d import lod_types
 from a3ob_houdini import lod_props, material_text, names, nodes
 from a3ob_houdini.errors import UserError
 from a3ob_houdini.messages import Report
+from a3ob_houdini import params
 from a3ob_houdini.params import read_parms
 from tests.hou_support import HAS_HOU, imported_fixture
 
@@ -107,7 +108,7 @@ class StubNode:
     def __init__(self, kind, source, **values):
         self.spec = nodes.load(kind).SPEC
         defaults = {}
-        for parm in self.spec.parms:
+        for parm in params.flat_parms(self.spec.parms):
             if parm.kind == "button":
                 continue
             defaults[parm.name] = [] if parm.kind == "multiparm" else parm.default
@@ -132,7 +133,7 @@ class StubNode:
         if name in self.values:
             value = self.values[name]
             return StubParm(len(value) if isinstance(value, list) else value)
-        for parm in self.spec.parms:
+        for parm in params.flat_parms(self.spec.parms):
             for child in parm.children:
                 stem = child.name.replace("#", "")
                 if name.startswith(stem) and name[len(stem):].isdigit():
