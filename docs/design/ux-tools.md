@@ -1,15 +1,16 @@
 # A3OB tools in Houdini: UX design (nodes, shelf tools, walkthroughs)
 
-Status: draft 1 (2026-11-03), task #6. For the owner to review. Nothing here is built yet.
+Status: revision 2 (2026-11-03), task #6. Updated for D13 (shipping) and D14 (the owner's answers to Q-1 to Q-13).
+Nothing here is built yet.
 
 This document says what an artist sees and does: which nodes exist, what is on each node, what the shelf buttons do,
 and how errors show up. It follows the owner decision D10 (node and shelf split, one SOP network per model) and the
 data-model spec `docs/design/houdini-data-model.md` revision 3 (called "the spec" below; `§n` points into it).
 
-It does not decide how nodes ship. That is D11, and the packaging spike (task #5) is still running. So this document
-describes every node by its parameters and its behaviour only, and
-[Shipping: what changes for the artist](#6-shipping-what-changes-for-the-artist) lists the few places where the answer
-to #5 changes what the artist sees.
+How nodes ship is settled by owner decision D13 (which supersedes D11): text-authored Python-type HDAs, stored in
+folder form under `houdini/otls/<name>.hda/` and never saved from the GUI. This document describes every node by its
+parameters and its behaviour. [Shipping: what the artist sees](#6-shipping-what-the-artist-sees) lists what D13 means
+for the artist. The packaging spike (task #5, `docs/design/packaging-spike.md`) has the evidence.
 
 ## 0. How to read this
 
@@ -20,10 +21,11 @@ to #5 changes what the artist sees.
 | **Spec attribute** | An attribute, group or detail name defined in the spec. This document never invents one. |
 | **Parm name** | The short internal name of a parameter, given so that both shipping options use the same names. |
 | **A3OB** | The Blender add-on. Paths like `ui/tool_mass.py` are relative to `.reference/Arma3ObjectBuilder/Arma3ObjectBuilder/` (pinned at 9f2b8bc). |
-| **Q-n** | An open question for the owner in [section 10](#10-open-questions-for-the-owner). |
+| **Q-n** | A question that the owner has answered (D14). The answers are in [section 10](#10-resolved-d14). |
 | **M1, M3, M4** | M1 is the finished pure-Python layer `python/a3ob_core`. M3 is import, M4 is export. |
 
-Rules for this document: where the UX needs something the spec does not define, it is a Q-n, not a new attribute.
+Rules for this document: where the UX needs something the spec does not define, it is a spec addition (task #7),
+not a new attribute invented here.
 Every Houdini claim marked "checked" was run in hython 22.0.466 on this machine.
 
 ## 1. The design in one page
@@ -53,8 +55,8 @@ Every Houdini claim marked "checked" was run in hython 22.0.466 on this machine.
 
 **Where the code lives.** Every node's logic is a Python function in `python/a3ob_houdini`. The node itself is a thin
 wrapper that calls that function and reports what it returns. A single parameter table per node in the same package
-describes the parameters (name, label, default, menu), so one table can build either an HDA or the spare parameters of
-a Python SOP. That is what keeps both D11 answers possible. Pure data work (reading, writing, signatures, strings) stays
+describes the parameters (name, label, default, menu), so one table builds the HDA's parameters (D13). The same table
+could build the spare parameters of a Python SOP, which keeps the fallback open. Pure data work (reading, writing, signatures, strings) stays
 in `a3ob_core`; the node code only translates between Houdini geometry and `a3ob_core` objects (spec §16).
 
 **Defaults are lossless.** An unedited file imported and exported again must give the same bytes (the spec's L0 goal).
@@ -147,7 +149,7 @@ A3OB features that are **not** carried as nodes, and why:
 | Vertex and face flag groups (`ui/props_object_mesh.py` lines 705-816) | Lossy in A3OB; the spec keeps raw `a3ob_vertex_flags` and `a3ob_face_flags`. No node in D10. See Q-10. |
 | Proxy copy, copy-all, transfer between LODs (`ui/tool_proxies.py`) | In Houdini the proxies are packed prims inside the LOD geometry. Copy them with Blast (group by `a3ob_proxy_path`) and Merge (LOD geometry first, so its detail wins). The Proxy node can also place new ones. |
 | Edit-mode assign / select operators | Native Houdini group editing. |
-| Convex hull, find components, check convexity, cleanup vertex groups (`ui/tool_utilities.py`) | Native Houdini nodes. Convexity and components are checked by Validate if Q-3 is accepted. |
+| Convex hull, find components, check convexity, cleanup vertex groups (`ui/tool_utilities.py`) | Native Houdini nodes. Convexity and components are checked by Validate as switchable warnings (Q-3, M4). |
 | Import "Additional data" switches | Dropping data on import makes the export lossy (spec §15). Use Attribute Delete if you want less data. |
 
 ## 5. The nodes
@@ -172,7 +174,7 @@ All nodes: one output. Parm names are lowercase and short. "Default" is what a n
 | Explicit face groups | `facegroups` | off | Spec §7.2 (OQ-6): always make prim groups for face selections, not only where the face bytes differ. |
 
 Not offered, on purpose (see section 4): absolute paths, translate selections, cleanup empty selections, proxy action,
-data switches. Q-8 (proxy action) and Q-11 ask about two of them.
+data switches. Q-8 (proxy action: no forced-inline switch) and Q-11 (no extra import options) settle two of them.
 
 **Messages.**
 
@@ -229,7 +231,7 @@ input's detail attributes (spec §3.1, T7c). That is why Assemble packs each LOD
 
 | Parameter | Parm name | Default | Notes |
 |---|---|---|---|
-| Replace matching LODs | `replace` | on | A LOD input replaces the base LOD that has the **same stored signature** (`a3ob_lod_signature`, raw bits, §3.4). It keeps the base LOD's position. A LOD input with no match (a new LOD, or one without `a3ob_lod_signature`) is appended at the end. Off: always append. This matching rule uses only spec attributes, but the spec does not state it: Q-4. |
+| Replace matching LODs | `replace` | on | A LOD input replaces the base LOD that has the **same stored signature** (`a3ob_lod_signature`, raw bits, §3.4). It keeps the base LOD's position. A LOD input with no match (a new LOD, or one without `a3ob_lod_signature`) is appended at the end. Off: always append. The matching rule is fixed by Q-4 (D14); the spec text for it is in spec section 17.1 / 3.2 (task #7). |
 
 How it works: each LOD input is packed with the Pack verb (Pack by Name off, spec §3.1) and merged. The base LODs it
 does not replace are copied as they are, packed, untouched. That is how "untouched LODs pass through" and why a
@@ -250,9 +252,10 @@ file with no edits is byte-identical after export.
 - With no base input it builds a new P3D geometry from scratch. The New P3D template does this.
 - It does not sort. Sorting is an export option (D7, OQ-3).
 - Duplicate signatures after replacement are reported by Validate and Export, not here.
-- The number of LOD inputs depends on how nodes ship: [section 6](#6-shipping-what-changes-for-the-artist). A Python
-  SOP has 0 to 4 inputs (checked), which is base + 3. A chain of two Assemble nodes covers more: the second takes the
-  first as its base.
+- There is no 4-input limit. The HDA sets its input count in its `INDEX__SECTION` ("Inputs: 1 to N"), see
+  [section 6](#6-shipping-what-the-artist-sees). Input 1 is the base; the others are LODs. The first build uses one
+  number N for the maximum, chosen when the HDA is written. Chaining two Assemble nodes (the second takes the first as
+  its base) also works but is not needed.
 
 ### 5.4 LOD Properties
 
@@ -302,13 +305,13 @@ differ (§3.4). The node shows a message: "Signature will be re-encoded."
 
 | Parameter | Parm name | Default | Notes |
 |---|---|---|---|
-| Path | `path` | empty | The proxy model path, for example `\a3\data_f\proxies\weapon_slots\top`. Slashes are written as backslashes and the `.p3d` ending is removed, as A3OB does (`props/object.py` line 258, `utilities/generic.py` `format_path`). Q-6 asks where else this should happen. |
+| Path | `path` | empty | The proxy model path, for example `\a3\data_f\proxies\weapon_slots\top`. Slashes are written as backslashes and the `.p3d` ending is removed, as A3OB does (`props/object.py` line 258, `utilities/generic.py` `format_path`). Material Assign does the same for its paths (Q-6, D14); see spec section 3.2 (task #7). |
 | Common proxies | `common` (menu) | none | Fills Path from the presets (A3OB "Paste Common Proxy", `utilities/data.py` line 782 onward). |
 | Index | `index` | `1` | 0 to 999. |
 | Number from points | `autoindex` | on | With input 2: the first proxy gets `index`, the next `index + 1`, and so on. Off: all get `index`. |
 | Translate | `t` | `0 0 0` | Placement when there is no input 2. |
 | Rotate | `r` | `0 0 0` | Degrees. A proxy has no scale: A3OB also resets scale to 1 when aligning (`ui/tool_proxies.py` lines 58-59). |
-| Orient from points | `useorient` | on | With input 2: rotate each proxy by the point's `orient` if the point has one; no other attribute is read. Q-8. |
+| Orient from points | `useorient` | on | With input 2: rotate each proxy by the point's `orient` if the point has one; no other attribute is read (Q-8, D14). There is no switch to force inline triangles. |
 
 **Messages.**
 
@@ -390,7 +393,7 @@ with mass, and the **centre of mass** in Houdini coordinates. A3OB moves the 3D 
 |---|---|
 | Info | "Total 90.0 kg on 34 points. Centre of mass (0.00, 0.95, 0.01)." |
 | Density mode meets open or flat components | Warning: "Non-closed or flat components were ignored" (A3OB's text, `ui/tool_mass.py` lines 63-67). |
-| `a3ob_lod_type` is not Geometry | Warning: the spec says `a3ob_mass` on another LOD type is a validator warning (§10). Q-3 asks which types count. |
+| `a3ob_lod_type` is not Geometry | Warning: the spec says `a3ob_mass` on another LOD type is a validator warning (§10). Geometry, Geometry Buoyancy and Geometry PhysX count as geometry types (Q-3, D14). |
 
 ### 5.8 Validate
 
@@ -402,15 +405,15 @@ with mass, and the **centre of mass** in Houdini coordinates. A3OB moves the 3D 
 | Reads | everything the exporter reads. It writes no attribute and no file. |
 | Writes | nothing. |
 
-What it checks: **all of spec §17.1**, row for row, and nothing else (Q-3 asks about more). Some rows need only Houdini
+What it checks: **all of spec §17.1**, row for row, plus A3OB's per-LOD-type rules as a second tier of switchable warnings (Q-3, D14; spec section 17.1, task #7; built in M4). Some rows need only Houdini
 data (polygon sides, merged LODs, packed prims); others use `a3ob_core` (`encode_signature`, `encode_string`,
 `structure_errors()`, `check()`).
 The node reuses the exporter's code to build the `a3ob_core` objects, so it tells the artist exactly what Export would.
 
 | Parameter | Parm name | Default | Notes |
 |---|---|---|---|
-| Errors show as | `errorlevel` | `Error (stop here)` | `Error (stop here)`: red node, nodes below it stop. `Warning (keep geometry)`: yellow, geometry keeps flowing, text still starts with "Error:". Q-1. |
-| Warnings count as errors | `strict` | off | A3OB has this on by default for its validator (`props/scene.py` line 262). Q-2. |
+| Errors show as | `errorlevel` | `Error (stop here)` | `Error (stop here)`: red node, nodes below it stop. `Warning (keep geometry)`: yellow, geometry keeps flowing, text still starts with "Error:". Default is Error (Q-1, D14). |
+| Warnings count as errors | `strict` | off | A3OB has this on by default for its validator (`props/scene.py` line 262). Ours is off (Q-2, D14). |
 | Duplicate LODs | `dupes` | `Fail` | `Fail`, `Skip`, `Ignore`. A3OB's "Collisions" (`ui/import_export_p3d.py` line 279). Spec §3.2. |
 | Max messages | `maxmessages` | `25` | Section 2, rule 3. |
 
@@ -449,7 +452,7 @@ failed save leaves the old file alone.
 | Duplicate LODs | `dupes` | `Fail` | As in Validate. |
 | Max messages | `maxmessages` | `25` | |
 | **Selection mask** | `selmask` | `* ^__*` | Which point groups become selections (spec §7.2, D7 OQ-9). A group whose decoded name is in `a3ob_tagg_order` is always a selection. |
-| **Lowercase** | `lowercase` | **off** | Lowercases the same things A3OB does: texture and material paths, selection names (so proxy paths too) and property names and values (`io/data_p3d.py` line 752). The spec only names paths (§5): Q-12. |
+| **Lowercase** | `lowercase` | **off** | Lowercases the same things A3OB does: texture and material paths, selection names (so proxy paths too) and property names and values (`io/data_p3d.py` line 752). The spec only names paths (§5); all four are lowercased (Q-12, D14), the tooltip says so, and a warning appears when lowering the case makes two selection names equal (spec section 17.1, task #7). |
 | **Relative paths** | `relpaths` | **off** | Makes paths relative to `projectroot`; at least the drive letter is stripped (`utilities/generic.py` lines 174-216). |
 | Project root | `projectroot` | empty = the shelf setting | Falls back to the root from [7.2](#72-project-root-and-presets) (A3OB default `P:\`). Used only when `relpaths` is on. |
 | **Sort sections** | `sortsections` | **off** | Orders faces by texture and material pair (`io/export_p3d.py` line 255). Changes the face order, so a round trip becomes L1. |
@@ -470,7 +473,7 @@ A3OB's own defaults for the same options, for comparison. The owner chose off fo
 | Force lowercase | on | 302 | off |
 | Generate components | on | 311 | off |
 | LOD collisions | Fail | 279 | Fail |
-| Warnings are errors | on | 293 | off (Q-2) |
+| Warnings are errors | on | 293 | off (Q-2, D14) |
 
 #### 5.9.1 Save to Disk
 
@@ -478,8 +481,11 @@ A3OB's own defaults for the same options, for comparison. The owner chose off fo
   On a validation error it shows a dialog with the error list and writes nothing.
 - **In hython or a script:** the same function without a dialog; errors raise a Python exception. This is what Batch
   folder convert and the tests call.
-- **How the button is made** depends on shipping (section 6). In both cases the button callback calls one function in
-  `python/a3ob_houdini`.
+- **The button** is a button parameter of the HDA. Its callback calls one function in `python/a3ob_houdini`. Houdini
+  swallows exceptions raised in a button callback (`pressButton` does not raise, checked in the spike), so that
+  function catches every error itself, reports it (dialog in the GUI, node message everywhere), and never lets it
+  escape. It writes the file to a temporary name next to the target and renames it when complete, so a failed save
+  leaves the old file untouched (D13).
 - **Later:** a `/out` ROP wrapper (D10) for rendering-style export, calling the same function.
 
 **Messages (cook and save).**
@@ -493,24 +499,34 @@ A3OB's own defaults for the same options, for comparison. The owner chose off fo
 | File cannot be written (locked, read-only) | Error on save; the old file is untouched. |
 | Trailing bytes dropped because of several inputs or a Merge | Warning (§3.3). |
 
-## 6. Shipping: what changes for the artist
+## 6. Shipping: what the artist sees
 
-How nodes ship is decided after task #5 (D11). Logic is in `python/a3ob_houdini` either way. This is what differs for
-the artist:
+Owner decision D13 (which supersedes D11) fixes how nodes ship. The evidence is in `docs/design/packaging-spike.md`.
 
-| Topic | Real HDAs | Python SOPs made by shelf tools | Where it is settled |
-|---|---|---|---|
-| Creating a node | Tab menu: a submenu "A3OB" with the nine names | Shelf buttons "P3D Import", ... create a Python SOP with the code and parameters filled in; no Tab menu entry unless a shelf tool is also placed there | #5 |
-| Node type name in the network | A3OB type with the label from this document | `python`, renamed by the tool to the node's role | #5 |
-| Parameter layout | Fixed by the asset | Spare parameters, built from the same parameter table and stored in each node | #5 |
-| After a package update that changes parameters | The artist updates the asset; versioning is Houdini's | Existing nodes keep the old layout (**drift**). A shelf tool "Update A3OB nodes" rebuilds the spare parameters and keeps values. | #5 |
-| Save to Disk button | A button parameter of the asset, callback calls the Python function | A spare button parameter, callback calls the same function | #5 |
-| Number of inputs on Assemble | Can be many | A Python SOP has at most 4 inputs (checked: min 0, max 4): base + 3 LODs. Chain Assemble nodes for more. | #5 |
-| Menus built from the input (Extract LOD) | Menu script | Spare parameter with a menu script | #5 |
-| Licence tag on a saved asset | Indie-saved HDAs can carry the limited-commercial tag (D3) | Not applicable | D3, #5 |
+- Each node is a **text-authored, Python-type HDA**. It lives in folder form at `houdini/otls/<name>.hda/` and is
+  never saved from the Houdini GUI (a GUI save would rewrite the files and hide the diffs).
+- Each HDA has a **frozen entry function** and **one parameter table** in `python/a3ob_houdini`. The wrapper is thin:
+  it calls the entry function and shows what it returns (section 1).
+- Logic stays in `python/a3ob_houdini` and `a3ob_core`. A package update changes code; it does not need new assets
+  unless the parameters change.
 
-If #5 picks the Python-SOP form, the two visible costs are the input limit on Assemble LODs and parameter drift. The
-parameters, behaviour and messages in this document stay the same.
+What this means for the artist:
+
+| Topic | What the artist sees |
+|---|---|
+| Creating a node | Tab menu: a submenu "A3OB" with the nine names. The shelf tools (section 7) are separate. |
+| Node type in the network | An A3OB type with the label from this document. |
+| Parameter layout | Fixed by the asset, generated from the parameter table. |
+| After a package update that changes parameters | The HDA update **adds the new parameters to old nodes and keeps the values** already set. Nothing is rebuilt by hand and there is no drift. |
+| Inputs on Assemble LODs | Set in the HDA's `INDEX__SECTION` ("Inputs: 1 to N"). **There is no 4-input limit.** The spike changed the count from 1 to 4 by editing that text and connected three inputs (`docs/design/evidence/packaging/q4b_multi_input.out.txt` on main). N is one number chosen when the HDA is written. |
+| Save to Disk button | A button parameter of the asset. Houdini swallows exceptions in button callbacks (`pressButton` does not raise), so the callback **catches and reports its own errors**, and writes to a temporary file and renames it (5.9.1). |
+| Menus built from the input (Extract LOD) | Menu script on the parameter. |
+| Licence tag on a saved asset | Indie-saved HDAs can carry the limited-commercial tag (D3). Not relevant while the HDAs are text-authored. |
+
+**Fallback.** A Python SOP made by a shelf tool stays possible. The parameter table could build its spare parameters.
+It would cost two things: a Python SOP has at most 4 inputs (checked: min 0, max 4), so Assemble would need chaining,
+and old nodes would keep the old parameter layout (drift). D13 does not use it. The parameters, behaviour and messages
+in this document would be the same.
 
 ## 7. Shelf tools
 
@@ -536,11 +552,12 @@ One dialog with:
 | Setting | Default | Notes |
 |---|---|---|
 | Project root | `P:\` | A3OB default (`__init__.py` line 261). Also read from an environment variable if set (name chosen at build time). Used by relative paths. |
-| Presets | `Lossless`, `Arma 3 release` | Named sets of the P3D Export option parameters (5.9). `Lossless` is the default (all data-changing options off). `Arma 3 release` is A3OB's defaults: relative paths, sort sections, lowercase and auto-components on. Q-5 asks whether to ship both. |
+| Presets | `Lossless`, `Arma 3 release` | Named sets of the P3D Export option parameters (5.9). `Lossless` is the default (all data-changing options off). `Arma 3 release` is A3OB's defaults: relative paths, sort sections, lowercase and auto-components on. Both ship (Q-5, D14). |
 | Common data file | none | A JSON file with extra common proxies, named properties, procedural textures and materials. Same idea as A3OB's "custom data" (`__init__.py` line 267, `utilities/data.py` `common_data`). Feeds the "Common" menus. |
 
 Stored in a single JSON file in the user's Houdini preferences folder. The dialog can save the current Export node's
-options as a new preset. Where the file lives is Q-7. The tool changes nothing in a scene.
+options as a new preset. The file is in the user folder, and an environment variable overrides its location (Q-7,
+D14). The tool changes nothing in a scene.
 
 ### 7.3 Selection browser
 
@@ -550,11 +567,11 @@ options as a new preset. Where the file lives is Q-7. The tool changes nothing i
 | Actions | **Copy name**: puts the encoded group name on the clipboard, ready to paste into a group field. **Create selection**: asks for a P3D name and a group expression, and adds a Group node that makes the encoded point group. **Delete selection**: adds a Group Delete node. **Rename**: adds a Group Rename node. |
 | Creates | Nothing unless an action is chosen. Create, delete, and rename add one SOP node after the selected node (Group, Group Delete, Group Rename; all three exist, checked) and set its parameters. |
 | Edits geometry? | Never directly: cooked geometry is read-only. |
-| Version 1 form | A list dialog (`hou.ui.selectFromList`) and an input dialog. A real Python Panel can come later (Q-9). |
+| Version 1 form | A list dialog (`hou.ui.selectFromList`) and an input dialog. A real Python Panel comes after M4 (Q-9, D14). |
 
 ### 7.4 Batch folder convert
 
-Q-5 asks what "convert" should mean. This is the recommended reading:
+"Convert" means re-export with a report (Q-5, D14):
 
 | | |
 |---|---|
@@ -673,7 +690,7 @@ Scenario: a Boolean on the Geometry LOD left some polygons with more than 4 poin
 2. **Find the branch.** Move the display flag to the last node of the Geometry branch (above Assemble). The viewport
    is no longer blank, because that node is above the red one.
 3. **Look at the faces.** In that branch, add a Group node with `12 15 40` and look at them (the spreadsheet or the
-   viewport). They are the Boolean's n-gons. (Highlighting them automatically is Q-9.)
+   viewport). They are the Boolean's n-gons. (Highlighting them automatically comes after M4, Q-9.)
 4. **Fix.** Insert a Divide node on the branch after the Boolean: `convex` on, `usemaxsides` on, `numsides` 3
    (triangles are best for a Geometry LOD, A3OB's `is_triangulated` check).
 5. **Recook.** The red nodes clear. Export says: "9 LODs checked: 0 errors, 0 warnings." Save to Disk now works.
@@ -705,7 +722,7 @@ exporter's collection and `a3ob_core` build step (spec §16).
 | Project root and presets | M4 | Only Export uses them (and Batch). |
 | New P3D | M4 | Needs a working Export to be worth building. |
 | Batch folder convert | M4, last | Needs both ends. |
-| `/out` ROP wrapper, Weighted mass, Python Panel for selections, node update tool (if Python SOPs), problem highlighting | after M4 | |
+| `/out` ROP wrapper, Weighted mass, Python Panel for selections, problem highlighting (Q-9) | after M4 | |
 
 **Order of work.**
 
@@ -720,32 +737,33 @@ exporter's collection and `a3ob_core` build step (spec §16).
 | 7 | Project root and presets, Quick Export | |
 | 8 | New P3D, Batch folder convert | The batch report on both fixtures says "identical". |
 
-## 10. Open questions for the owner
+## 10. Resolved (D14)
 
-Each has a recommendation. Q-1 to Q-4 touch the first build; the rest can wait.
+The owner answered Q-1 to Q-13 as this document recommended (D14). The answers below are now rules. Where a rule
+needs spec text, it is written in spec section 17.1 / 3.2 (task #7); this table does not restate it.
 
-| # | Question | Recommendation |
+| # | Question | Resolved |
 |---|---|---|
-| **Q-1** | **Validate error level.** A node error stops everything below it (checked, section 2). Default for Validate and Export: `Error (stop here)` (honest: it cannot export) or `Warning (keep geometry)` (the viewport stays)? | Default `Error`, with the menu to switch. Put the display flag above the red node while fixing (walkthrough 3). |
-| **Q-2** | **Warnings count as errors.** A3OB turns this on by default. | Off. Warnings in the spec are things that may be intended (merges, case-equal names). |
-| **Q-3** | **A3OB's per-LOD-type rules.** `utilities/validator.py` checks, by LOD type, convexity, components, mass present, no materials on shadow LODs, 255 point limit on Roadway, and more. Spec §17.1 lists none of them, so they are **not** in this design's Validate. Add them? Which LOD types count as "geometry" for them and for the Mass warning (Geometry only, or Buoyancy and PhysX too)? | Yes, as a second tier of warnings in M4, with a switch (`Check LOD-type rules`, on). It needs no new attributes, but it needs a spec addition to §17.1. Treat Geometry, Geometry Buoyancy and Geometry PhysX as geometry types for mass. |
-| **Q-4** | **How Assemble matches an edited LOD to the base LOD it replaces.** Proposed: the stored `a3ob_lod_signature`. The spec defines the attribute but not this use. Alternative: a parameter that says which base LOD to replace. | Signature match with the `replace` switch, plus the info message. It works for LODs without polygons (Memory), which the `a3ob_lod_uid` cannot do. |
-| **Q-5** | **Presets and Batch convert.** (a) Ship two built-in presets, `Lossless` and `Arma 3 release`? (b) Batch convert means "re-export a folder with a preset and report" (as proposed)? Or "convert to `.bgeo.sc`"? | (a) Yes. (b) Re-export with report first; `.bgeo.sc` output as an extra option later. |
-| **Q-6** | **Slash normalisation.** The Proxy node turns `/` into `\` and drops `.p3d` when you type. Should Material Assign do the same for textures and materials? The spec stores paths "exactly as in the file". | Yes: both nodes normalise `/` to `\` on entry, so what the spreadsheet shows is what is written. Export applies only lowercase and relative paths. |
-| **Q-7** | **Where settings live.** One JSON in the user's Houdini preferences folder (project root, presets, common data), or next to the `.hip`? | User folder, with an environment variable override. Presets are personal; the project root rarely changes between models. |
-| **Q-8** | **Proxy options not in the spec.** (a) "Orient from points" (using `orient` or `N` of input 2); (b) a switch to import proxies as inline triangles instead of packed prims. (b) needs a spec change (§13.6 makes it automatic). | (a) Keep, only the rotation part and a plain rule: the point's `orient` if present, else no rotation. (b) No for now. |
-| **Q-9** | **Show the bad elements.** Validate could put offending polygons and points into temporary groups (names starting `__`, so the export mask `* ^__*` ignores them). The group names are not in the spec. | Yes, after M4, with names defined by a spec revision. Also a Python Panel for the selection browser at the same time. |
-| **Q-10** | **Flag editing** (A3OB flag groups). No node in D10. | None for M3 and M4. Revisit with real files (spec OQ-11). Raw `a3ob_vertex_flags` and `a3ob_face_flags` can be edited with Attribute Wrangle meanwhile. |
-| **Q-11** | **Other A3OB import options** not carried: absolute paths on import, translate selections, cleanup empty selections. One is kept (`lods` filter). | Carry none. Empty selections matter to `model.cfg` animations (A3OB warns in the import dialog, `ui/import_export_p3d.py` lines 83-85), so the spec keeps them on purpose. |
-| **Q-12** | **Scope of Lowercase.** A3OB lowercases texture and material paths, selection names, and property names and values. The spec says "paths". | Follow A3OB (all four), say so in the tooltip, and warn when lowering the case makes two selection names equal. |
-| **Q-13** | **Skip invalid LODs.** A3OB can skip LODs that fail validation and export the rest (`validate_lods`, `ui/import_export_p3d.py` line 289). The spec stops on errors. | Stop (as designed). A model missing a LOD is worse than no model. |
+| **Q-1** | Validate error level | Default for Validate and Export is `Error (stop here)`, with the menu to switch to `Warning (keep geometry)`. Put the display flag above the red node while fixing (walkthrough 3). |
+| **Q-2** | Warnings count as errors | Off. Warnings in the spec are things that may be intended (merges, case-equal names). |
+| **Q-3** | A3OB per-LOD-type rules | Added to Validate as a second tier of switchable warnings (`Check LOD-type rules`, on), built in M4. Geometry, Geometry Buoyancy and Geometry PhysX are the geometry types, for these rules and for the Mass warning. Spec section 17.1 (task #7). |
+| **Q-4** | How Assemble matches an edited LOD to its base LOD | By the stored `a3ob_lod_signature`, with the `replace` switch and the info message. It also works for LODs without polygons (Memory). Spec section 3.2 / 17.1 (task #7). |
+| **Q-5** | Presets and Batch convert | Two built-in presets, `Lossless` and `Arma 3 release`. Batch convert is a re-export with a report. `.bgeo.sc` output may come later as an extra option. |
+| **Q-6** | Slash normalisation | The Proxy and Material Assign nodes both turn `/` into `\` on entry, so the spreadsheet shows what is written. Export applies only lowercase and relative paths. Spec section 3.2 (task #7). |
+| **Q-7** | Where settings live | One JSON in the user's Houdini preferences folder, with an environment variable override. |
+| **Q-8** | Proxy options not in the spec | "Orient from points" stays, as a plain rule: the point's `orient` if present, else no rotation. No switch to force inline triangles. |
+| **Q-9** | Show the bad elements | Yes, after M4: Validate puts offenders in temporary `__` groups (names defined by a spec revision), with the Python Panel for the selection browser. |
+| **Q-10** | Flag editing | No flags node yet. Raw `a3ob_vertex_flags` and `a3ob_face_flags` can be edited with Attribute Wrangle. Revisit with real files (spec OQ-11). |
+| **Q-11** | Other A3OB import options | None carried (absolute paths, translate selections, cleanup selections). Empty selections matter to `model.cfg` animations, so the spec keeps them. The `lods` filter stays. |
+| **Q-12** | Scope of Lowercase | All four are lowercased: texture and material paths, selection names, and property names and values. The tooltip says so, and a warning appears when lowering the case makes two selection names equal. Spec section 17.1 (task #7). |
+| **Q-13** | Skip invalid LODs | No. Export stops on errors. A model missing a LOD is worse than no model. |
 
 ## 11. Interpretations in this document
 
 These are the places where this document filled a gap in D10 or the spec. All are listed above as parameters or
 questions.
 
-1. **Replace rule in Assemble LODs** (5.3, Q-4).
+1. **Replace rule in Assemble LODs** (5.3, Q-4, resolved).
 2. **"LODs" filter on Import** (5.1) from A3OB's "First LOD Only".
 3. **Validate default level** and the `errorlevel` switch (5.8, Q-1), from the checked Houdini behaviour.
 4. **Batch folder convert** means re-export with a report (7.4, Q-5).
