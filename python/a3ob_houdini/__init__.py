@@ -8,6 +8,9 @@ back. The format code itself lives in ``a3ob_core``, which never imports
 Importing this package does not import ``hou``; modules that need it import
 it themselves, so the package can be inspected outside Houdini.
 
+How the nodes are built, and the naming convention for node types, is in
+``README.md`` next to this file.
+
 Derived from Arma 3 Object Builder by MrClock (present add-on) and
 Hans-Joerg "Alwarren" Frieden (original ArmaToolbox). Modified for Houdini.
 See NOTICE.md.

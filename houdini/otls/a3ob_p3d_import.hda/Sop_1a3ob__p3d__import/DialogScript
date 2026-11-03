@@ -1,0 +1,44 @@
+# Dialog script for a3ob_p3d_import, version 1
+
+{
+    name	a3ob_p3d_import
+    script	a3ob_p3d_import
+    label	"P3D Import"
+
+    help {
+	"Reads an Arma 3 .p3d file (MLOD) and outputs one packed primitive per LOD."
+    }
+
+    parm {
+	name	"file"
+	label	"File"
+	type	file
+	default	{ "" }
+	help	"The .p3d file to read. Must be an MLOD file, not a binarized one."
+	parmtag	{ "filechooser_mode" "read" }
+	parmtag	{ "filechooser_pattern" "*.p3d" }
+    }
+    parm {
+	name	"reload"
+	label	"Reload"
+	type	button
+	default	{ "0" }
+	help	"Read the file again, even if nothing changed."
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('p3d_import', 'reload', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+    parm {
+	name	"lods"
+	label	"LODs"
+	type	string
+	default	{ "*" }
+	help	"Which LODs to import, by position in the file: * for all, or numbers and ranges like 0 2-4."
+    }
+    parm {
+	name	"facegroups"
+	label	"Explicit Face Groups"
+	type	toggle
+	default	{ "0" }
+	help	"Always make a primitive group for every selection, not only where the face data needs one."
+    }
+}
