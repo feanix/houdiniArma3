@@ -279,7 +279,8 @@ def _write_sharp_edges(geo, plan: LodPlan, subset: Subset) -> None:
         if a != b and a in subset.local and b in subset.local:
             edge = geo.findEdge(points[subset.local[a]], points[subset.local[b]])
         if edge is None or group.contains(edge):  # not an edge, or the same edge again (either direction)
-            extras.extend((a, b))
+            # Spec 13.6: the pair is stored as export-order point numbers, so a moved proxy point stays the same point.
+            extras.extend((plan.permutation.new_point(a), plan.permutation.new_point(b)))
         else:
             group.add(edge)
     if extras:

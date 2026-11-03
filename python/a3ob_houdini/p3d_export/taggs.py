@@ -21,6 +21,7 @@ from a3ob_core import binary, p3d
 from a3ob_core.p3d import P3DError
 
 from .. import messages, names
+from ..permutation import Permutation, remap_payload
 from .data import LodData
 from .mesh_build import FileMesh
 from .options import ExportOptions, fold_collisions, keeps_uvs, make_relative, relative_proxy_name
@@ -71,7 +72,7 @@ def make_items(data: LodData, file_mesh: FileMesh, selections: Sequence[Selectio
     items.extend(_property_items(data, options, report))
     items.extend(_mass_items(file_mesh))
     items.extend(_selection_items(data, selections, options, report))
-    items.extend(_blob_items(data, counts, options, report))
+    items.extend(_blob_items(data, file_mesh, counts, options, report))
     return items
 
 
@@ -206,7 +207,8 @@ def _warn_name_collisions(label: str, original: List[str], written: List[str], o
             % (first, second), "Rename one of them"))
 
 
-def _blob_items(data: LodData, counts, options: ExportOptions, report: messages.Report) -> List[Item]:
+def _blob_items(data: LodData, file_mesh: FileMesh, counts, options: ExportOptions,
+                report: messages.Report) -> List[Item]:
     """Spec 11.2: opaque TAGGs, written unchanged while the counts equal ``a3ob_source_counts``.
 
     With Drop UVs on a type that has no UVs, a ``#UVSet#`` blob is UV data and is dropped without a word (spec 18.4)."""
@@ -225,6 +227,7 @@ def _blob_items(data: LodData, counts, options: ExportOptions, report: messages.
                     _counts_text(counts), _counts_text(details.source_counts) if details.source_counts else "unknown")),
             "Data kept from the file only fits the mesh it came with"))
         return []
+    perm = _sort_permutation(data, file_mesh)
     items = []
     for i in wanted:
         active = details.unknown_active[i] if i < len(details.unknown_active) else 1
@@ -237,8 +240,40 @@ def _blob_items(data: LodData, counts, options: ExportOptions, report: messages.
             tagg = p3d.parse_tagg(name, active & 0xFF, payload, *counts)
         except P3DError:
             tagg = p3d.RawTagg(name, payload, active & 0xFF, counts=tuple(details.source_counts))
+        if perm is not None:
+            tagg = _follow_sorted_faces(tagg, perm, counts, i, data.label, report)
+            if tagg is None:
+                continue
         items.append(Item("#?%d" % i, tagg, blob=True))
     return items
+
+
+def _sort_permutation(data: LodData, file_mesh: FileMesh) -> Optional[Permutation]:
+    """The face move of the Sort sections option (spec 13.6): the mesh faces are written in ``file_mesh.mesh_faces``
+    order, then the proxies. None when the faces stay in place. Points never move here (the importer put them in the
+    export order)."""
+    polys = data.mesh.polys
+    faces = file_mesh.mesh_faces
+    if len(faces) != len(polys) or faces == list(range(len(faces))):
+        return None
+    proxies = len(file_mesh.proxy_faces)
+    sides = [len(poly.points) for poly in polys] + [3] * proxies
+    return Permutation(range(len(file_mesh.point_flags)), list(faces) + [len(polys) + k for k in range(proxies)], sides)
+
+
+def _follow_sorted_faces(tagg: p3d.Tagg, perm: Permutation, counts, number: int, label: str,
+                         report: messages.Report) -> Optional[p3d.Tagg]:
+    """A blob with face or corner data, rewritten for the sorted face order, or None (dropped with a warning)."""
+    payload = remap_payload(tagg, perm)
+    if payload is None:
+        report.warning(messages.format_problem(
+            label, "the opaque TAGG %r (record %d) is dropped because Sort sections moved the faces and its face "
+            "numbers cannot be moved with them" % (tagg.name, number)))
+        return None
+    if isinstance(tagg, p3d.RawTagg):
+        tagg.data = payload
+        return tagg
+    return p3d.parse_tagg(tagg.name, tagg.active, payload, *counts)
 
 
 def order_items(items: List[Item], hint: Sequence[str], hint_active: Sequence[int]) -> List[p3d.Tagg]:

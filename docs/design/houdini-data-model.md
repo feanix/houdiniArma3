@@ -660,7 +660,7 @@ All of the following must hold:
 
 Otherwise the triangle stays inline. Its selection stays a normal point group. If the name passes the first test, prim attributes `a3ob_proxy_path` / `a3ob_proxy_index` are set on the selection's member faces. That is the same form an unpacked packed proxy has, so the exporter treats both the same way (§13.5).
 
-Lossless order requires the proxy vertices and faces to be the **tail** of the vertex and face lists in prim order. That holds in the fixture (§6). If proxies are interleaved, the round trip is L1 (D7, OQ-2).
+Lossless order requires the proxy vertices and faces to be the **tail** of the vertex and face lists in prim order. That holds in the fixture (§6). If proxies are interleaved, the round trip is L1 (D7, OQ-2): the bytes differ, the content does not. Index-bound records follow the move (task #36, `permutation.py`): the importer stores blobs (editor masks, `#Hide#`, inactive selections, `#Mass#`, `#Animation#`, `#UVSet#`, `#SharpEdges#`) and the pairs of `a3ob_sharp_extra` in the order the export writes (mesh, then proxies), so they mark the same points and faces by position. A record that cannot be moved (unknown layout, wrong size) is dropped with a warning that names the LOD and the record. With Sort sections the export moves face and corner bytes of blobs the same way.
 
 ## 14. Reserved and meaningful Houdini names
 
