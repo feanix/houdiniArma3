@@ -425,7 +425,7 @@ Selections that include proxy points are split between the mesh group and the pr
 | UV embedded in face data (`data_p3d.py:452-455`) | = set 0 unless `a3ob_face_uv` exists | A3OB takes set 0 from face data and overrides it with TAGG 0 (`data_p3d.py:702-710`); on export it writes layer 0 into face data (`export_p3d.py:446-460`). The importer creates `a3ob_face_uv` only if face UVs ≠ TAGG 0, or if TAGG 0 is absent and some face UV is non-zero. Fixtures: face UV == TAGG 0 everywhere (S2), and the LODs without a TAGG have all-zero face UVs (S4), so no `a3ob_face_uv` is created. |
 | no `#UVSet#` TAGG | no `uv*` attribute | export writes no TAGG and (0,0) face UVs |
 
-The A3OB rule that drops UVs on non-UV LOD types (`export_p3d.py:275-277`, `utilities/data.py:150`) is an export option, off for a lossless round trip.
+The A3OB rule that drops UVs on non-UV LOD types (`export_p3d.py:275-277`, `utilities/data.py:150`) is an export option, off for a lossless round trip. Revision 5 specifies it in §18.4.
 
 ## 9. Normals and sharp edges
 
@@ -755,7 +755,7 @@ Lossless order requires the proxy vertices and faces to be the **tail** of the v
 5. **Expand copies**, then check for duplicate signatures.
 6. **Write.** Append `a3ob_file_trailing` if it applies (§3.3). `a3ob_lod_uid` is not written (§3.5).
 
-Export options that change data (lowercase: texture and material paths, selection names, property names and values, §5 Paths; relative paths, sort sections, sort LODs, auto-components `export_p3d.py:294-303`, renumber components, Czech translation `export_p3d.py:591-593`) all default to off. They are applied in `a3ob_core` after collection.
+Export options that change data (lowercase: texture and material paths, selection names, property names and values, §5 Paths; relative paths, sort sections, sort LODs, auto-components `export_p3d.py:294-303`, renumber components, Czech translation `export_p3d.py:591-593`) all default to off. They are applied in `a3ob_core` after collection. Revision 5 specifies renumber components, Czech translation and drop UVs in §18.
 
 ## 17. Validator and artist tooling (M3/M4 plan)
 
@@ -872,6 +872,269 @@ HDAs are deferred (D3), so M3/M4 ship Python tools that need no `.hda`:
   copies (§13.3).
 - **Unpack LOD k / Pack LODs helpers** (D7, OQ-7), which unpack one LOD at a time so that detail attributes stay detail
   (§3.1).
+
+## 18. Revision 5: the three export options of D17 (renumber, Czech names, drop UVs)
+
+**Status: normative for task #21 (the build).** Owner decision D17: build all three as export options, off in the
+`Lossless` preset, on in `Arma 3 release` exactly where A3OB enables them by default. This section is the spec for
+them; nothing here is built yet. It replaces the one-line mentions in §8 (last paragraph) and §16 (last paragraph).
+Surveys behind it: `docs/design/evidence/d17/d17_survey.py` (output in `d17_survey_out.txt`).
+
+**Source paths.** In this section, `file:line` is relative to `.reference/Arma3ObjectBuilder/Arma3ObjectBuilder/` (A3OB
+v2.5.1 @ 9f2b8bc), as in the rest of the spec. A port path is written `port: path`, relative to `python/a3ob_houdini/`.
+
+### 18.1 Overview, names, defaults
+
+| | Renumber components | Czech selection names | Drop UVs |
+|---|---|---|---|
+| What it does | renames `component<digits>` selections to `component01`, `component02`, ... | renames English selection names to the Czech names of the game | removes UV data from LODs of types that do not use it |
+| A3OB option | `renumber_components` (`ui/import_export_p3d.py:298-301`, panel `:472`) | `translate_selections` (`ui/import_export_p3d.py:307-310`, panel `:474`) | **none**: always on, not an option (`io/export_p3d.py:275-277`, called at `:384` and `:389`) |
+| A3OB default | off (no `default`, so `False`) | off (no `default`, so `False`) | always on |
+| `ExportOptions` field (port: `p3d_export/options.py`) | `renumber_components: bool = False` | `czech_names: bool = False` | `drop_uvs: bool = False` |
+| P3D Export parameter (ux-tools.md 5.9) | `renumber` | `czech` | `dropuvs` |
+| Preset JSON key | `renumber_components` | `czech_names` | `drop_uvs` |
+| `Lossless` | off | off | off |
+| `Arma 3 release` | **off** | **off** | **on** |
+
+**Preset mapping (D17 "on where A3OB enables them by default").** A3OB turns exactly one of the three on by default:
+UV dropping, which it does unconditionally. Renumber and Czech translation are plain `BoolProperty`s with no `default`
+(`ui/import_export_p3d.py:298-310`), so they are off. So `Arma 3 release` is the existing four (lowercase, relative
+paths, sort sections, auto-components) **plus `drop_uvs`**, and both other options stay off in both built-in presets.
+(This reads D17 literally. The other reading, "all three on in the release preset", is not what A3OB does.)
+
+**Storage.**
+
+- The three fields join `ExportOptions` (all `False`), so `settings.PRESET_KEYS` (derived from the dataclass fields)
+  accepts them in user presets with no further change. A stored preset that leaves a key out means `False`
+  (`settings.options_for`), so presets saved before #21 keep working and read the new options as off.
+- `settings.py`: add the three keys to `_ALL_OFF` (all `False`), and `drop_uvs=True` to `BUILTIN_PRESETS["Arma 3 release"]`.
+- The settings JSON has them like any other option, for example `{"presets": {"mine": {"drop_uvs": true}}}`. Types are
+  checked as for the other bool options.
+- `nodes/p3d_export.py`: add the parms `renumber`, `czech`, `dropuvs` (toggle, off) to `SPEC` and to `OPTION_PARMS`, map
+  them in `preset_values` and in `_export_common.options_from` (`values.get("renumber", False)`, and so on). Quick
+  Export and Batch folder convert take their options from `settings.options_for`, so they need no change.
+
+**Pipeline position.** A3OB order, per LOD: components are generated (`io/export_p3d.py:386`, `:391`, inside
+`get_lod_data`), UVs are dropped for the LOD's own type (`:384`, `:389`), then `process_lod` builds the TAGGs
+(`:641`), renumbers (`:643-645`), translates (`:647-649`), and `write_file` lowercases the whole file last
+(`:720-722`). The port keeps that order:
+
+1. validate the Houdini data (§17.1), which therefore **sees the UVs before they are dropped** (A3OB validates at
+   `:356-360`, before `cleanup_uvs`);
+2. build the mesh, dropping UVs if the LOD's type says so (§18.4);
+3. collect selections, then auto-components (`port: p3d_export/lod_build.py`, `selections.py`);
+4. order the TAGGs (`taggs.order_items`, the `a3ob_tagg_order` hint);
+5. **renumber** the selection TAGGs in that written order (§18.2);
+6. **translate** selection names (§18.3);
+7. lowercase (§5 Paths).
+
+Steps 5 to 7 act on the **written name** of a selection. The `a3ob_tagg_order` token of a selection stays its
+original group name (`taggs.Item.token`), so the hint still finds it after a rename. Because renumber and translation
+compare case-insensitively and both write lowercase names, the file is the same whether lowercase runs before or
+after them. The collision warnings (§18.3, and the existing lowercase one) are worked out on the names as they were
+before the renames and on the final names; see each rule.
+
+### 18.2 Renumber components
+
+**A3OB rule** (`io/data_p3d.py:651-660`, called at `io/export_p3d.py:643-645`):
+
+```python
+counter = 1
+for tagg in self.taggs:
+    if not re.match(r"component\d+", tagg.name, re.IGNORECASE):
+        continue
+    tagg.name = "component%02d" % counter
+    counter += 1
+```
+
+What that means, rule by rule (each is normative for the port):
+
+| Rule | Detail |
+|---|---|
+| Which names | `re.match` anchors at the **start** only: `component` then one or more digits, any case. `Component1`, `COMPONENT07`, `component01_hull` and `component12abc` all match. `components`, `component`, `component_1`, `my_component1` and `__component1` do not. Use `re.match(r"component\d+", name, re.IGNORECASE)` exactly. |
+| New name | `"component%02d" % n`: lowercase, at least two digits, and **no suffix**: `component01_hull` becomes `component01` and the suffix is lost. From 100 on it grows (`component100`). |
+| Numbering | `n` starts at 1 **per LOD** (the counter is local to the call) and counts up in the order the TAGGs are **written to the file**. It is not sorted by the old number: if the written order is `Component03`, `Component01`, they become `component01`, `component02`. |
+| Which LOD types | **All of them.** There is no LOD-type test in A3OB's renumber, so a Visual LOD with a selection named `component1` is renamed too. |
+| What changes | Only the name. Vertex and face bytes, order, active byte and every other TAGG are untouched. |
+| Result is unique | Yes: every matching name gets its own number, so two matches never end up equal. A name that does not match (`component`) cannot equal `componentNN`. |
+| What does not fix | It cannot split a selection that already merged two parts. Houdini groups are by name, so two parts that both have group `Component01` are one selection before the exporter sees them (A3OB has the same limit: Join merges vertex groups by name, `io/export_p3d.py:176`). The option only repairs the **names** (gaps, mixed case, duplicates that differ in case or suffix). |
+| Interaction with the selection mask | Renumber sees only the selections that the mask let through (§7.2, with the `a3ob_tagg_order` exception). A group left out by the mask is not renamed and does not take a number, so the numbers stay dense over what is exported. |
+| Interaction with auto-components | Auto-components runs first (`io/export_p3d.py:294-303`; `port: selections.add_auto_components`) and makes `Component01`... (`utilities/structure.py:27`, `"Component%02d" % (i + 1)`). With renumber on those are then renamed to lowercase `component01`... in the same order. That is A3OB's behaviour and is kept: renumber lowercases a name even when the lowercase option is off. For fewer than 100 auto components the numbers do not change. |
+| Interaction with the Geometry check | The validator needs a `component<digits>` selection on Geometry-type LODs (A3OB `ValidatorComponentLOD`, §17.1). It runs before the rename, on the Houdini data, and renumber never adds or removes a match, so the result is the same either way. |
+| Blobs | Opaque TAGGs (§11.2) are never renamed and take no number. A blob can only be a duplicate or empty selection name, so a duplicate `Component01` blob can remain next to the renamed live one. The existing duplicate-name warning (§7.3, §17.1) covers it. |
+| Proxy and other names | `proxy:...` selections, `-proxies`, and names starting with `#` or `@` never match (the regex needs `component` at the start). |
+| Weights | A selection's weight and face bytes belong to the selection, not to the name, so they move with the rename. |
+
+**Round trip.** Off: no effect. On: **L0** when the file's component selections are already `component01`,
+`component02`, ... in written order (lowercase, dense, no suffix); **L1** otherwise (the names change, the bytes
+differ). Both fixtures are L0 with renumber alone: every component name is already dense and lowercase in the four
+LODs that have any (`sample_1_character` LODs 4 and 8; `sample_2_crate` LODs 3 and 4; survey output).
+
+**Messages.** One info line per LOD that renamed anything: `LOD 'Geometry': renamed 3 component selections`. No
+warning: the option is explicit.
+
+### 18.3 Czech selection names (English to Czech)
+
+**What A3OB does.** `translate_selections(p3dm)` (`io/export_p3d.py:591-593`, called at `:647-649`):
+
+```python
+for tagg in p3dm.taggs:
+    tagg.name = data.translations_english_czech.get(tagg.name.lower(), tagg.name)
+```
+
+`translations_english_czech` is built at `utilities/data.py:645` as `{v: k for k, v in translations_czech_english.items()}`
+from the table at `utilities/data.py:482-642`.
+
+| Rule | Detail |
+|---|---|
+| Direction | **Export: English to Czech** (the inverse of the table). The table itself is Czech to English. A3OB uses the forward direction on import (`io/import_p3d.py:290-292`, option at `ui/import_export_p3d.py:79-81`) and in a Vertex Groups utility (`ui/tool_utilities.py:193-208`); the port offers **neither** (ux-tools.md 5.1, Q-11 in D14), so only the inverse is built. |
+| Matching | **Whole name, case-insensitive, exact.** The lookup key is `name.lower()`; the table keys are all lowercase (survey). No prefix, suffix, regex or trimming: `wheel_1_1` matches, `wheel_1_11`, `wheel_1_1_x` and `wheel_1_1 ` do not. |
+| Hit | The name becomes the table's Czech key, which is lowercase, even with the lowercase option off. |
+| Miss | The name is kept unchanged, with its case. Names already in Czech miss and stay (no double translation; the English side and the Czech side share no name, survey). |
+| Which names | A3OB loops over all TAGGs, but only selections can match, because every table key starts with a letter and `#...#` TAGG names cannot. The port translates the **live selection TAGGs** only, in every LOD type. Proxy selections (`proxy:...`) cannot match; skip them. Blobs are not touched. |
+| Where | After renumber (so `component01` is never a table hit; no table key starts with `component`), before lowercase. |
+| Table size | 144 Czech to English entries, 141 distinct English names (survey). 30 Czech keys contain a space (for example `usti hlavne`, `konec hlavne1`, `spice rakety 1`, `stopa pll`). A P3D name may hold a space but a Houdini group name may not, so a Czech name can only appear in the file, never as a group; the lookup therefore runs on the **decoded** name (§7.3) and the result is written as is. |
+
+**Collisions.**
+
+1. **Many-to-one in the table (A3OB bug kept).** Three English names have two Czech sources each, and the inverse dict
+   keeps the **last** one in table order:
+
+   | English | Czech keys in table order | Export writes |
+   |---|---|---|
+   | `hatch_driver_axis` | `osa_poklop_driver`, `poklop_driver_axis` | `poklop_driver_axis` |
+   | `hatch_commander_axis` | `osa_poklop_commander`, `poklop_commander_axis` | `poklop_commander_axis` |
+   | `hatch_gunner_axis` | `osa_poklop_gunner`, `poklop_gunner_axis` | `poklop_gunner_axis` |
+
+   So `osa_poklop_*` is import-only. The port builds the inverse the same way (`dict((english, czech) for czech, english in
+   table.items())`, later wins), not by hand-written exceptions, and a test pins these three results.
+2. **Two selections become one name.** Two selections whose translated names are equal, or a translated name that equals
+   a selection that did not translate (for example a LOD that has both `turret` and a ready-made `otocvez`). A3OB
+   writes both without a word. The port writes both too (the data is not lost) and adds a **warning** per pair:
+   `LOD 'Memory': Czech translation makes the selection names 'turret' and 'otocvez' equal. Both are still written.`
+   (fix: "Rename one of them"). The comparison is case-insensitive, like the lowercase collision warning of D14 Q-12
+   (§5 Paths, §17.1); #21 adds the row to the §17.1 warning list beside the lowercase one, after #19's edits to that
+   list are merged.
+3. **Typos in the table (kept, one addition).** Two English values are misspelled in A3OB: `properller_a_axis` and
+   `properller_b_axis` (`utilities/data.py:627-628`, Czech keys `osavrtulea` and `osavrtuleb`). Rule: keep the A3OB
+   spelling (an A3OB user's file has it), and **add two inverse-only aliases** `propeller_a_axis` and `propeller_b_axis`
+   that map to the same Czech names. **(change)** The aliases collide with nothing (no key or value is `propeller_*_axis`)
+   and are not part of the forward table. If the owner prefers strict parity, drop the aliases; nothing else depends on them.
+
+**Where the table lives (for #21).** One data module, `python/a3ob_houdini/p3d_export/czech_names.py` (pure Python, no
+`hou`; or `python/a3ob_core/p3d/` if the lead prefers the pure layer; the options are applied after collection either
+way, §16). It holds `CZECH_TO_ENGLISH` (the 144 entries, in A3OB's order, with A3OB's comments as group headings),
+`ENGLISH_TO_CZECH` built as above (plus the two aliases) and `translate_name(name) -> str`. The header comment says it is
+derived from A3OB `utilities/data.py` lines 482-645 (v2.5.1 @ 9f2b8bc), was modified (moved out of Blender's add-on,
+aliases added), and carries the SPDX line. The table is copied verbatim; do not retype it.
+
+**Licence and credit.** The table is part of A3OB's source, which is GPL-3.0-or-later (`LICENSE`; `blender_manifest.toml:12`
+`license = ["SPDX:GPL-3.0-or-later"]`), the same as this project, so copying it is allowed under the licence. The
+file gives no separate origin or author for the table: it sits in `utilities/data.py` under the add-on's own
+authorship (MrClock, with Alwarren's ArmaToolbox as the base), and A3OB's changelog records the import translation as
+added in v2.2.0 (`CHANGELOG.md:201`). So the credit is to A3OB and its authors, and this spec **does not claim a
+finer origin**. NOTICE.md gets a "Selection name translation table" paragraph (written in this task). Where the
+Czech names themselves come from (the game's own model and config conventions) is not stated upstream.
+
+**Round trip.** Off: no effect. On: **L1** for any file that has a selection in the table (the name changes, so the bytes
+do); L0 for a file with no table hit. Fixture survey: `sample_2_crate` has **no** selection name that is an English
+table name, so it is L0 with the option on. `sample_1_character` has three (`aimpoint`, `body`, `weapon`, which become
+`zamerny`, `telo`, `zbran`), so it is L1 with the option on, and its test expects exactly those three renames and
+nothing else. A file exported with the option on and imported again keeps the Czech names (the port has no import
+translation).
+
+### 18.4 Drop UVs on LOD types that do not use them
+
+**A3OB rule.** `cleanup_uvs(obj)` (`io/export_p3d.py:275-277`):
+
+```python
+if int(obj.a3ob_properties_object.lod) not in data.lod_allow_uvs:
+    utils.clear_uvs(obj)        # removes every UV layer: utilities/generic.py:162-166
+```
+
+It runs on every LOD object (and on each LOD copy, with the **copy's** LOD type: `:384`, `:389`) after validation, so
+the validator sees the UVs. `lod_allow_uvs = {*lod_visuals, *lod_shadows, LOD.GROUNDLAYER}` (`utilities/data.py:150`).
+
+**LOD types that keep UVs** (`utilities/data.py:114-129`, `:150`; numbers from the `LOD` class at `:67-101`; names as in
+`a3ob_core.p3d.LodType`):
+
+| Group | Types (number) |
+|---|---|
+| `lod_visuals` | Visual (0), View Gunner (1), View Pilot (2), View Cargo (3), View Commander (18), Unknown (-1) |
+| `lod_shadows` | Shadow (4), Shadow View Cargo (26), Shadow View Pilot (27), Shadow View Gunner (28) |
+| extra | Ground Layer (31) |
+
+**LOD types that drop UVs: every other type**, that is: Edit (5), Geometry (6), Geometry Buoyancy (7), Geometry PhysX
+(8), Memory (9), Land Contact (10), Roadway (11), Paths (12), Hit-points (13), View Geometry (14), Fire Geometry
+(15), View Cargo Geometry (16), View Cargo Fire Geometry (17), View Commander Geometry (19), View Commander Fire
+Geometry (20), View Pilot Geometry (21), View Pilot Fire Geometry (22), View Gunner Geometry (23), View Gunner Fire
+Geometry (24), Subparts (25), Wreckage (29), Underground (30), Navigation (32). (A3OB's changelog says "only exported
+for visual and shadow LODs", `CHANGELOG.md:224`; the code also keeps Ground Layer, and the code is the rule, because
+`T2-GL-UV` needs a UV set there, §17.1.1.) The set is a constant `UV_LOD_TYPES = frozenset({0, 1, 2, 3, 18, -1, 4, 26,
+27, 28, 31})` in the port; a type not in it drops UVs. The decision uses the type the LOD is **written** with, which
+for a LOD copy (`a3ob_lod_copy_*`, §3.3) is the copy's own type.
+
+**What is dropped.** All of the UV data of the written LOD, because A3OB removes the layers before building anything:
+
+- every `#UVSet#` TAGG (set 0 included): none is written;
+- the **face-data UVs**: the UV block of each face record is written as zeros. This is what A3OB does without a UV layer
+  (`io/export_p3d.py:446-462`: `(0, 0)` when `uv_layer` is `None`), which is the same as the "no `#UVSet#` TAGG" row
+  of §8 (the file value `(0,0)`; the V flip does not apply, there is no value to flip). In the port: `record_uvs` all
+  `0.0` and `uv_sets` empty in `mesh_build.build_file_mesh` and its proxy path (both read `uv`, `uv<k+1>` and
+  `a3ob_face_uv`);
+- **blob** TAGGs named `#UVSet#` (repeated-id blobs, §8), because they are UV data too. Their drop is silent for the
+  blob-count warning (§11.2): the "opaque TAGGs dropped because the mesh changed" warning is about count mismatch and
+  does not apply.
+
+Not dropped: the Houdini geometry (the attributes `uv*` stay on the node's output, since the export never edits the
+input), sharp edges, normals, mass, selections, properties.
+
+**Proxy triangles.** A3OB clears proxy UVs unconditionally on every LOD (`io/export_p3d.py:192`, with flags zeroed at
+`:195-197`), which §13.5 records. The new option does not change that rule; it only applies to the LOD's mesh and the
+proxies' UVs follow whatever §13.5 says.
+
+**Validator.** Rules that read UVs (`T2-UV2`, `T2-GL-UV`, `T2-GL-UVVALUES`, §17.1.1) run on the Houdini data **before**
+the drop, as in A3OB, so a Geometry LOD with 3 UV sets still gets `T2-UV2` while `drop_uvs` is on. #21 adds one **info**
+line per exported file: `Dropped the UVs of 4 LODs (Geometry, Geometry Buoyancy, Memory, Roadway)`.
+
+**Round trip.** Off: no effect. On: **L1** for any file that has a UV set or a non-zero face UV on a dropping type. The
+survey: none of the character's LODs of a dropping type has a UV set or a non-zero face UV, so **`sample_1_character` is L0 with `drop_uvs` alone**. In `sample_2_crate`, LODs 3 (Geometry), 4 (Geometry Buoyancy), 5 (Memory) and 6 (Roadway) carry
+a `#UVSet#` 0 (and LODs 3, 4, 6 non-zero face UVs), so the crate is **L1** with it on. So the L0 test with
+`drop_uvs` alone uses the character, and the crate tests the drop (§18.5).
+
+### 18.5 Test ideas for #21
+
+Pure Python (no `hou`), in `tests/`; each names what it catches.
+
+| Test | Catches |
+|---|---|
+| Renumber rule table: `Component3`, `component01_hull`, `COMPONENT07`, `components`, `component`, `component_1`, `__component1`, `proxy:...` against the regex | a wrong match rule (prefix versus whole name, case) |
+| `Component03`, `Component01` written in that order become `component01`, `component02` | numbering by old number instead of written order |
+| Counter restarts per LOD; a Visual LOD is renamed too; `component99` after 99 matches gives `component100` | per-file counter; LOD-type filter that A3OB does not have |
+| Renumber with the mask excluding a group, and with a hint order that differs from canonical order | mask and order interaction; hint token lost after a rename |
+| Auto-components plus renumber on a LOD with 3 pieces: `component01..03` in order | order of the two steps |
+| Both fixtures, renumber alone: bytes equal the source (L0) | a rename that changes dense lowercase names |
+| Czech: `Turret` becomes `otocvez`; `wheel_1_1` becomes `kolol1`; `wheel_1_11`, `kolol1`, `wheel_1_1_x` are unchanged; `Usti_Hlavne`-style near misses unchanged; case of a miss kept | wrong matching (prefix, case) |
+| The three many-to-one results of §18.3 | an inverse built with the wrong winner |
+| `turret` + `otocvez` in one LOD: both written, one collision warning | silent merge, or a hard stop |
+| `propeller_a_axis` (alias) and `properller_a_axis` both give `osavrtulea` | the alias rule |
+| Crate with Czech alone: L0. Character with Czech alone: only `aimpoint`, `body`, `weapon` become `zamerny`, `telo`, `zbran` (every LOD that has them), all else byte-equal | a rename of names that are not table hits |
+| Drop UVs: per-type table test over all 33 types against `UV_LOD_TYPES` | a type on the wrong side |
+| Crate with `drop_uvs`: LODs 3 to 6 have no `#UVSet#` and zero face UV; LODs 0 to 2 are byte-equal to the source; the character is L0 | partial drop; V-flip applied to zeros; proxies |
+| LOD copy of a Visual LOD written as a Geometry LOD with `drop_uvs` on: its UVs are dropped, the original keeps them | decision taken on the source type instead of the written type |
+| `#UVSet#` blob on a Geometry LOD with `drop_uvs` on is not written, without the "mesh changed" warning | blob path |
+| Presets: `Lossless` all three `False`; `Arma 3 release` `drop_uvs` `True` and the other two `False`; a stored preset without the keys reads `False`; unknown value types are reported like other options | the preset mapping of §18.1 |
+| hou test (skips under CPython): the P3D Export node has the three parms, Apply fills them from `Arma 3 release`, a Lossless export is unchanged | node wiring |
+| Pipeline order: renumber then Czech then lowercase gives `component01`, not a table hit; with the lowercase option on, output equals the output with it off for all names these two options touch | step order |
+
+### 18.6 Open points for the owner or lead (none block #21)
+
+- `sort_lods` is **off** in `Arma 3 release` today although A3OB always sorts LODs (`io/export_p3d.py:716`, ux-tools.md
+  5.9). D17 does not cover it, so this task leaves it.
+- A3OB generates components for all 14 `lod_geometries` types (`utilities/data.py:132-147`, used at `io/export_p3d.py:295`);
+  the port's `selections.GEOMETRY_TYPES = (6, 7, 8)` covers only three. Not part of D17; noted because the renumber
+  rule above is written for all LOD types.
+- The two `propeller` aliases of §18.3 are a small addition to A3OB's data; say if you want strict parity.
 
 ## Resolved (D7-D9)
 

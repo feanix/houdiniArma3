@@ -1,0 +1,26 @@
+translation table entries: 144
+distinct English names: 141
+  many-to-one: hatch_driver_axis <- ['osa_poklop_driver', 'poklop_driver_axis'] => the inverse dict keeps poklop_driver_axis
+  many-to-one: hatch_commander_axis <- ['osa_poklop_commander', 'poklop_commander_axis'] => the inverse dict keeps poklop_commander_axis
+  many-to-one: hatch_gunner_axis <- ['osa_poklop_gunner', 'poklop_gunner_axis'] => the inverse dict keeps poklop_gunner_axis
+English names that are also Czech keys: []
+keys or values with upper case: []
+keys with a space: 30
+sample_1_character: selection names that are English table names (export would rename): ['aimpoint', 'body', 'weapon']
+sample_2_crate: selection names that are English table names (export would rename): []
+sample_1_character LOD 0 VISUAL 1.0: components 0 (identity renumber: n/a), UVSet ids [0], non-zero face UV values 64161, drop UVs changes it: False
+sample_1_character LOD 1 VISUAL 2.0: components 0 (identity renumber: n/a), UVSet ids [0], non-zero face UV values 16065, drop UVs changes it: False
+sample_1_character LOD 2 VIEW_PILOT 0.0: components 0 (identity renumber: n/a), UVSet ids [0], non-zero face UV values 64158, drop UVs changes it: False
+sample_1_character LOD 3 SHADOW 0.0: components 0 (identity renumber: n/a), UVSet ids [], non-zero face UV values 0, drop UVs changes it: False
+sample_1_character LOD 4 GEOMETRY 0.0: components 1 (identity renumber: True), UVSet ids [], non-zero face UV values 0, drop UVs changes it: False
+sample_1_character LOD 5 MEMORY 0.0: components 0 (identity renumber: n/a), UVSet ids [], non-zero face UV values 0, drop UVs changes it: False
+sample_1_character LOD 6 LANDCONTACT 0.0: components 0 (identity renumber: n/a), UVSet ids [], non-zero face UV values 0, drop UVs changes it: False
+sample_1_character LOD 7 HITPOINTS 0.0: components 0 (identity renumber: n/a), UVSet ids [], non-zero face UV values 0, drop UVs changes it: False
+sample_1_character LOD 8 FIRE_GEOMETRY 0.0: components 11 (identity renumber: True), UVSet ids [], non-zero face UV values 0, drop UVs changes it: False
+sample_2_crate LOD 0 VISUAL 1.0: components 0 (identity renumber: n/a), UVSet ids [0], non-zero face UV values 1008, drop UVs changes it: False
+sample_2_crate LOD 1 VISUAL 2.0: components 0 (identity renumber: n/a), UVSet ids [0], non-zero face UV values 432, drop UVs changes it: False
+sample_2_crate LOD 2 SHADOW 0.0: components 0 (identity renumber: n/a), UVSet ids [], non-zero face UV values 0, drop UVs changes it: False
+sample_2_crate LOD 3 GEOMETRY 0.0: components 2 (identity renumber: True), UVSet ids [0], non-zero face UV values 138, drop UVs changes it: True
+sample_2_crate LOD 4 GEOMETRY_BUOY 0.0: components 1 (identity renumber: True), UVSet ids [0], non-zero face UV values 69, drop UVs changes it: True
+sample_2_crate LOD 5 MEMORY 0.0: components 0 (identity renumber: n/a), UVSet ids [0], non-zero face UV values 0, drop UVs changes it: True
+sample_2_crate LOD 6 ROADWAY 0.0: components 0 (identity renumber: n/a), UVSet ids [0], non-zero face UV values 20, drop UVs changes it: True
