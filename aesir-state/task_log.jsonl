@@ -380,3 +380,17 @@
 {"actor": "lead", "id": 380, "task_id": 30, "text": "status in_review -> approved (rev-30-a approved; no changes/ dir in repo so no fragment)", "ts": "2026-11-03T19:10:03Z"}
 {"actor": "lead", "id": 381, "task_id": 30, "text": "gate full PASS 711a6099 61.8s (lock wait 0s; steps: python scripts/run_tests.py -q 3.1s, Houdini Indie/bin/hython.exe\" scripts... 58.7s; run 61.8s) | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T19:11:09Z"}
 {"actor": "lead", "id": 382, "task_id": 30, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T19:11:09Z"}
+{"actor": "lead", "id": 383, "task_id": 30, "text": "merged by lead (queued by lead)", "ts": "2026-11-03T19:11:11Z"}
+{"actor": "lead", "id": 384, "task_id": 30, "text": "queue: merged at eb3627f; lock wait 0s; steps: python scripts/run_tests.py -q 3.1s, Houdini Indie/bin/hython.exe\" scripts... 58.7s; run 61.8s", "ts": "2026-11-03T19:11:11Z"}
+{"actor": "aesir-hook", "id": 385, "task_id": 35, "text": "status open -> in_progress (started by impl-35-a)", "ts": "2026-11-03T19:12:40Z"}
+{"actor": "advisor", "id": 386, "task_id": 29, "text": "Advisor verified on main eb3627f: 578 tests OK on CPython (235 skips) and hython. Findings reviewed with the owner: decisions D23-D25.", "ts": "2026-11-03T19:15:47Z"}
+{"actor": "advisor", "id": 387, "task_id": 29, "text": "status merged -> verified (advisor verified on eb3627f)", "ts": "2026-11-03T19:15:47Z"}
+{"actor": "advisor", "id": 388, "task_id": 30, "text": "Advisor verified on main eb3627f: 578 tests OK on CPython (235 skips) and hython. Findings reviewed with the owner: decisions D23-D25.", "ts": "2026-11-03T19:15:47Z"}
+{"actor": "advisor", "id": 389, "task_id": 30, "text": "status merged -> verified (advisor verified on eb3627f)", "ts": "2026-11-03T19:15:47Z"}
+{"actor": "aesir-hook", "id": 390, "task_id": 36, "text": "status open -> in_progress (started by impl-36-a)", "ts": "2026-11-03T19:17:06Z"}
+{"actor": "aesir-hook", "id": 391, "task_id": 38, "text": "status open -> in_progress (started by impl-38-a)", "ts": "2026-11-03T19:17:06Z"}
+{"actor": "impl-35-a", "id": 392, "task_id": 35, "text": "gate quick PASS 573b4190 60.2s (lock wait 0s; steps: python scripts/run_tests.py -q 2.5s, Houdini Indie/bin/hython.exe\" scripts... 57.7s; run 60.2s) | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T19:20:37Z"}
+{"actor": "lead", "id": 393, "task_id": 35, "text": "status in_progress -> in_review (rev-35-a approved (wf_186aba31-513))", "ts": "2026-11-03T19:23:30Z"}
+{"actor": "lead", "id": 394, "task_id": 35, "text": "status in_review -> approved (rev-35-a approved (wf_186aba31-513))", "ts": "2026-11-03T19:23:31Z"}
+{"actor": "lead", "id": 395, "task_id": 35, "text": "gate full PASS 68400017 64.2s (lock wait 0s; steps: python scripts/run_tests.py -q 3.2s, Houdini Indie/bin/hython.exe\" scripts... 61.0s; run 64.2s) | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T19:24:38Z"}
+{"actor": "lead", "id": 396, "task_id": 35, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T19:24:38Z"}
