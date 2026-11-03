@@ -11,3 +11,7 @@ quick = [
     "python scripts/run_tests.py -q",
     "\"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scripts/run_tests.py -q",
 ]
+
+[machine]
+# D12 (owner): skip the old machine-wide one-gate lock; gates still take a slot in the shared worker budget.
+legacy_lock = false
