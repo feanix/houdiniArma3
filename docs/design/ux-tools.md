@@ -244,8 +244,9 @@ file with no edits is byte-identical after export.
 | Info | "2 replaced, 7 passed through, 1 added." |
 | An input has no `a3ob_lod_type` | Error: "Input 3 has no LOD type. Add a LOD Properties node." |
 | An input is a P3D geometry (packed LODs) in the LOD slots | Error: "Input 2 is already a P3D geometry. Use it as the base input." |
-| Two inputs replace the same base LOD | Warning: "Resolution 1 is replaced twice; the last input wins." |
-| Several base LODs have the same stored signature | Warning, the first one is replaced. |
+| Two LOD inputs have the same signature | Warning, as spec 3.2 says: the first one replaces the first base LOD with that signature, a further one replaces the next base duplicate, if one is left, and is appended otherwise. "Resolution 1: 2 LOD inputs have the same signature (inputs 2, 3)." |
+| Several base LODs have the same stored signature | Warning, the first one is replaced and the others are kept. |
+| A base LOD to replace is not a PackedGeometry prim (for example PackedDisk) | Error naming the base LOD and the prim type. Replace Matching LODs off passes such a prim through. |
 
 **Notes.**
 
@@ -265,7 +266,7 @@ file with no edits is byte-identical after export.
 | Input | Geometry (normally a LOD geometry). |
 | Output | The same geometry with the LOD detail attributes set. |
 | Reads | `a3ob_lod_type`, `a3ob_lod_resolution`, `a3ob_prop_names`, `a3ob_prop_values`, `a3ob_prop_raw`, `a3ob_lod_copy_types`, `a3ob_lod_copy_resolutions` (only for the Read from Input button and the Add mode). |
-| Writes | `a3ob_spec_version` (1), `a3ob_lod_type`, `a3ob_lod_resolution`, `a3ob_lod_copy_types`, `a3ob_lod_copy_resolutions`, `a3ob_prop_names`, `a3ob_prop_values`, and `a3ob_prop_raw` (kept parallel; dropped when no entry has a tail). It never writes `a3ob_lod_signature`; an imported one stays and the export decides whether it still fits (§3.4). It does not touch `a3ob_lod_flags`. |
+| Writes | `a3ob_spec_version` (1), `a3ob_lod_type`, `a3ob_lod_resolution`, `a3ob_lod_copy_types`, `a3ob_lod_copy_resolutions`, `a3ob_prop_names`, `a3ob_prop_values`, and `a3ob_prop_raw` (kept parallel; dropped when no entry has a tail). It keeps a **stored** `a3ob_lod_signature` in step with the type and resolution (§3.4): bits that still decode to the new type and resolution stay as they are; otherwise they are re-encoded with `a3ob_core`. A LOD with no stored signature stays without one. It does not touch `a3ob_lod_flags`. |
 
 | Parameter | Parm name | Default | Notes |
 |---|---|---|---|
@@ -273,16 +274,18 @@ file with no edits is byte-identical after export.
 | Set type and resolution | `settype` | on | Off: leave the input's type and resolution alone and only edit properties and copies. |
 | LOD type | `lodtype` | `Resolution` | Menu of all types from `a3ob_core` `LOD_TYPES`, by display name (`Resolution`, `View - Gunner`, `Shadow Volume`, `Geometry`, `Memory`, ..., `Unknown`). Tooltip shows the description. Nobody types the enum number (§17.2). |
 | Resolution | `resolution` | `1` | Float, 0 or more. Shown for types that carry a resolution (`has_resolution`). For `Unknown` the label is "Signature value". |
-| Signature (read-only) | `signature` | computed | The value `encode_signature` gives, and the LOD name next to it. |
 | Property mode | `propmode` | `Add to input` | `Add to input`: entries below are added; an entry with the same name (any case) replaces the input's. `Replace all`: only the entries below remain. |
 | Properties | `props` (multiparm) | 0 | Rows of `prop_name#` and `prop_value#`. Menu "Add common" fills a row from the presets. |
 | LOD copies | `copies` (multiparm) | 0 | Rows of `copy_type#` (the same menu) and `copy_res#`. A copy is the same mesh written under another signature (A3OB's "Copies"). |
+
+There is no signature parameter. The signature, when the LOD has a stored one, is shown in the info message.
 
 **Messages.**
 
 | Case | Surface |
 |---|---|
 | Info | "Resolution 1, signature 1, 2 properties, 0 copies." |
+| The stored signature did not fit the new type and resolution | Info: "The stored signature no longer fitted the new type and resolution and was updated." |
 | `encode_signature` raises (resolution out of range for the type, or an Unknown value that collides with a known type) | Error naming the type and the allowed range. |
 | Property name or value longer than 63 characters (`props/object.py` limit, M1 `PropertyTagg`) | Error naming the row. |
 | A property or type text with a character that cp1252 cannot write | Error (D-STR, §5). |
@@ -291,7 +294,7 @@ file with no edits is byte-identical after export.
 
 **Notes.** When the artist changes the type of an imported LOD, the old `a3ob_lod_signature` is stale. The spec already
 handles this: the export compares the decoded stored bits to the current type and resolution and re-encodes if they
-differ (§3.4). The node shows a message: "Signature will be re-encoded."
+differ (§3.4). The node does that step itself for a stored signature and says so in the info message above.
 
 ### 5.5 Proxy
 
@@ -377,9 +380,9 @@ because alpha faces need it (`ui/import_export_p3d.py` line 274).
 
 | Parameter | Parm name | Default | Notes |
 |---|---|---|---|
-| Mode | `mode` | `Uniform total` | `Set on each` (every point gets Value), `Uniform total` (Value in kg is shared equally among the points), `From density` (Value in kg/m3 times the volume of each closed component, shared among its points), `Clear` (removes `a3ob_mass`), `Copy from mass`, `Copy to mass` (spec §10, D7 OQ-4 helper). The first four follow A3OB's buttons "Set Mass On Each", "Distribute Mass", "Mass From Density", "Clear All Masses". |
+| Mode | `mode` | `Uniform total` | `Set on each` (every point gets Value), `Uniform total` (Value in kg is shared equally among the points), `From density` (Value in kg/m3 times the absolute volume of each closed component, so a component with flipped faces still gets a positive mass, shared among its points), `Clear` (removes `a3ob_mass`), `Copy from mass`, `Copy to mass` (spec §10, D7 OQ-4 helper). The first four follow A3OB's buttons "Set Mass On Each", "Distribute Mass", "Mass From Density", "Clear All Masses". |
 | Value | `value` | `1` | 0 to 1,000,000. Kilograms, or kg/m3 for density. |
-| Group | `group` | empty (all points) | Points to set. A3OB works on the selected vertices. |
+| Group | `group` | empty (all points) | Points to set: a point group name or point numbers. A3OB works on the selected vertices. In density mode a closed component is used only when **all** its points are in the group; the others are ignored with the warning below. |
 | Distribution | `distribution` | `Uniform` | `Uniform`. `Weighted` (by cell volume around each point) is A3OB's slow mode; the brief marks it secondary. Not in the first version. |
 | Visualize | `visualize` | off | Writes `Cd`: blue (least) to red (most), A3OB's ramp (`props/scene.py` lines 162-215). |
 
@@ -564,7 +567,7 @@ D14). The tool changes nothing in a scene.
 | | |
 |---|---|
 | Does | Lists the point groups of the selected node's geometry by **decoded** name (`-proxies`, not `xn__proxies_cka`) with: member count, "weighted" if `a3ob_w_<enc>` exists, "faces" if a prim group of the same name exists, "proxy" if the name is a proxy name. A filter box narrows the list. |
-| Actions | **Copy name**: puts the encoded group name on the clipboard, ready to paste into a group field. **Create selection**: asks for a P3D name and a group expression, and adds a Group node that makes the encoded point group. **Delete selection**: adds a Group Delete node. **Rename**: adds a Group Rename node. |
+| Actions | **Copy name**: puts the encoded group name on the clipboard, ready to paste into a group field. **Create selection**: asks for a P3D name and the point numbers (for example `0-9`; empty: all points), and adds a Group node that makes the encoded point group. **Delete selection**: adds a Group Delete node. **Rename**: adds a Group Rename node. |
 | Creates | Nothing unless an action is chosen. Create, delete, and rename add one SOP node after the selected node (Group, Group Delete, Group Rename; all three exist, checked) and set its parameters. |
 | Edits geometry? | Never directly: cooked geometry is read-only. |
 | Version 1 form | A list dialog (`hou.ui.selectFromList`) and an input dialog. A real Python Panel comes after M4 (Q-9, D14). |

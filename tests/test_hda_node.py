@@ -95,11 +95,13 @@ class TestHdaInHython(unittest.TestCase):
         self.assertEqual(self.result["fallback_errors"], [])
         self.assertEqual(self.result["fallback_prims"], 7)
 
-    def test_a_bug_in_the_package_is_a_node_error_not_a_crash(self):
+    def test_a_kind_the_loaded_code_does_not_know_is_a_node_error_with_the_fix(self):
+        # Stale code in a long session (task 13): not a "bug in the A3OB tools", a message that says what to do.
         errors = self.result["bug_errors"]
         self.assertEqual(len(errors), 1)
         self.assertIn("no_such_kind", errors[0])
-        self.assertIn("bug in the A3OB tools", errors[0])
+        self.assertIn("not in the A3OB code that is loaded", errors[0])
+        self.assertIn("Reload A3OB", errors[0])
 
 
 if __name__ == "__main__":

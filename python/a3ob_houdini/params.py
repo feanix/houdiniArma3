@@ -28,6 +28,10 @@ TYPE_PREFIX = "a3ob_"
 #: What a button, or a menu with an action, runs when it changes.
 CALLBACK = "import a3ob_houdini.entry as e; e.button(%r, %r, kwargs)"
 
+#: The script of a menu whose items are made at the moment the menu opens (``Parm.menu_action``).
+#: Houdini evaluates it as one Python expression (``return`` is a syntax error there), so it imports inline.
+MENU_SCRIPT = "__import__('a3ob_houdini.entry', fromlist=['menu']).menu(%r, %r, kwargs)"
+
 
 @dataclass(frozen=True)
 class Parm:
@@ -45,6 +49,10 @@ class Parm:
     action: str = ""
     #: For menus: ``((token, label), ...)``. The default is a token and ``read_parms`` gives the token.
     items: Tuple[Tuple[str, str], ...] = ()
+    #: For menus whose items depend on the scene (the LODs of the input): the name of a function in the node module's
+    #: ``MENUS``. It is called as ``entry.menu(kind, name, kwargs)`` and returns ``[(token, label), ...]``. A menu
+    #: with this needs no ``items``; the default is then any token the artist may type.
+    menu_action: str = ""
     #: For int and float parameters: how many components (a colour has 4, a translate 3). The default is then a
     #: tuple. A float of size 3 is a vector: its Houdini names end in ``x``, ``y``, ``z``. Other sizes end in 1, 2, ...
     size: int = 1
@@ -63,7 +71,12 @@ class Parm:
             raise ValueError("button %r needs an action name" % self.name)
         if self.action and self.kind not in ("button", "menu"):
             raise ValueError("parameter %r: only a button or a menu has an action" % self.name)
-        if self.kind == "menu":
+        if self.menu_action and self.kind != "menu":
+            raise ValueError("parameter %r: only a menu has a menu_action" % self.name)
+        if self.kind == "menu" and self.menu_action:
+            if self.items:
+                raise ValueError("menu %r: give items or a menu_action, not both" % self.name)
+        elif self.kind == "menu":
             if not self.items:
                 raise ValueError("menu %r needs items" % self.name)
             if self.default not in [token for token, _ in self.items]:
@@ -162,6 +175,11 @@ def _template(spec: NodeSpec, parm: Parm):
         template = hou.StringParmTemplate(parm.name, parm.label, 1, default_value=(str(parm.default),))
         if parm.kind == "file":
             template.setStringType(hou.stringParmType.FileReference)
+    elif parm.kind == "menu" and parm.menu_action:
+        template = hou.StringParmTemplate(
+            parm.name, parm.label, 1, default_value=(str(parm.default),), menu_type=hou.menuType.Normal,
+            item_generator_script=MENU_SCRIPT % (spec.kind, parm.menu_action),
+            item_generator_script_language=hou.scriptLanguage.Python)
     elif parm.kind == "menu":
         template = hou.StringParmTemplate(
             parm.name, parm.label, 1, default_value=(str(parm.default),),

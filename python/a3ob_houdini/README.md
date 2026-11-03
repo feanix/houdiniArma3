@@ -23,6 +23,11 @@ A Python-type SOP starts with a copy of its first input, so a node that edits it
 `node.geometry()` (Mass and Proxy do) and must not merge the input again. A node module imports `hou` only inside a
 `try`, because the parameter tables are also read under plain Python.
 
+**Do not edit a loaded A3OB asset in Houdini.** `hou.HDADefinition.setParmTemplateGroup`, or any edit in the GUI (Type
+Properties, Apply, Save), rewrites the asset's HDA folder on disk and writes a copy to `houdini/otls/backup`. Both break
+the checked-in text files. To change a parameter, change the table in `nodes/<kind>.py` and run
+`python scripts/build_hdas.py`. `houdini/otls/backup` is in `.gitignore`; delete it if it appears.
+
 To add a node: write `nodes/<kind>.py` (`nodes.KINDS` finds it by itself), run `python scripts/build_hdas.py`, and commit
 the generated folder. A test fails when the checked-in files differ from the generated ones.
 
@@ -46,7 +51,8 @@ Type names carry no version suffix yet. A change that old scenes cannot take get
 
 | Module | Needs `hou` | Purpose |
 |---|---|---|
-| `entry` | at cook time | Frozen entry functions called by the assets. |
+| `entry` | at cook time | Frozen entry functions called by the assets: `cook`, `button`, `menu`. |
+| `reload` | no | `reload_all`: the Reload A3OB shelf tool. Forgets the A3OB modules after a package update, no restart. |
 | `params` | no | `Parm` (kinds below), `NodeSpec`, `read_parms`, `add_spare_parms`. |
 | `nodes` | no | One module per node kind; `KINDS`, `load`, `all_specs`. |
 | `hda_source` | no | Makes the HDA text files from a `NodeSpec`. |
@@ -70,6 +76,10 @@ The parameter table (`Parm`, one per parameter) knows these kinds: `string`, `fi
 - `name`, `label`, `kind`, `default`, `help` for every kind.
 - `action`: for a button, and for a menu that fills other parameters. It calls `a3ob_houdini.entry.button(kind, action, kwargs)`.
 - `items`: for a menu, `((token, label), ...)`. A menu is a string parameter and its value is the token; `default` is a token.
+- `menu_action`: for a menu whose items depend on the scene (Extract LOD lists the input's LODs). A name in the node
+  module's `MENUS`, a function `f(kwargs)` that returns `[(token, label), ...]`. It is called through
+  `a3ob_houdini.entry.menu(kind, name, kwargs)`, which never raises. Give `items` or `menu_action`, not both. The
+  value is still the token, and the artist may type any other value.
 - `size`: for `int` and `float`, how many components; `default` is then a tuple and `read_parms` gives a tuple. A float
   of size 3 is a vector (components `x`, `y`, `z`); other sizes are numbered (a colour of size 4 has `1` to `4`).
 - `minimum`, `maximum`: for `int` and `float`. An end that is given is strict (Houdini clamps to it); an end left out is

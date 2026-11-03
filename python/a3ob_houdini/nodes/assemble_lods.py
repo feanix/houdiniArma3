@@ -52,6 +52,7 @@ def cook(node, report: Report) -> None:
     base_prims = base.prims() if base is not None else []
     base_content = [lc.lod_content(prim) for prim in base_prims]
     base_signatures = [lc.detail_int(content, lc.SIGNATURE_ATTRIB) for content in base_content]
+    base_names = [lc.prim_name(prim, content) for prim, content in zip(base_prims, base_content)]
     match = match_lods(base_signatures, [item[2] for item in edited], bool(values["replace"]))
 
     out = node.geometry()
@@ -62,6 +63,12 @@ def cook(node, report: Report) -> None:
     if out.findPrimAttrib("name") is None:
         out.addAttrib(hou.attribType.Prim, "name", "")
     prims = list(out.prims())
+    for position in match.replaced:
+        if not isinstance(prims[position], hou.PackedGeometry):
+            raise UserError(format_problem(
+                base_names[position], "base LOD %d is a %s prim, and only a PackedGeometry prim can be replaced" % (
+                    position, prims[position].intrinsicValue("typename")),
+                "Unpack it and pack it again with P3D Import, or turn Replace Matching LODs off"))
     for position, number in match.replaced.items():
         _put(prims[position], edited[number], reset_transform=True)
     for number in match.appended:
