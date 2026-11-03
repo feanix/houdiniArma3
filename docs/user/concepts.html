@@ -27,11 +27,252 @@
 </header>
 <main>
 <h1>Concepts</h1>
-<p class="lead">The words and ideas used in these pages.</p>
+<p class="lead">How a model is kept in Houdini, what the presets do, and what the checks mean.</p>
 
-<p class="todo">This page is not written yet. It will hold: A glossary and a short explanation of how a model is kept in Houdini geometry.</p>
+<p>Read the quick start for your background first: <a href="quick-start-arma.html">Arma modders</a> or
+<a href="quick-start-houdini.html">Houdini users</a>. This page is for looking things up.</p>
 
-<p>In the meantime, the <a href="reference/index.html">reference</a> lists every node and shelf tool.</p>
+<ul>
+<li><a href="#p3d-geometry">A P3D file in Houdini</a></li>
+<li><a href="#lod-data">LOD data and properties</a></li>
+<li><a href="#selections">Selections</a></li>
+<li><a href="#proxies">Proxies</a></li>
+<li><a href="#mass">Mass</a></li>
+<li><a href="#surface">Textures, UVs and sharp edges</a></li>
+<li><a href="#paths">The P drive and the project root</a></li>
+<li><a href="#presets">Presets</a></li>
+<li><a href="#validator">The checks: errors and warnings</a></li>
+<li><a href="#lossless">Lossless round trips</a></li>
+</ul>
+
+<h2 id="p3d-geometry">A P3D file in Houdini</h2>
+<p>A <strong>P3D</strong> file is the model format of Arma 3. Object Builder writes it. One file holds several
+<strong>LODs</strong> (levels of detail): separate versions of the model for different jobs. Some are for looking at
+(Resolution 1 is the most detailed, Resolution 2 is simpler and is used farther away). Others are for the game engine:
+Geometry is the collision shape, Memory holds named points such as where a muzzle is, Shadow Volume casts shadows.</p>
+<p>Houdini has no such thing as a file with several models inside, so the add-on uses two shapes of geometry. Both are
+ordinary Houdini geometry. Geometry in Houdini is points, polygons and the extra data attached to them.</p>
+
+<table class="facts">
+<tr><th>P3D geometry</th><td>The whole model. It has one <strong>packed primitive</strong> for each LOD, in file order.
+A packed primitive is a whole piece of geometry stored as one item, with its own place in space. Packed items cannot be
+edited point by point until you unpack them. Each item has a <code>name</code> such as <code>Resolution 1</code> or
+<code>Geometry</code>. <kbd class="ui-node">P3D Import</kbd> and <kbd class="ui-node">Assemble LODs</kbd> output this.</td></tr>
+<tr><th>LOD geometry</th><td>One LOD as ordinary, unpacked points and polygons. You edit this.
+<kbd class="ui-node">Extract LOD</kbd> makes it from the P3D geometry, and <kbd class="ui-node">Assemble LODs</kbd> packs
+it back.</td></tr>
+</table>
+
+<p>Most A3OB nodes work on a LOD geometry. <kbd class="ui-node">P3D Export</kbd> and
+<kbd class="ui-node">Validate</kbd> accept either shape. If you give them a LOD geometry, they write a file with just
+that one LOD.</p>
+<p>To see the packed items, open the <strong>Geometry Spreadsheet</strong> (a pane that lists the points, primitives and
+attributes of the selected node) on the Primitives tab. You will see one row for each LOD.</p>
+
+<h3>Why two shapes?</h3>
+<p>A Houdini node that merges several pieces of geometry loses the per-piece data of all but the first. LOD data is
+per piece, so LODs have to stay packed until you want to edit one. Edit one LOD at a time, then let
+<kbd class="ui-node">Assemble LODs</kbd> put it back. The <kbd class="ui-parm" data-node="a3ob_assemble_lods">Replace Matching LODs</kbd>
+switch matches an edited LOD to the original one of the same stored resolution signature and keeps its place in the
+list. LODs with no match are added at the end. LODs you did not touch pass through unchanged.</p>
+
+<h3>Coordinates</h3>
+<p>Up is Y in Arma and in Houdini. The model's left stays on the same side. Arma's Z axis points the other way from
+Houdini's, so the importer negates Z and the exporter undoes it. The order of the corners of each polygon is reversed
+in the same step so that the front of every polygon stays the front. UV coordinates are flipped from top-down to
+bottom-up. You do not have to do anything. A character that looks forward in Object Builder looks toward +Z in
+Houdini.</p>
+
+<h2 id="lod-data">LOD data and properties</h2>
+<p>An <strong>attribute</strong> is a named piece of data attached to points, polygons or the whole geometry. Data
+attached to the whole geometry is a <strong>detail attribute</strong>. A LOD geometry keeps its LOD information in detail
+attributes. All attribute names of this add-on start with <code>a3ob_</code>.</p>
+<table>
+<tr><th>What</th><th>Where it is kept</th></tr>
+<tr><td>LOD type (Resolution, Geometry, Memory and so on)</td><td><code>a3ob_lod_type</code></td></tr>
+<tr><td>Resolution number</td><td><code>a3ob_lod_resolution</code></td></tr>
+<tr><td>The number the file stores for the pair above (the <em>signature</em>)</td><td><code>a3ob_lod_signature</code>, kept as read so that an unedited LOD is written exactly as it was</td></tr>
+<tr><td>Named properties, such as <code>class = house</code> or <code>lodnoshadow = 1</code></td><td><code>a3ob_prop_names</code> and <code>a3ob_prop_values</code> (two lists, side by side)</td></tr>
+<tr><td>LOD copies (the same mesh written under a second type and resolution)</td><td><code>a3ob_lod_copy_types</code> and <code>a3ob_lod_copy_resolutions</code></td></tr>
+</table>
+<p>You set all of these with the <kbd class="ui-node">LOD Properties</kbd> node. It gives you a menu of types by name, so you
+never type a number. When you change the type or resolution of an imported LOD, the node also brings the stored
+signature in line.</p>
+
+<p>The LOD types (the entries of the <kbd class="ui-parm" data-node="a3ob_lod_properties">LOD Type</kbd> menu) that you
+meet most often:</p>
+<table>
+<tr><th>Type</th><th>Used for</th><th>Has a resolution number?</th></tr>
+<tr><td><kbd class="ui-menu">Resolution</kbd></td><td>What you see. Resolution 1 is the nearest and best.</td><td>Yes</td></tr>
+<tr><td><kbd class="ui-menu">View - Pilot</kbd>, <kbd class="ui-menu">View - Gunner</kbd>, <kbd class="ui-menu">View - Cargo</kbd></td><td>The first-person view from a seat.</td><td>Only Cargo</td></tr>
+<tr><td><kbd class="ui-menu">Shadow Volume</kbd></td><td>The shape that casts shadows.</td><td>Yes</td></tr>
+<tr><td><kbd class="ui-menu">Geometry</kbd></td><td>Collision with the world, and mass. Built of convex pieces (see Components under Selections).</td><td>No</td></tr>
+<tr><td><kbd class="ui-menu">Fire Geometry</kbd></td><td>Where bullets hit.</td><td>No</td></tr>
+<tr><td><kbd class="ui-menu">View Geometry</kbd></td><td>What blocks the view of the AI.</td><td>No</td></tr>
+<tr><td><kbd class="ui-menu">Memory</kbd></td><td>Named points: weapon muzzles, camera positions, animation axes.</td><td>No</td></tr>
+<tr><td><kbd class="ui-menu">Land Contact</kbd></td><td>Points where the object touches the ground.</td><td>No</td></tr>
+<tr><td><kbd class="ui-menu">Hit-points</kbd></td><td>A cloud of points for damage zones.</td><td>No</td></tr>
+<tr><td><kbd class="ui-menu">Roadway</kbd></td><td>Surfaces that units can walk on.</td><td>No</td></tr>
+<tr><td><kbd class="ui-menu">Paths</kbd></td><td>The mesh for AI path-finding.</td><td>No</td></tr>
+</table>
+<p>The menu has more types. The page for <a href="reference/a3ob_lod_properties.html#lodtype">LOD Properties</a> lists them.</p>
+
+<h2 id="selections">Selections</h2>
+<p>A <strong>selection</strong> in Object Builder is a named set of points, and often the faces made of them. Animation,
+hit zones, components and memory points all use selections. In Houdini a selection is a <strong>group</strong>: a named
+set of points (a <em>point group</em>) or polygons (a <em>polygon group</em>).</p>
+<ul>
+<li><strong>Points.</strong> The selection is a point group with the same name.</li>
+<li><strong>Weights.</strong> A selection can give each point a weight (how strongly it belongs, used for animation).
+  Weights are kept in a point attribute <code>a3ob_w_</code> followed by the name. It is only made where some weight is
+  not 1.</li>
+<li><strong>Faces.</strong> In a P3D file a selection also says which faces belong to it. The importer makes a polygon
+  group for this only where the faces are not simply "all corners are in the selection". Otherwise the faces follow the
+  points. The <kbd class="ui-parm" data-node="a3ob_p3d_import">Explicit Face Groups</kbd> switch of <kbd class="ui-node">P3D Import</kbd> makes a polygon group for every selection.</li>
+</ul>
+<p><strong>Names.</strong> Houdini group names may only hold letters, digits and underscores. Object Builder names can
+hold anything, such as <code>-proxies</code> or <code>proxy:\a3\...</code>. The add-on stores such a name in a reversible
+code that starts with <code>xn__</code>. For example <code>-proxies</code> is stored as <code>xn__proxies_cka</code>.
+Plain names like <code>head</code> are stored as they are. The code is turned back into the real name when the file is
+written. The <a href="reference/tool-a3ob_selection_browser.html">Selection browser</a> shows the real name next to the
+stored one, copies the stored one for you to paste into a group field, and can add nodes that create, delete or rename a
+selection.</p>
+<p><strong>What becomes a selection on export.</strong> Every point group, except names that start with two underscores.
+This is the <kbd class="ui-parm" data-node="a3ob_p3d_export">Selection Mask</kbd> parameter of
+<kbd class="ui-node">P3D Export</kbd>. A group that came from the file is always written.</p>
+<p><strong>Components.</strong> A Geometry LOD is built from convex pieces. Each piece is a selection named
+<code>component01</code>, <code>component02</code> and so on. Arma needs at least one. The starter network has one. The
+<kbd class="ui-parm" data-node="a3ob_p3d_export">Auto-Components</kbd> option of the export can make them for you when none
+exist.</p>
+
+<h2 id="proxies">Proxies</h2>
+<p>A <strong>proxy</strong> is a place where the game puts another model: a weapon on a slot, a seat for a crew member,
+a backpack. In the file it is a selection named <code>proxy:</code> plus the model path and an index, on a single
+triangle. The triangle gives the position and direction of the other model. The path and index must be unique within a
+LOD.</p>
+<p>In Houdini the importer makes each proxy a small packed primitive inside the LOD geometry. It has a path attribute
+(<code>a3ob_proxy_path</code>) and an index (<code>a3ob_proxy_index</code>), and you move it with an ordinary
+<kbd class="ui-node">Transform</kbd> node. A proxy that cannot be packed without losing something stays as a plain
+triangle with the same two attributes. The <kbd class="ui-node">Proxy</kbd> node adds new proxies, one by hand or one for
+each point of a second input. A proxy has a position and a rotation but no size.</p>
+
+<h2 id="mass">Mass</h2>
+<p>The Geometry LOD gives each point a mass in kilograms. The game adds them up to get the weight of the object and
+works out its balance. In Houdini this is a point attribute, <code>a3ob_mass</code>. The
+<kbd class="ui-node">Mass</kbd> node sets it. Houdini has its own attribute called <code>mass</code> for simulations; the
+add-on does not use it by accident. The Mass node can copy between the two if you want that.</p>
+<p>Modes of the Mass node: <kbd class="ui-menu">Set on each</kbd> gives every point the value,
+<kbd class="ui-menu">Uniform total</kbd> shares a total weight equally between the points,
+<kbd class="ui-menu">From density</kbd> works from a density and the volume of each closed piece, and
+<kbd class="ui-menu">Clear</kbd> removes the mass. See <a href="reference/a3ob_mass.html#mode">Mode</a> in the reference.</p>
+
+<h2 id="surface">Textures, UVs and sharp edges</h2>
+<ul>
+<li><strong>Textures and materials.</strong> Each polygon has two text attributes, <code>a3ob_texture</code> and
+  <code>a3ob_material</code> (the rvmat file). They hold the text exactly as in the file, including procedural textures
+  such as <code>#(argb,8,8,3)color(...)</code>. The <kbd class="ui-node">Material Assign</kbd> node sets them for a group of
+  polygons. Houdini's own material attributes are not used. A run of polygons that share a texture and material is a
+  <em>section</em> in Object Builder. Sections are decided by polygon order, so assigning materials to scattered polygons
+  splits them. The <kbd class="ui-parm" data-node="a3ob_p3d_export">Sort Sections</kbd> option groups them on export.</li>
+<li><strong>UVs.</strong> UV sets are vertex attributes: <code>uv</code> for the first set, then <code>uv2</code>,
+  <code>uv3</code> and so on.</li>
+<li><strong>Normals.</strong> The shading directions are kept as the vertex attribute <code>N</code>.</li>
+<li><strong>Sharp edges.</strong> The edges that Object Builder marks sharp are the edge group <code>a3ob_sharp</code>.</li>
+</ul>
+
+<h2 id="paths">The P drive and the project root</h2>
+<p>Arma tools expect your source files on a virtual drive, usually called <strong>P:</strong> (the P drive). A texture
+that lives at <code>P:\my_mod\data\crate_co.paa</code> is known to the game as <code>my_mod\data\crate_co.paa</code>.
+The part that stands for the drive is the <strong>project root</strong>, by default <code>P:\</code>.</p>
+<p>The <kbd class="ui-parm" data-node="a3ob_p3d_export">Relative Paths</kbd> option cuts the project root off the front of
+every texture, material and proxy path when a file is written. The root comes from the
+<kbd class="ui-parm" data-node="a3ob_p3d_export">Project Root</kbd> parameter of the export node. If that is empty, it comes
+from the <kbd class="ui-shelf">Project root and presets</kbd> shelf tool. If that has none either, it is <code>P:\</code>. You can
+also set the environment variable <code>A3OB_PROJECT_ROOT</code>, which wins over the shelf setting.</p>
+<p>The shelf tool stores its settings in one file, <code>a3ob_settings.json</code>, in your Houdini preferences folder.
+Set the environment variable <code>A3OB_SETTINGS</code> to use another place.</p>
+
+<h2 id="presets">Presets</h2>
+<p>A <strong>preset</strong> is a saved set of export options. Pick one in the <kbd class="ui-parm" data-node="a3ob_p3d_export">Preset</kbd>
+menu of a <kbd class="ui-node">P3D Export</kbd> node and press <kbd class="ui-parm" data-node="a3ob_p3d_export">Apply</kbd> to fill in the
+options. <kbd class="ui-shelf">Quick Export</kbd> and <kbd class="ui-shelf">Batch folder convert</kbd> take a preset by
+name. Two presets come with the add-on. You can save more with the <kbd class="ui-shelf">Project root and presets</kbd> tool.</p>
+<table>
+<tr><th>Option</th><th><kbd class="ui-menu">Lossless</kbd></th><th><kbd class="ui-menu">Arma 3 release</kbd></th><th>What it does</th></tr>
+<tr data-option="lowercase"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Lowercase</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Writes texture and material paths, selection names and property names and values in lower case, as Object Builder does. Warns if two names become the same.</td></tr>
+<tr data-option="relative_paths"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Relative Paths</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Cuts the project root off texture, material and proxy paths.</td></tr>
+<tr data-option="sort_sections"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Sort Sections</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Orders the polygons by texture and material. This changes the polygon order.</td></tr>
+<tr data-option="sort_lods"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Sort LODs</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Writes the LODs sorted by resolution. Off keeps your order.</td></tr>
+<tr data-option="auto_components"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Auto-Components</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Geometry LODs with no component selection get one for each connected piece.</td></tr>
+<tr data-option="renumber_components"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Renumber Components</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">Off</td><td>Renames <code>component</code> selections to <code>component01</code>, <code>component02</code> and so on, in the order they are written.</td></tr>
+<tr data-option="czech_names"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Translate Names to Czech</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">Off</td><td>Renames selections that have an English name in Object Builder's table (such as <code>body</code>) to the Czech name the game uses (<code>telo</code>).</td></tr>
+<tr data-option="drop_uvs"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Drop UVs</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Writes no UVs for LOD types that do not use them (Geometry, Memory and the other collision and point types). The geometry in Houdini does not change.</td></tr>
+</table>
+<p><kbd class="ui-menu">Lossless</kbd> turns every option that changes data off. <kbd class="ui-menu">Arma 3 release</kbd> is the set
+that Object Builder uses by default. The two Czech and Renumber options are off in both, as in Object Builder.
+<kbd class="ui-parm" data-node="a3ob_p3d_export">Duplicate LODs</kbd> stays on Fail in both. A preset does not change
+<kbd class="ui-parm" data-node="a3ob_p3d_export">Project Root</kbd> or <kbd class="ui-parm" data-node="a3ob_p3d_export">Keep a .bak</kbd>.</p>
+<p>Choosing a preset in the menu changes nothing by itself: press Apply. After Apply you can still switch single options
+on or off on the node. Each option has a full entry in the <a href="reference/a3ob_p3d_export.html">P3D Export reference</a>.</p>
+
+<h2 id="validator">The checks: errors and warnings</h2>
+<p>The <kbd class="ui-node">Validate</kbd> node and the cook of <kbd class="ui-node">P3D Export</kbd> run the same checks, so a
+model that passes one passes the other. Each message starts with the LOD name and ends with how to fix the problem.</p>
+<ul>
+<li>An <strong>error</strong> means the file cannot be written correctly. The node turns red, the nodes below it stop,
+  and Save to Disk writes nothing.</li>
+<li>A <strong>warning</strong> means "look at this". The node turns yellow, the data keeps flowing, and you can still save.</li>
+<li><kbd class="ui-parm" data-node="a3ob_validate">Errors Show As</kbd> can turn errors into yellow warnings (the text still
+  starts with Error). <kbd class="ui-parm" data-node="a3ob_validate">Warnings Count As Errors</kbd> does the reverse, for a strict
+  check before a release. Saving always stops on a real error.</li>
+<li>A node shows at most 25 messages (<kbd class="ui-parm" data-node="a3ob_validate">Max Messages</kbd>). The rest are counted,
+  and listed in the Houdini console.</li>
+</ul>
+
+<h3>Errors you are likely to meet</h3>
+<table>
+<tr><th>Problem</th><th>Fix</th></tr>
+<tr><td>A polygon has more than 4 points, is open, or is not a polygon at all.</td><td>Add a <kbd class="ui-node">Divide</kbd> node (Convex Polygons on, Maximum Edges 3 or 4). Close open polygons.</td></tr>
+<tr><td>Two LODs have the same type and resolution. <samp class="ui-msg">another LOD has the same type and resolution</samp></td><td>Change the resolution of one with <kbd class="ui-node">LOD Properties</kbd>, or set <kbd class="ui-parm" data-node="a3ob_validate">Duplicate LODs</kbd> to Skip or Ignore.</td></tr>
+<tr><td>Packed LODs are mixed with loose polygons or points, or a packed item is neither a LOD nor a proxy.</td><td>Extract the LOD first, or give the loose geometry its own LOD with Assemble LODs.</td></tr>
+<tr><td>A text cannot be written in the file's character set (a texture path or property with a character the file cannot hold).</td><td>Use plain Western characters in paths, names and properties.</td></tr>
+<tr><td>A LOD type and resolution that the file format cannot encode.</td><td>Use a resolution in the range that <kbd class="ui-node">LOD Properties</kbd> names in its message.</td></tr>
+</table>
+
+<h3>Warnings you are likely to meet</h3>
+<table>
+<tr><th>Message starts with</th><th>Meaning and fix</th></tr>
+<tr><td><samp class="ui-msg">Geometry: the mesh is not triangulated</samp></td><td>A collision, shadow or underground LOD must be made of triangles. Add a Divide node (Convex Polygons on, Maximum Edges 3).</td></tr>
+<tr><td><samp class="ui-msg">Geometry: the LOD has no component selections</samp></td><td>Add a point group named <code>component01</code> (and <code>component02</code> and so on for more pieces). The Selection browser can add the Group node.</td></tr>
+<tr><td><samp class="ui-msg">Geometry: the LOD has no mass</samp></td><td>Add a <kbd class="ui-node">Mass</kbd> node. A Geometry LOD needs a total of at least 0.001 kg, and every point at least 0.001 kg.</td></tr>
+<tr><td>The LODs look merged</td><td>You joined LODs with a Merge node. Pack them with Assemble LODs instead.</td></tr>
+<tr><td><samp class="ui-msg">has no sound texture</samp></td><td>A Roadway LOD needs a texture on every polygon: it names the sound of the surface.</td></tr>
+<tr><td>a LOD transform is not the identity</td><td>The LOD item was moved or mirrored in Houdini. The move is baked in when the file is written. Check the result in Object Builder.</td></tr>
+</table>
+<p>Besides these, the checks include rules for the shape of each LOD type: Geometry (convex, contiguous, components, mass),
+Shadow Volume (triangles, sharp edges, no materials, usual resolution, no <code>LODNoShadow</code> property), point LODs
+(no edges or faces), Roadway, Paths and more. Every such rule has its own switch on the node, named like
+<kbd class="ui-parm" data-node="a3ob_validate">T2-TRI: Triangulated</kbd>, so you can turn off a rule that does not suit
+your model. The <a href="reference/a3ob_validate.html">Validate reference</a> lists them all with their meaning. The node's
+<kbd class="ui-parm" data-node="a3ob_validate">Check LOD-Type Rules</kbd> switch turns all of them off at once.</p>
+
+<h2 id="lossless">Lossless round trips</h2>
+<p>A <strong>round trip</strong> means reading a .p3d file into Houdini and writing it out again. With the
+<kbd class="ui-menu">Lossless</kbd> preset and no edits, the new file is identical to the old one, byte for byte. The add-on
+is built so that nothing in the file is thrown away on the way through, even data Object Builder does not show: blocks
+of data it does not understand, selection weights that Object Builder itself would lose, and the stored LOD signatures are kept.</p>
+<p>This is tested on the two sample files in the add-on folder (a character and a crate). Some unusual files come back
+slightly different, for example:</p>
+<ul>
+<li>A face with fewer than three points is dropped on export, with a warning, because the file writer cannot write it.</li>
+<li>A proxy that you moved is written from its new position. A proxy that you did not touch is written as it was read.</li>
+<li>Data that depends on the number of points or faces (for example a stored sharp edge that is not a polygon edge) is
+  dropped, with a warning, if you add or remove points.</li>
+<li>Every option in a preset that changes data, such as Lowercase, makes the file differ on purpose.</li>
+</ul>
+<p>The <kbd class="ui-shelf">Batch folder convert</kbd> tool is a quick way to test the round trip on a whole folder of your
+own files. It writes every file again into another folder and reports for each one whether it is identical, different or
+failed. It never writes into the folder it reads from.</p>
 </main>
 <footer class="site">
 <div class="inner">

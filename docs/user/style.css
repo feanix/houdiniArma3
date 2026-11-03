@@ -9,6 +9,8 @@
  *   .note        a hint or side remark          <p class="note">...</p>
  *   .warning     something that can lose work   <p class="warning">...</p>
  *   .todo        a placeholder to be replaced   <p class="todo">...</p>
+ *   .gui, .outside  a step in the Houdini window / in another program (lead-in word is added)
+ *   kbd, samp    interface text (button, menu entry, node) and a node message
  *   pre > code   a block of code or a file path
  *   code         a short piece of code, a node name or a parameter name in a sentence
  *   .network     a simple network diagram       <ol class="network"><li>Node</li>...</ol>
@@ -145,6 +147,37 @@ pre code { background: none; padding: 0; }
 .note::before { content: "Note. "; }
 .warning::before { content: "Careful. "; }
 .todo::before { content: "Still to write. "; }
+
+/* A step that needs the Houdini window, or a program other than Houdini. These steps are not run by the tests. */
+.gui, .outside {
+  margin: 1rem 0;
+  padding: 0.4rem 1rem;
+  border-left: 4px solid var(--line);
+  border-radius: 0 4px 4px 0;
+  background: var(--panel);
+}
+
+.gui::before { content: "Houdini window. "; font-weight: 700; }
+.outside::before { content: "Outside Houdini. "; font-weight: 700; }
+
+/* Text the reader sees in the interface: a button, a menu entry, a node name (kbd), a node message (samp). */
+kbd {
+  font-family: inherit;
+  font-size: 0.95em;
+  font-weight: 600;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0 0.3em;
+}
+
+samp {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  font-size: 0.9em;
+  background: var(--code-bg);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+}
 
 table { border-collapse: collapse; width: 100%; margin: 0.75rem 0; }
 th, td { text-align: left; vertical-align: top; padding: 0.35rem 0.6rem; border-bottom: 1px solid var(--line); }

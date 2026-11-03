@@ -4,7 +4,8 @@ A port of [Arma 3 Object Builder](https://github.com/MrClock8163/Arma3ObjectBuil
 (A3OB, a Blender add-on by MrClock) to SideFX Houdini: import and export of
 Arma 3 P3D models and related formats.
 
-**Status: pre-alpha.** Nothing usable in Houdini yet. Target: Houdini 22.0
+**Status: pre-alpha.** Import, editing nodes, checks and export work in Houdini; see the
+[install guide](docs/user/install.html) and the quick starts. Target: Houdini 22.0
 (Indie 22.0.466, Python 3.13).
 
 License: GPL-3.0-or-later, as a modified version of A3OB. See [LICENSE](LICENSE)
