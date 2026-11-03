@@ -149,16 +149,24 @@ class RawTagg(Tagg):
 
     ``counts`` is set by the reader when it keeps a malformed known TAGG raw (strict=False, or the editor TAGGs):
     the ``(points, faces, corners)`` of the LOD it was read from. Such a TAGG is written back verbatim only while the
-    LOD still has those counts (see ``LOD.structure_errors``); geometry edits drop it (see ``LOD.dropped_taggs``).
+    LOD still has those counts and its name and data are unchanged since the read (see ``LOD.structure_errors``);
+    geometry edits drop it (see ``LOD.dropped_taggs``).
     """
 
-    __slots__ = ("data", "counts")
+    __slots__ = ("data", "counts", "_read_source")
 
     def __init__(self, name: str, data: bytes = b"", active: int = 1,
                  counts: Optional[Tuple[int, int, int]] = None):
         super().__init__(name, active)
         self.data = bytes(data)
         self.counts = counts
+        # What the lenient exception in LOD.structure_errors vouches for: the name and bytes as read.
+        self._read_source = (name, self.data) if counts is not None else None
+
+    def unchanged_since_read(self) -> bool:
+        """True if ``counts`` is set and the name and data are still what they were when the TAGG was made."""
+        source = self._read_source
+        return source is not None and source[0] == self.name and source[1] == self.data
 
     def payload(self) -> bytes:
         return bytes(self.data)
@@ -472,6 +480,20 @@ def _flat3(values, what: str) -> array:
     return flat
 
 
+def _u32(value, what: str) -> int:
+    """A checked u32 value. Raises ``ValueError`` (not OverflowError or TypeError) for anything that does not fit."""
+    try:
+        return array(U32, (value,))[0]
+    except (OverflowError, TypeError) as ex:
+        raise ValueError("invalid %s %r: %s" % (what, value, ex)) from None
+
+
+def _check_strings(values, what: str) -> None:
+    for index, value in enumerate(values):
+        if not isinstance(value, str):
+            raise TypeError("%s[%d] must be str, got %s" % (what, index, type(value).__name__))
+
+
 class Face(NamedTuple):
     """Snapshot of one face (only its used corners)."""
 
@@ -586,6 +608,7 @@ class LOD:
         mass of 0, #Animation# frames the point's position. Raw TAGGs whose name has a known layout are parsed first
         (so they can grow) or, if malformed, moved to ``dropped_taggs``. Returns the point index."""
         vector = _vector3(position)
+        flags = _u32(flags, "point flags")  # everything is checked before the first append
         index = self.point_count
         self.points.extend(vector)
         self.point_flags.append(flags)
@@ -667,17 +690,28 @@ class LOD:
         Count-dependent TAGGs follow: each selection gets a face byte derived from the vertices (1 when all of them
         are members, else 0, A3OB's export rule), the editor masks get a 0 byte and UV set TAGGs get the face's
         corners (``uvs`` for set 0, zeros for the others). Raw TAGGs are settled as in ``add_point``."""
-        vertices = list(vertices)
+        vertices = [_u32(v, "vertex index") for v in vertices]
         sides = len(vertices)
         if not 3 <= sides <= MAX_FACE_SIDES:
             raise ValueError("faces must have 3 or 4 vertices, got %d" % sides)
-        normals = list(normals) if normals is not None else [0] * sides
-        uv_pairs = [tuple(uv) for uv in uvs] if uvs is not None else [(0.0, 0.0)] * sides
+        normals = [_u32(n, "normal index") for n in normals] if normals is not None else [0] * sides
+        uv_pairs = []
+        for uv in (uvs if uvs is not None else [(0.0, 0.0)] * sides):
+            pair = tuple(uv)
+            if len(pair) != 2:
+                raise ValueError("a UV needs 2 values, got %d" % len(pair))
+            uv_pairs.append(pair)
         if len(normals) != sides or len(uv_pairs) != sides:
             raise ValueError("a face needs as many normals and UVs as vertices")
-        flat_uvs = [value for uv in uv_pairs for value in uv]
+        try:
+            flat_uvs = list(array(F32, [value for uv in uv_pairs for value in uv]))
+        except (OverflowError, TypeError) as ex:
+            raise ValueError("invalid UV value: %s" % ex) from None
+        flags = _u32(flags, "face flags")
+        _check_strings((texture, material), "texture/material")
         padding = MAX_FACE_SIDES - sides
 
+        # Everything is converted; from here on nothing can fail before the columns are appended.
         index = self.face_count
         self.face_sides.append(sides)
         self.face_vertices.extend(vertices + [0] * padding)
@@ -819,6 +853,8 @@ class LOD:
         new_face_flags = array(U32, face_flags) if face_flags is not None else array(U32, bytes(4 * count_faces))
         new_textures = list(textures) if textures is not None else [""] * count_faces
         new_materials = list(materials) if materials is not None else [""] * count_faces
+        _check_strings(new_textures, "textures")
+        _check_strings(new_materials, "materials")
         if len(new_point_flags) != count_points:
             raise ValueError("need one point flag per point (%d), got %d" % (count_points, len(new_point_flags)))
         for what, values in (("face flag", new_face_flags), ("texture", new_textures), ("material", new_materials)):
@@ -1117,7 +1153,8 @@ class LOD:
         under a known name whose payload the reader rejects).
 
         A raw TAGG that a lenient read kept because its payload did not fit (``RawTagg.counts`` set) is accepted
-        while the LOD has the counts it was read with, so lenient round trips stay byte-identical."""
+        while the LOD has the counts it was read with and its name and data are unchanged, so lenient round trips
+        stay byte-identical."""
         errors = []
         count_points = len(self.point_flags)
         count_faces = len(self.face_sides)
@@ -1138,6 +1175,9 @@ class LOD:
         counts = (count_points, count_faces, corners)
         for tagg in self.taggs:
             name = tagg.name
+            if not isinstance(name, str):
+                errors.append("TAGG name must be str, got %s" % type(name).__name__)
+                continue
             fixed_name = _FIXED_NAMES.get(type(tagg))
             if name == END_OF_FILE:
                 errors.append("a TAGG cannot be named %s (it ends the TAGG list)" % END_OF_FILE)
@@ -1171,7 +1211,8 @@ class LOD:
                     errors.append("#SharpEdges# has an odd number of indices")
             elif isinstance(tagg, RawTagg) and is_typed_tagg_name(name):
                 problem = tagg_payload_problem(name, tagg.data, *counts)
-                kept_from_read = tagg.counts is not None and (name in _FIXED_SIZE_NAMES or tagg.counts == counts)
+                kept_from_read = (tagg.unchanged_since_read()
+                                  and (name in _FIXED_SIZE_NAMES or tagg.counts == counts))
                 if problem is not None and not kept_from_read:
                     errors.append("raw TAGG %r would not read back: %s" % (name, problem))
             if not 0 <= tagg.active <= 255:
