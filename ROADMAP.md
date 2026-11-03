@@ -4,4 +4,4 @@ Generated from the Aesir database, do not edit. A plan, not a promise: it change
 
 ## Unplaced
 
-- #011 [approved] M3 step 3b: Mass + Proxy nodes
+- #013 [open] M3 polish: review minors from #9-#12

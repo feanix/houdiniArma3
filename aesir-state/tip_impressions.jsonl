@@ -38,3 +38,7 @@
 {"agent_id": "rev-10-a", "id": 38, "task_id": 10, "tip_id": 2, "ts": "2026-11-03T09:02:57Z"}
 {"agent_id": "rev-11-a", "id": 39, "task_id": 11, "tip_id": 1, "ts": "2026-11-03T09:04:52Z"}
 {"agent_id": "rev-11-a", "id": 40, "task_id": 11, "tip_id": 2, "ts": "2026-11-03T09:04:52Z"}
+{"agent_id": "impl-11-b", "id": 41, "task_id": 11, "tip_id": 1, "ts": "2026-11-03T09:15:10Z"}
+{"agent_id": "impl-11-b", "id": 42, "task_id": 11, "tip_id": 2, "ts": "2026-11-03T09:15:10Z"}
+{"agent_id": "rev-11-b", "id": 43, "task_id": 11, "tip_id": 1, "ts": "2026-11-03T09:21:27Z"}
+{"agent_id": "rev-11-b", "id": 44, "task_id": 11, "tip_id": 2, "ts": "2026-11-03T09:21:27Z"}

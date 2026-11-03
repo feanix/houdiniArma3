@@ -126,3 +126,12 @@
 {"actor": "lead", "id": 126, "task_id": 10, "text": "status in_review -> approved (lead merged main (README union); evidence re-recorded)", "ts": "2026-11-03T09:13:49Z"}
 {"actor": "lead", "id": 127, "task_id": 10, "text": "gate full PASS 357182dc 20.3s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T09:14:11Z"}
 {"actor": "lead", "id": 128, "task_id": 10, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T09:14:12Z"}
+{"actor": "lead", "id": 129, "task_id": 10, "text": "merged by lead (queued by lead)", "ts": "2026-11-03T09:14:14Z"}
+{"actor": "lead", "id": 130, "task_id": 10, "text": "queue: merged at 8472faf", "ts": "2026-11-03T09:14:14Z"}
+{"actor": "impl-11-b", "id": 131, "task_id": 11, "text": "gate quick PASS d1cf4236 21.3s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T09:21:01Z"}
+{"actor": "lead", "id": 132, "task_id": 11, "text": "status approved -> changes_requested (branch head d1cf4236 (task/11-mass-proxy) is not the approved head cf127169; re-review: lead runs task set 11 --status in_review, reviews, then approves again)", "ts": "2026-11-03T09:22:50Z"}
+{"actor": "lead", "id": 133, "task_id": 11, "text": "status changes_requested -> in_progress (reconcile merge d1cf423 reviewed by rev-11-b (wf_0747f47b-644): approve)", "ts": "2026-11-03T09:22:59Z"}
+{"actor": "lead", "id": 134, "task_id": 11, "text": "status in_progress -> in_review (reconcile merge d1cf423 reviewed by rev-11-b (wf_0747f47b-644): approve)", "ts": "2026-11-03T09:23:00Z"}
+{"actor": "lead", "id": 135, "task_id": 11, "text": "status in_review -> approved (reconcile merge d1cf423 reviewed by rev-11-b (wf_0747f47b-644): approve)", "ts": "2026-11-03T09:23:01Z"}
+{"actor": "lead", "id": 136, "task_id": 11, "text": "gate full PASS 74f3ccc6 22.7s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T09:23:26Z"}
+{"actor": "lead", "id": 137, "task_id": 11, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T09:23:27Z"}
