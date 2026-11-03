@@ -14,6 +14,7 @@ from a3ob_core import p3d
 from ..errors import UserError
 from ..messages import Report, format_problem
 from ..p3d_import import import_model, parse_lod_filter
+from ..p3d_import.lod_filter import drop_star
 from ..p3d_import.lod_list import read_lod_names
 from ..params import NodeSpec, Parm, read_parms
 
@@ -35,8 +36,9 @@ SPEC = NodeSpec(
         Parm("reload", "Reload", "button", "",
              "Read the file again from disk, for example after you saved it in Object Builder.", action="reload"),
         Parm("lods", "LODs", "menu", "*",
-             "Which LODs to bring in. Pick them from the menu, or type numbers or names. * means all.",
-             menu_action="lod_choices", menu_toggle=True),
+             "Which LODs to bring in. Pick them from the menu, or type numbers or names. * means all. "
+             "Picking from the menu replaces a * in the field, and a * next to other entries still means all.",
+             action="lods_changed", menu_action="lod_choices", menu_toggle=True),
         Parm("facegroups", "Explicit Face Groups", "toggle", False,
              "A face group is a named set of faces. Every selection comes in as a group of points. Normally a face "
              "group is added only when the selection's faces are not just the faces whose points are all in it. "
@@ -94,6 +96,16 @@ def reload(kwargs) -> None:
     kwargs["node"].cook(force=True)
 
 
+def lods_changed(kwargs) -> None:
+    """The LODs field changed (a menu pick or typing): a * next to other entries is dropped, so a pick starting
+    from the default * selects just that LOD."""
+    parm = kwargs["node"].parm("lods")
+    text = parm.eval()
+    fixed = drop_star(text)
+    if fixed != text:
+        parm.set(fixed)
+
+
 def lod_menu_items(names) -> list:
     """``[(token, label)]`` for the LODs menu: the token is the position, the label reads ``5  Geometry``."""
     return [(str(index), "%d  %s" % (index, name)) for index, name in enumerate(names)]
@@ -110,5 +122,5 @@ def _menu_lods(kwargs) -> list:
         return []
 
 
-BUTTONS = {"reload": reload}
+BUTTONS = {"reload": reload, "lods_changed": lods_changed}
 MENUS = {"lod_choices": _menu_lods}

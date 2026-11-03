@@ -65,6 +65,22 @@ class TestNameSelection(unittest.TestCase):
         self.assertEqual(self.pick("Geometry* 1-2"), [1, 2, 4])
         self.assertEqual(self.pick("*"), [0, 1, 2, 3, 4])
 
+    def test_a_bare_star_means_all_wherever_it_is(self):
+        everything = [0, 1, 2, 3, 4]
+        for text in ("* 0", "0 *", "*", "0, *", "Geometry *", " * "):
+            self.assertEqual(self.pick(text), everything, text)
+        self.assertEqual(self.pick("Resolution*"), [0, 1])  # a pattern is not a bare star
+        self.assertEqual(self.pick("Geometry Memory"), [4])  # names with spaces still work
+
+    def test_a_menu_pick_from_the_default_selects_just_that_lod(self):
+        self.assertEqual(self.pick(lod_filter.drop_star("* 0")), [0])
+        self.assertEqual(self.pick(lod_filter.drop_star("* 4")), [4])
+        self.assertEqual(lod_filter.drop_star("* Geometry Memory"), "Geometry Memory")
+        self.assertEqual(lod_filter.drop_star("0 *"), "0")
+        self.assertEqual(lod_filter.drop_star("*"), "*")
+        self.assertEqual(lod_filter.drop_star("0 2-3"), "0 2-3")
+        self.assertEqual(lod_filter.drop_star("Resolution* 3"), "Resolution* 3")
+
     def test_the_longest_name_wins(self):
         self.assertEqual(self.pick("Geometry Memory"), [4])  # not Geometry and then "Memory"
         self.assertEqual(self.pick("Geometry Memory Memory"), [3, 4])
@@ -154,6 +170,17 @@ class TestImportNode(unittest.TestCase):
         template = self.importer("*").parm("lods").parmTemplate()
         self.assertEqual(template.type(), hou.parmTemplateType.String)
         self.assertEqual(template.menuType(), hou.menuType.StringToggle)
+
+    def test_a_menu_pick_from_the_default_imports_just_that_lod(self):
+        node = self.importer("* 0")  # what the menu writes when 0 is picked and the field holds the default *
+        entry.button("p3d_import", "lods_changed", {"node": node})
+        self.assertEqual(node.parm("lods").eval(), "0")
+        node.cook(force=True)
+        self.assertEqual([p.attribValue("name") for p in node.geometry().prims()], [self.names[0]])
+
+    def test_a_star_set_next_to_entries_still_means_all(self):
+        node = self.importer("* 0")
+        self.assertEqual(len(node.geometry().prims()), len(self.names))
 
     def test_selecting_by_name_and_pattern(self):
         geometry = self.importer("Geometry").geometry()

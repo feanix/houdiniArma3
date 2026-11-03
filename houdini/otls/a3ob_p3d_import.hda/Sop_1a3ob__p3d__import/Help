@@ -28,7 +28,7 @@ Reload:
 LODs:
     #id: lods
 
-    Which LODs to bring in. Pick them from the menu, or type numbers or names. `*` means all.
+    Which LODs to bring in. Pick them from the menu, or type numbers or names. `*` means all. Picking from the menu replaces a `*` in the field, and a `*` next to other entries still means all.
 
     Type: Menu (pick several; each pick adds or removes an entry in the text). Default: `*`.
 

@@ -3,7 +3,8 @@
 # houdiniArma3: a Houdini port of Arma 3 Object Builder (A3OB).
 """The "LODs" parameter of P3D Import: which LODs of the file to import.
 
-``*`` means all. Otherwise the text holds numbers (file positions), ranges (``2-4``) and, when the LOD names are known,
+``*`` as a word of its own means all LODs, even next to other entries ("* 0" is all). A menu pick replaces it
+(``drop_star``). Otherwise the text holds numbers (file positions), ranges (``2-4``) and, when the LOD names are known,
 LOD display names or ``*`` patterns, in any mix, for example ``0 2-4 Geometry*``. Names are matched without regard to
 case and may hold spaces ("Geometry Memory", "Resolution 1"); commas also separate entries. Pure Python.
 """
@@ -14,9 +15,21 @@ from typing import List, Optional, Sequence
 
 from ..errors import UserError
 
-__all__ = ["parse_lod_filter"]
+__all__ = ["parse_lod_filter", "drop_star"]
 
 _RANGE = re.compile(r"(\d+)(?:-(\d+))?")
+
+
+def drop_star(text: str) -> str:
+    """``text`` without its bare ``*`` words, when other entries remain; otherwise unchanged.
+
+    The LODs field starts as ``*``. A menu pick adds an entry next to it ("* 0"), which would still mean all. This
+    turns it into just the pick ("0")."""
+    segments = [part.split() for part in text.split(",")]
+    kept = [[word for word in words if word != "*"] for words in segments]
+    if not any(kept) or kept == [words for words in segments]:
+        return text
+    return ", ".join(" ".join(words) for words in kept if words)
 
 
 def parse_lod_filter(text: str, count: int, names: Optional[Sequence[str]] = None,
@@ -31,7 +44,7 @@ def parse_lod_filter(text: str, count: int, names: Optional[Sequence[str]] = Non
         raise ValueError("%d names for %d LODs" % (len(names), count))
     segments = [part.split() for part in text.split(",")]
     segments = [words for words in segments if words]
-    if not segments or segments == [["*"]]:
+    if not segments or any("*" in words for words in segments):  # a word that is just * means all, wherever it is
         return list(range(count))
     folded = [name.casefold() for name in names] if names is not None else None
     chosen = set()
