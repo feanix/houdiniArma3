@@ -21,7 +21,7 @@ import hou
 
 from a3ob_core import binary, p3d
 
-from .. import names
+from .. import layout_record, names
 from . import hou_util, proxies
 from .plan import LodPlan, ProxyPlan, houdini_corner_order, uv_attrib_name
 
@@ -310,6 +310,9 @@ def _write_details(geo, plan: LodPlan) -> None:
     _write_order_details(geo, plan)
     _write_blob_details(geo, plan)
     hou_util.add_detail_array(geo, "a3ob_source_counts", "int", [lod.point_count, lod.face_count, lod.corner_count])
+    record = layout_record.build_record(lod, plan.permutation, plan.sharp)
+    if record is not None:
+        hou_util.add_detail(geo, layout_record.DETAIL, record)  # spec 19: the file layout, for byte-identical export
 
 
 def _write_property_details(geo, plan: LodPlan) -> None:

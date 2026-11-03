@@ -125,6 +125,8 @@ class Details:
     unknown_data: List[str] = field(default_factory=list)
     source_counts: Optional[Tuple[int, int, int]] = None
     sharp_extra: List[int] = field(default_factory=list)
+    #: ``a3ob_layout`` (spec 19): the file layout record as text, or "" when the LOD has none.
+    layout: str = ""
 
 
 @dataclass

@@ -71,7 +71,12 @@ content-correct). The pin in `tests/test_real_file_layout.py` now checks this.
 Each of F-1 to F-5 has a minimal synthetic reproduction in `tests/test_real_file_layout.py` (no Samples bytes) that pins
 today's behaviour, so a later fix flips it on purpose. The Samples test fails on any LOD that differs in something else.
 
-**Proposal (for the owner, not done):** lossless output of real Object Builder files needs the file layout kept next to the
+**F-1 to F-5 are fixed (task #37, D23).** The importer writes a layout record (detail `a3ob_layout`, spec section 19) and the
+exporter applies it while the positions and topology are unchanged. With it, 34 of 34 Samples files are sha256-identical after
+Import then Lossless export, and after Import, Extract LOD (all), Assemble LODs and Lossless export. The sections above and
+the table in section 2 describe the state before that fix.
+
+**Proposal (done in #37; text kept for the record):** lossless output of real Object Builder files needs the file layout kept next to the
 Houdini data, for F-1, F-2, F-3 and F-4 alike: for example a per-LOD detail blob (base64, with the point, face and corner
 counts it is valid for, like the other blob TAGGs) that holds the normal table, the unused slots, the sharp pair list and the
 point and face permutation of interleaved proxies. Without it the export is content-lossless but not byte-lossless on these

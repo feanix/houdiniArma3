@@ -123,6 +123,7 @@ Type names carry no version suffix yet. A change that old scenes cannot take get
 | `selection_browser` | yes | Selection browser without a dialog: `list_groups`, `create_selection`, `delete_selection`, `rename_selection`. Each inserts its node inline after the chosen node (D21; `_add_after`, `ROW_STEP`). |
 | `selection_browser_dialog` | GUI only | The `hou.ui` layer called by `houdini/toolbar/a3ob_selection_browser.shelf`. |
 | `p3d_import` | `lod_builder` and `import_model` | The importer: `plan` (decisions, no `hou`), `lod_builder` (writes geometry), `proxies`, `lod_filter`. |
+| `layout_record` | no | The layout record `a3ob_layout` (spec 19, D23): `build_record` (import) packs the file layout Houdini cannot hold, `apply_record` (export, from `lod_build`) writes it back into the built LOD while the positions and topology still match its digest. Uses `permutation`. |
 | `p3d_export` | `collect_lods` and `read_geo` | The exporter core: `collect`, `build`, `to_bytes`, `write_file`, `export_geometry`. The rest works on plain data (`data`) and runs under CPython. |
 | `p3d_export/renames`, `p3d_export/czech_names` | no | The D17 options (spec 18): `renumber_components`, `translate_names` (table in `czech_names`) act on the ordered selection items of a LOD; `strip_uvs` drops the UVs of a built LOD (also of a LOD copy, by the copy's own type). Fields `renumber_components`, `czech_names`, `drop_uvs`; node parms `renumber`, `czech`, `dropuvs`. |
 | `settings` | no | The user prefs JSON (`A3OB_SETTINGS` overrides its place, `A3OB_PROJECT_ROOT` the root), project root, export presets (`Lossless`, `Arma 3 release`, own ones) mapped onto `ExportOptions`, common data lists. Never raises on a bad file. |
@@ -166,6 +167,12 @@ When proxies are interleaved the import moves points and faces (mesh first, prox
 `permutation.Permutation` holds that move (`point_old`, `face_old`, and the derived inverse and corner order) and
 `permutation.remap_payload` rewrites a TAGG payload through it. `plan._remap_blobs` and `a3ob_sharp_extra` use it, so masks
 and sharp pairs keep marking the same points; a record that cannot be moved is dropped with a warning.
+
+`layout_record.build_record(lod, permutation, sharp)` writes the hidden detail `a3ob_layout` (normal table entry of each
+corner, unused triangle slots, sharp pair payload, the permutation, the signs of zero, and a checksum of positions and
+topology). On export `lod_build` calls `apply_record` after the TAGGs are in; it moves the built LOD back to the file
+order and writes the layout only if the counts and the checksum match, else it leaves the LOD alone and the report gets one
+info line. The record is a detail, not a parameter, so Extract LOD and Assemble LODs carry it with the other details.
 
 ## The exporter in short
 
