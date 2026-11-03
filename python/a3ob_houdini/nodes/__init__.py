@@ -9,17 +9,21 @@ A node module has three public names:
 - ``cook(node, report)``: the work. Raise ``UserError`` for problems the artist can fix;
 - ``BUTTONS``: ``{action name: function(kwargs)}`` for its button parameters (may be empty).
 
-``KINDS`` lists every kind. Add a kind here when its module is written. ``a3ob_houdini.entry`` is the only caller.
+``KINDS`` lists every kind: every module in this package whose name does not start with ``_``. Adding a node is
+adding its module; no list to edit, so node tasks built in parallel do not collide here.
 """
 
 import importlib
+import pkgutil
 from typing import Dict, Tuple
 
 from ..params import NodeSpec
 
 __all__ = ["KINDS", "load", "all_specs"]
 
-KINDS: Tuple[str, ...] = ("p3d_import",)
+KINDS: Tuple[str, ...] = tuple(sorted(
+    info.name for info in pkgutil.iter_modules(__path__) if not info.name.startswith("_")
+))
 
 
 def load(kind: str):

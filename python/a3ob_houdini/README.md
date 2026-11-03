@@ -19,7 +19,7 @@ lives in the asset. `entry.cook` turns every exception into a node error (a `Use
 exception shows a short "bug" text and the traceback goes to the console). If the HDA route is ever dropped,
 `params.add_spare_parms` builds the same parameters on a Python SOP that calls the same entry function.
 
-To add a node: write `nodes/<kind>.py`, add the kind to `nodes.KINDS`, run `python scripts/build_hdas.py`, and commit
+To add a node: write `nodes/<kind>.py` (`nodes.KINDS` finds it by itself), run `python scripts/build_hdas.py`, and commit
 the generated folder. A test fails when the checked-in files differ from the generated ones.
 
 ## Naming convention for nodes
