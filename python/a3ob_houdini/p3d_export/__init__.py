@@ -15,6 +15,7 @@ The entry functions for the Validate and P3D Export nodes:
 of ``data`` and runs under plain Python, so the decisions can be tested there.
 """
 
+from dataclasses import dataclass
 from typing import Optional, Sequence
 
 from a3ob_core.p3d import P3DModel
@@ -28,7 +29,7 @@ from .write import write_file
 
 __all__ = [
     "ExportOptions", "Collection", "collect", "build", "to_bytes", "write_file", "export_geometry",
-    "build_bytes",
+    "build_bytes", "run", "BuildResult",
 ]
 
 
@@ -38,16 +39,30 @@ def collect(geometries: Sequence, report: messages.Report) -> Collection:
     return _collect(geometries, report)
 
 
-def build_bytes(geometries: Sequence, options: Optional[ExportOptions], report: messages.Report) -> Optional[bytes]:
-    """Collect, validate and build; return the file bytes, or None when ``report`` has errors."""
+@dataclass
+class BuildResult:
+    """What ``run`` found: the file bytes (None when there are errors) and how many LODs were collected."""
+
+    data: Optional[bytes] = None
+    lod_count: int = 0
+
+
+def run(geometries: Sequence, options: Optional[ExportOptions], report: messages.Report) -> BuildResult:
+    """Collect, validate and build. The one place the Validate and P3D Export nodes get their messages from."""
     options = options or ExportOptions()
     collection = collect(geometries, report)
+    result = BuildResult(None, len(collection.lods))
     if report.has_errors:
-        return None
+        return result
     model: Optional[P3DModel] = build(collection, options, report)
-    if model is None:
-        return None
-    return to_bytes(model, report)
+    if model is not None:
+        result.data = to_bytes(model, report)
+    return result
+
+
+def build_bytes(geometries: Sequence, options: Optional[ExportOptions], report: messages.Report) -> Optional[bytes]:
+    """Collect, validate and build; return the file bytes, or None when ``report`` has errors."""
+    return run(geometries, options, report).data
 
 
 def export_geometry(geometries: Sequence, path: str, options: Optional[ExportOptions], report: messages.Report,

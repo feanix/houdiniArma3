@@ -112,7 +112,39 @@ def rebuild_proxy(proxy: ProxyData, label: str, report: messages.Report) -> Opti
             label, "%s (proxy %s) is not exactly one triangle on three points" % (where, p3d.format_proxy_name(path, index)),
             "A plain proxy triangle is written in its place"))
         result = _canonical(path, index, transform, mirrored)
+    _warn_degenerate(result, where, label, report)
     return result
+
+
+#: A triangle is degenerate when its area is below this fraction of its longest side squared, and two sides are
+#: "equal" when they differ by less than this fraction of the longer one.
+DEGENERATE_AREA = 1e-6
+EQUAL_SIDES = 1e-4
+
+
+def degenerate_triangle(points) -> Optional[str]:
+    """Spec 13.4: ``"zero area"`` or ``"two sides of equal length"`` when the angle sort of the proxy frame is
+    ambiguous, else None. ``points`` are three positions."""
+    a, b, c = points
+    sides = sorted(math.dist(p, q) for p, q in ((a, b), (b, c), (c, a)))
+    longest = sides[2]
+    if longest == 0.0:
+        return "zero area"
+    cross = _cross(_sub(b, a), _sub(c, a))
+    area = 0.5 * math.sqrt(cross[0] ** 2 + cross[1] ** 2 + cross[2] ** 2)
+    if area <= DEGENERATE_AREA * longest * longest:
+        return "zero area"
+    if sides[1] - sides[0] <= EQUAL_SIDES * sides[1] or sides[2] - sides[1] <= EQUAL_SIDES * sides[2]:
+        return "two sides of equal length"
+    return None
+
+
+def _warn_degenerate(proxy: FileProxy, where: str, label: str, report: messages.Report) -> None:
+    problem = degenerate_triangle(proxy.points)
+    if problem:
+        report.warning(messages.format_problem(
+            label, "%s (proxy %s) has a degenerate triangle (%s), so its direction is ambiguous" % (where, proxy.name, problem),
+            "Use the Proxy node to make the proxy, or fix the triangle (a proxy has one long and one short side)"))
 
 
 def _to_file(position) -> Vec:

@@ -129,7 +129,7 @@ def _parm_block(spec: NodeSpec, parm: Parm) -> str:
     if parm.help:
         lines.append("\thelp\t%s" % _quote(parm.help))
     if parm.kind == "file":
-        lines.append('\tparmtag\t{ "filechooser_mode" "read" }')
+        lines.append('\tparmtag\t{ "filechooser_mode" "%s" }' % parm.file_mode)
         if parm.file_pattern:
             lines.append("\tparmtag\t{ \"filechooser_pattern\" %s }" % _quote(parm.file_pattern))
     if parm.kind == "button" or (parm.kind == "menu" and parm.action):
