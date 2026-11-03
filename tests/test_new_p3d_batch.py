@@ -46,9 +46,11 @@ class TestNewP3d(NodeTestCase):
     def test_validate_and_export_report_no_errors(self):
         validate = self.network.createNode("a3ob_validate")
         validate.setFirstInput(self.nodes["assemble"])
-        self.assertEqual(cook(validate).errors, ())
+        result = cook(validate)
+        self.assertEqual((result.errors, result.warnings), ((), ()))
         export = self.nodes["export"]
-        self.assertEqual(cook(export).errors, ())
+        result = cook(export)
+        self.assertEqual((result.errors, result.warnings), ((), ()))
         self.assertEqual(export.parm("file").unexpandedString(), "$HIP/%s.p3d" % self.network.name())
 
     def test_save_to_disk_works_on_the_first_try(self):

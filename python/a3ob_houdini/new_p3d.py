@@ -4,11 +4,12 @@
 """New P3D without a dialog (ux-tools.md section 7.5): builds the starter network of D10.
 
     res1_mesh (Box) -------------------> res1_props (LOD Properties: Resolution 1) ------+
-    geometry_mesh (Box) -> geometry_components (Group) -> geometry_mass (Mass, 100 kg)
+    geometry_mesh (Box) -> geometry_triangles (Divide) -> geometry_components (Group) -> geometry_mass (Mass)
         -> geometry_props (Geometry) ------------------------------------------------------+--> assemble --> export
     memory_points (Add, one point) -> memory_group (Group "new_point") -> memory_props (Memory) --+
 
-The network passes the checks of spec 17.1 as it stands, so Save to Disk works on the first try. ``new_p3d_dialog`` is
+The network passes the checks of spec 17.1 as it stands, with no errors and no warnings (the Geometry box is
+triangulated so rule T2-TRI stays quiet), so Save to Disk works on the first try. ``new_p3d_dialog`` is
 the thin ``hou.ui`` layer on top. Needs ``hou``.
 """
 
@@ -26,7 +27,7 @@ TOOL = "New P3D"
 _NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 #: Node names, in the order of the diagram above.
-NODE_NAMES = ("res1_mesh", "res1_props", "geometry_mesh", "geometry_components", "geometry_mass", "geometry_props",
+NODE_NAMES = ("res1_mesh", "res1_props", "geometry_mesh", "geometry_triangles", "geometry_components", "geometry_mass", "geometry_props",
               "memory_points", "memory_group", "memory_props", "assemble", "export")
 
 _NOTE = ("Replace res1_mesh, geometry_mesh and memory_points with your own model, geometry and memory points. "
@@ -102,11 +103,15 @@ def build_starter(parent=None, name: str = "new_p3d"):
 
     geometry_mesh = add("box", "geometry_mesh", 0, 3)
     _set_box(geometry_mesh)
-    geometry_components = group(geometry_mesh, "geometry_components", "component01", 1, 3)
-    geometry_mass = chain(add("a3ob_mass", "geometry_mass", 2, 3), geometry_components)
+    geometry_triangles = chain(add("divide", "geometry_triangles", 1, 3), geometry_mesh)
+    geometry_triangles.parm("convex").set(1)  # Convex Polygons, at most 3 sides: triangles
+    geometry_triangles.parm("usemaxsides").set(1)
+    geometry_triangles.parm("numsides").set(3)
+    geometry_components = group(geometry_triangles, "geometry_components", "component01", 2, 3)
+    geometry_mass = chain(add("a3ob_mass", "geometry_mass", 3, 3), geometry_components)
     geometry_mass.parm("mode").set("total")
     geometry_mass.parm("value").set(100.0)
-    geometry_props = chain(add("a3ob_lod_properties", "geometry_props", 3, 3), geometry_mass)
+    geometry_props = chain(add("a3ob_lod_properties", "geometry_props", 4, 3), geometry_mass)
     geometry_props.parm("lodtype").set("geometry")
 
     memory_points = add("add", "memory_points", 0, 6)
@@ -115,11 +120,11 @@ def build_starter(parent=None, name: str = "new_p3d"):
     memory_props = chain(add("a3ob_lod_properties", "memory_props", 3, 6), memory_group)
     memory_props.parm("lodtype").set("memory")
 
-    assemble = add("a3ob_assemble_lods", "assemble", 4, 3)
+    assemble = add("a3ob_assemble_lods", "assemble", 5, 3)
     for number, props in enumerate((res1_props, geometry_props, memory_props)):
         assemble.setInput(number + 1, props)  # input 1 is the optional base: left empty
 
-    export = chain(add("a3ob_p3d_export", "export", 5, 3), assemble)
+    export = chain(add("a3ob_p3d_export", "export", 6, 3), assemble)
     export.parm("file").set("$HIP/%s.p3d" % name)
     export.setDisplayFlag(True)
     export.setRenderFlag(True)
@@ -127,7 +132,7 @@ def build_starter(parent=None, name: str = "new_p3d"):
     made.note = network.createStickyNote()
     made.note.setText(_NOTE)
     made.note.setPosition(hou.Vector2(0, 1.5 * _ROW))
-    made.note.setSize(hou.Vector2(4 * _COLUMN, 1.2))
+    made.note.setSize(hou.Vector2(5 * _COLUMN, 1.2))
     return made
 
 
