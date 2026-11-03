@@ -608,11 +608,24 @@ D14). The tool changes nothing in a scene.
 | Creates | One Geo object and these nodes (all inside it): |
 
 ```
- res1_mesh (Box) ---------> res1_props (LOD Properties: Resolution, 1) -----------+
- geometry_mesh (Box) -> geometry_triangles (Divide: 3 sides) -> geometry_components (Group: "component01") |
-        -> geometry_mass (Mass: Uniform total, 100 kg) -> geometry_props (Geometry) --+--> assemble --> export
- memory_points (Add: 1 point, group "new_point") -> memory_props (Memory) --------+
+                         geometry_mesh (Box)
+                              |
+                         geometry_triangles (Divide: 3 sides)
+                              |
+ res1_mesh (Box)         geometry_components (Group: "component01")   memory_points (Add: 1 point)
+     |                        |                                            |
+     |                   geometry_mass (Mass: Uniform total, 100 kg)  memory_group (Group: "new_point")
+     |                        |                                            |
+ res1_props (Resolution 1) geometry_props (Geometry)                  memory_props (Memory)
+         (the three props nodes feed assemble, on one row)
+                         assemble
+                              |
+                         export
 ```
+
+The layout flows top to bottom in three LOD columns (Res 1, Geometry, Memory). The props nodes share one row,
+`assemble` and `export` sit under the Geometry column, and the note is to the left of the Res 1 column. The exact
+offsets are the `LAYOUT` table in `new_p3d.py`.
 
 | Node | Notes |
 |---|---|
