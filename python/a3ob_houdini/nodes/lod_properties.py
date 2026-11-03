@@ -32,6 +32,7 @@ SPEC = NodeSpec(
     summary="Sets the LOD type, resolution, named properties and LOD copies of a LOD geometry.",
     inputs=(1, 1),
     input_labels=("LOD geometry",),
+    input_help=("The LOD whose type, resolution, properties and copies you want to set.",),
     parms=(
         Parm("fromin", "Read from Input", "button", "",
              "Copy the type, resolution, properties and copies of the input into the parameters below. "

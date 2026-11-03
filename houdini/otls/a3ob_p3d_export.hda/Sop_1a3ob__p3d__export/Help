@@ -12,7 +12,7 @@ This node is the end of a network. It checks the geometry the way Validate does 
 @inputs
 
 P3D geometry or LOD geometry:
-    Input 1.
+    The model to check and write: a whole P3D from Assemble LODs, or a single LOD.
 
 @parameters
 
@@ -21,7 +21,7 @@ Output File:
 
     The .p3d file to write.
 
-    Type: File path (can name a new file). Default: $HIP/$HIPNAME.p3d. Files: *.p3d.
+    Type: File path (can name a new file). Default: $HIP/$HIPNAME.p3d. Files: `*.p3d`.
 
 Save to Disk:
     #id: save
@@ -36,10 +36,10 @@ Check:
     Type: Menu. Default: Every cook.
 
     Every cook:
-        check whenever the node cooks.
+        Check whenever the node cooks.
 
     When saving:
-        check only on Save to Disk (for large models).
+        Check only on Save to Disk (for large models).
 
 Errors Show As:
     #id: errorlevel
@@ -47,10 +47,10 @@ Errors Show As:
     Type: Menu. Default: Error (stop here).
 
     Error (stop here):
-        the node turns red and the nodes below it stop.
+        The node turns red and the nodes below it stop.
 
     Warning (keep geometry):
-        the node turns yellow and the geometry keeps flowing; the text still starts with Error:. Saving stops on errors either way.
+        The node turns yellow and the geometry keeps flowing; the text still starts with Error:. Saving stops on errors either way.
 
 Warnings Count As Errors:
     #id: strict
@@ -66,14 +66,7 @@ Duplicate LODs:
 
     Type: Menu. Default: Fail.
 
-    Fail:
-        Sets this to Fail.
-
-    Skip:
-        Sets this to Skip.
-
-    Ignore:
-        Sets this to Ignore.
+    Choices: Fail, Skip, Ignore.
 
 Max Messages:
     #id: maxmessages
@@ -101,9 +94,9 @@ Apply:
 Selection Mask:
     #id: selmask
 
-    Which point groups become selections: names separated by spaces, * and ? match, ^ before a name leaves it out. Groups named in a3ob_tagg_order are always selections.
+    Which point groups become selections: names separated by spaces, `*` and ? match, ^ before a name leaves it out. Groups named in a3ob_tagg_order are always selections.
 
-    Type: Text. Default: * ^__*.
+    Type: Text. Default: `* ^__*`.
 
 Lowercase:
     #id: lowercase

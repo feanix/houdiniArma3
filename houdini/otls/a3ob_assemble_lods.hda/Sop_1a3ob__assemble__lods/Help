@@ -14,10 +14,10 @@ Input 1 is optional: it takes the original P3D geometry, so that the LODs you di
 @inputs
 
 Base P3D geometry (optional):
-    Input 1.
+    The original P3D geometry. LODs you do not replace are kept from it.
 
 LOD geometry:
-    Inputs 2 to 32.
+    One LOD to put into the model. It replaces the base LOD of the same type and resolution.
 
 The node also works with no input connected.
 

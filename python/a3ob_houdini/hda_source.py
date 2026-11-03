@@ -25,9 +25,9 @@ This module does not import ``hou``.
 import os
 from typing import Dict, List
 
-from .docs_common import (NODE_INTRO, collapse_inputs, default_text, range_text, split_menu_help,
-                          type_text)
-from .params import CALLBACK, MENU_SCRIPT, NodeSpec, Parm
+from .docs_common import (FOLDER_TEXT, NODE_INTRO, collapse_inputs, condition_text, default_text, input_sentence,
+                          menu_texts, parm_index_for, range_text, type_text, wiki_escape)
+from .params import CALLBACK, MENU_SCRIPT, NodeSpec, Parm, hide_when_text
 
 __all__ = ["hda_folder_name", "section_name", "render", "write", "differences"]
 
@@ -112,21 +112,27 @@ def _parm_block(spec: NodeSpec, parm: Parm) -> str:
     """One ``parm { ... }`` (or ``multiparm { ... }``) block of the DialogScript."""
     if parm.kind == "multiparm":
         return _multiparm_block(spec, parm)
-    kind = {"string": "string", "file": "file", "toggle": "toggle", "button": "button", "int": "integer",
-            "float": "float", "menu": "string"}[parm.kind]
+    if parm.kind == "folder":
+        return _folder_block(spec, parm)
+    kind = {"string": "string", "file": "file", "dir": "directory", "color": "color4", "toggle": "toggle",
+            "button": "button", "int": "integer", "float": "float", "menu": "string"}[parm.kind]
     if parm.kind == "float" and parm.size == 3:
         kind = "vector"  # Houdini names the components tx, ty, tz
     lines = ["    parm {", "\tname\t%s" % _quote(parm.name), "\tlabel\t%s" % _quote(parm.label), "\ttype\t%s" % kind]
-    if parm.kind in ("int", "float"):
+    if parm.kind in ("int", "float", "color"):
         lines.append("\tsize\t%d" % parm.size)
-    if parm.size > 1:
+    if parm.kind == "color":
+        lines.append("\tdefault\t{ %s }" % " ".join(_quote(_number(value)) for value in parm.default))
+    elif parm.size > 1:
         lines.append("\tdefault\t{ %s }" % " ".join(_quote(str(value)) for value in parm.default))
     else:
         lines.append("\tdefault\t{ %s }" % _quote(_default_text(parm)))
     if parm.kind in ("int", "float") and (parm.minimum is not None or parm.maximum is not None):
         lines.append("\trange\t{ %s }" % _range_text(parm))
+    if parm.kind == "color":
+        lines.append("\trange\t{ 0 1 }")
     if parm.kind == "menu" and parm.menu_action:
-        lines.append("\tmenu {")
+        lines.append("\tmenutoggle {" if parm.menu_toggle else "\tmenu {")
         lines.append("\t    [ %s ]" % _quote(MENU_SCRIPT % (spec.kind, parm.menu_action)))
         lines.append("\t    language python")
         lines.append("\t}")
@@ -136,6 +142,10 @@ def _parm_block(spec: NodeSpec, parm: Parm) -> str:
         lines.append("\t}")
     if parm.help:
         lines.append("\thelp\t%s" % _quote(parm.help))
+    if parm.enable_when:
+        lines.append("\tdisablewhen\t%s" % _quote(hide_when_text(parm.enable_when)))
+    if parm.show_when:
+        lines.append("\thidewhen\t%s" % _quote(hide_when_text(parm.show_when)))
     if parm.kind == "file":
         lines.append('\tparmtag\t{ "filechooser_mode" "%s" }' % parm.file_mode)
         if parm.file_pattern:
@@ -145,6 +155,18 @@ def _parm_block(spec: NodeSpec, parm: Parm) -> str:
         lines.append("\tparmtag\t{ \"script_callback\" %s }" % _quote(callback))
         lines.append('\tparmtag\t{ "script_callback_language" "python" }')
     lines.append("    }")
+    return "\n".join(lines)
+
+
+def _folder_block(spec: NodeSpec, parm: Parm) -> str:
+    """A folder: ``groupsimple`` / ``groupcollapsible`` / ``group`` (one tab; neighbours form the row of tabs).
+    Its children are written inside it, one level deeper, as Houdini writes them."""
+    word = {"simple": "groupsimple", "collapsible": "groupcollapsible", "tabs": "group"}[parm.folder_type]
+    lines = ["    %s {" % word, "\tname\t%s" % _quote(parm.name), "\tlabel\t%s" % _quote(parm.label)]
+    for child in parm.children:
+        lines.append("")
+        lines.extend("    " + line if line else line for line in _parm_block(spec, child).split("\n"))
+    lines += ["    }", ""]
     return "\n".join(lines)
 
 
@@ -195,33 +217,56 @@ def _indent(lines: List[str]) -> List[str]:
     return [("    " + line) if line else "" for line in lines]
 
 
-def _parm_help(parm: Parm) -> List[str]:
-    """Wiki entry for one parameter: the label as the term, then its facts. A multiparm nests its row parameters."""
-    intro, item_text = split_menu_help(parm) if parm.kind == "menu" and parm.items else (parm.help, {})
+def _parm_help(spec: NodeSpec, parm: Parm, depth: int = 0, scope=None) -> List[str]:
+    """Wiki entry for one parameter: the label as the term, then its facts. A multiparm nests its row parameters.
+    A folder is a heading (one level deeper inside another folder) followed by its children. Text that the wiki would
+    read as markup is escaped (``wiki_escape``)."""
+    if parm.kind == "folder":
+        bars = "=" * (2 + depth)
+        lines = ["%s %s %s (%s)" % (bars, wiki_escape(parm.label), bars, parm.name), ""]
+        lines.append("These parameters are in the %s %s." % (wiki_escape(parm.label), FOLDER_TEXT[parm.folder_type]))
+        lines.append("")
+        if parm.help:
+            lines += [wiki_escape(parm.help), ""]
+        for child in parm.children:
+            lines += _parm_help(spec, child, depth + 1, scope)
+        return lines
+    intro, item_text = menu_texts(parm) if parm.kind == "menu" else (parm.help, {})
     body = ["#id: " + parm.name.replace("#", ""), ""]
     if intro:
-        body += [intro, ""]
-    facts = ["Type: " + type_text(parm)]
+        body += [wiki_escape(intro), ""]
+    facts = ["Type: " + wiki_escape(type_text(parm))]
     default = default_text(parm)
     if default is not None:
-        facts.append("Default: " + default)
+        facts.append("Default: " + wiki_escape(default))
     allowed = range_text(parm)
     if allowed:
-        facts.append("Allowed: " + allowed)
+        facts.append("Allowed: " + wiki_escape(allowed))
     if parm.kind == "file" and parm.file_pattern:
-        facts.append("Files: " + parm.file_pattern)
+        facts.append("Files: " + wiki_escape(parm.file_pattern))
+    index = parm_index_for(spec, scope)
+    if parm.show_when:
+        facts.append("Shown when: " + wiki_escape(condition_text(index, parm.show_when)))
+    if parm.enable_when:
+        facts.append("Editable when: " + wiki_escape(condition_text(index, parm.enable_when)))
     body += [". ".join(facts) + ".", ""]
-    if parm.kind == "menu" and not parm.items:
+    if parm.kind == "menu" and parm.menu_action:
         body += ["The choices are made when you open the menu, from the geometry or the settings.", ""]
+    plain = []
     for token, label in parm.items if parm.kind == "menu" else ():
-        body += [label + ":", "    " + (item_text.get(token) or "Sets this to " + label + "."), ""]
+        if item_text.get(token):
+            body += [wiki_escape(label) + ":", "    " + wiki_escape(item_text[token]), ""]
+        else:
+            plain.append(wiki_escape(label))
+    if plain:
+        body += [("Other choices: " if len(plain) < len(parm.items) else "Choices: ") + ", ".join(plain) + ".", ""]
     if parm.kind == "multiparm":
         body += ["Each row has these parameters. The number in the row replaces the # in the name.", ""]
         for child in parm.children:
-            body += _parm_help(child)
+            body += _parm_help(spec, child, depth, parm)
     while body[-1] == "":
         body.pop()
-    return [parm.label + ":"] + _indent(body) + [""]
+    return [wiki_escape(parm.label) + ":"] + _indent(body) + [""]
 
 
 def help_text(spec: NodeSpec) -> str:
@@ -229,22 +274,22 @@ def help_text(spec: NodeSpec) -> str:
 
     Houdini's help server shows it for the node (``hou.helpServerUrl() + "nodes/sop/<type name>"``) and the ``?`` icon
     of the parameter pane opens it. The last line names the full HTML page; it is not a link."""
-    lines = ["= %s =" % spec.label, "", "#type: node", "#context: sop", "#internal: " + spec.type_name,
-             "#tags: arma, p3d", "", '"""%s"""' % spec.summary.replace('"""', "'''"), ""]
+    lines = ["= %s =" % wiki_escape(spec.label), "", "#type: node", "#context: sop", "#internal: " + spec.type_name,
+             "#tags: arma, p3d", "", '"""%s"""' % wiki_escape(spec.summary.replace('"""', "'''")), ""]
     for paragraph in NODE_INTRO.get(spec.kind, ()):
-        lines += [paragraph, ""]
+        lines += [wiki_escape(paragraph), ""]
     groups = collapse_inputs(spec)
     if groups:
         lines += ["@inputs", ""]
         for first, last, label in groups:
-            lines.append(label + ":")
-            lines.append("    " + ("Input %d." % first if first == last else "Inputs %d to %d." % (first, last)))
+            lines.append(wiki_escape(label) + ":")
+            lines.append("    " + wiki_escape(input_sentence(spec, first)))
             lines.append("")
         if spec.inputs[0] == 0:
             lines += ["The node also works with no input connected.", ""]
     lines += ["@parameters", ""]
     for parm in spec.parms:
-        lines += _parm_help(parm)
+        lines += _parm_help(spec, parm)
     lines += [HELP_LAST_LINE % spec.type_name, ""]
     return "\n".join(lines)
 

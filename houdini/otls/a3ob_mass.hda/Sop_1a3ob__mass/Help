@@ -12,7 +12,7 @@ Arma needs a mass for each point of a Geometry LOD to work out how a vehicle or 
 @inputs
 
 LOD geometry:
-    Input 1.
+    The Geometry LOD whose points get a mass.
 
 @parameters
 
@@ -23,23 +23,7 @@ Mode:
 
     Type: Menu. Default: Uniform total.
 
-    Set on each:
-        Sets this to Set on each.
-
-    Uniform total:
-        Sets this to Uniform total.
-
-    From density:
-        Sets this to From density.
-
-    Clear:
-        Sets this to Clear.
-
-    Copy from mass:
-        Sets this to Copy from mass.
-
-    Copy to mass:
-        Sets this to Copy to mass.
+    Choices: Set on each, Uniform total, From density, Clear, Copy from mass, Copy to mass.
 
 Value:
     #id: value

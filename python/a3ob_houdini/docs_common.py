@@ -10,8 +10,9 @@ not import ``hou``.
 
 import re
 
-__all__ = ["NODE_INTRO", "KIND_TEXT", "number_text", "default_text", "type_text", "range_text", "collapse_inputs",
-           "split_menu_help", "inputs_text"]
+__all__ = ["NODE_INTRO", "KIND_TEXT", "FOLDER_TEXT", "number_text", "default_text", "type_text", "range_text",
+           "collapse_inputs", "input_sentence", "split_menu_help", "menu_texts", "inputs_text", "wiki_escape",
+           "condition_text", "parm_index_for"]
 
 #: A short introduction for each node page, in plain words. The parameter list below it comes from the node's table.
 NODE_INTRO = {
@@ -69,7 +70,84 @@ KIND_TEXT = {
     "float": "Number",
     "menu": "Menu",
     "multiparm": "List of rows",
+    "dir": "Folder path",
+    "color": "Colour with alpha",
+    "folder": "Group",
 }
+
+#: What the three folder looks are called for an artist.
+FOLDER_TEXT = {"simple": "group box", "collapsible": "group box you can fold", "tabs": "tab"}
+
+#: Characters that make Houdini's help wiki read the text as markup (bold, italics, links, keys, code, variables).
+_WIKI_MARKUP = re.compile(r"[*`\[\]]|<<|>>|\(\(|\)\)|^_|_$|__|\{\{\{")
+
+
+def wiki_escape(text):
+    """Text for the Help section that the wiki shows exactly as written.
+
+    The wiki has no backslash escape, but it shows the text of a code span (between backticks) as it is. So every run
+    of words that would read as markup (``* ^__*``) goes into one code span. A backtick in the text becomes a quote."""
+    parts = re.split(r"(\s+)", text.replace("`", "'"))
+    out, i = [], 0
+    while i < len(parts):
+        if parts[i] and not parts[i].isspace() and _WIKI_MARKUP.search(parts[i]):
+            end = i
+            while end + 2 < len(parts) and _WIKI_MARKUP.search(parts[end + 2]):
+                end += 2
+            run = "".join(parts[i:end + 1])
+            tail = re.search(r"[.,;:]+$", run)  # punctuation after the run is the sentence's, not the markup's
+            if tail and tail.start() > 0:
+                run, tail = run[:tail.start()], tail.group(0)
+            else:
+                tail = ""
+            out.append("`" + run + "`" + tail)
+            i = end + 1
+        else:
+            out.append(parts[i])
+            i += 1
+    return "".join(out)
+
+
+def _value_words(parm, value):
+    if parm is None:
+        return value
+    if parm.kind == "toggle":
+        return "on" if value in ("1", "true", "True") else "off"
+    for token, label in parm.items:
+        if token == value:
+            return label
+    return value
+
+
+def condition_text(index, conditions):
+    """A ``show_when`` / ``enable_when`` in words: ``Mode is Uniform total or Set on each and Set Texture is on``.
+
+    ``index`` maps parameter names to parameters (``NodeSpec.parm_index``, plus the row's own parameters)."""
+    terms = []
+    for name, values in conditions:
+        parm = index.get(name)
+        label = parm.label if parm is not None else name
+        words = [_value_words(parm, value) for value in values]
+        terms.append("%s is %s" % (label, " or ".join(words)))
+    return " and ".join(terms)
+
+
+def parm_index_for(spec, parm=None):
+    """The parameters a condition may name: the node's, and (for a multiparm row parameter) the row's own."""
+    index = dict(spec.parm_index)
+    if parm is not None:
+        index.update({child.name: child for child in parm.children})
+    return index
+
+
+def menu_texts(parm):
+    """``(intro, {token: text})`` of a menu: the per-choice texts of ``item_help``, or the ones split out of its help.
+
+    Every text starts with a capital letter."""
+    intro, texts = split_menu_help(parm)
+    texts = dict(texts)
+    texts.update(dict(parm.item_help))
+    return intro, {token: text[:1].upper() + text[1:] for token, text in texts.items() if text}
 
 
 def number_text(value):
@@ -79,8 +157,10 @@ def number_text(value):
 
 def default_text(parm):
     """The default of a parameter in words, or ``None`` for a button."""
-    if parm.kind == "button":
+    if parm.kind in ("button", "folder"):
         return None
+    if parm.kind == "color":
+        return "%s (red, green, blue, alpha)" % ", ".join(number_text(v) for v in parm.default)
     if parm.kind == "multiparm":
         return "%d rows" % int(parm.default)
     if parm.kind == "toggle":
@@ -99,7 +179,11 @@ def default_text(parm):
 
 def type_text(parm):
     text = KIND_TEXT[parm.kind]
-    if parm.size > 1:
+    if parm.kind == "menu" and parm.menu_toggle:
+        text = "Menu (pick several; each pick adds or removes an entry in the text)"
+    if parm.kind == "folder":
+        text = "Group (%s)" % FOLDER_TEXT[parm.folder_type]
+    elif parm.size > 1 and parm.kind != "color":
         text = "%d %s" % (parm.size, "whole numbers" if parm.kind == "int" else "numbers")
     if parm.kind == "file" and parm.file_mode == "write":
         text += " (can name a new file)"
@@ -127,6 +211,13 @@ def collapse_inputs(spec):
         else:
             groups.append([number, number, base])
     return groups
+
+
+def input_sentence(spec, first):
+    """The one-line description of input ``first`` (1-based): ``spec.input_help``, or the label as a sentence."""
+    if first - 1 < len(spec.input_help) and spec.input_help[first - 1]:
+        return spec.input_help[first - 1]
+    return "Connect %s here." % spec.input_labels[first - 1]
 
 
 def inputs_text(spec):

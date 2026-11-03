@@ -12,7 +12,7 @@ P3D Import gives you each LOD of a model packed into one primitive. This node un
 @inputs
 
 P3D geometry:
-    Input 1.
+    The geometry from P3D Import, with every LOD packed into its own primitive.
 
 @parameters
 

@@ -49,6 +49,8 @@ SPEC = NodeSpec(
     summary="Adds proxies (references to other .p3d files, such as weapon slots or seats) as packed primitives.",
     inputs=(1, 2),
     input_labels=("LOD geometry", "Points (one proxy per point)"),
+    input_help=("The LOD that gets the proxy.",
+                "Optional. Each point of this geometry becomes one proxy, placed and turned by that point."),
     parms=(
         Parm("path", "Path", "string", "",
              "The proxy model path, for example \\a3\\data_f\\proxies\\weapon_slots\\top. Slashes become backslashes "

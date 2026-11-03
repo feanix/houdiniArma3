@@ -12,7 +12,7 @@ A polygon in a P3D file has a texture and a material (an rvmat file). This node 
 @inputs
 
 LOD geometry:
-    Input 1.
+    The LOD whose polygons get the texture and material.
 
 @parameters
 
@@ -29,10 +29,10 @@ Group Type:
     Type: Menu. Default: Primitives.
 
     Primitives:
-        the polygons in the group.
+        The polygons in the group.
 
     Points:
-        the polygons whose points are all in the group.
+        The polygons whose points are all in the group.
 
 Set Texture:
     #id: settex
@@ -48,14 +48,7 @@ Texture Source:
 
     Type: Menu. Default: File.
 
-    File:
-        Sets this to File.
-
-    Color:
-        Sets this to Color.
-
-    Custom:
-        Sets this to Custom.
+    Choices: File, Color, Custom.
 
 Texture File:
     #id: texture
@@ -78,74 +71,7 @@ Color Type:
 
     Type: Menu. Default: CO - Color Value.
 
-    CO - Color Value:
-        Sets this to CO - Color Value.
-
-    CA - Texture with Alpha:
-        Sets this to CA - Texture with Alpha.
-
-    LCO - Terrain Texture Layer Color:
-        Sets this to LCO - Terrain Texture Layer Color.
-
-    SKY - Sky texture:
-        Sets this to SKY - Sky texture.
-
-    NO - Normal Map:
-        Sets this to NO - Normal Map.
-
-    NS - Normal map specular with Alpha:
-        Sets this to NS - Normal map specular with Alpha.
-
-    NOF - Normal map faded:
-        Sets this to NOF - Normal map faded.
-
-    NON - Normal map noise:
-        Sets this to NON - Normal map noise.
-
-    NOHQ - Normal map High Quality:
-        Sets this to NOHQ - Normal map High Quality.
-
-    NOPX - Normal Map with paralax:
-        Sets this to NOPX - Normal Map with paralax.
-
-    NOVHQ - two-part DXT5 compression:
-        Sets this to NOVHQ - two-part DXT5 compression.
-
-    DT - Detail Texture:
-        Sets this to DT - Detail Texture.
-
-    CDT - Colored detail texture:
-        Sets this to CDT - Colored detail texture.
-
-    MCO - Multiply color:
-        Sets this to MCO - Multiply color.
-
-    DTSMDI - Detail SMDI map:
-        Sets this to DTSMDI - Detail SMDI map.
-
-    MC - Macro Texture:
-        Sets this to MC - Macro Texture.
-
-    AS - Ambient Shadow texture:
-        Sets this to AS - Ambient Shadow texture.
-
-    ADS - Ambient Shadow in Blue:
-        Sets this to ADS - Ambient Shadow in Blue.
-
-    PR - Ambient shadow from directions:
-        Sets this to PR - Ambient shadow from directions.
-
-    SM - Specular Map:
-        Sets this to SM - Specular Map.
-
-    SMDI - Specular Map, optimized:
-        Sets this to SMDI - Specular Map, optimized.
-
-    MASK - Mask for multimaterial:
-        Sets this to MASK - Mask for multimaterial.
-
-    TI - Thermal imaging map:
-        Sets this to TI - Thermal imaging map.
+    Choices: CO - Color Value, CA - Texture with Alpha, LCO - Terrain Texture Layer Color, SKY - Sky texture, NO - Normal Map, NS - Normal map specular with Alpha, NOF - Normal map faded, NON - Normal map noise, NOHQ - Normal map High Quality, NOPX - Normal Map with paralax, NOVHQ - two-part DXT5 compression, DT - Detail Texture, CDT - Colored detail texture, MCO - Multiply color, DTSMDI - Detail SMDI map, MC - Macro Texture, AS - Ambient Shadow texture, ADS - Ambient Shadow in Blue, PR - Ambient shadow from directions, SM - Specular Map, SMDI - Specular Map, optimized, MASK - Mask for multimaterial, TI - Thermal imaging map.
 
 Raw Text:
     #id: raw

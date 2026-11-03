@@ -31,7 +31,8 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(REPO_ROOT, "python"))
 
 # The text helpers are shared with the Help section of each HDA (python/a3ob_houdini/hda_source.py).
-from a3ob_houdini.docs_common import (NODE_INTRO, collapse_inputs, default_text, inputs_text,  # noqa: E402
+from a3ob_houdini.docs_common import (FOLDER_TEXT, NODE_INTRO, collapse_inputs, condition_text,  # noqa: E402
+                                      default_text, input_sentence, inputs_text, menu_texts, parm_index_for,
                                       range_text, split_menu_help, type_text)
 
 DOCS_DIR = os.path.join(REPO_ROOT, "docs", "user")
@@ -186,12 +187,27 @@ def paragraphs(texts):
 # Node pages
 
 
-def parm_html(parm, id_prefix=""):
-    """One ``<section class="parm">`` for a parameter."""
+def folder_html(spec, parm, scope=None):
+    """A folder: a heading that says what it is, then its parameters. Folders are only a grouping on the node."""
+    lines = ['<section class="folder" id="%s">' % esc(parm.name),
+             "<h3>%s <code>%s</code></h3>" % (esc(parm.label), esc(parm.name)),
+             "<p>These parameters are in the %s %s.</p>" % (esc(parm.label), esc(FOLDER_TEXT[parm.folder_type]))]
+    if parm.help:
+        lines.append("<p>%s</p>" % esc(parm.help))
+    lines.append('<div class="folder-body">')
+    lines.extend(parm_html(child, "", spec, scope) for child in parm.children)
+    lines += ["</div>", "</section>"]
+    return "\n".join(lines)
+
+
+def parm_html(parm, id_prefix="", spec=None, scope=None):
+    """One ``<section class="parm">`` for a parameter (or ``folder_html`` for a folder)."""
+    if parm.kind == "folder":
+        return folder_html(spec, parm, scope)
     anchor = id_prefix + parm.name.replace("#", "")
     lines = ['<section class="parm" id="%s">' % esc(anchor),
              "<h3>%s <code>%s</code></h3>" % (esc(parm.label), esc(parm.name))]
-    intro, item_text = (split_menu_help(parm) if parm.kind == "menu" and parm.items else (parm.help, {}))
+    intro, item_text = (menu_texts(parm) if parm.kind == "menu" else (parm.help, {}))
     if intro:
         lines.append("<p>%s</p>" % esc(intro))
     facts = [("Type", type_text(parm))]
@@ -203,6 +219,12 @@ def parm_html(parm, id_prefix=""):
         facts.append(("Allowed", allowed))
     if parm.kind == "file" and parm.file_pattern:
         facts.append(("Files", parm.file_pattern))
+    if spec is not None:
+        index = parm_index_for(spec, scope)
+        if parm.show_when:
+            facts.append(("Shown when", condition_text(index, parm.show_when)))
+        if parm.enable_when:
+            facts.append(("Editable when", condition_text(index, parm.enable_when)))
     lines.append("<dl>")
     for name, value in facts:
         lines.append("<dt>%s</dt><dd>%s</dd>" % (esc(name), esc(value)))
@@ -214,13 +236,13 @@ def parm_html(parm, id_prefix=""):
             more = ": %s" % esc(item_text[token]) if item_text.get(token) else ""
             lines.append("<li>%s <code>%s</code>%s</li>" % (esc(label), esc(token), more))
         lines.append("</ul>")
-    elif parm.kind == "menu":
+    if parm.kind == "menu" and parm.menu_action:
         lines.append("<p>The choices are made when you open the menu, from the geometry or the settings.</p>")
     if parm.kind == "multiparm":
         lines.append("<p>Each row has these parameters. The number in the row replaces the <code>#</code> in the "
                      "name.</p>")
         lines.append('<div class="rows">')
-        lines.extend(parm_html(child, anchor + "-") for child in parm.children)
+        lines.extend(parm_html(child, anchor + "-", spec, parm) for child in parm.children)
         lines.append("</div>")
     lines.append("</section>")
     return "\n".join(lines)
@@ -243,13 +265,15 @@ def node_page(spec):
         lines += ["<h2>Inputs</h2>", "<ol>"]
         for first, last, label in groups:
             where = "Input %d" % first if first == last else "Inputs %d to %d" % (first, last)
-            lines.append("<li value=\"%d\">%s: %s</li>" % (first, esc(where), esc(label)))
+            has_help = first - 1 < len(spec.input_help) and spec.input_help[first - 1]
+            more = ". " + input_sentence(spec, first) if has_help else ""
+            lines.append("<li value=\"%d\">%s: %s%s</li>" % (first, esc(where), esc(label), esc(more)))
         lines.append("</ol>")
         if low == 0:
             lines.append('<p class="note">The node also works with no input connected.</p>')
     lines.append("<h2>Parameters</h2>")
     lines.append("<p>Parameters are in the order they appear on the node.</p>")
-    lines.extend(parm_html(parm) for parm in spec.parms)
+    lines.extend(parm_html(parm, "", spec) for parm in spec.parms)
     return relative, page(relative, spec.label, "\n".join(lines))
 
 

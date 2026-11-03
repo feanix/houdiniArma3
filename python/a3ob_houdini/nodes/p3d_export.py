@@ -56,6 +56,7 @@ SPEC = NodeSpec(
             "pressed. The output is the input.",
     inputs=(1, 1),
     input_labels=("P3D geometry or LOD geometry",),
+    input_help=("The model to check and write: a whole P3D from Assemble LODs, or a single LOD.",),
     parms=(
         Parm("file", "Output File", "file", "$HIP/$HIPNAME.p3d", "The .p3d file to write.", file_pattern="*.p3d",
              file_mode="write"),

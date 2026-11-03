@@ -23,6 +23,7 @@ SPEC = NodeSpec(
     summary="Sets the texture and the material (rvmat) of the polygons in a group, or of all polygons.",
     inputs=(1, 1),
     input_labels=("LOD geometry",),
+    input_help=("The LOD whose polygons get the texture and material.",),
     parms=(
         Parm("group", "Group", "string", "",
              "Which polygons to set. Empty means all polygons. Normal Houdini group syntax; a selection with an "

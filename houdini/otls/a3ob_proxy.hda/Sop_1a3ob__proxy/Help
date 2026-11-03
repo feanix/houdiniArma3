@@ -14,10 +14,10 @@ With one input, the node adds a single proxy. With a second input, it adds one p
 @inputs
 
 LOD geometry:
-    Input 1.
+    The LOD that gets the proxy.
 
 Points (one proxy per point):
-    Input 2.
+    Optional. Each point of this geometry becomes one proxy, placed and turned by that point.
 
 @parameters
 
@@ -35,38 +35,7 @@ Common Proxies:
 
     Type: Menu. Default: (choose).
 
-    (choose):
-        Sets this to (choose).
-
-    Weapon: optic:
-        Sets this to Weapon: optic.
-
-    Weapon: pointer:
-        Sets this to Weapon: pointer.
-
-    Weapon: suppressor:
-        Sets this to Weapon: suppressor.
-
-    Weapon: magazine:
-        Sets this to Weapon: magazine.
-
-    Weapon: bipod:
-        Sets this to Weapon: bipod.
-
-    Driver: offroad:
-        Sets this to Driver: offroad.
-
-    Passenger: offroad:
-        Sets this to Passenger: offroad.
-
-    Gunner: hunter:
-        Sets this to Gunner: hunter.
-
-    Commander: hunter:
-        Sets this to Commander: hunter.
-
-    Light volume: car:
-        Sets this to Light volume: car.
+    Choices: (choose), Weapon: optic, Weapon: pointer, Weapon: suppressor, Weapon: magazine, Weapon: bipod, Driver: offroad, Passenger: offroad, Gunner: hunter, Commander: hunter, Light volume: car.
 
 Index:
     #id: index

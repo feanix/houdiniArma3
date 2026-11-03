@@ -12,7 +12,7 @@ Run this node before you export. It looks for problems that Arma would reject or
 @inputs
 
 P3D geometry or LOD geometry:
-    Input 1.
+    The model to check: a whole P3D from Assemble LODs, or a single LOD.
 
 @parameters
 
@@ -22,10 +22,10 @@ Errors Show As:
     Type: Menu. Default: Error (stop here).
 
     Error (stop here):
-        the node turns red and the nodes below it stop.
+        The node turns red and the nodes below it stop.
 
     Warning (keep geometry):
-        the node turns yellow and the geometry keeps flowing; the text still starts with Error:. Saving stops on errors either way.
+        The node turns yellow and the geometry keeps flowing; the text still starts with Error:. Saving stops on errors either way.
 
 Warnings Count As Errors:
     #id: strict
@@ -41,14 +41,7 @@ Duplicate LODs:
 
     Type: Menu. Default: Fail.
 
-    Fail:
-        Sets this to Fail.
-
-    Skip:
-        Sets this to Skip.
-
-    Ignore:
-        Sets this to Ignore.
+    Choices: Fail, Skip, Ignore.
 
 Max Messages:
     #id: maxmessages
