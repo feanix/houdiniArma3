@@ -30,3 +30,13 @@
 {"actor": "lead", "id": 30, "task_id": 3, "text": "status in_review -> approved (verify-3-a findings fixed in rev 3; lead review 64000cd)", "ts": "2026-11-03T07:34:22Z"}
 {"actor": "lead", "id": 31, "task_id": 3, "text": "gate full PASS 28f1864c 7.0s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T07:38:08Z"}
 {"actor": "lead", "id": 32, "task_id": 3, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T07:38:08Z"}
+{"actor": "lead", "id": 33, "task_id": 3, "text": "merged by lead (queued by lead)", "ts": "2026-11-03T07:38:11Z"}
+{"actor": "lead", "id": 34, "task_id": 3, "text": "queue: merged at 574f620", "ts": "2026-11-03T07:38:11Z"}
+{"actor": "advisor", "id": 35, "task_id": 5, "text": "Advisor (requester) reviewed 4de2a61: all five criteria answered with evidence. Accepted; owner chose the hybrid as D13. OK to merge.", "ts": "2026-11-03T08:08:00Z"}
+{"actor": "advisor", "id": 36, "task_id": 6, "text": "Advisor (requester) reviewed f0df404: content meets the criteria. Before merge: (1) rewrite section 6 for D13 (text-authored Python-type HDAs: inputs per INDEX__SECTION, so Assemble is not limited to 4; HDA updates add parms; temp-then-rename export; callbacks swallow errors); (2) fold the owner answers to Q-1..Q-13 (D14) into the doc as resolved; (3) file the spec additions Q-3/Q-4 (and Q-12 lowercase scope) as a spec task or include them if in scope.", "ts": "2026-11-03T08:08:01Z"}
+{"actor": "lead", "id": 37, "task_id": 5, "text": "gate quick PASS 4de2a612 3.0s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T08:08:39Z"}
+{"actor": "lead", "id": 38, "task_id": 5, "text": "status in_progress -> in_review (lead reran q2b; advisor accepted; owner D13)", "ts": "2026-11-03T08:08:40Z"}
+{"actor": "lead", "id": 39, "task_id": 5, "text": "docs-only branch: code gate not needed", "ts": "2026-11-03T08:08:40Z"}
+{"actor": "lead", "id": 40, "task_id": 5, "text": "status in_review -> approved (lead reran q2b; advisor accepted; owner D13)", "ts": "2026-11-03T08:08:40Z"}
+{"actor": "lead", "id": 41, "task_id": 5, "text": "gate full PASS acae0d7c 3.5s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T08:08:47Z"}
+{"actor": "lead", "id": 42, "task_id": 5, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T08:08:48Z"}
