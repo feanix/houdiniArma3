@@ -1,7 +1,6 @@
 # M2 data-model revision 3 check (W1-W7): the per-prim LOD uid `a3ob_lod_uid` (D8).
 # Run: "E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe" hcheck5_lod_uid.py
 import os
-import random
 import sys
 import tempfile
 
@@ -132,20 +131,18 @@ cat.nodeVerb("unpack").execute(unb2, [back])
 print("W7 bgeo save/load of the packed P3D geometry, then Unpack:", uids(unb2))
 
 
-# ---------------------------------------------------------------- uid generator (spec 3.3)
-_issued = set()
+# ---------------------------------------------------------------- uid generator (spec 3.5, lead revision)
+import hashlib
 
 
-def new_lod_uid(rng=None):
-    """Random positive int32, never 0, never one this session already issued."""
-    rng = rng or random.SystemRandom()
-    while True:
-        value = rng.randrange(1, 2**31)
-        if value not in _issued:
-            _issued.add(value)
-            return value
+def lod_uid(source_key, lod_index):
+    """Deterministic positive int32, never 0: hash of the import's source key (importer node path) and LOD index."""
+    digest = hashlib.blake2b(("%s|%d" % (source_key, lod_index)).encode("utf-8"), digest_size=8).digest()
+    return 1 + int.from_bytes(digest, "little") % (2**31 - 1)
 
 
-draw = [new_lod_uid() for _ in range(200000)]
-print("W8 generator: 200000 draws, distinct", len(set(draw)), "min", min(draw), "max", max(draw),
-      "all fit int32:", all(0 < v < 2**31 for v in draw))
+same = lod_uid("/obj/geo1/a3ob_import1", 3) == lod_uid("/obj/geo1/a3ob_import1", 3)
+keys = [("/obj/geo%d/a3ob_import1" % node, lod) for node in range(1000) for lod in range(32)]
+draw = [lod_uid(k, lod) for k, lod in keys]
+print("W8 generator: deterministic", same, "| 1000 import nodes x 32 LODs =", len(draw), "uids, distinct", len(set(draw)),
+      "min", min(draw), "max", max(draw), "all fit int32:", all(0 < v < 2**31 for v in draw))

@@ -61,7 +61,7 @@ and changes them where marked **(change)**.
 | D-RAW | Flags, the LOD header flags, named properties and unknown TAGGs are stored raw. A decoded view is optional and never authoritative. |
 | D-PROXY | Each proxy becomes a PackedGeometry primitive. Its embedded geometry is the proxy triangle in proxy-local space, with all its attributes and groups. Its transform is A3OB's triangle frame expressed in Houdini axes. Prim attributes `a3ob_proxy_path` and `a3ob_proxy_index` carry the reference, on the packed prim **and** on the embedded triangle, so unpacking a proxy yields a valid inline proxy (§13.3). |
 | D-STR | M1 strings are valid Unicode (cp1252, undefined bytes as C1) and go to `hou` unchanged; export encodes them back with M1's `encode_string`, and a character it cannot encode is a validator error (§5, V9). Lone surrogates crash Houdini (R1), and M1 never produces them. |
-| D-UID | Every polygon of an imported LOD carries the prim int `a3ob_lod_uid`, one fresh value per LOD per import (D8). The validator flags a LOD geometry that holds two or more distinct non-zero uids, i.e. a Merge of LODs. The uid is never written to the P3D file (§3.5). |
+| D-UID | Every polygon of an imported LOD carries the prim int `a3ob_lod_uid`, a stable hash of the importer node path and LOD index (D8, §3.5). The validator flags a LOD geometry that holds two or more distinct non-zero uids, i.e. a Merge of LODs. The uid is never written to the P3D file (§3.5). |
 | D-PREFIX | Every custom attribute is named `a3ob_*`. The Houdini standard names `P`, `N` and `uv*` are used only where their Houdini meaning is exactly right (§14). |
 
 ## 3. P3D and LOD containers
@@ -174,16 +174,12 @@ per prim, so a per-prim marker shows the damage exactly.
 
 **Generation (importer).**
 
-- One uid per LOD per import: a random integer in `1 .. 2³¹−1`, from `random.SystemRandom`, redrawn when it was
-  already issued in this Python session. So two LODs of one file, and the LODs of two imports of the same file, get
-  different uids.
+- One uid per LOD per import, **deterministic**: `lod_uid(source_key, lod_index) = 1 + (blake2b("<source_key>|<lod_index>", 8 bytes) as little-endian int) mod (2³¹−1)`. Range `1 .. 2³¹−1`, never 0 (W8).
+- `source_key` is the importer node's path (`hou.Node.path()`); a scripted import with no node passes its own key. So two LODs of one file differ by index, two import nodes (even of the same file) differ by path, and a recook of the same node gives the same uids. That keeps the importer's output stable for caches and for diffing.
 - The importer writes it on **every polygon** of the LOD, inline proxy triangles included. It does not write it on
   packed proxy prims or on their embedded triangles. Those are ignored by the check (value 0).
-- A new import never reuses a uid of an earlier import, even of the same file. This is deliberate: two imports of one
-  file merged together are exactly the error to catch.
-- Across hip sessions the session memory is gone. A saved uid can collide with a new random one with probability about
-  n²/2³² for n LODs in one scene (n = 1000: about 2e-4). A collision only hides a merge from this check (the count
-  heuristic is still there); it never changes exported data. The generator is tested in W8.
+- Two import nodes of one file merged together get different uids, which is exactly the error to catch.
+- Distinct keys can still collide, with probability about n²/2³² for n stamped LODs in one scene (1000 nodes × 32 LODs: no collision in W8). Two hip files whose import nodes share a path give the same uids. A collision only hides a merge from this check (the count heuristic is still there); it never changes exported data.
 
 **Survival (hython checks W2-W7).** The uid is an ordinary prim attribute, so everything that keeps prim attributes keeps it:
 
@@ -209,10 +205,10 @@ distinct values exist, the geometry is a merged LOD. The check is exact for stam
 | Prims with two or more distinct non-zero uids | Merged LOD (warning). |
 | Imported LOD merged with a hand-authored mesh | Not seen by the uid check (the hand-authored prims read 0 or have no attribute), only by the count heuristic (W6). |
 | LOD with no polygons (Memory, Land Contact: only loose points) | No prim can carry a uid, so the uid check is blind for it. The count heuristic still applies. |
-| Two copies of one LOD merged | One uid: not flagged. The duplicate-signature error (§3.2) catches the result. |
+| Two copies of one LOD merged | One uid: not flagged by the uid check. The count heuristic may still warn. |
 
 The "A3OB LOD" shelf tool (§17.2) stamps nothing: an artist-authored LOD has no import to trace. An artist who wants
-the check on such a LOD can run the same stamping helper (`new_lod_uid`) on it.
+the check on such a LOD can run the same stamping helper on it, with the helper node's path as `source_key`.
 
 **Never exported.** The exporter ignores `a3ob_lod_uid`: it is not a TAGG, not part of any signature and has no P3D
 field. The same holds if the attribute is lost; nothing in the file depends on it. So it is invisible to every
@@ -837,7 +833,7 @@ Run headless with `"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.ex
 | W5 | `hcheck5_lod_uid.py` | Blast, `fuse::2.0` and `polyextrude::2.0` keep the uid (PolyExtrude's new prims inherit it); `copytopoints::2.0` copies share it |
 | W6 | `hcheck5_lod_uid.py` | A prim created by HOM in a stamped LOD reads 0 (one distinct non-zero uid); a LOD without the attribute has none; Merge(stamped, hand-authored) shows one distinct non-zero uid |
 | W7 | `hcheck5_lod_uid.py` | bgeo save and load of the packed P3D geometry, then Unpack: the uids are intact |
-| W8 | `hcheck5_lod_uid.py` | The uid generator (`SystemRandom`, 1..2³¹−1, session-unique): 200 000 draws, all distinct and in int32 range |
+| W8 | `hcheck5_lod_uid.py` | `lod_uid` is deterministic (same key and index, same uid) and gives 32 000 distinct uids, all in 1..2³¹−1, for 1000 import-node paths × 32 LODs |
 | X1 | `proxyframe_check.py` → `proxyframe_check_out.txt` (pure Python, uses M1) | For 5000 random triangles, the §13.4 Houdini frame equals `(M·x, M·y, −M·z, M·origin)` of M1's `proxy_frame`; M1's frame mapped by `M` has det −1 and the spec frame det +1; the canonical triangle gives the identity |
 | R1 | `hcheck3_surrogate_crash.py` → `hcheck3_surrogate_crash_out.txt` (review evidence `rv_sur.py`, reproduced) | `setAttribValue` with an M1 string containing U+DC81 kills hython with "Fatal error: Segmentation fault" (exit 139) |
 | R2 | review evidence `rv_check2.py` case F (not copied; same result as V5) | Fuse merges a packed proxy's point with a mesh point |

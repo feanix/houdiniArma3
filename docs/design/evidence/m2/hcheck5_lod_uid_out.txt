@@ -16,4 +16,4 @@ W6 HOM-created prim in a stamped LOD: uids [111, 111, 0] distinct nonzero [111]
 W6 hand-authored LOD without the attribute: uids None distinct []
 W6 Merge(stamped LOD, hand-authored LOD): uids [111, 111, 0, 0] distinct [111]
 W7 bgeo save/load of the packed P3D geometry, then Unpack: [111, 111, 222, 222]
-W8 generator: 200000 draws, distinct 200000 min 32646 max 2147472043 all fit int32: True
+W8 generator: deterministic True | 1000 import nodes x 32 LODs = 32000 uids, distinct 32000 min 34475 max 2147476213 all fit int32: True
