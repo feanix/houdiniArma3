@@ -76,6 +76,11 @@ Parm("lods", "LODs", "menu", "*", "...", menu_action="lod_choices", menu_toggle=
 `created(node)` once when an artist makes the node, never when a scene loads (P3D Export uses it for D26: start from
 the active preset). The HDA defaults stay as the table says.
 
+`NodeSpec.on_loaded=True` does the same for the OnLoaded event (a scene with the node loads) and calls `loaded(node)`;
+Mass and Material Assign use it to move an old hidden parameter into its new one. The section guards its import, so a
+session without the package loads the node quietly. A toggle may have an `action` (a `BUTTONS` callback), as Mass
+"Visualize" does. `node_visualizer.py` makes node Color visualizers (only in a session with the Houdini window).
+
 `NodeSpec.input_help` is a tuple of one plain sentence per input (the Help `@inputs` section and the reference show it).
 Text in the Help section goes through `docs_common.wiki_escape`: the wiki has no backslash escape, so words that would
 read as markup (`* ^__*`) are put in a code span. Write plain text in the table; do not add wiki markup yourself.

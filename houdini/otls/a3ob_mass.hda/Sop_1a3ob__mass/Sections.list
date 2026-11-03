@@ -4,3 +4,5 @@ PythonCook	PythonCook
 TypePropertiesOptions	TypePropertiesOptions
 Tools.shelf	Tools.shelf
 Help	Help
+OnLoaded	OnLoaded
+ExtraFileOptions	ExtraFileOptions

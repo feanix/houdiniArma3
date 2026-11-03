@@ -36,6 +36,10 @@ CALLBACK = "import a3ob_houdini.entry as e; e.button(%r, %r, kwargs)"
 
 #: The OnCreated event of a node whose spec has ``on_created`` (the section text; the node is ``kwargs["node"]``).
 CREATED_SCRIPT = "import a3ob_houdini.entry as e; e.created(%r, kwargs)\n"
+#: The OnLoaded event of a node whose spec has ``on_loaded`` (a scene load, not a new node). The import is guarded:
+#: with the A3OB package not on the path the node still loads, quietly.
+LOADED_SCRIPT = ("try:\n    import a3ob_houdini.entry as e\nexcept ImportError:\n    e = None\n"
+                 "if e is not None:\n    e.loaded(%r, kwargs)\n")
 
 #: The script of a menu whose items are made at the moment the menu opens (``Parm.menu_action``).
 #: Houdini evaluates it as one Python expression (``return`` is a syntax error there), so it imports inline.
@@ -124,8 +128,8 @@ class Parm:
                     raise ValueError("parameter %r: a condition needs a parameter name and values" % self.name)
         if self.kind == "button" and not self.action:
             raise ValueError("button %r needs an action name" % self.name)
-        if self.action and self.kind not in ("button", "menu"):
-            raise ValueError("parameter %r: only a button or a menu has an action" % self.name)
+        if self.action and self.kind not in ("button", "menu", "toggle"):
+            raise ValueError("parameter %r: only a button, a menu or a toggle has an action" % self.name)
         if self.file_mode not in ("read", "write"):
             raise ValueError("parameter %r: file_mode must be read or write" % self.name)
         if self.menu_action and self.kind != "menu":
@@ -174,6 +178,9 @@ class NodeSpec:
     #: The node module has a ``created(node)`` function that runs once when an artist makes the node (the HDA's
     #: OnCreated event; not when a scene loads). The parameter defaults stay as the table says.
     on_created: bool = False
+    #: The node module has a ``loaded(node)`` function that runs when a scene with the node is loaded (the HDA's
+    #: OnLoaded event), for example to move the value of an old parameter into its new one.
+    on_loaded: bool = False
     parm_index: Dict[str, Parm] = field(init=False, repr=False, compare=False, default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -350,6 +357,9 @@ def _template_unconditioned(spec: NodeSpec, parm: Parm):
             template.setScriptCallbackLanguage(hou.scriptLanguage.Python)
     elif parm.kind == "toggle":
         template = hou.ToggleParmTemplate(parm.name, parm.label, default_value=bool(parm.default))
+        if parm.action:  # a toggle that runs code when it is switched (Mass "Visualize")
+            template.setScriptCallback(CALLBACK % (spec.kind, parm.action))
+            template.setScriptCallbackLanguage(hou.scriptLanguage.Python)
     elif parm.kind == "int":
         defaults = tuple(int(v) for v in parm.default) if parm.size > 1 else (int(parm.default),)
         template = hou.IntParmTemplate(

@@ -3,6 +3,7 @@
 SPDX-License-Identifier: GPL-3.0-or-later
 """
 
+import json
 import os
 import unittest
 
@@ -60,6 +61,24 @@ class TestRampAndStats(unittest.TestCase):
         self.assertAlmostEqual(colors[2][0], 0.002, places=3)  # half way is green, just turning yellow
         self.assertEqual(colors[2][1], 1.0)
 
+    def test_visualizer_ramp_gives_the_same_colours(self):
+        # #32: ramp_stops + ramp_range, read the way a node Color visualizer does (linear, clamped at both ends)
+        def visualizer_color(value, masses):
+            low, high = mass_math.ramp_range(masses)
+            position = min(1.0, max(0.0, (value - low) / (high - low)))
+            stops = mass_math.ramp_stops()
+            for (p0, c0), (p1, c1) in zip(stops, stops[1:]):
+                if position <= p1:
+                    rate = (position - p0) / (p1 - p0)
+                    return tuple(c0[k] + (c1[k] - c0[k]) * rate for k in range(3))
+            return stops[-1][1]
+
+        for masses in ([0, 1, 3, 5, 2, 0], [0, 4, 4], [2.5, 7.5, 100.0, 0], [0.5, 100.0, 0]):
+            for got, want in zip((visualizer_color(m, masses) for m in masses), mass_math.ramp_colors(masses)):
+                for a, b in zip(got, want):
+                    self.assertAlmostEqual(a, b, places=2, msg=str(masses))
+        self.assertEqual(mass_math.ramp_range([0, 0]), (0.0, 1.0))
+
     def test_stats_and_centre_ignore_zero_mass(self):
         positions = [(0, 0, 0), (2, 0, 0), (9, 9, 9)]
         masses = [1.0, 3.0, 0.0]
@@ -77,6 +96,25 @@ class TestParameterTables(unittest.TestCase):
         otls = os.path.join(REPO_ROOT, "houdini", "otls")
         for kind in ("mass", "proxy"):
             self.assertEqual(hda_source.differences(nodes.load(kind).SPEC, otls), [], kind)
+
+    def test_mass_and_material_assign_have_a_guarded_python_onloaded(self):
+        for kind in ("mass", "material_assign"):
+            spec = nodes.load(kind).SPEC
+            files = hda_source.render(spec)
+            section = hda_source.section_name(spec)
+            script = files[section + "/OnLoaded"]
+            self.assertIn("except ImportError", script)  # without the package the node loads quietly
+            self.assertIn("e.loaded(%r, kwargs)" % kind, script)
+            self.assertEqual(json.loads(files[section + "/ExtraFileOptions"]),
+                             {"OnLoaded/IsPython": {"type": "bool", "value": True}})
+            self.assertIn("OnLoaded\tOnLoaded", files[section + "/Sections.list"])
+        spec = nodes.load("mass").SPEC
+        dialog = hda_source.render(spec)[hda_source.section_name(spec) + "/DialogScript"]
+        self.assertIn("e.button('mass', 'visualize', kwargs)", dialog)  # the Visualize toggle runs the callback
+
+    def test_both_events_share_one_extra_file_options(self):
+        text = hda_source._extra_file_options(["OnCreated", "OnLoaded"])
+        self.assertEqual(sorted(json.loads(text)), ["OnCreated/IsPython", "OnLoaded/IsPython"])
 
     def test_mass_modes_and_proxy_defaults(self):
         mass = nodes.load("mass").SPEC

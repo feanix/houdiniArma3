@@ -17,20 +17,21 @@ except ImportError:
 
 from a3ob_core.p3d.lod_types import LodType
 
-from .. import mass_math
+from .. import mass_math, node_visualizer
 from ..errors import UserError
 from ..messages import Report, format_problem
 from ..params import NodeSpec, Parm, read_parms
 from ._lodname import lod_name, lod_type
 
-__all__ = ["SPEC", "cook", "BUTTONS"]
+__all__ = ["SPEC", "cook", "BUTTONS", "loaded"]
 
 NAME = "Mass"
 ATTRIB = "a3ob_mass"
 HOUDINI_ATTRIB = "mass"
 GEOMETRY_TYPES = (LodType.GEOMETRY, LodType.GEOMETRY_BUOY, LodType.GEOMETRY_PHYSX)
 LEGACY_UNSET = -1.0  # the default of the hidden "value" parameter: "an old scene did not store a number here"
-OWN_DEFAULT = 1.0
+VISUALIZER = "a3ob_mass_color"  # the name of the node visualizer this node makes
+MODE_PARM = {"each": "mass_each", "total": "mass_total", "density": "density"}  # the number each mode reads
 
 SPEC = NodeSpec(
     kind="mass",
@@ -67,13 +68,16 @@ SPEC = NodeSpec(
              "this number. It cannot be below 0. The slider shows 0 to 10, and you can type a larger number.",
              minimum=0, show_when=(("mode", ("density",)),)),
         Parm("value", "Value (old scenes)", "float", LEGACY_UNSET,
-             "Not shown. Scenes saved before the three mass parameters existed stored the number here. While it is "
-             "0 or more and the parameter of the current mode is still 1, the node uses it, so old scenes keep "
-             "their mass. A new node leaves it at -1.", hidden=True),
+             "Not shown. Scenes saved before the three mass parameters existed stored the number here. When a scene "
+             "loads, a number of 0 or more is moved into the parameter of the current mode and this goes back to "
+             "-1. A new node leaves it at -1.", hidden=True),
         Parm("group", "Group", "string", "", "The points to change, as a group name or point numbers (for example 0-3). Empty means all points."),
         Parm("visualize", "Visualize", "toggle", False,
-             "Write the colour Cd: blue is the least mass, red the most, black no mass. The export ignores Cd."),
+             "Colour the points in the viewport by their mass: blue is the least mass, red the most, black no mass. "
+             "This is a node visualizer, so the geometry (and any Cd it has) is not changed. The export ignores it.",
+             action="visualize"),
     ),
+    on_loaded=True,
 )
 
 
@@ -109,17 +113,12 @@ def cook(node, report: Report) -> None:
         _write(geo, ATTRIB, masses)
     _report(geo, positions, report)
     if values["visualize"]:
-        _visualize(geo, count)
+        _update_range(node, geo, count)
 
 
 def _amount(values: dict, name: str) -> float:
-    """The number of the current mode. Only that mode's own parameter is read, except for the old shared "value":
-    a scene saved before the split stores it, and it counts while the mode's own parameter is still at its default."""
-    own = values[name]
-    legacy = values["value"]
-    if legacy >= 0 and own == OWN_DEFAULT:
-        return legacy
-    return own
+    """The number of the current mode: its own parameter. (The old shared "value" is moved there by ``loaded``.)"""
+    return values[name]
 
 
 def _selected_points(geo, group: str):
@@ -246,14 +245,52 @@ def _warn_lod_type(geo, report: Report) -> None:
         "Use a Geometry, Geometry Buoyancy or Geometry PhysX LOD, or clear the mass"))
 
 
-def _visualize(geo, count: int) -> None:
-    """Write ``Cd`` from the final masses on every point."""
-    masses = list(geo.pointFloatAttribValues(ATTRIB)) if geo.findPointAttrib(ATTRIB) else [0.0] * count
-    colors = mass_math.ramp_colors(masses)
-    if geo.findPointAttrib("Cd") is None:
-        geo.addAttrib(hou.attribType.Point, "Cd", (1.0, 1.0, 1.0))
-    if colors:
-        geo.setPointFloatAttribValues("Cd", [c for color in colors for c in color])
+def _masses(geo, count: int):
+    return list(geo.pointFloatAttribValues(ATTRIB)) if geo.findPointAttrib(ATTRIB) else [0.0] * count
 
 
-BUTTONS = {}
+def _update_range(node, geo, count: int) -> None:
+    """Keep the ramp of the node visualizer on the present masses (least non-zero mass at blue, most at red).
+    The cooked geometry is not touched. Without a visualizer (hython, or none made yet) nothing happens."""
+    viz = node_visualizer.find(node, VISUALIZER)
+    if viz is not None:
+        node_visualizer.set_range(viz, *mass_math.ramp_range(_masses(geo, count)))
+
+
+def _show(node) -> None:
+    """Make (or switch on) the node Color visualizer of ``a3ob_mass`` on this node."""
+    low, high = (0.0, 1.0)
+    geo = node.geometry()  # may be None before the first cook
+    if geo is not None and geo.findPointAttrib(ATTRIB) is not None:
+        low, high = mass_math.ramp_range(_masses(geo, len(geo.points())))
+    node_visualizer.ensure_color_ramp(node, VISUALIZER, "Mass", ATTRIB, mass_math.ramp_stops(), low, high)
+
+
+def visualize(kwargs) -> None:
+    """The Visualize toggle was switched: add or remove the node visualizer."""
+    node = kwargs["node"]
+    if node.evalParm("visualize"):
+        _show(node)
+    else:
+        node_visualizer.remove(node, VISUALIZER)
+
+
+def loaded(node) -> None:
+    """The OnLoaded event (a scene with this node was loaded).
+
+    1. An old scene stored one shared number in ``value``. It moves into the parameter of the current mode, and
+       ``value`` goes back to -1, so from now on whatever is typed in the mode's own parameter (1 as well) counts.
+       A mode with no number (Clear, the two copy modes) just drops it: nothing reads it.
+    2. A scene saved while Visualize wrote Cd has the toggle on but no visualizer: make it.
+    """
+    legacy = node.evalParm("value")
+    if legacy >= 0:
+        own = MODE_PARM.get(node.evalParm("mode"))
+        if own:
+            node.parm(own).set(legacy)
+        node.parm("value").set(LEGACY_UNSET)
+    if node.evalParm("visualize") and node_visualizer.available():
+        _show(node)
+
+
+BUTTONS = {"visualize": visualize}

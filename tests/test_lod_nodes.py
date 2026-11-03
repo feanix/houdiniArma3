@@ -436,12 +436,11 @@ class TestMaterialAssign(unittest.TestCase):
         with self.assertRaises(UserError):
             cook("material_assign", self.crate, texsource="color", texcolor=(2.0, 0.0, 0.0, 1.0))
 
-    def test_the_old_colour_parameter_still_counts_when_the_picker_is_left_white(self):
+    def test_the_old_colour_parameter_is_not_read_on_cook(self):
+        # #32: the OnLoaded event moves it into the picker (tested in hython); the cook only reads the picker
         want = {"#(argb,8,8,3)color(0.250,0.500,0.750,1.000,CO)"}
-        out, _ = cook("material_assign", self.crate, texsource="color", color=(0.25, 0.5, 0.75, 1.0), setmat=False)
-        self.assertEqual(set(self.strings(out, "a3ob_texture")), want)
         out, _ = cook("material_assign", self.crate, texsource="color", color=(0.9, 0.9, 0.9, 1.0),
-                      texcolor=(0.25, 0.5, 0.75, 1.0), setmat=False)  # the picker wins once it is changed
+                      texcolor=(0.25, 0.5, 0.75, 1.0), setmat=False)
         self.assertEqual(set(self.strings(out, "a3ob_texture")), want)
 
     def test_messages(self):
