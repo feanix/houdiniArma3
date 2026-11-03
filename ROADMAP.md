@@ -4,4 +4,4 @@ Generated from the Aesir database, do not edit. A plan, not a promise: it change
 
 ## Unplaced
 
-- #021 [open] Build D17 export options (after #20)
+- #022 [open] Auto-components on all 14 A3OB geometry LOD types (D19)
