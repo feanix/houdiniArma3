@@ -100,6 +100,18 @@ class TestMaterialAssignNode(NodeTestCase):
         self.assertEqual(self.texture_values(), {"#(argb,8,8,3)color(1.000,1.000,1.000,1.000,CO)"})
         self.assertTrue(self.state("color")[0])  # the old fields never show
 
+    def test_loading_keeps_a_colour_already_picked(self):
+        path = self.old_colour_node().path()
+        self.node.parmTuple("texcolor").set((0.5, 0.5, 0.0, 1.0))
+        hip = os.path.join(tempfile.mkdtemp(prefix="a3ob_material_hip_"), "both.hip")
+        hou.hipFile.save(hip)
+        hou.hipFile.load(hip, suppress_save_prompt=True)
+        node = hou.node(path)
+        self.network = node.parent()
+        self.node = node
+        self.assertEqual(tuple(node.parmTuple("texcolor").eval()), (0.5, 0.5, 0.0, 1.0))
+        self.assertEqual(tuple(node.parmTuple("color").eval()), (1.0, 1.0, 1.0, 1.0))
+
     def test_loading_a_scene_moves_the_old_colour_into_the_picker(self):
         # #32: saved in a hip and loaded again, OnLoaded moves it; then a white typed later counts
         path = self.old_colour_node().path()

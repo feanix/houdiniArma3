@@ -286,7 +286,8 @@ def loaded(node) -> None:
     legacy = node.evalParm("value")
     if legacy >= 0:
         own = MODE_PARM.get(node.evalParm("mode"))
-        if own:
+        # Only move it when the own parameter is still at its default: a number typed there wins.
+        if own and node.parm(own).eval() == 1.0:
             node.parm(own).set(legacy)
         node.parm("value").set(LEGACY_UNSET)
     if node.evalParm("visualize") and node_visualizer.available():

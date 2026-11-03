@@ -362,6 +362,17 @@ class TestMassNode(NodeTestCase):
         cook(node)
         self.assertEqual(self.masses(node), [1.0] * 8)
 
+    def test_loading_keeps_a_number_already_typed_in_the_mode_parameter(self):
+        node = self.old_style_node("each", 40.0)
+        node.parm("mass_each").set(7.0)
+        hip = os.path.join(tempfile.mkdtemp(prefix="a3ob_mass_hip_"), "both.hip")
+        path = node.path()
+        hou.hipFile.save(hip)
+        hou.hipFile.load(hip, suppress_save_prompt=True)
+        node = hou.node(path)
+        self.network = node.parent()
+        self.assertEqual((node.parm("mass_each").eval(), node.parm("value").eval()), (7.0, -1.0))
+
     def test_loaded_with_nothing_old_changes_nothing(self):
         node, _ = self.run_mass(cube_geometry(), mode="total", value=8)
         mass_node.loaded(node)

@@ -95,7 +95,9 @@ def loaded(node) -> None:
     set ``color`` back to white ("not stored"), so a colour typed later counts, white included."""
     old = tuple(node.parmTuple("color").eval())
     if old != WHITE:
-        node.parmTuple("texcolor").set(old)
+        # Only move it when the picker is still white: a colour picked there wins.
+        if tuple(node.parmTuple("texcolor").eval()) == WHITE:
+            node.parmTuple("texcolor").set(old)
         node.parmTuple("color").set(WHITE)
 
 
