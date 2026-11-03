@@ -35,6 +35,47 @@ Every node also needs a user docs page (the `?` icon of the parameter pane opens
 section). The page is made from the table: run `python scripts/build_user_docs.py` after `build_hdas.py`, add a short
 intro to `NODE_INTRO` in that script, and commit `docs/user/`. A test fails when the pages are out of date.
 
+## Parameter kinds and fields (`params.Parm`)
+
+`KINDS`: `string file dir color toggle button int float menu multiparm folder`. The fields below are what the node
+parts use. `tests/test_node_generator.py` has a small SPEC with every one of them (read it for working examples).
+`hda_source.py` writes them into the DialogScript; the HTML reference and the Help section show them.
+
+```python
+# Visibility: show_when / enable_when = ((parm name, (values...)), ...). All pairs must hold; a pair holds when the
+# parm has any of its values (a menu token, or "1" / "0" for a toggle). Written as Houdini hidewhen / disablewhen;
+# the docs say "Shown when Mode is Uniform total" / "Editable when Set Texture is on".
+Parm("mass_total", "Total Mass (kg)", "float", 1.0, "...", minimum=0, show_when=(("mode", ("total",)),))
+Parm("texture", "Texture File", "file", "", "...", enable_when=(("settex", ("1",)),))
+
+# Folders: kind "folder", folder_type "simple" (group box), "collapsible" or "tabs" (one tab; neighbouring tabs form
+# one row). The children are ordinary top-level parms: read_parms and the cooks look through folders and never see
+# the folder. A folder takes no show_when / enable_when (put them on its children). Folder names must not clash
+# with parm names. Houdini renames the 2nd and later tab of a row to <first tab name>_1, _2, ... when it loads the
+# asset, so only the first tab name is kept as written; the generated text stays stable.
+Parm("props_box", "Properties", "folder", folder_type="simple", children=(Parm("props", "Properties", "multiparm", ...),))
+Parm("tab_checking", "Error Checking", "folder", folder_type="tabs", children=common.level_parms())
+
+# File picker: kind "file" with file_pattern (as Houdini filechooser_pattern) and file_mode "read" or "write".
+Parm("tex", "Texture File", "file", "", "...", file_pattern="*.paa *.tga *.png")
+# Folder picker (Houdini directory chooser): kind "dir".
+Parm("projectroot", "Project Root", "dir", "", "...")
+# Colour with alpha: kind "color", four floats 0..1, default (r, g, b, a) (default white). read_parms gives a tuple.
+Parm("color", "Color", "color", (1.0, 1.0, 1.0, 1.0), "...")
+
+# Toggle menu on a string parm: a menu with menu_action (a function in the node module's MENUS, as for any dynamic
+# menu) and menu_toggle=True. Picking an entry adds or removes its token in the string (Houdini menutoggle);
+# read_parms gives the string as typed. The default may be any text.
+Parm("lods", "LODs", "menu", "*", "...", menu_action="lod_choices", menu_toggle=True)
+
+# Menu choices that need their own help: item_help=((token, text), ...). A menu whose help reads
+# "Intro. Label A: text; Label B: text" is split by itself. A choice with no text is only listed by name.
+```
+
+`NodeSpec.input_help` is a tuple of one plain sentence per input (the Help `@inputs` section and the reference show it).
+Text in the Help section goes through `docs_common.wiki_escape`: the wiki has no backslash escape, so words that would
+read as markup (`* ^__*`) are put in a code span. Write plain text in the table; do not add wiki markup yourself.
+
 ## Testing: which HDAs the suite uses
 
 The hou tests install the HDAs of the checkout under test from `houdini/otls` (`tests/hou_support.py`). A Houdini package

@@ -36,6 +36,7 @@ SPEC = NodeSpec(
     summary="Sets the mass of each point of a Geometry LOD (the #Mass# data of the P3D file).",
     inputs=(1, 1),
     input_labels=("LOD geometry",),
+    input_help=("The Geometry LOD whose points get a mass.",),
     parms=(
         Parm("mode", "Mode", "menu", "total", "What to do with the mass.", items=(
             ("each", "Set on each"),

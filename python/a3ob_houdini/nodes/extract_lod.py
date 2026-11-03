@@ -23,6 +23,7 @@ SPEC = NodeSpec(
     summary="Takes one LOD out of a P3D geometry and outputs it as a LOD geometry that you can edit.",
     inputs=(1, 1),
     input_labels=("P3D geometry",),
+    input_help=("The geometry from P3D Import, with every LOD packed into its own primitive.",),
     parms=(
         Parm("lod", "LOD", "menu", "0",
              "Which LOD to extract: pick one from the menu, or type its position in the P3D geometry "

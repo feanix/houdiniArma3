@@ -16,12 +16,18 @@ This module does not import ``hou`` at import time.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
-__all__ = ["Parm", "NodeSpec", "type_name", "read_parms", "add_spare_parms", "KINDS"]
+__all__ = ["Parm", "NodeSpec", "type_name", "read_parms", "add_spare_parms", "flat_parms", "KINDS", "FOLDER_TYPES"]
 
-#: The parameter kinds the table and the generators know.
-KINDS = ("string", "file", "toggle", "button", "int", "float", "menu", "multiparm")
+#: The parameter kinds the table and the generators know. ``folder`` is not a value: it only groups its children on the
+#: node (see ``Parm.folder_type``). ``dir`` is a string with a folder chooser. ``color`` is four floats (red, green,
+#: blue, alpha) with a colour swatch.
+KINDS = ("string", "file", "dir", "color", "toggle", "button", "int", "float", "menu", "multiparm", "folder")
+
+#: The looks of a ``folder``: a group box (``simple``), a group box the artist can fold (``collapsible``), or one tab.
+#: Neighbouring ``tabs`` folders make one row of tabs.
+FOLDER_TYPES = ("simple", "collapsible", "tabs")
 
 TYPE_PREFIX = "a3ob_"
 
@@ -65,10 +71,51 @@ class Parm:
     #: For multiparms: the parameters of one row. Their names end in ``#`` (``prop_name#``); the row number
     #: replaces it (``prop_name1``). The default of the multiparm itself is the number of rows.
     children: Tuple["Parm", ...] = ()
+    #: For folders: ``simple``, ``collapsible`` or ``tabs`` (one tab; neighbouring tabs share a row). The children are
+    #: ordinary top-level parameters: a folder only groups them, so ``read_parms`` and the cooks never see it.
+    folder_type: str = "simple"
+    #: For menus filled by ``menu_action``: let the artist pick several entries. Each pick adds or removes its token
+    #: in the string (Houdini ``menutoggle``). The callback gives the entries; the parameter stays a string.
+    menu_toggle: bool = False
+    #: When the parameter is shown: ``((parm name, (value, ...)), ...)``. All pairs must hold (and), and a pair holds
+    #: when the named parameter has any of its values (or). A menu value is its token; a toggle is ``"1"`` or
+    #: ``"0"``. The generator writes Houdini ``hidewhen`` for it, the docs say it in words. Empty: always shown.
+    show_when: Tuple[Tuple[str, Tuple[str, ...]], ...] = ()
+    #: When the parameter can be edited, in the same form as ``show_when`` (Houdini ``disablewhen``).
+    enable_when: Tuple[Tuple[str, Tuple[str, ...]], ...] = ()
+    #: For menus: ``((token, text), ...)``: what each choice does, in plain words. A choice without a text is only
+    #: listed by name. A menu whose help already reads ``Intro. Label: text; Label: text`` needs none of this.
+    item_help: Tuple[Tuple[str, str], ...] = ()
 
     def __post_init__(self) -> None:
         if self.kind not in KINDS:
             raise ValueError("parameter %r has unknown kind %r" % (self.name, self.kind))
+        if self.folder_type not in FOLDER_TYPES:
+            raise ValueError("parameter %r: folder_type must be one of %s" % (self.name, ", ".join(FOLDER_TYPES)))
+        if self.kind == "folder" and not self.children:
+            raise ValueError("folder %r needs children" % self.name)
+        if self.kind == "folder" and (self.show_when or self.enable_when):
+            raise ValueError("folder %r: put show_when and enable_when on its children" % self.name)
+        if self.children and self.kind not in ("folder", "multiparm"):
+            raise ValueError("parameter %r: only a folder or a multiparm has children" % self.name)
+        if self.kind == "color":
+            if self.size == 1:
+                object.__setattr__(self, "size", 4)
+            if self.size != 4:
+                raise ValueError("colour %r has four components (red, green, blue, alpha)" % self.name)
+            if self.default == "":
+                object.__setattr__(self, "default", (1.0, 1.0, 1.0, 1.0))
+        if self.menu_toggle and not (self.kind == "menu" and self.menu_action):
+            raise ValueError("parameter %r: menu_toggle needs a menu with a menu_action" % self.name)
+        if self.item_help and self.kind != "menu":
+            raise ValueError("parameter %r: only a menu has item_help" % self.name)
+        for token, _ in self.item_help:
+            if token not in [item for item, _ in self.items]:
+                raise ValueError("menu %r: item_help names %r, which is not a choice" % (self.name, token))
+        for conditions in (self.show_when, self.enable_when):
+            for name, values in conditions:
+                if not name or not values:
+                    raise ValueError("parameter %r: a condition needs a parameter name and values" % self.name)
         if self.kind == "button" and not self.action:
             raise ValueError("button %r needs an action name" % self.name)
         if self.action and self.kind not in ("button", "menu"):
@@ -87,8 +134,8 @@ class Parm:
                 raise ValueError("menu %r: the default %r is not one of its tokens" % (self.name, self.default))
         if self.kind == "multiparm" and not self.children:
             raise ValueError("multiparm %r needs children" % self.name)
-        if self.size != 1 and self.kind not in ("int", "float"):
-            raise ValueError("parameter %r: only int and float can have a size" % self.name)
+        if self.size != 1 and self.kind not in ("int", "float", "color"):
+            raise ValueError("parameter %r: only int, float and color can have a size" % self.name)
         if self.size < 1:
             raise ValueError("parameter %r: size must be at least 1" % self.name)
         if self.size > 1 and (not isinstance(self.default, (tuple, list)) or len(self.default) != self.size):
@@ -113,15 +160,21 @@ class NodeSpec:
     #: How many inputs the node takes: (smallest, largest).
     inputs: Tuple[int, int] = (0, 0)
     input_labels: Tuple[str, ...] = ()
+    #: One plain sentence per input (same order as ``input_labels``) for the Help section and the reference. Inputs
+    #: that only differ by "(input N)" in their labels share the first one's sentence. May be shorter than the labels.
+    input_help: Tuple[str, ...] = ()
     #: Tab menu submenu.
     submenu: str = "A3OB"
     parm_index: Dict[str, Parm] = field(init=False, repr=False, compare=False, default_factory=dict)
 
     def __post_init__(self) -> None:
-        names = [parm.name for parm in self.parms]
-        if len(set(names)) != len(names):
+        flat = flat_parms(self.parms)
+        names = [parm.name for parm in flat]
+        folder_names = [parm.name for parm in _walk_folders(self.parms)]
+        if len(set(names + folder_names)) != len(names + folder_names):
             raise ValueError("node %r has a duplicate parameter name" % self.kind)
-        object.__setattr__(self, "parm_index", {parm.name: parm for parm in self.parms})
+        object.__setattr__(self, "parm_index", {parm.name: parm for parm in flat})
+        _check_conditions(self.kind, self.parms, set(names))
 
     @property
     def type_name(self) -> str:
@@ -133,13 +186,50 @@ def type_name(kind: str) -> str:
     return TYPE_PREFIX + kind
 
 
-def read_parms(node, spec: NodeSpec) -> Dict[str, Any]:
-    """Current values of every parameter (buttons left out). A missing parameter gives the table's default.
+def flat_parms(parms) -> List[Parm]:
+    """The parameters that hold values, in node order: folders are looked through and left out. A multiparm stays
+    one entry (its row parameters are its children)."""
+    found = []
+    for parm in parms:
+        if parm.kind == "folder":
+            found.extend(flat_parms(parm.children))
+        else:
+            found.append(parm)
+    return found
 
-    An int or float with ``size`` above 1 gives a tuple. A multiparm gives a list with one dict per row, keyed by the
-    children's names without the ``#``."""
+
+def _walk_folders(parms) -> List[Parm]:
+    found = []
+    for parm in parms:
+        if parm.kind == "folder":
+            found.append(parm)
+            found.extend(_walk_folders(parm.children))
+    return found
+
+
+def _check_conditions(kind: str, parms, names) -> None:
+    """Every name in a show_when or enable_when must be a parameter of the node (or of the same multiparm row)."""
+    for parm in flat_parms(parms):
+        row_names = {child.name for child in parm.children} if parm.kind == "multiparm" else set()
+        for conditions in (parm.show_when, parm.enable_when):
+            for name, _ in conditions:
+                if name not in names:
+                    raise ValueError("node %r: %r depends on %r, which is not a parameter" % (kind, parm.name, name))
+        for child in parm.children if parm.kind == "multiparm" else ():
+            for conditions in (child.show_when, child.enable_when):
+                for name, _ in conditions:
+                    if name not in names and name not in row_names:
+                        raise ValueError("node %r: %r depends on %r, which is not a parameter" % (kind, child.name, name))
+
+
+def read_parms(node, spec: NodeSpec) -> Dict[str, Any]:
+    """Current values of every parameter (buttons and folders left out). A missing parameter gives the table's
+    default. A parameter inside a folder is read like any other: folders only group them on the node.
+
+    An int, float or colour with ``size`` above 1 gives a tuple. A multiparm gives a list with one dict per row,
+    keyed by the children's names without the ``#``."""
     values = {}
-    for parm in spec.parms:
+    for parm in flat_parms(spec.parms):
         if parm.kind == "button":
             continue
         values[parm.name] = _read_one(node, parm)
@@ -173,17 +263,68 @@ def add_spare_parms(node, spec: NodeSpec) -> None:
     node.setParmTemplateGroup(group)
 
 
+def _term(value: str) -> str:
+    """A value in a Houdini condition: plain when it is a simple word or number, quoted otherwise."""
+    return value if value and all(ch.isalnum() or ch in "_.-" for ch in value) else '"%s"' % value.replace('"', '\\"')
+
+
+def hide_when_text(show_when) -> str:
+    """The Houdini ``hidewhen`` condition that hides a parameter unless every pair of ``show_when`` holds.
+
+    ``{ a != x a != y } { b != z }`` hides when (a is neither x nor y) or (b is not z): terms in one brace are and-ed,
+    braces are or-ed. The same text, from ``enable_when``, is the ``disablewhen`` condition."""
+    return " ".join("{ %s }" % " ".join("%s != %s" % (name, _term(value)) for value in values)
+                    for name, values in show_when)
+
+
+def _set_conditions(template, parm: Parm) -> None:
+    import hou
+    if parm.show_when:
+        template.setConditional(hou.parmCondType.HideWhen, hide_when_text(parm.show_when))
+    if parm.enable_when:
+        template.setConditional(hou.parmCondType.DisableWhen, hide_when_text(parm.enable_when))
+
+
+_FOLDER_TYPES = {"simple": "Simple", "collapsible": "Collapsible", "tabs": "Tabs"}
+
+
 def _template(spec: NodeSpec, parm: Parm):
     import hou
+    template = _template_unconditioned(spec, parm)
+    _set_conditions(template, parm)
+    return template
+
+
+def _template_unconditioned(spec: NodeSpec, parm: Parm):
+    import hou
+    if parm.kind == "folder":
+        return hou.FolderParmTemplate(
+            parm.name, parm.label, folder_type=getattr(hou.folderType, _FOLDER_TYPES[parm.folder_type]),
+            parm_templates=[_template(spec, child) for child in parm.children])
+    if parm.kind == "dir":
+        template = hou.StringParmTemplate(parm.name, parm.label, 1, default_value=(str(parm.default),),
+                                          string_type=hou.stringParmType.FileReference,
+                                          file_type=hou.fileType.Directory)
+        template.setHelp(parm.help)
+        return template
+    if parm.kind == "color":
+        template = hou.FloatParmTemplate(
+            parm.name, parm.label, 4, default_value=tuple(float(v) for v in parm.default), min=0.0, max=1.0,
+            look=hou.parmLook.ColorSquare, naming_scheme=hou.parmNamingScheme.RGBA)
+        template.setHelp(parm.help)
+        return template
     if parm.kind in ("string", "file"):
         template = hou.StringParmTemplate(parm.name, parm.label, 1, default_value=(str(parm.default),))
         if parm.kind == "file":
             template.setStringType(hou.stringParmType.FileReference)
-            if parm.file_mode == "write":
-                template.setTags({"filechooser_mode": "write"})
+            tags = {"filechooser_mode": parm.file_mode}
+            if parm.file_pattern:
+                tags["filechooser_pattern"] = parm.file_pattern
+            template.setTags(tags)
     elif parm.kind == "menu" and parm.menu_action:
         template = hou.StringParmTemplate(
-            parm.name, parm.label, 1, default_value=(str(parm.default),), menu_type=hou.menuType.Normal,
+            parm.name, parm.label, 1, default_value=(str(parm.default),),
+            menu_type=hou.menuType.StringToggle if parm.menu_toggle else hou.menuType.Normal,
             item_generator_script=MENU_SCRIPT % (spec.kind, parm.menu_action),
             item_generator_script_language=hou.scriptLanguage.Python)
         if parm.action:  # a dynamic menu that also fills other parameters (Material Assign "Common" menus)

@@ -12,7 +12,7 @@ Every LOD has a type (for example Visual or Geometry), a resolution number and a
 @inputs
 
 LOD geometry:
-    Input 1.
+    The LOD whose type, resolution, properties and copies you want to set.
 
 @parameters
 
@@ -153,11 +153,7 @@ Property Mode:
 
     Type: Menu. Default: Add to Input.
 
-    Add to Input:
-        Sets this to Add to Input.
-
-    Replace All:
-        Sets this to Replace All.
+    Choices: Add to Input, Replace All.
 
 Properties:
     #id: props
@@ -192,107 +188,7 @@ LOD Copies:
 
         Type: Menu. Default: Resolution.
 
-        Resolution:
-            Sets this to Resolution.
-
-        View - Gunner:
-            Sets this to View - Gunner.
-
-        View - Pilot:
-            Sets this to View - Pilot.
-
-        View - Cargo:
-            Sets this to View - Cargo.
-
-        Shadow Volume:
-            Sets this to Shadow Volume.
-
-        Edit:
-            Sets this to Edit.
-
-        Geometry:
-            Sets this to Geometry.
-
-        Geometry Buoyancy:
-            Sets this to Geometry Buoyancy.
-
-        Geometry PhysX:
-            Sets this to Geometry PhysX.
-
-        Memory:
-            Sets this to Memory.
-
-        Land Contact:
-            Sets this to Land Contact.
-
-        Roadway:
-            Sets this to Roadway.
-
-        Paths:
-            Sets this to Paths.
-
-        Hit-points:
-            Sets this to Hit-points.
-
-        View Geometry:
-            Sets this to View Geometry.
-
-        Fire Geometry:
-            Sets this to Fire Geometry.
-
-        View - Cargo Geometry:
-            Sets this to View - Cargo Geometry.
-
-        View - Cargo Fire Geometry:
-            Sets this to View - Cargo Fire Geometry.
-
-        View - Commander:
-            Sets this to View - Commander.
-
-        View - Commander Geometry:
-            Sets this to View - Commander Geometry.
-
-        View - Commander Fire Geometry:
-            Sets this to View - Commander Fire Geometry.
-
-        View - Pilot Geometry:
-            Sets this to View - Pilot Geometry.
-
-        View - Pilot Fire Geometry:
-            Sets this to View - Pilot Fire Geometry.
-
-        View - Gunner Geometry:
-            Sets this to View - Gunner Geometry.
-
-        View - Gunner Fire Geometry:
-            Sets this to View - Gunner Fire Geometry.
-
-        Sub Parts:
-            Sets this to Sub Parts.
-
-        Shadow Volume - Cargo View:
-            Sets this to Shadow Volume - Cargo View.
-
-        Shadow Volume - Pilot View:
-            Sets this to Shadow Volume - Pilot View.
-
-        Shadow Volume - Gunner View:
-            Sets this to Shadow Volume - Gunner View.
-
-        Wreckage:
-            Sets this to Wreckage.
-
-        Underground (VBS):
-            Sets this to Underground (VBS).
-
-        Groundlayer (VBS):
-            Sets this to Groundlayer (VBS).
-
-        Navigation (VBS):
-            Sets this to Navigation (VBS).
-
-        Unknown:
-            Sets this to Unknown.
+        Choices: Resolution, View - Gunner, View - Pilot, View - Cargo, Shadow Volume, Edit, Geometry, Geometry Buoyancy, Geometry PhysX, Memory, Land Contact, Roadway, Paths, Hit-points, View Geometry, Fire Geometry, View - Cargo Geometry, View - Cargo Fire Geometry, View - Commander, View - Commander Geometry, View - Commander Fire Geometry, View - Pilot Geometry, View - Pilot Fire Geometry, View - Gunner Geometry, View - Gunner Fire Geometry, Sub Parts, Shadow Volume - Cargo View, Shadow Volume - Pilot View, Shadow Volume - Gunner View, Wreckage, Underground (VBS), Groundlayer (VBS), Navigation (VBS), Unknown.
 
     Copy Resolution #:
         #id: copy_res

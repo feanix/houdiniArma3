@@ -16,7 +16,7 @@ File:
 
     The .p3d file to read. Must be an MLOD file, not a binarized one.
 
-    Type: File path. Default: (empty). Files: *.p3d.
+    Type: File path. Default: (empty). Files: `*.p3d`.
 
 Reload:
     #id: reload
@@ -28,9 +28,9 @@ Reload:
 LODs:
     #id: lods
 
-    Which LODs to import, by position in the file: * for all, or numbers and ranges like 0 2-4.
+    Which LODs to import, by position in the file: `*` for all, or numbers and ranges like 0 2-4.
 
-    Type: Text. Default: *.
+    Type: Text. Default: `*`.
 
 Explicit Face Groups:
     #id: facegroups

@@ -30,6 +30,8 @@ SPEC = NodeSpec(
     inputs=(0, MAX_INPUTS),
     input_labels=("Base P3D geometry (optional)",) + tuple(
         "LOD geometry (input %d)" % number for number in range(2, MAX_INPUTS + 1)),
+    input_help=("The original P3D geometry. LODs you do not replace are kept from it.",
+                "One LOD to put into the model. It replaces the base LOD of the same type and resolution."),
     parms=(
         Parm("replace", "Replace Matching LODs", "toggle", True,
              "A LOD input replaces the base LOD that has the same stored LOD signature and keeps its position. "
