@@ -44,7 +44,37 @@ class TestBuiltInPresets(unittest.TestCase):
         options = ExportOptions(**sm.BUILTIN_PRESETS[sm.RELEASE])
         self.assertTrue(options.relative_paths and options.sort_sections and options.lowercase and options.auto_components)
         self.assertEqual(options.duplicate_lods, "fail")
-        self.assertFalse(options.sort_lods)
+        self.assertTrue(options.sort_lods)  # D19: A3OB always sorts LODs
+
+    def test_d17_options_in_the_presets(self):
+        """Spec 18.1 and D19: Lossless has all three D17 options off; release has only drop_uvs (and sort_lods) on."""
+        lossless = ExportOptions(**sm.BUILTIN_PRESETS[sm.LOSSLESS])
+        release = ExportOptions(**sm.BUILTIN_PRESETS[sm.RELEASE])
+        for key in ("renumber_components", "czech_names", "drop_uvs"):
+            self.assertIn(key, sm.PRESET_KEYS)
+            self.assertIs(getattr(lossless, key), False, key)
+        self.assertEqual((release.renumber_components, release.czech_names, release.drop_uvs), (False, False, True))
+
+    def test_stored_preset_without_the_d17_keys_reads_off(self):
+        settings = sm.Settings(presets={"old": {"lowercase": True}})
+        options = sm.options_for(settings, "old")
+        self.assertEqual((options.renumber_components, options.czech_names, options.drop_uvs), (False, False, False))
+
+    def test_d17_keys_round_trip_through_the_file_and_bad_types_are_reported(self):
+        folder = tempfile.mkdtemp(prefix="a3ob_d17_")
+        self.addCleanup(__import__("shutil").rmtree, folder, True)
+        path = os.path.join(folder, "s.json")
+        settings = sm.Settings(presets={"mine": {"renumber_components": True, "czech_names": True, "drop_uvs": True}})
+        sm.save(settings, path)
+        loaded, problems = sm.load(path)
+        self.assertEqual(problems, [])
+        self.assertEqual(loaded.presets["mine"], {"renumber_components": True, "czech_names": True, "drop_uvs": True})
+        self.assertTrue(sm.options_for(loaded, "mine").czech_names)
+        with open(path, "w", encoding="utf-8") as file:
+            file.write(json.dumps({"presets": {"bad": {"drop_uvs": "yes"}}}))
+        loaded, problems = sm.load(path)
+        self.assertEqual(loaded.presets["bad"], {})
+        self.assertEqual(len(problems), 1)
 
     def test_every_preset_key_is_an_export_option(self):
         fields = set(ExportOptions.__dataclass_fields__)

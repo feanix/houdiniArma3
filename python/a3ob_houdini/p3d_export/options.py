@@ -17,13 +17,21 @@ from dataclasses import dataclass
 from typing import Dict, List, Sequence, Tuple
 
 __all__ = [
-    "ExportOptions", "DEFAULT_SELECTION_MASK", "DUPLICATES", "matches_mask", "make_relative", "relative_proxy_name",
+    "ExportOptions", "DEFAULT_SELECTION_MASK", "DUPLICATES", "UV_LOD_TYPES", "keeps_uvs", "matches_mask", "make_relative", "relative_proxy_name",
     "fold_collisions",
 ]
 
 DEFAULT_SELECTION_MASK = "* ^__*"
 #: What to do with a LOD whose signature was already written (spec 3.2): stop, drop the later one, or write both.
 DUPLICATES = ("fail", "skip", "ignore")
+#: Spec 18.4: Visual, View Gunner, View Pilot, View Cargo, View Commander, Unknown, Shadow and its three views, Ground
+#: Layer (A3OB ``lod_allow_uvs``, ``utilities/data.py`` line 150). Every other LOD type drops its UVs.
+UV_LOD_TYPES = frozenset({0, 1, 2, 3, 18, -1, 4, 26, 27, 28, 31})
+
+
+def keeps_uvs(lod_type: int) -> bool:
+    """True if a LOD of this type keeps its UVs when the Drop UVs option is on."""
+    return lod_type in UV_LOD_TYPES
 
 
 @dataclass
@@ -39,6 +47,12 @@ class ExportOptions:
     sort_lods: bool = False
     auto_components: bool = False
     duplicate_lods: str = "fail"
+    #: D17 (spec 18.2): ``component<digits>`` selections become ``component01``, ``component02``... in written order.
+    renumber_components: bool = False
+    #: D17 (spec 18.3): English selection names become the Czech names of the game.
+    czech_names: bool = False
+    #: D17 (spec 18.4): LODs of a type that does not use UVs are written without them.
+    drop_uvs: bool = False
     #: Ids of the tier-2 per-LOD-type rules that are switched off (spec 17.1.1, for example ``"T2-TRI"``). All are on by
     #: default. They only change which warnings appear, never the bytes.
     rules_off: Tuple[str, ...] = ()

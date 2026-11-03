@@ -25,7 +25,8 @@ from .mesh_build import FileMesh, build_file_mesh
 from .options import ExportOptions
 from .proxy_rebuild import FileProxy, rebuild_proxy
 from .selections import GEOMETRY_TYPES, add_auto_components, collect_selections
-from .taggs import make_items, order_items, output_text
+from .renames import apply_name_options
+from .taggs import make_items, order_item_list, output_text
 
 __all__ = ["build_lod", "signature_for", "ADVISORY_PREEMPTED"]
 
@@ -81,7 +82,9 @@ def build_lod(data: LodData, options: ExportOptions, report: messages.Report) ->
     if options.auto_components:
         add_auto_components(data, file_mesh, selections, report)
     items = make_items(data, file_mesh, selections, options, report)
-    lod.taggs = order_items(items, data.details.tagg_order, data.details.tagg_active)
+    ordered = order_item_list(items, data.details.tagg_order, data.details.tagg_active)
+    apply_name_options(ordered, options, label, report)
+    lod.taggs = [item.tagg for item in ordered]
     _checks(lod, data, file_mesh, options, label, report)
     if len(report.texts(messages.ERROR)) > errors_before:
         return None

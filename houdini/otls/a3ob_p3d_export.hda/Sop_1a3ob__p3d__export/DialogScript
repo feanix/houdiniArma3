@@ -149,6 +149,27 @@
 	help	"Geometry LODs without a component selection get one per connected piece."
     }
     parm {
+	name	"renumber"
+	label	"Renumber Components"
+	type	toggle
+	default	{ "0" }
+	help	"Rename every selection that starts with component and digits to component01, component02, ... in the order they are written, per LOD. The name is lowercased and any text after the digits is lost."
+    }
+    parm {
+	name	"czech"
+	label	"Translate Names to Czech"
+	type	toggle
+	default	{ "0" }
+	help	"Rename selections that have an English name from Object Builder's table (body becomes telo, weapon becomes zbran) to the Czech name the game uses. Whole name, any case. Warns when two selections end up equal."
+    }
+    parm {
+	name	"dropuvs"
+	label	"Drop UVs"
+	type	toggle
+	default	{ "0" }
+	help	"LODs of a type that does not use UVs (Geometry, Memory, Roadway, the fire and view geometry types) are written without UV sets and with zero face UVs, as Object Builder does. The geometry on the node is not changed."
+    }
+    parm {
 	name	"backup"
 	label	"Keep a .bak"
 	type	toggle
