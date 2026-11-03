@@ -1,7 +1,8 @@
 # A3OB tools in Houdini: UX design (nodes, shelf tools, walkthroughs)
 
 Status: revision 2 (2026-11-03), task #6. Updated for D13 (shipping) and D14 (the owner's answers to Q-1 to Q-13).
-Nothing here is built yet.
+Nothing here is built yet. Revision 2a (task #20, D17): section 5.9 and 7.2 now specify the options Renumber components,
+Translate names to Czech and Drop UVs, and the `Arma 3 release` preset gains Drop UVs.
 
 This document says what an artist sees and does: which nodes exist, what is on each node, what the shelf buttons do,
 and how errors show up. It follows the owner decision D10 (node and shelf split, one SOP network per model) and the
@@ -461,9 +462,9 @@ failed save leaves the old file alone.
 | **Sort sections** | `sortsections` | **off** | Orders faces by texture and material pair (`io/export_p3d.py` line 255). Changes the face order, so a round trip becomes L1. |
 | **Sort LODs** | `sortlods` | **off** | Sorts by signature, as A3OB always does (`io/export_p3d.py` line 716). |
 | **Auto-components** | `autocomponents` | **off** | For Geometry-type LODs with no `component##` selection, make them (A3OB "Generate Components", `io/export_p3d.py` lines 294-303). Only if none exist. The check counts them as present while this is on (A3OB does the same with a temporary one, line 310). |
-| Renumber components | `renumber` | off | Spec §16. |
-| Translate names to Czech | `czech` | off | Spec §16 (`io/export_p3d.py` line 591). |
-| Drop UVs on LODs that do not use them | `dropuvs` | off | Spec §8 option (`io/export_p3d.py` line 275). |
+| **Renumber components** | `renumber` | **off** | Rename every selection that starts with `component` and digits to `component01`, `component02`, ... in the order they are written, per LOD, in all LOD types. Case is lowercased and any text after the digits is lost. A3OB "Renumber Components" (`ui/import_export_p3d.py` lines 298-301, `io/data_p3d.py` lines 651-660). Spec §18.2 (D17). |
+| **Translate names to Czech** | `czech` | **off** | Rename selections that have an English name from A3OB's table (for example `body` to `telo`, `weapon` to `zbran`) to the Czech name the game uses. Whole name, any case; other names stay as they are. A3OB "Translate Selections" (`ui/import_export_p3d.py` lines 307-310, `io/export_p3d.py` lines 591-593, table at `utilities/data.py` lines 482-645). Warns when two selections end up with the same name. Spec §18.3 (D17). |
+| **Drop UVs** | `dropuvs` | **off** | On LODs whose type does not use UVs (Geometry, Memory, Roadway, Fire Geometry and the other geometry and point types; all except Visual, View, Shadow and Ground Layer) write no UV sets and zero face UVs. A3OB always does this (`io/export_p3d.py` lines 275-277, `utilities/data.py` line 150). The geometry on the node is not changed. Spec §18.4 (D17). |
 | Keep a .bak | `backup` | off | When overwriting, keep the old file as `.bak` (A3OB preference "Create Backups", `__init__.py` line 232). |
 | Preset | `preset` (menu) + Apply | `Lossless` | Fills the option parameters from a saved set (7.2). |
 
@@ -477,6 +478,20 @@ A3OB's own defaults for the same options, for comparison. The owner chose off fo
 | Generate components | on | 311 | off |
 | LOD collisions | Fail | 279 | Fail |
 | Warnings are errors | on | 293 | off (Q-2, D14) |
+| Renumber components | off | 298 (no default) | off, also in `Arma 3 release` (D17) |
+| Translate selections | off | 307 (no default) | off, also in `Arma 3 release` (D17) |
+| Drop UVs | always on, not an option | `io/export_p3d.py` 275-277 | off in `Lossless`, **on** in `Arma 3 release` (D17) |
+
+Only drop UVs is on in the `Arma 3 release` preset of the three D17 options, because it is the only one A3OB turns on
+by default. The preset storage names are in spec §18.1 (`renumber_components`, `czech_names`, `drop_uvs`).
+
+**Messages of the D17 options (cook and save).** These are info lines unless noted:
+
+| Case | Surface |
+|---|---|
+| Renumber renamed selections in a LOD | Info: "LOD 'Geometry': renamed 3 component selections." |
+| Czech made two selection names equal | Warning, both are still written (spec §18.3). |
+| Drop UVs removed UV data | Info: "Dropped the UVs of 4 LODs (Geometry, Geometry Buoyancy, Memory, Roadway)." The UV validator rules still run first on the unchanged data. |
 
 #### 5.9.1 Save to Disk
 
@@ -555,7 +570,7 @@ One dialog with:
 | Setting | Default | Notes |
 |---|---|---|
 | Project root | `P:\` | A3OB default (`__init__.py` line 261). Also read from an environment variable if set (name chosen at build time). Used by relative paths. |
-| Presets | `Lossless`, `Arma 3 release` | Named sets of the P3D Export option parameters (5.9). `Lossless` is the default (all data-changing options off). `Arma 3 release` is A3OB's defaults: relative paths, sort sections, lowercase and auto-components on. Both ship (Q-5, D14). |
+| Presets | `Lossless`, `Arma 3 release` | Named sets of the P3D Export option parameters (5.9). `Lossless` is the default (all data-changing options off). `Arma 3 release` is A3OB's defaults: relative paths, sort sections, lowercase, auto-components and drop UVs on (renumber components and Czech names stay off, as in A3OB; D17, spec §18.1). Both ship (Q-5, D14). |
 | Common data file | none | A JSON file with extra common proxies, named properties, procedural textures and materials. Same idea as A3OB's "custom data" (`__init__.py` line 267, `utilities/data.py` `common_data`). Feeds the "Common" menus. |
 
 Stored in a single JSON file in the user's Houdini preferences folder. The dialog can save the current Export node's

@@ -34,6 +34,17 @@ Report problems with this port here, not upstream.
 `tests/fixtures/p3d/*.p3d` (`sample_1_character.p3d`, `sample_2_crate.p3d`)
 are copied unchanged from A3OB's test inputs at the commit above.
 
+## Selection name translation table
+
+The export option "Translate names to Czech" uses A3OB's table of selection names: `translations_czech_english`
+(144 entries, Czech to English) in `utilities/data.py` of A3OB 2.5.1, commit **9f2b8bc**, and its inverse. The table is
+copied from A3OB without changes to its entries, which is allowed because A3OB is licensed GPL-3.0-or-later like this
+project. Credit for it goes to A3OB and its authors, **MrClock** and **Hans-Joerg "Alwarren" Frieden**. A3OB's source
+does not name any other author or origin for the table, and none is claimed here. The file that holds it in this
+project says that it is derived from A3OB and was modified (it runs without Blender, and adds two inverse-only
+aliases for the misspelled `properller_a_axis` and `properller_b_axis`). The design is in
+`docs/design/houdini-data-model.md` section 18.3.
+
 ## Files you export
 
 Models, textures and other files you create or export with this tool are not
