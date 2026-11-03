@@ -1,0 +1,52 @@
+# Dialog script for a3ob_mass, version 1
+
+{
+    name	a3ob_mass
+    script	a3ob_mass
+    label	"Mass"
+
+    help {
+	"Sets the mass of each point of a Geometry LOD (the #Mass# data of the P3D file)."
+    }
+
+    inputlabel	1	"LOD geometry"
+
+    parm {
+	name	"mode"
+	label	"Mode"
+	type	string
+	default	{ "total" }
+	menu {
+	    "each"	"Set on each"
+	    "total"	"Uniform total"
+	    "density"	"From density"
+	    "clear"	"Clear"
+	    "copyfrom"	"Copy from mass"
+	    "copyto"	"Copy to mass"
+	}
+	help	"What to do with the mass."
+    }
+    parm {
+	name	"value"
+	label	"Value"
+	type	float
+	size	1
+	default	{ "1.0" }
+	range	{ 0! 10 }
+	help	"Set on each: kilograms per point. Uniform total: kilograms shared by all the points. From density: kilograms per cubic metre. The value cannot be below 0; there is no upper limit (the slider shows 0 to 10, and you can type more)."
+    }
+    parm {
+	name	"group"
+	label	"Group"
+	type	string
+	default	{ "" }
+	help	"The points to change. Empty means all points."
+    }
+    parm {
+	name	"visualize"
+	label	"Visualize"
+	type	toggle
+	default	{ "0" }
+	help	"Write the colour Cd: blue is the least mass, red the most, black no mass. The export ignores Cd."
+    }
+}
