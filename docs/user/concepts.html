@@ -242,15 +242,15 @@ model that passes one passes the other. Each message starts with the LOD name an
 <h3>Warnings you are likely to meet</h3>
 <table>
 <tr><th>Message starts with</th><th>Meaning and fix</th></tr>
-<tr><td><samp class="ui-msg">Geometry: the mesh is not triangulated</samp></td><td>A collision, shadow or underground LOD must be made of triangles. Add a Divide node (Convex Polygons on, Maximum Edges 3).</td></tr>
+<tr><td><samp class="ui-msg">Geometry: the mesh is not triangulated</samp></td><td>An underground LOD must be made of triangles. A collision or shadow LOD may also hold convex quads, so this message means a quad that is not convex or a polygon with 5 or more points. Add a Divide node (Convex Polygons on).</td></tr>
 <tr><td><samp class="ui-msg">Geometry: the LOD has no component selections</samp></td><td>Add a point group named <code>component01</code> (and <code>component02</code> and so on for more pieces). The Selection browser can add the Group node.</td></tr>
-<tr><td><samp class="ui-msg">Geometry: the LOD has no mass</samp></td><td>Add a <kbd class="ui-node">Mass</kbd> node. A Geometry LOD needs a total of at least 0.001 kg, and every point at least 0.001 kg.</td></tr>
+<tr><td><samp class="ui-msg">Geometry: this Geometry LOD has no mass</samp></td><td>This is a note, not a warning. It is fine for items such as vests or scopes. A physical object needs mass: add a <kbd class="ui-node">Mass</kbd> node. When a Geometry LOD has mass, every point needs at least 0.001 kg or the point-mass warning appears.</td></tr>
 <tr><td>The LODs look merged</td><td>You joined LODs with a Merge node. Pack them with Assemble LODs instead.</td></tr>
 <tr><td><samp class="ui-msg">has no sound texture</samp></td><td>A Roadway LOD needs a texture on every polygon: it names the sound of the surface.</td></tr>
 <tr><td>a LOD transform is not the identity</td><td>The LOD item was moved or mirrored in Houdini. The move is baked in when the file is written. Check the result in Object Builder.</td></tr>
 </table>
 <p>Besides these, the checks include rules for the shape of each LOD type: Geometry (convex, contiguous, components, mass),
-Shadow Volume (triangles, sharp edges, no materials, usual resolution, no <code>LODNoShadow</code> property), point LODs
+Shadow Volume (triangles or convex quads, sharp edges; the usual-resolution and <code>LODNoShadow</code> rules are off by default), point LODs
 (no edges or faces), Roadway, Paths and more. Every such rule has its own switch on the node, named like
 <kbd class="ui-parm" data-node="a3ob_validate">T2-TRI: Triangulated</kbd>, so you can turn off a rule that does not suit
 your model. The <a href="reference/a3ob_validate.html">Validate reference</a> lists them all with their meaning. The node's

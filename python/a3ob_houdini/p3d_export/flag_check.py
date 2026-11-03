@@ -33,6 +33,7 @@ _FACE_FIELDS = (
     (0x00000300, None),                                           # z bias
     (0x00000010, None),                                           # no shadow
     (0x01000000, None),                                           # merging
+    (0x00003000, (0x0, 0x1000, 0x2000)),                          # 0x1000, 0x2000 (D24/D25: Bohemia's Samples use them)
     (0xFE000000, None),                                           # user bits
 )
 

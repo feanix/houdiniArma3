@@ -53,12 +53,12 @@ def level_parms() -> Tuple[Parm, ...]:
 
 
 def rule_parms() -> Tuple[Parm, ...]:
-    """The master switch and one switch per tier-2 rule (spec 17.1.1, all on)."""
+    """The master switch and one switch per tier-2 rule (spec 17.1.1, on except the two of D24)."""
     parms = [Parm("typerules", "Check LOD-Type Rules", "toggle", True,
                   "Warn about what Object Builder's validator would: rules for geometry, shadow, roadway and other "
                   "LOD types. Each rule has its own switch below.")]
     for rule in RULES:
-        parms.append(Parm(rule_parm_name(rule.id), "%s: %s" % (rule.id, rule.label), "toggle", True, rule.help))
+        parms.append(Parm(rule_parm_name(rule.id), "%s: %s" % (rule.id, rule.label), "toggle", rule.default_on, rule.help))
     return tuple(parms)
 
 
@@ -68,7 +68,7 @@ def options_from(values: Dict[str, object]) -> ExportOptions:
     if not values.get("typerules", True):
         rules_off = [rule.id for rule in RULES]
     else:
-        rules_off = [rule.id for rule in RULES if not values.get(rule_parm_name(rule.id), True)]
+        rules_off = [rule.id for rule in RULES if not values.get(rule_parm_name(rule.id), rule.default_on)]
     return ExportOptions(
         selection_mask=str(values.get("selmask", DEFAULT_SELECTION_MASK)),
         lowercase=bool(values.get("lowercase", False)),

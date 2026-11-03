@@ -76,7 +76,7 @@
 	label	"T2-TRI: Triangulated"
 	type	toggle
 	default	{ "1" }
-	help	"Geometry, shadow and underground LODs: every polygon is a triangle."
+	help	"Underground LODs: every polygon is a triangle. Geometry and shadow LODs: triangles and convex quads."
     }
     parm {
 	name	"t2convex"
@@ -97,7 +97,7 @@
 	label	"T2-MASS: Mass is set"
 	type	toggle
 	default	{ "1" }
-	help	"Geometry LOD: the points have a total mass of at least 0.001."
+	help	"Geometry LOD: a note (not a warning) when the points have a total mass below 0.001."
     }
     parm {
 	name	"t2massall"
@@ -118,21 +118,21 @@
 	label	"T2-NOMAT: No materials"
 	type	toggle
 	default	{ "1" }
-	help	"Shadow and underground LODs: no polygon has a texture or material."
+	help	"Underground LODs: no polygon has a texture or material. Shadow LODs may have them."
     }
     parm {
 	name	"t2shadowres"
 	label	"T2-SHADOWRES: Conventional shadow resolution"
 	type	toggle
-	default	{ "1" }
-	help	"Shadow LODs: the resolution is 0, 10, 1000, 1010 or 1020."
+	default	{ "0" }
+	help	"Shadow LODs: the resolution is 0, 10, 1000, 1010 or 1020. Off by default."
     }
     parm {
 	name	"t2shadowoff"
 	label	"T2-SHADOWOFF: Shadow not disabled"
 	type	toggle
-	default	{ "1" }
-	help	"Shadow LODs: no LODNoShadow = 1 property."
+	default	{ "0" }
+	help	"Shadow LODs: no LODNoShadow = 1 property. Off by default."
     }
     parm {
 	name	"t2pcedge"

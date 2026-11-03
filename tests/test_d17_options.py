@@ -199,7 +199,8 @@ class TestDropUvs(unittest.TestCase):
     def test_off_keeps_uvs_everywhere(self):
         model, report = export([make_lod(LodType.GEOMETRY, 0.0)])
         self.assertTrue(any(isinstance(t, p3d.UVSetTagg) for t in model.lods[0].taggs))
-        self.assertEqual(report.texts(messages.INFO), [])
+        # No "Dropped the UVs" note. The only info is the D24 note that a Geometry LOD has no mass.
+        self.assertEqual([t for t in report.texts(messages.INFO) if "T2-MASS" not in t], [])
 
     def test_copy_is_judged_by_its_own_type(self):
         data = make_lod(LodType.VISUAL, 1.0, copy_types=[int(LodType.GEOMETRY)], copy_resolutions=[0.0])

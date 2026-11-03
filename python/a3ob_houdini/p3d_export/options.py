@@ -13,15 +13,18 @@ selection names (so proxy paths too) and property names and values. The relative
 
 import fnmatch
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Sequence, Tuple
 
 __all__ = [
-    "ExportOptions", "DEFAULT_SELECTION_MASK", "DUPLICATES", "UV_LOD_TYPES", "keeps_uvs", "matches_mask", "make_relative", "relative_proxy_name",
+    "ExportOptions", "DEFAULT_RULES_OFF", "DEFAULT_SELECTION_MASK", "DUPLICATES", "UV_LOD_TYPES", "keeps_uvs", "matches_mask", "make_relative", "relative_proxy_name",
     "fold_collisions",
 ]
 
 DEFAULT_SELECTION_MASK = "* ^__*"
+#: D24: Bohemia's own files switch a shadow volume off (LODNoShadow = 1) and use other shadow resolutions on purpose, so
+#: these two tier-2 rules exist but are off by default. The switches stay on the nodes, so old hips load.
+DEFAULT_RULES_OFF = ("T2-SHADOWOFF", "T2-SHADOWRES")
 #: What to do with a LOD whose signature was already written (spec 3.2): stop, drop the later one, or write both.
 DUPLICATES = ("fail", "skip", "ignore")
 #: Spec 18.4: Visual, View Gunner, View Pilot, View Cargo, View Commander, Unknown, Shadow and its three views, Ground
@@ -54,8 +57,8 @@ class ExportOptions:
     #: D17 (spec 18.4): LODs of a type that does not use UVs are written without them.
     drop_uvs: bool = False
     #: Ids of the tier-2 per-LOD-type rules that are switched off (spec 17.1.1, for example ``"T2-TRI"``). All are on by
-    #: default. They only change which warnings appear, never the bytes.
-    rules_off: Tuple[str, ...] = ()
+    #: default except the two in ``DEFAULT_RULES_OFF`` (D24). They only change which warnings appear, never the bytes.
+    rules_off: Tuple[str, ...] = field(default_factory=lambda: DEFAULT_RULES_OFF)
 
     def __post_init__(self) -> None:
         if self.duplicate_lods not in DUPLICATES:

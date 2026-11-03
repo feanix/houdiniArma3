@@ -23,7 +23,7 @@ from a3ob_core.p3d.lod_types import LodType
 from .. import messages
 from .data import LodData, Poly
 from .normals import face_normal
-from .options import ExportOptions
+from .options import DEFAULT_RULES_OFF, ExportOptions
 
 __all__ = ["Rule", "RULES", "RULE_IDS", "rule_by_id", "check_lod_rules", "GEOMETRY_TYPES", "SHADOW_TYPES"]
 
@@ -63,6 +63,12 @@ class Rule:
     #: ``check(context)`` returns None when the LOD passes, else ``(what is wrong, how to fix it)``.
     check: Callable[["_Context"], Optional[Tuple[str, str]]]
     help: str
+    #: D24: a failure is an info note, not a warning.
+    info: bool = False
+
+    @property
+    def default_on(self):
+        return self.id not in DEFAULT_RULES_OFF
 
     def applies_to(self, lod_type: int) -> bool:
         return self.types is None or lod_type in self.types
@@ -164,13 +170,39 @@ def _skips_for_occluder(c: _Context) -> bool:
     return c.lod_type in GEOMETRY_TYPES and c.has_group(_OCCLUDER)
 
 
+def _quad_is_convex(c: _Context, poly: Poly) -> bool:
+    """True when the four corners turn the same way round the face normal (no reflex corner, no bow tie)."""
+    normal = face_normal(c.positions(poly))
+    if normal == (0.0, 0.0, 0.0):
+        return False
+    points = c.positions(poly)
+    signs = set()
+    for k in range(4):
+        a, b, d = points[k], points[(k + 1) % 4], points[(k + 2) % 4]
+        edge1 = tuple(b[i] - a[i] for i in range(3))
+        edge2 = tuple(d[i] - b[i] for i in range(3))
+        cross = (edge1[1] * edge2[2] - edge1[2] * edge2[1], edge1[2] * edge2[0] - edge1[0] * edge2[2],
+                 edge1[0] * edge2[1] - edge1[1] * edge2[0])
+        turn = _dot(cross, normal)
+        if turn == 0.0:
+            return False
+        signs.add(turn > 0.0)
+    return len(signs) == 1
+
+
 def _tri(c: _Context):
-    for poly in c.polys:
-        if len(poly.points) > 3:
-            what = "the mesh is not triangulated: polygon %d has %d points" % (poly.number, len(poly.points))
-            if c.lod_type in GEOMETRY_TYPES:
-                what += " (convexity is not definite)"
-            return what, "Add a Divide node with Convex Polygons on and Maximum Edges 3"
+    # D24: Bohemia's own Geometry and Shadow Volume LODs hold convex quads, so those are fine there.
+    quads_ok = c.lod_type in GEOMETRY_TYPES or c.lod_type in SHADOW_TYPES
+    for poly in c.mesh.polys:
+        count = len(poly.points)
+        if count < 3 or count == 3 or (count == 4 and quads_ok and _quad_is_convex(c, poly)):
+            continue
+        if quads_ok:
+            what = "the mesh is not triangulated: polygon %d is %s" % (
+                poly.number, "a quad that is not convex" if count == 4 else "a polygon with %d points" % count)
+            return what + " (only triangles and convex quads are allowed)", "Add a Divide node with Convex Polygons on"
+        return ("the mesh is not triangulated: polygon %d has %d points" % (poly.number, count),
+                "Add a Divide node with Convex Polygons on and Maximum Edges 3")
     return None
 
 
@@ -207,7 +239,8 @@ def _comp(c: _Context):
 def _mass(c: _Context):
     masses = c.mesh.masses
     if masses is None or math.fsum(masses) < MASS_MINIMUM:
-        return "the LOD has no mass (a3ob_mass is missing or adds up to less than 0.001)", "Use the Mass node"
+        return ("this Geometry LOD has no mass. Fine for items such as vests or scopes; physical objects need mass",
+                "Use the Mass node on physical objects")
     return None
 
 
@@ -249,6 +282,9 @@ def _sharp(c: _Context):
 
 
 def _nomat(c: _Context):
+    # D24: Shadow Volume LODs may carry a texture or material (foliage alpha shadows in Bohemia's own files).
+    if c.lod_type in SHADOW_TYPES:
+        return None
     for poly in c.mesh.polys:
         if poly.texture or poly.material:
             return ("polygon %d has a texture or material" % poly.number, "Clear a3ob_texture and a3ob_material")
@@ -344,21 +380,23 @@ RULES: Tuple[Rule, ...] = (
     Rule("T2-UV2", "At most 2 UV sets", ANY, _uv2, "The LOD has no more than 2 UV sets."),
     Rule("T2-CONTIG", "Contiguous mesh", _TYPES_CONTIG, _contig,
          "Geometry, shadow and underground LODs: no flipped polygons (shared edges run in opposite directions)."),
-    Rule("T2-TRI", "Triangulated", _TYPES_CONTIG, _tri, "Geometry, shadow and underground LODs: every polygon is a triangle."),
+    Rule("T2-TRI", "Triangulated", _TYPES_CONTIG, _tri,
+         "Underground LODs: every polygon is a triangle. Geometry and shadow LODs: triangles and convex quads."),
     Rule("T2-CONVEX", "Convex mesh", GEOMETRY_TYPES | {LodType.UNDERGROUND}, _convex,
          "Geometry and underground LODs: every shared edge is convex or flat."),
     Rule("T2-COMP", "Component selections", GEOMETRY_TYPES | {LodType.UNDERGROUND}, _comp,
          "Geometry and underground LODs: a group called component01, component02, ... exists."),
     # D16: mass is checked on the Geometry LOD only, as in A3OB (validator.py:292-311; the subtype validator has none).
-    Rule("T2-MASS", "Mass is set", MASS_TYPES, _mass, "Geometry LOD: the points have a total mass of at least 0.001."),
+    Rule("T2-MASS", "Mass is set", MASS_TYPES, _mass,
+         "Geometry LOD: a note (not a warning) when the points have a total mass below 0.001.", info=True),
     Rule("T2-MASSALL", "Every point has mass", MASS_TYPES, _massall, "Geometry LOD: every point has a mass of at least 0.001."),
     Rule("T2-SHARP", "No smooth edges", SHADOW_TYPES | {LodType.UNDERGROUND}, _sharp,
          "Shadow and underground LODs: with smooth polygons, every shared edge is in a3ob_sharp."),
     Rule("T2-NOMAT", "No materials", SHADOW_TYPES | {LodType.UNDERGROUND}, _nomat,
-         "Shadow and underground LODs: no polygon has a texture or material."),
+         "Underground LODs: no polygon has a texture or material. Shadow LODs may have them."),
     Rule("T2-SHADOWRES", "Conventional shadow resolution", SHADOW_TYPES, _shadowres,
-         "Shadow LODs: the resolution is 0, 10, 1000, 1010 or 1020."),
-    Rule("T2-SHADOWOFF", "Shadow not disabled", SHADOW_TYPES, _shadowoff, "Shadow LODs: no LODNoShadow = 1 property."),
+         "Shadow LODs: the resolution is 0, 10, 1000, 1010 or 1020. Off by default."),
+    Rule("T2-SHADOWOFF", "Shadow not disabled", SHADOW_TYPES, _shadowoff, "Shadow LODs: no LODNoShadow = 1 property. Off by default."),
     Rule("T2-PC-EDGE", "No edges in point clouds", POINT_CLOUD_TYPES, _pc_edge,
          "Memory, land contact and hit-point LODs: no 2-point primitives."),
     Rule("T2-PC-FACE", "No faces in point clouds", POINT_CLOUD_TYPES, _pc_face,
@@ -399,4 +437,8 @@ def check_lod_rules(data: LodData, options: ExportOptions, report: messages.Repo
         problem = rule.check(context)
         if problem is not None:
             what, fix = problem
-            report.warning(messages.format_problem(data.label, "%s (rule %s)" % (what, rule.id), fix))
+            text = messages.format_problem(data.label, "%s (rule %s)" % (what, rule.id), fix)
+            if rule.info:
+                report.info(text)
+            else:
+                report.warning(text)

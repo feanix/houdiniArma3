@@ -14,6 +14,7 @@ from a3ob_houdini.p3d_export import flag_check, proxy_rebuild, type_rules
 from a3ob_houdini.p3d_export.data import Collection, Details, GroupData, LodData, MeshData, Poly, ProxyData
 from a3ob_houdini.p3d_export.normals import face_normal
 
+SHADOW_TYPES_FOR_TEST = (LodType.SHADOW, LodType.SHADOW_VIEW_CARGO, LodType.SHADOW_VIEW_PILOT, LodType.SHADOW_VIEW_GUNNER)
 CUBE_POINTS = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0), (0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1)]
 #: Every face runs counter-clockwise seen from outside, so the shared edges run in opposite directions.
 CUBE_FACES = [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (3, 7, 6, 2), (0, 4, 7, 3), (1, 2, 6, 5)]
@@ -43,9 +44,26 @@ def lod(lod_type, faces=CUBE_FACES, points=CUBE_POINTS, resolution=0.0, flat=Tru
 
 
 def run(data, rules_off=(), **options):
+    """The warnings. All rules are on unless named: the default-off ones (D24) are tested on their own."""
     report = messages.Report()
     type_rules.check_lod_rules(data, ExportOptions(rules_off=tuple(rules_off), **options), report)
     return report.texts(messages.WARNING)
+
+
+def run_notes(data, rules_off=(), **options):
+    """The info notes (T2-MASS since D24)."""
+    report = messages.Report()
+    type_rules.check_lod_rules(data, ExportOptions(rules_off=tuple(rules_off), **options), report)
+    return report.texts(messages.INFO)
+
+
+def run_all(data, rules_off=()):
+    return run(data, rules_off) + run_notes(data, rules_off)
+
+
+#: A quad with a reflex corner at the third point (not convex), and a convex quad.
+DENT_QUAD_POINTS = [(0, 0, 0), (2, 0, 0), (0.5, 0, 0.5), (0, 0, 2)]
+FLAT_QUAD_POINTS = [(0, 0, 0), (2, 0, 0), (2, 0, 2), (0, 0, 2)]
 
 
 def with_rule(texts, rule_id):
@@ -66,7 +84,7 @@ def failing_examples():
     flipped = lod(LodType.GEOMETRY)
     flipped.mesh.polys[1] = flat_poly(1, CUBE_FACES[1][::-1], CUBE_POINTS)
     examples["T2-CONTIG"] = flipped
-    examples["T2-TRI"] = lod(LodType.GEOMETRY)
+    examples["T2-TRI"] = lod(LodType.GEOMETRY, faces=[(0, 1, 2, 3)], points=DENT_QUAD_POINTS)
     examples["T2-CONVEX"] = lod(LodType.GEOMETRY, DENT_FACES, DENT_POINTS)
     examples["T2-COMP"] = lod(LodType.GEOMETRY)
     examples["T2-MASS"] = lod(LodType.GEOMETRY)
@@ -74,7 +92,7 @@ def failing_examples():
     massless.mesh.masses = [1.0] * 7 + [0.0]
     examples["T2-MASSALL"] = massless
     examples["T2-SHARP"] = lod(LodType.SHADOW, resolution=1000.0, flat=False)
-    textured = lod(LodType.SHADOW, resolution=1000.0)
+    textured = lod(LodType.UNDERGROUND)
     textured.mesh.polys[2].texture = "a.paa"
     examples["T2-NOMAT"] = textured
     examples["T2-SHADOWRES"] = lod(LodType.SHADOW, resolution=7.0)
@@ -115,9 +133,9 @@ class TestRules(unittest.TestCase):
         self.assertEqual(len(set(type_rules.RULE_IDS)), 20)
         for rule_id, data in examples.items():
             with self.subTest(rule=rule_id):
-                texts = run(data)
+                texts = run_all(data)
                 self.assertTrue(with_rule(texts, rule_id), texts)
-                self.assertFalse(with_rule(run(data, rules_off=[rule_id]), rule_id))
+                self.assertFalse(with_rule(run_all(data, rules_off=[rule_id]), rule_id))
                 others = [text for text in with_rule(texts, rule_id)]
                 self.assertEqual(len(others), 1)  # once per LOD
                 self.assertTrue(texts[0].startswith(data.label + ": "))
@@ -125,18 +143,84 @@ class TestRules(unittest.TestCase):
     def test_a_rule_applies_to_its_types_only(self):
         data = lod(LodType.VISUAL, resolution=1.0)  # not triangulated, no mass, no components: all fine for a visual LOD
         self.assertEqual(run(data), [])
-        self.assertTrue(with_rule(run(lod(LodType.GEOMETRY)), "T2-MASS"))
+        self.assertTrue(with_rule(run_notes(lod(LodType.GEOMETRY)), "T2-MASS"))
         for name in ("GEOMETRY_BUOY", "GEOMETRY_PHYSX"):  # D16: mass is checked on the Geometry LOD only
-            texts = run(lod(getattr(LodType, name)))
+            texts = run_all(lod(getattr(LodType, name)))
             self.assertEqual(with_rule(texts, "T2-MASS"), [])
             self.assertEqual(with_rule(texts, "T2-MASSALL"), [])
         self.assertEqual(run(lod(LodType.FIRE_GEOMETRY)), [])  # not ported (spec 17.1.1 notes)
         self.assertEqual(run(lod(LodType.VIEW_GEOMETRY)), [])
 
-    def test_a_clean_geometry_lod_has_only_the_triangle_warning_for_quads(self):
-        texts = run(passing_examples())
-        self.assertEqual([t for t in texts if "T2-TRI" not in t], [])
-        self.assertIn("convexity is not definite", with_rule(texts, "T2-TRI")[0])
+    def test_a_clean_geometry_lod_with_convex_quads_has_no_message(self):
+        # D24: the cube's six faces are convex quads, which Geometry LODs may hold.
+        self.assertEqual(run_all(passing_examples()), [])
+
+    def test_tri_allows_convex_quads_in_geometry_and_shadow_lods(self):
+        for lod_type in (LodType.GEOMETRY, LodType.GEOMETRY_BUOY, LodType.GEOMETRY_PHYSX, LodType.SHADOW):
+            convex = lod(lod_type, faces=[(0, 1, 2, 3)], points=FLAT_QUAD_POINTS, resolution=1000.0)
+            self.assertEqual(with_rule(run(convex), "T2-TRI"), [], lod_type)
+            dent = lod(lod_type, faces=[(0, 1, 2, 3)], points=DENT_QUAD_POINTS, resolution=1000.0)
+            texts = with_rule(run(dent), "T2-TRI")
+            self.assertEqual(len(texts), 1, lod_type)
+            self.assertIn("a quad that is not convex", texts[0])
+
+    def test_tri_warns_for_five_sided_polygons_and_any_quad_in_underground(self):
+        points = [(0, 0, 0), (2, 0, 0), (3, 0, 1), (1, 0, 3), (-1, 0, 1)]
+        five = lod(LodType.GEOMETRY, faces=[(0, 1, 2, 3, 4)], points=points)
+        texts = with_rule(run(five), "T2-TRI")
+        self.assertEqual(len(texts), 1)
+        self.assertIn("a polygon with 5 points", texts[0])
+        underground = lod(LodType.UNDERGROUND, faces=[(0, 1, 2, 3)], points=FLAT_QUAD_POINTS)
+        self.assertEqual(len(with_rule(run(underground), "T2-TRI")), 1)
+        triangle = lod(LodType.UNDERGROUND, faces=[(0, 1, 2)], points=FLAT_QUAD_POINTS)
+        self.assertEqual(with_rule(run(triangle), "T2-TRI"), [])
+
+    def test_a_bow_tie_quad_is_not_convex(self):
+        bow = lod(LodType.GEOMETRY, faces=[(0, 1, 3, 2)], points=FLAT_QUAD_POINTS)
+        self.assertEqual(len(with_rule(run(bow), "T2-TRI")), 1)
+
+    def test_mass_is_a_note_not_a_warning(self):
+        data = lod(LodType.GEOMETRY)
+        self.assertEqual(with_rule(run(data), "T2-MASS"), [])
+        notes = with_rule(run_notes(data), "T2-MASS")
+        self.assertEqual(len(notes), 1)
+        self.assertIn("This Geometry LOD has no mass".lower(), notes[0].lower())
+        self.assertIn("Fine for items such as vests or scopes; physical objects need mass", notes[0])
+        data.mesh.masses = [1.0] * 8
+        self.assertEqual(with_rule(run_notes(data), "T2-MASS"), [])
+        data.mesh.masses = [0.0] * 8
+        self.assertEqual(len(with_rule(run_notes(data), "T2-MASS")), 1)
+        # T2-MASSALL stays a warning.
+        data.mesh.masses = [1.0] * 7 + [0.0]
+        self.assertEqual(len(with_rule(run(data), "T2-MASSALL")), 1)
+
+    def test_nomat_allows_shadow_volumes_but_not_underground(self):
+        for lod_type in SHADOW_TYPES_FOR_TEST:
+            data = lod(lod_type, resolution=1000.0)
+            data.mesh.polys[0].texture = "leaf.paa"
+            data.mesh.polys[1].material = "leaf.rvmat"
+            self.assertEqual(with_rule(run(data), "T2-NOMAT"), [], lod_type)
+        clean = lod(LodType.UNDERGROUND)
+        self.assertEqual(with_rule(run(clean), "T2-NOMAT"), [])
+        clean.mesh.polys[0].material = "x.rvmat"
+        self.assertEqual(len(with_rule(run(clean), "T2-NOMAT")), 1)
+
+    def test_shadow_resolution_and_shadow_off_are_off_by_default(self):
+        self.assertEqual(type_rules.rule_by_id("T2-SHADOWRES").default_on, False)
+        self.assertEqual(type_rules.rule_by_id("T2-SHADOWOFF").default_on, False)
+        self.assertEqual(ExportOptions().rules_off, ("T2-SHADOWOFF", "T2-SHADOWRES"))
+        data = lod(LodType.SHADOW, resolution=7.0, prop_names=["LODNoShadow"], prop_values=["1"])
+        report = messages.Report()
+        type_rules.check_lod_rules(data, ExportOptions(), report)
+        self.assertEqual(report.texts(messages.WARNING), [])
+        # Switched on (a node switch or a preset) they still work.
+        self.assertEqual(len(with_rule(run(data), "T2-SHADOWRES")), 1)
+        self.assertEqual(len(with_rule(run(data), "T2-SHADOWOFF")), 1)
+
+    def test_unchanged_rules_still_warn(self):
+        for rule_id in ("T2-MASSALL", "T2-CONTIG", "T2-CONVEX", "T2-RW-LIMIT"):
+            with self.subTest(rule=rule_id):
+                self.assertEqual(len(with_rule(run(failing_examples()[rule_id]), rule_id)), 1)
 
     def test_convex_cube_in_either_winding_and_dent(self):
         for faces in (CUBE_FACES, [f[::-1] for f in CUBE_FACES]):
@@ -197,15 +281,19 @@ class TestRules(unittest.TestCase):
         values = {"typerules": False}
         self.assertEqual(sorted(common.options_from(values).rules_off), sorted(type_rules.RULE_IDS))
         values = {"typerules": True, "t2tri": False}
-        self.assertEqual(common.options_from(values).rules_off, ("T2-TRI",))
-        self.assertEqual(common.options_from({}).rules_off, ())
+        self.assertCountEqual(common.options_from(values).rules_off, ("T2-TRI", "T2-SHADOWRES", "T2-SHADOWOFF"))
+        self.assertEqual(common.options_from({}).rules_off, ("T2-SHADOWRES", "T2-SHADOWOFF"))
+        on = {"typerules": True, "t2shadowres": True, "t2shadowoff": True}
+        self.assertEqual(common.options_from(on).rules_off, ())
+        defaults = {parm.name: parm.default for parm in common.rule_parms()}
+        self.assertEqual([name for name, value in defaults.items() if value is False], ["t2shadowres", "t2shadowoff"])
         names = [common.rule_parm_name(rule_id) for rule_id in type_rules.RULE_IDS]
         self.assertEqual(len(set(names)), 20)
 
     def test_rules_run_in_the_build_and_the_switches_silence_them(self):
         data = failing_examples()["T2-SHADOWRES"]
         report = messages.Report()
-        model = build(Collection([data]), ExportOptions(), report)
+        model = build(Collection([data]), ExportOptions(rules_off=()), report)
         self.assertIsNotNone(model)
         self.assertTrue(with_rule(report.texts(messages.WARNING), "T2-SHADOWRES"))
         self.assertFalse(report.has_errors)
@@ -220,9 +308,12 @@ class TestFlags(unittest.TestCase):
             self.assertFalse(flag_check.unknown_vertex_flags(value), hex(value))
         for value in (0x3, 0x06000000, 0x3000, 0x50, 0x8000, 0x12345678):
             self.assertTrue(flag_check.unknown_vertex_flags(value), hex(value))
-        for value in (0, 0x20, 0x80, 0x100000, 0x200000, 0x300, 0x10, 0x01000000, 0xFE000000, 0x100):
+        # 0x1000 and 0x2000: Bohemia's own Samples (the male, the plant) use them on faces (D24, D25). A3OB lists them as
+        # vertex fog values only.
+        for value in (0, 0x20, 0x80, 0x100000, 0x200000, 0x300, 0x10, 0x01000000, 0xFE000000, 0x100, 0x1000, 0x2000,
+                      0x1020, 0x2000 | 0x300):
             self.assertFalse(flag_check.unknown_face_flags(value), hex(value))
-        for value in (0x40, 0x300000, 0x2, 0xA0, 0x4000):
+        for value in (0x40, 0x300000, 0x2, 0xA0, 0x4000, 0x3000, 0x8000):
             self.assertTrue(flag_check.unknown_face_flags(value), hex(value))
         self.assertTrue(flag_check.unknown_vertex_flags(-0x80000000))  # int32 attributes hold the same bits as u32
 

@@ -297,10 +297,11 @@ class TestQuickStartsRunInHoudini(unittest.TestCase):
         validate = made.network.createNode("a3ob_validate")
         validate.setFirstInput(made.nodes["assemble"])
         cls.job1_validate = cls.look(validate)
-        triangles = made.nodes["geometry_triangles"]
-        triangles.bypass(True)
-        cls.job1_untriangulated = cls.look(validate)
-        triangles.bypass(False)
+        # D24: the box's convex quads are fine, so the guide bypasses the Mass node to show a message (an info note).
+        mass = made.nodes["geometry_mass"]
+        mass.bypass(True)
+        cls.job1_no_mass = cls.look(validate)
+        mass.bypass(False)
         memory = made.nodes["memory_props"]
         memory.parm("lodtype").set("geometry")
         cls.job1_duplicate = cls.look(validate)
@@ -366,9 +367,22 @@ class TestQuickStartsRunInHoudini(unittest.TestCase):
         cls.networks.append(made.network)
         validate = made.network.createNode("a3ob_validate")
         validate.setFirstInput(made.nodes["assemble"])
-        for key in ("geometry_mass", "geometry_components", "geometry_triangles"):
+        for key in ("geometry_mass", "geometry_components"):
             made.nodes[key].bypass(True)
+        cls.make_concave_quad(made.nodes["geometry_triangles"])
         cls.rules_probe = cls.look(validate)
+
+    @classmethod
+    def make_concave_quad(cls, triangles):
+        """D24: convex quads are fine in a Geometry LOD, so the untriangulated case needs a quad with a reflex corner.
+        The Divide node is bypassed and fed a wrangle that makes one."""
+        wrangle = triangles.parent().createNode("attribwrangle", "concave_quad")
+        wrangle.parm("class").set(0)
+        wrangle.parm("snippet").set(
+            "int a = addpoint(0, {0,0,0}); int b = addpoint(0, {2,0,0}); int c = addpoint(0, {0.5,0,0.5}); "
+            "int d = addpoint(0, {0,0,2}); addprim(0, 'poly', a, b, c, d);")
+        triangles.setFirstInput(wrangle)
+        triangles.bypass(True)
 
     def all_text(self):
         return " \n ".join(clean(text) for text in self.messages)
@@ -377,8 +391,10 @@ class TestQuickStartsRunInHoudini(unittest.TestCase):
         errors, warnings, messages = self.job1_validate
         self.assertEqual((errors, warnings), ((), ()))
         self.assertIn("3 LODs checked: 0 errors, 0 warnings.", messages)
-        self.assertEqual(self.job1_untriangulated[0], ())
-        self.assertTrue(any(w.startswith("Geometry: the mesh is not triangulated") for w in self.job1_untriangulated[1]))
+        self.assertEqual(self.job1_no_mass[0], ())
+        self.assertTrue(any(w.startswith("Geometry: the points have no mass") for w in self.job1_no_mass[1]))
+        self.assertTrue(any(m.startswith("Geometry: this Geometry LOD has no mass") for m in self.job1_no_mass[2]),
+                        self.job1_no_mass)
         self.assertTrue(any(e.startswith("Geometry: another LOD has the same type and resolution.")
                             for e in self.job1_duplicate[0]))
         self.assertEqual(self.job1_fixed[:2], ((), ()))
@@ -478,9 +494,9 @@ class TestQuickStartsRunInHoudini(unittest.TestCase):
         self.assertEqual(problems, [])
 
     def test_the_validator_messages_the_concepts_page_quotes_exist(self):
-        text = " ".join(self.rules_probe[1])
+        text = " ".join(self.rules_probe[1] + self.rules_probe[2])  # the mass message is an info note since D24
         for start in ("Geometry: the mesh is not triangulated", "Geometry: the LOD has no component selections",
-                      "Geometry: the LOD has no mass"):
+                      "Geometry: this Geometry LOD has no mass"):
             self.assertIn(start, text)
 
 

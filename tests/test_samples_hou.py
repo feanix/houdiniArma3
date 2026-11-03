@@ -96,6 +96,25 @@ class TestSamplesInHoudini(unittest.TestCase):
                 self.assertIsNotNone(r["written"])
                 self.assertLess(r["export_seconds"], SLOW)
 
+    def test_release_export_follows_bohemias_files_d24(self):
+        """D24 and D25: the rules that fired on Bohemia's own files no longer warn; the unchanged rules still do.
+        What it can catch: a rule that comes back, or one of the four kept rules going quiet. The unchanged rules are
+        only expected on a full run (the default subset may not hold the files that trigger them)."""
+        warnings, notes = [], []
+        for rel in ss.houdini_files():
+            self.clear()
+            r = self.rig.roundtrip(rel, "Arma 3 release")
+            warnings.extend(r["report"].texts(messages.WARNING))
+            notes.extend(r["report"].texts(messages.INFO))
+        for gone in ("T2-SHADOWOFF", "T2-SHADOWRES", "T2-NOMAT", "T2-MASS"):
+            self.assertEqual([w for w in warnings if "(rule %s)" % gone in w], [], gone)
+        self.assertEqual([w for w in warnings if "T2-TRI" in w and "not convex" not in w and "points" not in w], [])
+        self.assertEqual([w for w in warnings if "a3ob_face_flags that Object Builder does not know" in w], [])
+        if ss.FULL:
+            for kept in ("T2-MASSALL", "T2-CONTIG", "T2-CONVEX", "T2-RW-LIMIT"):
+                self.assertTrue([w for w in warnings if "(rule %s)" % kept in w], kept)
+            self.assertTrue([n for n in notes if "(rule T2-MASS)" in n])
+
 
 if __name__ == "__main__":
     unittest.main()

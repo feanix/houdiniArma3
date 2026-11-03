@@ -133,8 +133,9 @@ memory_points (Add) -> memory_group (Group) -> memory_props (Memory) ----/</code
   on <code>geometry_mass</code>: its <kbd class="ui-parm" data-node="a3ob_mass">Mode</kbd> is
   <kbd class="ui-menu">Uniform total</kbd> and its message is <samp class="ui-msg">Total 100.0 kg on 8 points.</samp></li>
 <li>Add a <kbd class="ui-node">Validate</kbd> node after <code>assemble</code>:
-  <samp class="ui-msg">3 LODs checked: 0 errors, 0 warnings.</samp> Bypass <code>geometry_triangles</code> to see a warning,
-  <samp class="ui-msg">Geometry: the mesh is not triangulated</samp>. Give two LODs the same type and resolution to see
+  <samp class="ui-msg">3 LODs checked: 0 errors, 0 warnings.</samp> Bypass <code>geometry_mass</code> to see a note,
+  <samp class="ui-msg">Geometry: this Geometry LOD has no mass</samp>, and a warning,
+  <samp class="ui-msg">Geometry: the points have no mass</samp>. Give two LODs the same type and resolution to see
   an error, <samp class="ui-msg">Geometry: another LOD has the same type and resolution.</samp> The meaning of the checks
   is on <a href="concepts.html#validator">Concepts</a>.</li>
 <li>Set <kbd class="ui-parm" data-node="a3ob_p3d_export">Output File</kbd> on <code>export</code> and press
