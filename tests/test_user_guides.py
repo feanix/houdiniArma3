@@ -393,7 +393,7 @@ class TestQuickStartsRunInHoudini(unittest.TestCase):
         self.assertIn("3 LODs checked: 0 errors, 0 warnings.", messages)
         self.assertEqual(self.job1_no_mass[0], ())
         self.assertTrue(any(w.startswith("Geometry: the points have no mass") for w in self.job1_no_mass[1]))
-        self.assertTrue(any(m.startswith("Geometry: this Geometry LOD has no mass") for m in self.job1_no_mass[2]),
+        self.assertTrue(any(m.startswith("Geometry: has no mass. Fine for items such as vests or scopes; physical objects need mass (rule T2-MASS)") for m in self.job1_no_mass[2]),
                         self.job1_no_mass)
         self.assertTrue(any(e.startswith("Geometry: another LOD has the same type and resolution.")
                             for e in self.job1_duplicate[0]))
@@ -496,7 +496,7 @@ class TestQuickStartsRunInHoudini(unittest.TestCase):
     def test_the_validator_messages_the_concepts_page_quotes_exist(self):
         text = " ".join(self.rules_probe[1] + self.rules_probe[2])  # the mass message is an info note since D24
         for start in ("Geometry: the mesh is not triangulated", "Geometry: the LOD has no component selections",
-                      "Geometry: this Geometry LOD has no mass"):
+                      "Geometry: has no mass"):
             self.assertIn(start, text)
 
 

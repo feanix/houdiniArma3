@@ -20,8 +20,8 @@ from ..p3d_export.type_rules import RULES
 from ..params import Parm
 
 __all__ = [
-    "LEVELS", "level_parms", "rule_parms", "checking_tab", "rules_tab", "rule_parm_name", "options_from", "apply_policy", "is_blocked", "Checked",
-    "run_checks", "input_geometry", "DEFAULT_MAX_MESSAGES",
+    "LEVELS", "level_parms", "rule_parms", "checking_tab", "rules_tab", "rule_parm_name", "options_from",
+    "apply_policy", "is_blocked", "Checked", "run_checks", "input_geometry", "DEFAULT_MAX_MESSAGES",
 ]
 
 DEFAULT_MAX_MESSAGES = messages.MAX_MESSAGES
@@ -58,9 +58,8 @@ def rule_parms() -> Tuple[Parm, ...]:
                   "Warn about what Object Builder's validator would: rules for geometry, shadow, roadway and other "
                   "LOD types. Each rule has its own switch below.")]
     for rule in RULES:
-        # The rule id is not in the label; it ends the tooltip, and stays in the messages, so it can be searched for.
-        parms.append(Parm(rule_parm_name(rule.id), rule.label, "toggle", rule.default_on,
-                          "%s (Rule %s.)" % (rule.help, rule.id)))
+        # The rule id is not in the label or the tooltip; it stays in the messages, so it can be searched for.
+        parms.append(Parm(rule_parm_name(rule.id), rule.label, "toggle", rule.default_on, rule.help))
     return tuple(parms)
 
 

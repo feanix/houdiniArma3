@@ -112,7 +112,7 @@
 	size	4
 	default	{ "1.0" "1.0" "1.0" "1.0" }
 	help	"Never shown. It only keeps the colour of scenes saved before Color became a colour picker: when a scene loads, a colour that is not white is moved into Color and this goes back to white. Change Color instead."
-	hidewhen	"{ texsource != never }"
+	invisible
     }
     parm {
 	name	"raw"

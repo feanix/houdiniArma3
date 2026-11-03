@@ -35,7 +35,10 @@ TYPE_PREFIX = "a3ob_"
 CALLBACK = "import a3ob_houdini.entry as e; e.button(%r, %r, kwargs)"
 
 #: The OnCreated event of a node whose spec has ``on_created`` (the section text; the node is ``kwargs["node"]``).
-CREATED_SCRIPT = "import a3ob_houdini.entry as e; e.created(%r, kwargs)\n"
+#: The import is guarded like OnLoaded's: with the A3OB package not on the path, making the node does nothing extra
+#: (no Python error popup).
+CREATED_SCRIPT = ("try:\n    import a3ob_houdini.entry as e\nexcept ImportError:\n    e = None\n"
+                  "if e is not None:\n    e.created(%r, kwargs)\n")
 #: The OnLoaded event of a node whose spec has ``on_loaded`` (a scene load, not a new node). The import is guarded:
 #: with the A3OB package not on the path the node still loads, quietly.
 LOADED_SCRIPT = ("try:\n    import a3ob_houdini.entry as e\nexcept ImportError:\n    e = None\n"

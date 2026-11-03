@@ -291,7 +291,6 @@ def read_tools():
             order.extend(member.get("name") for member in shelf.findall("memberTool"))
         for tool in root.findall("tool"):
             help_text = (tool.findtext("helpText") or "").strip()
-            help_text = re.sub(r"\s*The work is in [\w/.]+\.py\.?", "", help_text)
             tools[tool.get("name")] = (tool.get("label") or tool.get("name"), help_text)
     names = [name for name in order if name in tools] + sorted(name for name in tools if name not in order)
     seen = set()
