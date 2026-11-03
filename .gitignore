@@ -5,3 +5,7 @@ __pycache__/
 .claude/worktrees/
 .reference/
 houdini/otls/backup/
+
+# Owner scratch folders (manual export tests, screenshots)
+/exportTests/
+/images/
