@@ -154,7 +154,7 @@ class TestHdaSources(unittest.TestCase):
     def test_a_changed_file_is_noticed(self):
         spec = nodes.load("p3d_import").SPEC
         files = hda_source.render(spec)
-        self.assertEqual(len(files), 8)
+        self.assertEqual(len(files), 9)
         import tempfile
         with tempfile.TemporaryDirectory() as directory:
             hda_source.write(spec, directory)

@@ -10,6 +10,8 @@ Arma 3 P3D models and related formats.
 License: GPL-3.0-or-later, as a modified version of A3OB. See [LICENSE](LICENSE)
 and [NOTICE.md](NOTICE.md).
 
+**User documentation:** open [docs/user/index.html](docs/user/index.html) in a browser (works offline).
+
 ## Layout
 
 | Path                        | Contents                                                    |
@@ -20,7 +22,7 @@ and [NOTICE.md](NOTICE.md).
 | `packages/a3ob_houdini.json`| Houdini package file.                                       |
 | `tests/`                    | `unittest` tests and fixtures (`tests/fixtures/p3d/`).      |
 | `scripts/run_tests.py`      | Test runner.                                                |
-| `docs/`                     | Research and design notes.                                  |
+| `docs/`                     | Research and design notes. `docs/user/` is the user documentation (static HTML; rebuild the generated reference with `python scripts/build_user_docs.py`). |
 
 ## Running the tests
 

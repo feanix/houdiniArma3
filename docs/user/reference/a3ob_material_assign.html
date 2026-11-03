@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Material Assign - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
+<h1>Material Assign</h1>
+<p class="lead">Sets the texture and the material (rvmat) of the polygons in a group, or of all polygons.</p>
+<p>A polygon in a P3D file has a texture and a material (an rvmat file). This node sets them for the polygons in a group, or for all polygons.</p>
+<table class="facts">
+<tr><th>Houdini name</th><td><code>a3ob_material_assign</code></td></tr>
+<tr><th>Where to find it</th><td>Tab menu, A3OB, Material Assign</td></tr>
+<tr><th>Inputs</th><td>1</td></tr>
+</table>
+<h2>Inputs</h2>
+<ol>
+<li value="1">Input 1: LOD geometry</li>
+</ol>
+<h2>Parameters</h2>
+<p>Parameters are in the order they appear on the node.</p>
+<section class="parm" id="group">
+<h3>Group <code>group</code></h3>
+<p>Which polygons to set. Empty means all polygons. Normal Houdini group syntax; a selection with an encoded name is easiest to pick in the Selection browser.</p>
+<dl>
+<dt>Type</dt><dd>Text</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="grouptype">
+<h3>Group Type <code>grouptype</code></h3>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>Primitives</dd>
+</dl>
+<p>Choices:</p>
+<ul>
+<li>Primitives <code>prims</code>: the polygons in the group.</li>
+<li>Points <code>points</code>: the polygons whose points are all in the group.</li>
+</ul>
+</section>
+<section class="parm" id="settex">
+<h3>Set Texture <code>settex</code></h3>
+<p>Off: leave a3ob_texture as it is.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>On</dd>
+</dl>
+</section>
+<section class="parm" id="texsource">
+<h3>Texture Source <code>texsource</code></h3>
+<p>Where the texture text comes from.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>File</dd>
+</dl>
+<p>Choices:</p>
+<ul>
+<li>File <code>file</code></li>
+<li>Color <code>color</code></li>
+<li>Custom <code>custom</code></li>
+</ul>
+</section>
+<section class="parm" id="texture">
+<h3>Texture File <code>texture</code></h3>
+<p>For File. Slashes are written as backslashes.</p>
+<dl>
+<dt>Type</dt><dd>Text</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="color">
+<h3>Color <code>color</code></h3>
+<p>For Color. Red, green, blue and alpha, 0 to 1.</p>
+<dl>
+<dt>Type</dt><dd>4 numbers</dd>
+<dt>Default</dt><dd>1, 1, 1, 1</dd>
+</dl>
+</section>
+<section class="parm" id="colortype">
+<h3>Color Type <code>colortype</code></h3>
+<p>For Color. The kind of procedural texture.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>CO - Color Value</dd>
+</dl>
+<p>Choices:</p>
+<ul>
+<li>CO - Color Value <code>CO</code></li>
+<li>CA - Texture with Alpha <code>CA</code></li>
+<li>LCO - Terrain Texture Layer Color <code>LCO</code></li>
+<li>SKY - Sky texture <code>SKY</code></li>
+<li>NO - Normal Map <code>NO</code></li>
+<li>NS - Normal map specular with Alpha <code>NS</code></li>
+<li>NOF - Normal map faded <code>NOF</code></li>
+<li>NON - Normal map noise <code>NON</code></li>
+<li>NOHQ - Normal map High Quality <code>NOHQ</code></li>
+<li>NOPX - Normal Map with paralax <code>NOPX</code></li>
+<li>NOVHQ - two-part DXT5 compression <code>NOVHQ</code></li>
+<li>DT - Detail Texture <code>DT</code></li>
+<li>CDT - Colored detail texture <code>CDT</code></li>
+<li>MCO - Multiply color <code>MCO</code></li>
+<li>DTSMDI - Detail SMDI map <code>DTSMDI</code></li>
+<li>MC - Macro Texture <code>MC</code></li>
+<li>AS - Ambient Shadow texture <code>AS</code></li>
+<li>ADS - Ambient Shadow in Blue <code>ADS</code></li>
+<li>PR - Ambient shadow from directions <code>PR</code></li>
+<li>SM - Specular Map <code>SM</code></li>
+<li>SMDI - Specular Map, optimized <code>SMDI</code></li>
+<li>MASK - Mask for multimaterial <code>MASK</code></li>
+<li>TI - Thermal imaging map <code>TI</code></li>
+</ul>
+</section>
+<section class="parm" id="raw">
+<h3>Raw Text <code>raw</code></h3>
+<p>For Custom. Copied exactly as typed.</p>
+<dl>
+<dt>Type</dt><dd>Text</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="commonproc">
+<h3>Common Procedural <code>commonproc</code></h3>
+<p>Fill Raw Text from the common procedural textures (and switch Texture Source to Custom). Add your own in the common data file of the Project root and presets tool.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>none</dd>
+</dl>
+<p>The choices are made when you open the menu, from the geometry or the settings.</p>
+</section>
+<section class="parm" id="setmat">
+<h3>Set Material <code>setmat</code></h3>
+<p>Off: leave a3ob_material as it is.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>On</dd>
+</dl>
+</section>
+<section class="parm" id="material">
+<h3>Material File <code>material</code></h3>
+<p>The rvmat path. Empty clears the material. Slashes are written as backslashes.</p>
+<dl>
+<dt>Type</dt><dd>Text</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="commonmat">
+<h3>Add Common <code>commonmat</code></h3>
+<p>Fill Material File from the common materials (and switch Set Material on). Add your own in the common data file of the Project root and presets tool.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>none</dd>
+</dl>
+<p>The choices are made when you open the menu, from the geometry or the settings.</p>
+</section>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

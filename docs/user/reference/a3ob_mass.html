@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mass - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
+<h1>Mass</h1>
+<p class="lead">Sets the mass of each point of a Geometry LOD (the #Mass# data of the P3D file).</p>
+<p>Arma needs a mass for each point of a Geometry LOD to work out how a vehicle or object moves. This node sets that mass in one of several ways.</p>
+<table class="facts">
+<tr><th>Houdini name</th><td><code>a3ob_mass</code></td></tr>
+<tr><th>Where to find it</th><td>Tab menu, A3OB, Mass</td></tr>
+<tr><th>Inputs</th><td>1</td></tr>
+</table>
+<h2>Inputs</h2>
+<ol>
+<li value="1">Input 1: LOD geometry</li>
+</ol>
+<h2>Parameters</h2>
+<p>Parameters are in the order they appear on the node.</p>
+<section class="parm" id="mode">
+<h3>Mode <code>mode</code></h3>
+<p>What to do with the mass.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>Uniform total</dd>
+</dl>
+<p>Choices:</p>
+<ul>
+<li>Set on each <code>each</code></li>
+<li>Uniform total <code>total</code></li>
+<li>From density <code>density</code></li>
+<li>Clear <code>clear</code></li>
+<li>Copy from mass <code>copyfrom</code></li>
+<li>Copy to mass <code>copyto</code></li>
+</ul>
+</section>
+<section class="parm" id="value">
+<h3>Value <code>value</code></h3>
+<p>Set on each: kilograms per point. Uniform total: kilograms shared by all the points. From density: kilograms per cubic metre. The value cannot be below 0; there is no upper limit (the slider shows 0 to 10, and you can type more).</p>
+<dl>
+<dt>Type</dt><dd>Number</dd>
+<dt>Default</dt><dd>1</dd>
+<dt>Allowed</dt><dd>At least 0; no upper limit</dd>
+</dl>
+</section>
+<section class="parm" id="group">
+<h3>Group <code>group</code></h3>
+<p>The points to change. Empty means all points.</p>
+<dl>
+<dt>Type</dt><dd>Text</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="visualize">
+<h3>Visualize <code>visualize</code></h3>
+<p>Write the colour Cd: blue is the least mass, red the most, black no mass. The export ignores Cd.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>Off</dd>
+</dl>
+</section>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

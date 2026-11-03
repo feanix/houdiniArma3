@@ -31,7 +31,11 @@ __all__ = ["hda_folder_name", "section_name", "render", "write", "differences"]
 #: Fixed, so that the generated files do not change from day to day.
 MODIFIED = "Mon Nov  3 12:00:00 2026"
 
-_TYPE_PROPERTIES = """ParmsFromVfl := 0;
+#: What F1 opens: the node's page in the user docs. ``%s`` is the type name; the page is
+#: ``docs/user/reference/<type name>.html``. ``$A3OB_HOUDINI`` is set by the package file.
+HELP_URL = "file:///$A3OB_HOUDINI/docs/user/reference/%s.html"
+
+_TYPE_PROPERTIES ="""ParmsFromVfl := 0;
 PrefixDroppedParmName := 1;
 UseDSParms := 1;
 ForbidOutsideParms := 1;
@@ -200,9 +204,11 @@ def render(spec: NodeSpec) -> Dict[str, str]:
         section + "/PythonCook": "import a3ob_houdini.entry as e; e.cook(%r, hou.pwd())\n" % spec.kind,
         section + "/TypePropertiesOptions": _TYPE_PROPERTIES,
         section + "/Tools.shelf": _TOOLS_SHELF % {"submenu": spec.submenu},
+        section + "/HelpUrl": HELP_URL % spec.type_name,
         section + "/Sections.list": _sections_list([
             ("DialogScript", "DialogScript"), ("PythonCook", "PythonCook"),
-            ("TypePropertiesOptions", "TypePropertiesOptions"), ("Tools.shelf", "Tools.shelf")]),
+            ("TypePropertiesOptions", "TypePropertiesOptions"), ("Tools.shelf", "Tools.shelf"),
+            ("HelpUrl", "HelpUrl")]),
     }
 
 
