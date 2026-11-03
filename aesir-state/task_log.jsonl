@@ -118,3 +118,11 @@
 {"actor": "lead", "id": 118, "task_id": 9, "text": "status in_review -> approved (evidence re-recorded on 87dc254)", "ts": "2026-11-03T09:11:14Z"}
 {"actor": "lead", "id": 119, "task_id": 9, "text": "gate full PASS db61ad36 20.6s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T09:11:38Z"}
 {"actor": "lead", "id": 120, "task_id": 9, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T09:11:38Z"}
+{"actor": "lead", "id": 121, "task_id": 9, "text": "merged by lead (queued by lead)", "ts": "2026-11-03T09:11:39Z"}
+{"actor": "lead", "id": 122, "task_id": 9, "text": "queue: merged at 2229a49", "ts": "2026-11-03T09:11:39Z"}
+{"actor": "lead", "id": 123, "task_id": 10, "text": "gate quick PASS a57c27c0 23.0s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T09:13:46Z"}
+{"actor": "lead", "id": 124, "task_id": 10, "text": "status changes_requested -> in_progress (lead merged main (README union); evidence re-recorded)", "ts": "2026-11-03T09:13:47Z"}
+{"actor": "lead", "id": 125, "task_id": 10, "text": "status in_progress -> in_review (lead merged main (README union); evidence re-recorded)", "ts": "2026-11-03T09:13:48Z"}
+{"actor": "lead", "id": 126, "task_id": 10, "text": "status in_review -> approved (lead merged main (README union); evidence re-recorded)", "ts": "2026-11-03T09:13:49Z"}
+{"actor": "lead", "id": 127, "task_id": 10, "text": "gate full PASS 357182dc 20.3s | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-03T09:14:11Z"}
+{"actor": "lead", "id": 128, "task_id": 10, "text": "status approved -> merged (merge queue)", "ts": "2026-11-03T09:14:12Z"}
