@@ -29,6 +29,8 @@ NAME = "Mass"
 ATTRIB = "a3ob_mass"
 HOUDINI_ATTRIB = "mass"
 GEOMETRY_TYPES = (LodType.GEOMETRY, LodType.GEOMETRY_BUOY, LodType.GEOMETRY_PHYSX)
+LEGACY_UNSET = -1.0  # the default of the hidden "value" parameter: "an old scene did not store a number here"
+OWN_DEFAULT = 1.0
 
 SPEC = NodeSpec(
     kind="mass",
@@ -38,19 +40,37 @@ SPEC = NodeSpec(
     input_labels=("LOD geometry",),
     input_help=("The Geometry LOD whose points get a mass.",),
     parms=(
-        Parm("mode", "Mode", "menu", "total", "What to do with the mass.", items=(
+        Parm("mode", "Mode", "menu", "total", "How the mass is set. Only the number for the chosen way is shown.", items=(
             ("each", "Set on each"),
             ("total", "Uniform total"),
             ("density", "From density"),
             ("clear", "Clear"),
             ("copyfrom", "Copy from mass"),
             ("copyto", "Copy to mass"),
+        ), item_help=(
+            ("each", "Gives every point the same mass, set by Mass per Point."),
+            ("total", "Sets the mass of the whole object (Total Mass) and shares it equally among the points."),
+            ("density", "Works the mass out from the volume of each closed shape and the Density."),
+            ("clear", "Removes the mass. With a group, only those points go back to 0."),
+            ("copyfrom", "Takes the mass from the point attribute called mass, which you made yourself."),
+            ("copyto", "Copies the mass into a point attribute called mass, so you can see it or use it elsewhere."),
         )),
-        Parm("value", "Value", "float", 1.0,
-             "Set on each: kilograms per point. Uniform total: kilograms shared by all the points. From density: "
-             "kilograms per cubic metre. The value cannot be below 0; there is no upper limit (the slider shows "
-             "0 to 10, and you can type more).", minimum=0),
-        Parm("group", "Group", "string", "", "The points to change. Empty means all points."),
+        Parm("mass_each", "Mass per Point (kg)", "float", 1.0,
+             "The mass in kilograms that every point gets. It cannot be below 0. The slider shows 0 to 10, and you "
+             "can type a larger number.", minimum=0, show_when=(("mode", ("each",)),)),
+        Parm("mass_total", "Total Mass (kg)", "float", 1.0,
+             "The mass in kilograms of the whole object. It is shared equally among the points. It cannot be below "
+             "0. The slider shows 0 to 10, and you can type a larger number.", minimum=0,
+             show_when=(("mode", ("total",)),)),
+        Parm("density", "Density (kg/m³)", "float", 1.0,
+             "The mass of one cubic metre of the material, in kilograms. Each closed shape gets its volume times "
+             "this number. It cannot be below 0. The slider shows 0 to 10, and you can type a larger number.",
+             minimum=0, show_when=(("mode", ("density",)),)),
+        Parm("value", "Value (old scenes)", "float", LEGACY_UNSET,
+             "Not shown. Scenes saved before the three mass parameters existed stored the number here. While it is "
+             "0 or more and the parameter of the current mode is still 1, the node uses it, so old scenes keep "
+             "their mass. A new node leaves it at -1.", hidden=True),
+        Parm("group", "Group", "string", "", "The points to change, as a group name or point numbers (for example 0-3). Empty means all points."),
         Parm("visualize", "Visualize", "toggle", False,
              "Write the colour Cd: blue is the least mass, red the most, black no mass. The export ignores Cd."),
     ),
@@ -80,16 +100,26 @@ def cook(node, report: Report) -> None:
         masses = _current(geo, count)
         if mode == "each":
             for number in selected:
-                masses[number] = values["value"]
+                masses[number] = _amount(values, "mass_each")
         elif mode == "total":
             for number in selected:
-                masses[number] = values["value"] / len(selected)
+                masses[number] = _amount(values, "mass_total") / len(selected)
         elif selected:  # with an empty selection the warning above is all there is to say
-            _from_density(geo, positions, selected, masses, values["value"], report)
+            _from_density(geo, positions, selected, masses, _amount(values, "density"), report)
         _write(geo, ATTRIB, masses)
     _report(geo, positions, report)
     if values["visualize"]:
         _visualize(geo, count)
+
+
+def _amount(values: dict, name: str) -> float:
+    """The number of the current mode. Only that mode's own parameter is read, except for the old shared "value":
+    a scene saved before the split stores it, and it counts while the mode's own parameter is still at its default."""
+    own = values[name]
+    legacy = values["value"]
+    if legacy >= 0 and own == OWN_DEFAULT:
+        return legacy
+    return own
 
 
 def _selected_points(geo, group: str):

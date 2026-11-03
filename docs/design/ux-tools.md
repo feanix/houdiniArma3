@@ -382,7 +382,7 @@ because alpha faces need it (`ui/import_export_p3d.py` line 274).
 | Parameter | Parm name | Default | Notes |
 |---|---|---|---|
 | Mode | `mode` | `Uniform total` | `Set on each` (every point gets Value), `Uniform total` (Value in kg is shared equally among the points), `From density` (Value in kg/m3 times the absolute volume of each closed component, so a component with flipped faces still gets a positive mass, shared among its points), `Clear` (removes `a3ob_mass`), `Copy from mass`, `Copy to mass` (spec §10, D7 OQ-4 helper). The first four follow A3OB's buttons "Set Mass On Each", "Distribute Mass", "Mass From Density", "Clear All Masses". |
-| Value | `value` | `1` | 0 to 1,000,000. Kilograms, or kg/m3 for density. |
+| Mass per Point (kg) / Total Mass (kg) / Density (kg/m³) | `mass_each` / `mass_total` / `density` | `1` each | At least 0, no upper limit. Each is shown only for its mode (Set on each / Uniform total / From density), hidden for the other modes (#39). The old shared `value` stays as a hidden legacy parameter (default -1): a scene saved before the split keeps its mass, because the cook uses `value` while it is 0 or more and the mode's own parameter is still 1. |
 | Group | `group` | empty (all points) | Points to set: a point group name or point numbers. A3OB works on the selected vertices. In density mode a closed component is used only when **all** its points are in the group; the others are ignored with the warning below. |
 | Distribution | `distribution` | `Uniform` | `Uniform`. `Weighted` (by cell volume around each point) is A3OB's slow mode; the brief marks it secondary. Not in the first version. |
 | Visualize | `visualize` | off | Writes `Cd`: blue (least) to red (most), A3OB's ramp (`props/scene.py` lines 162-215). |
@@ -674,7 +674,7 @@ LODs alone, and export to a new file. The fixture file itself is never written.
 3. **Check the round trip first (optional, one minute).** Wire Import straight into a P3D Export node, set `file` to
    a scratch path, press Save to Disk. No options are on, so the file should be **byte-identical** to the fixture (the
    spec's goal L0 on this fixture, §15). Compare the two files. Then continue.
-4. **Geometry LOD, mass.** Add Extract LOD, `lod` = `4: Geometry`. Add a Mass node: `mode` Uniform total, `value`
+4. **Geometry LOD, mass.** Add Extract LOD, `lod` = `4: Geometry`. Add a Mass node: `mode` Uniform total, `mass_total`
    90. Its message says "Total 90.0 kg on 34 points."
 5. **Resolution 1, texture.** Add a second Extract LOD, `lod` = `0: Resolution 1`. Add Material Assign: `grouptype`
    Points, `group` `head` (the selection browser shows `head` among the 35), `texsource` File, `texture`

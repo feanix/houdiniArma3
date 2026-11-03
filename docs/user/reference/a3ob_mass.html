@@ -43,33 +43,62 @@
 <p>Parameters are in the order they appear on the node.</p>
 <section class="parm" id="mode">
 <h3>Mode <code>mode</code></h3>
-<p>What to do with the mass.</p>
+<p>How the mass is set. Only the number for the chosen way is shown.</p>
 <dl>
 <dt>Type</dt><dd>Menu</dd>
 <dt>Default</dt><dd>Uniform total</dd>
 </dl>
 <p>Choices:</p>
 <ul>
-<li>Set on each <code>each</code></li>
-<li>Uniform total <code>total</code></li>
-<li>From density <code>density</code></li>
-<li>Clear <code>clear</code></li>
-<li>Copy from mass <code>copyfrom</code></li>
-<li>Copy to mass <code>copyto</code></li>
+<li>Set on each <code>each</code>: Gives every point the same mass, set by Mass per Point.</li>
+<li>Uniform total <code>total</code>: Sets the mass of the whole object (Total Mass) and shares it equally among the points.</li>
+<li>From density <code>density</code>: Works the mass out from the volume of each closed shape and the Density.</li>
+<li>Clear <code>clear</code>: Removes the mass. With a group, only those points go back to 0.</li>
+<li>Copy from mass <code>copyfrom</code>: Takes the mass from the point attribute called mass, which you made yourself.</li>
+<li>Copy to mass <code>copyto</code>: Copies the mass into a point attribute called mass, so you can see it or use it elsewhere.</li>
 </ul>
 </section>
-<section class="parm" id="value">
-<h3>Value <code>value</code></h3>
-<p>Set on each: kilograms per point. Uniform total: kilograms shared by all the points. From density: kilograms per cubic metre. The value cannot be below 0; there is no upper limit (the slider shows 0 to 10, and you can type more).</p>
+<section class="parm" id="mass_each">
+<h3>Mass per Point (kg) <code>mass_each</code></h3>
+<p>The mass in kilograms that every point gets. It cannot be below 0. The slider shows 0 to 10, and you can type a larger number.</p>
 <dl>
 <dt>Type</dt><dd>Number</dd>
 <dt>Default</dt><dd>1</dd>
 <dt>Allowed</dt><dd>At least 0; no upper limit</dd>
+<dt>Shown when</dt><dd>Mode is Set on each</dd>
+</dl>
+</section>
+<section class="parm" id="mass_total">
+<h3>Total Mass (kg) <code>mass_total</code></h3>
+<p>The mass in kilograms of the whole object. It is shared equally among the points. It cannot be below 0. The slider shows 0 to 10, and you can type a larger number.</p>
+<dl>
+<dt>Type</dt><dd>Number</dd>
+<dt>Default</dt><dd>1</dd>
+<dt>Allowed</dt><dd>At least 0; no upper limit</dd>
+<dt>Shown when</dt><dd>Mode is Uniform total</dd>
+</dl>
+</section>
+<section class="parm" id="density">
+<h3>Density (kg/m³) <code>density</code></h3>
+<p>The mass of one cubic metre of the material, in kilograms. Each closed shape gets its volume times this number. It cannot be below 0. The slider shows 0 to 10, and you can type a larger number.</p>
+<dl>
+<dt>Type</dt><dd>Number</dd>
+<dt>Default</dt><dd>1</dd>
+<dt>Allowed</dt><dd>At least 0; no upper limit</dd>
+<dt>Shown when</dt><dd>Mode is From density</dd>
+</dl>
+</section>
+<section class="parm" id="value">
+<h3>Value (old scenes) <code>value</code></h3>
+<p>Not shown. Scenes saved before the three mass parameters existed stored the number here. While it is 0 or more and the parameter of the current mode is still 1, the node uses it, so old scenes keep their mass. A new node leaves it at -1.</p>
+<dl>
+<dt>Type</dt><dd>Number</dd>
+<dt>Default</dt><dd>-1</dd>
 </dl>
 </section>
 <section class="parm" id="group">
 <h3>Group <code>group</code></h3>
-<p>The points to change. Empty means all points.</p>
+<p>The points to change, as a group name or point numbers (for example 0-3). Empty means all points.</p>
 <dl>
 <dt>Type</dt><dd>Text</dd>
 <dt>Default</dt><dd>(empty)</dd>
