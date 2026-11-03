@@ -448,7 +448,7 @@ failed save leaves the old file alone.
 
 | Parameter | Parm name | Default | Notes |
 |---|---|---|---|
-| Output file | `file` | `$HIP/$HIPNAME.p3d` | Chooser, `*.p3d`. |
+| Output file | `file` | `$HIP/$HIPNAME.p3d` | Chooser, `*.p3d`. `.p3d` is added when the name does not end in it (any case), as Blender's `ExportHelper` does for A3OB; the message names the file written. Quick Export and Batch convert follow the same rule. |
 | **Save to Disk** | `save` (button) | | See 5.9.1. |
 | Check | `check` | `Every cook` | `Every cook` or `When saving`. Large models can switch to `When saving`. |
 | Errors show as | `errorlevel` | `Error (stop here)` | As in Validate. |
