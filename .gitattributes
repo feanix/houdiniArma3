@@ -1,3 +1,7 @@
 aesir-state/*.jsonl text eol=lf
 .aesir-pkg/aesir/githooks/* text eol=lf
 .aesir-pkg/** text eol=lf
+
+*.p3d binary
+*.paa binary
+*.rtm binary
