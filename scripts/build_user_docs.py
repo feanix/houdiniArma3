@@ -19,6 +19,7 @@ The output has no dates and a fixed order, so running the script twice gives the
 SPDX-License-Identifier: GPL-3.0-or-later
 """
 
+import argparse
 import glob
 import html
 import os
@@ -415,7 +416,11 @@ def build(docs_dir=DOCS_DIR):
 
 
 def main(argv):
-    if "--check" in argv:
+    parser = argparse.ArgumentParser(description="Build the generated parts of the user docs in docs/user/.")
+    parser.add_argument("--check", action="store_true",
+                        help="change nothing; exit 1 if a checked-in file is out of date")
+    args = parser.parse_args(argv)  # --help and unknown arguments exit here, before anything is written
+    if args.check:
         bad = differences(render_all())
         for relative in bad:
             print("differs: docs/user/%s" % relative)

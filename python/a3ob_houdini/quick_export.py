@@ -14,6 +14,7 @@ from typing import List, Optional, Tuple
 from . import messages, p3d_export, settings as settings_module
 from .errors import UserError
 from .messages import format_problem
+from .project_settings_dialog import display_path  # pure function; the module needs no hou at import
 
 __all__ = ["USER_DATA_KEY", "choose_node", "default_path", "remembered_path", "export_node", "summary_lines"]
 
@@ -60,7 +61,7 @@ def export_node(node, path: str, preset: Optional[str] = None, settings=None) ->
     if ok:
         path = p3d_export.with_p3d_extension(path)  # the file written has the .p3d ending (task #26)
         node.setUserData(USER_DATA_KEY, path)
-        report.info("Saved %s (%d bytes)." % (path, os.path.getsize(os.path.expandvars(path))))
+        report.info("Saved %s (%d bytes)." % (display_path(path), os.path.getsize(os.path.expandvars(path))))
     return ok, report
 
 

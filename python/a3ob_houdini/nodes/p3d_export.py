@@ -33,6 +33,7 @@ from ..errors import UserError
 from ..messages import ERROR, INFO, Report, format_problem
 from ..p3d_export.type_rules import RULES
 from ..params import NodeSpec, Parm, read_parms
+from ..project_settings_dialog import display_path  # pure function; the module needs no hou at import
 from . import _export_common as common
 
 __all__ = ["SPEC", "cook", "BUTTONS", "MENUS", "OPTION_PARMS", "run_save", "save", "save_button",
@@ -184,7 +185,8 @@ def run_save(node) -> Report:
             return report
         path = p3d_export.with_p3d_extension(str(values["file"]).strip())  # the message names the real file
         if p3d_export.write_file(path, result.data, report, bool(values["backup"])):
-            report.info("Saved %d LODs, %s to %s." % (result.lod_count, _size(len(result.data)), path))
+            report.info("Saved %d LODs, %s to %s." % (result.lod_count, _size(len(result.data)),
+                                                                  display_path(path)))
     except Exception as ex:  # a bug: a button callback must not raise (Houdini would only print it)
         LOGGER.error("Save to Disk failed:\n%s", traceback.format_exc())
         report.error("%s: Save to Disk failed with %s: %s. This is a bug in the A3OB tools. "

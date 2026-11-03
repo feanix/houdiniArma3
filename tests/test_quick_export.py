@@ -50,6 +50,17 @@ class TestQuickExport(NodeTestCase):
         self.assertTrue(qe.export_node(node, path, None, self.settings)[0])
         self.assertEqual(qe.remembered_path(node), path)
 
+    def test_saved_message_uses_one_kind_of_slash_but_the_stored_path_is_kept(self):
+        node = self.source_node("sample_2_crate.p3d")
+        path = self.folder + "/out\\mixed.p3d"
+        self.assertTrue(qe.export_node(node, path, None, self.settings)[0])
+        saved = [text for text in qe.export_node(node, path, None, self.settings)[1].texts("info")
+                 if text.startswith("Saved ")][0]
+        shown = saved[len("Saved "):saved.index(" (")]
+        self.assertEqual(shown, os.path.normpath(path))
+        self.assertFalse("/" in shown and "\\" in shown, shown)
+        self.assertEqual(qe.remembered_path(node), path)
+
     def test_release_preset_is_used_and_changes_the_bytes(self):
         node = self.source_node("sample_2_crate.p3d")
         path = os.path.join(self.folder, "release.p3d")

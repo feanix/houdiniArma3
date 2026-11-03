@@ -78,10 +78,21 @@ window and gave the messages quoted here. Your numbers can differ if your model 
 
 <h2>Job 1: make a new model</h2>
 <p>Here is the network you will have after step 1:</p>
-<pre><code>res1_mesh --------- res1_props ----------\
-geometry_mesh - geometry_triangles - geometry_components - geometry_mass - geometry_props --- assemble - export
-memory_points ----- memory_group ---- memory_props -------/</code></pre>
-<p>Each row is one LOD. The three rows join at <code>assemble</code>, which packs them into one model.
+<pre><code>                              geometry_mesh
+                                   |
+                              geometry_triangles
+                                   |
+    res1_mesh                 geometry_components               memory_points
+        |                          |                                 |
+        |                     geometry_mass                     memory_group
+        |                          |                                 |
+    res1_props                geometry_props                    memory_props
+        (all three props nodes feed assemble)
+                                assemble
+                                   |
+                                export</code></pre>
+<p>Each column is one LOD: Resolution 1 on the left, Geometry in the middle, Memory on the right. The three props
+nodes at the bottom of the columns all feed <code>assemble</code>, which packs the LODs into one model.
 <code>export</code> writes the file.</p>
 
 <h3>Step 1: build the starter network</h3>
