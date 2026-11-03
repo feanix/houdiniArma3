@@ -3,10 +3,23 @@
 # houdiniArma3: a Houdini port of Arma 3 Object Builder (A3OB).
 """New P3D without a dialog (ux-tools.md section 7.5): builds the starter network of D10.
 
-    res1_mesh (Box) -------------------> res1_props (LOD Properties: Resolution 1) ------+
-    geometry_mesh (Box) -> geometry_triangles (Divide) -> geometry_components (Group) -> geometry_mass (Mass)
-        -> geometry_props (Geometry) ------------------------------------------------------+--> assemble --> export
-    memory_points (Add, one point) -> memory_group (Group "new_point") -> memory_props (Memory) --+
+Three LOD columns flow downward. The props nodes share one row; Assemble and Export sit under Geometry.
+
+                              geometry_mesh        (Box)
+                                   |
+                              geometry_triangles   (Divide)
+                                   |
+    res1_mesh (Box)           geometry_components  (Group)          memory_points (Add, one point)
+        |                          |                                     |
+        |                     geometry_mass        (Mass)           memory_group (Group "new_point")
+        |                          |                                     |
+    res1_props (Resolution 1) geometry_props       (Geometry)       memory_props (Memory)
+        (all three props nodes feed assemble)
+                                assemble
+                                   |
+                                export
+
+The note sits to the left of the Res 1 column, its bottom on the props row.
 
 The network passes the checks of spec 17.1 as it stands, with no errors and no warnings (the Geometry box is
 triangulated so rule T2-TRI stays quiet), so Save to Disk works on the first try. ``new_p3d_dialog`` is
@@ -34,8 +47,25 @@ _NOTE = ("Replace res1_mesh, geometry_mesh and memory_points with your own model
          "Everything else is set up: the LOD Properties nodes name the LODs, Assemble LODs makes the P3D geometry, "
          "and P3D Export writes it when you press Save to Disk.")
 
-_COLUMN = 3.0  # network editor units between columns
-_ROW = 1.2
+# Where each node sits, as (x, y) offsets from geometry_mesh in network editor units (x right, y up). This is the
+# owner's hand-made layout: three LOD columns flow downward, the props nodes share one row, and assemble then
+# export sit under the Geometry column.
+LAYOUT = {
+    "res1_mesh": (-3.66, -2.20),
+    "res1_props": (-3.66, -3.32),
+    "geometry_mesh": (0.0, 0.0),
+    "geometry_triangles": (0.0, -0.77),
+    "geometry_components": (0.0, -1.55),
+    "geometry_mass": (0.0, -2.37),
+    "geometry_props": (0.0, -3.32),
+    "memory_points": (4.31, -1.55),
+    "memory_group": (4.31, -2.51),
+    "memory_props": (4.31, -3.32),
+    "assemble": (0.0, -5.09),
+    "export": (0.0, -6.32),
+}
+NOTE_POSITION = (-8.53, -3.32)  # lower-left corner: left of the Res 1 column, bottom on the props row
+NOTE_SIZE = (3.57, 2.75)
 
 
 @dataclass
@@ -78,61 +108,66 @@ def build_starter(parent=None, name: str = "new_p3d"):
         name = network.name()
     made = StarterNetwork(network)
 
-    def add(type_name: str, key: str, column: float, row: float):
-        node = network.createNode(type_name, key)
-        node.setPosition(hou.Vector2(column * _COLUMN, -row * _ROW))
+    def place(node, key: str) -> None:
+        node.setPosition(hou.Vector2(*LAYOUT[key]))
         made.nodes[key] = node
+
+    def add(type_name: str, key: str):
+        node = network.createNode(type_name, key)
+        place(node, key)
         return node
 
-    def group(source, key: str, selection: str, column: float, row: float):
+    def group(source, key: str, selection: str):
         node = selection_browser.create_selection(source, selection)  # all points; the node is wired to ``source``
         node.setName(key, unique_name=True)
-        node.setPosition(hou.Vector2(column * _COLUMN, -row * _ROW))
-        made.nodes[key] = node
+        place(node, key)
         return node
 
     def chain(node, source):
         node.setFirstInput(source)
         return node
 
-    res1_mesh = add("box", "res1_mesh", 0, 0)
+    res1_mesh = add("box", "res1_mesh")
     _set_box(res1_mesh)
-    res1_props = chain(add("a3ob_lod_properties", "res1_props", 1, 0), res1_mesh)
+    res1_props = chain(add("a3ob_lod_properties", "res1_props"), res1_mesh)
     res1_props.parm("lodtype").set("visual")
     res1_props.parm("resolution").set(1.0)
 
-    geometry_mesh = add("box", "geometry_mesh", 0, 3)
+    geometry_mesh = add("box", "geometry_mesh")
     _set_box(geometry_mesh)
-    geometry_triangles = chain(add("divide", "geometry_triangles", 1, 3), geometry_mesh)
+    geometry_triangles = chain(add("divide", "geometry_triangles"), geometry_mesh)
     geometry_triangles.parm("convex").set(1)  # Convex Polygons, at most 3 sides: triangles
     geometry_triangles.parm("usemaxsides").set(1)
     geometry_triangles.parm("numsides").set(3)
-    geometry_components = group(geometry_triangles, "geometry_components", "component01", 2, 3)
-    geometry_mass = chain(add("a3ob_mass", "geometry_mass", 3, 3), geometry_components)
+    geometry_components = group(geometry_triangles, "geometry_components", "component01")
+    geometry_mass = chain(add("a3ob_mass", "geometry_mass"), geometry_components)
     geometry_mass.parm("mode").set("total")
     geometry_mass.parm("value").set(100.0)
-    geometry_props = chain(add("a3ob_lod_properties", "geometry_props", 4, 3), geometry_mass)
+    geometry_props = chain(add("a3ob_lod_properties", "geometry_props"), geometry_mass)
     geometry_props.parm("lodtype").set("geometry")
 
-    memory_points = add("add", "memory_points", 0, 6)
+    memory_points = add("add", "memory_points")
     memory_points.parm("points").set(1)
-    memory_group = group(memory_points, "memory_group", "new_point", 1, 6)
-    memory_props = chain(add("a3ob_lod_properties", "memory_props", 3, 6), memory_group)
+    memory_group = group(memory_points, "memory_group", "new_point")
+    memory_props = chain(add("a3ob_lod_properties", "memory_props"), memory_group)
     memory_props.parm("lodtype").set("memory")
 
-    assemble = add("a3ob_assemble_lods", "assemble", 5, 3)
+    assemble = add("a3ob_assemble_lods", "assemble")
     for number, props in enumerate((res1_props, geometry_props, memory_props)):
         assemble.setInput(number + 1, props)  # input 1 is the optional base: left empty
 
-    export = chain(add("a3ob_p3d_export", "export", 6, 3), assemble)
+    export = chain(add("a3ob_p3d_export", "export"), assemble)
     export.parm("file").set("$HIP/%s.p3d" % name)
     export.setDisplayFlag(True)
     export.setRenderFlag(True)
 
+    for key, node in made.nodes.items():
+        node.setPosition(hou.Vector2(*LAYOUT[key]))  # again now that all is wired: wiring can nudge a node
+
     made.note = network.createStickyNote()
     made.note.setText(_NOTE)
-    made.note.setPosition(hou.Vector2(0, 1.5 * _ROW))
-    made.note.setSize(hou.Vector2(5 * _COLUMN, 1.2))
+    made.note.setPosition(hou.Vector2(*NOTE_POSITION))
+    made.note.setSize(hou.Vector2(*NOTE_SIZE))
     return made
 
 

@@ -63,6 +63,37 @@ class TestNewP3d(NodeTestCase):
         model = p3d.read_p3d_file(path, strict=False)
         self.assertEqual(len(model.lods), 3)
 
+    def test_layout_flows_top_to_bottom_in_the_owners_positions(self):
+        # Purpose: catch a layout that drifts from the owner's hand-made one (task 23, ux-tools.md 7.5).
+        def pos(key):
+            p = self.nodes[key].position()
+            return p.x(), p.y()
+
+        for key, node in self.nodes.items():
+            for source in node.inputs():
+                if source is not None:
+                    self.assertLess(node.position().y(), source.position().y(), "%s under its input" % key)
+        props_y = {round(pos(k)[1], 2) for k in ("res1_props", "geometry_props", "memory_props")}
+        self.assertEqual(len(props_y), 1, props_y)
+        origin_x, origin_y = pos("geometry_mesh")
+        self.assertEqual(pos("assemble")[0], origin_x)
+        self.assertEqual(pos("export")[0], origin_x)
+        for key, (dx, dy) in new_p3d.LAYOUT.items():
+            x, y = pos(key)
+            self.assertAlmostEqual(x - origin_x, dx, delta=0.01, msg=key)
+            self.assertAlmostEqual(y - origin_y, dy, delta=0.01, msg=key)
+        note = self.made.note
+        nx, ny = note.position().x(), note.position().y()
+        self.assertAlmostEqual(nx - origin_x, new_p3d.NOTE_POSITION[0], delta=0.01)
+        self.assertAlmostEqual(ny - origin_y, new_p3d.NOTE_POSITION[1], delta=0.01)
+        self.assertAlmostEqual(note.size().x(), new_p3d.NOTE_SIZE[0], delta=0.01)
+        self.assertAlmostEqual(note.size().y(), new_p3d.NOTE_SIZE[1], delta=0.01)
+        for key, node in self.nodes.items():
+            x, y = pos(key)
+            width, height = node.size().x(), node.size().y()
+            apart = (x + width <= nx or nx + note.size().x() <= x or y + height <= ny or ny + note.size().y() <= y)
+            self.assertTrue(apart, "the note overlaps %s" % key)
+
     def test_a_new_object_is_made_when_no_parent_is_given(self):
         made = new_p3d.build_starter(None, "made_by_test")
         self.addCleanup(made.network.destroy)
