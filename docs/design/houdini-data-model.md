@@ -207,7 +207,7 @@ per prim, so a per-prim marker shows the damage exactly.
 - The importer writes it on **every polygon** of the LOD, inline proxy triangles included. It does not write it on
   packed proxy prims or on their embedded triangles. Those are ignored by the check (value 0).
 - Two import nodes of one file merged together get different uids, which is exactly the error to catch.
-- Distinct keys can still collide, with probability about n²/2³² for n stamped LODs in one scene (1000 nodes × 32 LODs: no collision in W8). Two hip files whose import nodes share a path give the same uids. A collision only hides a merge from this check (the count heuristic is still there); it never changes exported data.
+- Distinct keys can still collide, with probability about n²/2³² for n stamped LODs in one scene (1000 nodes × 32 LODs: no collision in W8). Two hip files whose import nodes share a path give the same uids. A collision only hides a merge from this check (D15: the count heuristic does not run for a stamped LOD); it never changes exported data.
 
 **Survival (hython checks W2-W7).** The uid is an ordinary prim attribute, so everything that keeps prim attributes keeps it:
 
@@ -222,18 +222,20 @@ per prim, so a per-prim marker shows the damage exactly.
 | a prim an artist adds by script or by a SOP that does not inherit (HOM `createPolygon`) | reads `0` (W6) |
 
 **Validator rule (§17.1).** Take the polygons of the LOD geometry. Collect their **non-zero** uids. If two or more
-distinct values exist, the geometry is a merged LOD. The check is exact for stamped LODs, with no count heuristic.
+distinct values exist, the geometry is a merged LOD. The check is exact for stamped LODs. **D15 (supersedes D8):** the
+count heuristic runs only for a LOD geometry with no non-zero uid at all. Where a uid is present, the uid check is the
+only merge check.
 
 **Hand-authored LODs and partial stamping.**
 
 | Case | Behaviour |
 |---|---|
-| No `a3ob_lod_uid` attribute (a LOD made by hand, or by the "A3OB LOD" shelf tool) | The uid check does not fire. Nothing is written for it on export. The count heuristic still applies if `a3ob_source_counts` exists. |
-| Some prims 0, others one non-zero uid (new prims added to an imported LOD) | Fine: 0 is "unstamped", not a second uid. The geometry has one distinct uid. |
+| No `a3ob_lod_uid` attribute (a LOD made by hand, or by the "A3OB LOD" shelf tool) | The uid check does not fire. Nothing is written for it on export. The count heuristic applies if `a3ob_source_counts` exists (D15: it runs only for a LOD with no uid). |
+| Some prims 0, others one non-zero uid (new prims added to an imported LOD, a proxy for example) | Fine: 0 is "unstamped", not a second uid. The geometry has one distinct uid, and (D15) the count heuristic does not run, so added prims give no merge warning. |
 | Prims with two or more distinct non-zero uids | Merged LOD (warning). |
-| Imported LOD merged with a hand-authored mesh | Not seen by the uid check (the hand-authored prims read 0 or have no attribute), only by the count heuristic (W6). |
-| LOD with no polygons (Memory, Land Contact: only loose points) | No prim can carry a uid, so the uid check is blind for it. The count heuristic still applies. |
-| Two copies of one LOD merged | One uid: not flagged by the uid check. The count heuristic may still warn. |
+| Imported LOD merged with a hand-authored mesh | Not seen (D15). The hand-authored prims read 0, the imported ones carry one uid, so the LOD counts as stamped and only the uid check runs. |
+| LOD with no polygons (Memory, Land Contact: only loose points) | No prim can carry a uid, so the uid check is blind for it. It has no uid, so the count heuristic applies. |
+| Two copies of one LOD merged | One uid: not flagged (D15). |
 
 The "A3OB LOD" shelf tool (§17.2) stamps nothing: an artist-authored LOD has no import to trace. An artist who wants
 the check on such a LOD can run the same stamping helper on it, with the helper node's path as `source_key`.
@@ -458,7 +460,7 @@ The A3OB rule that drops UVs on non-UV LOD types (`export_p3d.py:275-277`, `util
 
 - **P3D.** `#Mass#` is one f32 per vertex (`data_p3d.py:89-104`); its length is 4·nverts (S3).
 - **A3OB.** Imports and exports it only on the Geometry LOD, as the `a3ob_mass` layer (`import_p3d.py:150-162`, `368`; `export_p3d.py:578-583`).
-- **Port.** Point float32 **`a3ob_mass`**, imported for any LOD that has the TAGG. The TAGG is written iff the attribute exists. The validator warns if it exists on a LOD that is not a geometry-type LOD (D14, Q-3: Geometry, Geometry Buoyancy and Geometry PhysX all count as geometry for mass, §17.1).
+- **Port.** Point float32 **`a3ob_mass`**, imported for any LOD that has the TAGG. The TAGG is written iff the attribute exists. The validator warns if it exists on a LOD that is not a geometry-type LOD (Geometry, Geometry Buoyancy, Geometry PhysX, §17.1). The mass rules `T2-MASS` and `T2-MASSALL` check the Geometry LOD only (D16, §17.1.1).
 - **Why not Houdini `mass`?** It is a simulation attribute: Vellum Configure nodes compute "particle mass" (docs: `nodes/sop/vellumconstraints_grain`, "Physical Attributes"). A stray `mass` from a sim setup would silently emit a `#Mass#` TAGG. A helper copies `a3ob_mass` ↔ `mass` in either direction (D7, OQ-4).
 
 ## 11. Named properties, unknown TAGGs, TAGG order
@@ -776,7 +778,7 @@ Export options that change data (lowercase: texture and material paths, selectio
 | Selection names equal up to case (pre-empts M1's `check()` message) | warning | §7.3 |
 | Repeated `#UVSet#` id, empty or exact-duplicate selection name (stored as blobs; the glue reports them, and drops M1's repeated `check()` message about the written-back blob) | warning | §7.3, §8 |
 | **LOD uid: merged LOD.** The polygons of one LOD geometry carry two or more distinct **non-zero** `a3ob_lod_uid` values (a prim without the attribute, or with 0, is unstamped and ignored). The message names the uids, the prim counts per uid and explains that a Merge of unpacked LODs keeps only the first input's detail (W4, T7c). Exact for stamped LODs. A LOD with no polygons, or a hand-authored LOD with no uid, cannot be checked this way. | warning | §3.5 |
-| **LOD looks merged (secondary).** `a3ob_source_counts` exists and the current point and face counts are both higher than its first two numbers. The message names the counts and explains the same Merge behaviour (V8: two 3-point LODs merged give the first LOD's detail, with counts 6/2 against source 3/1). It covers what the uid cannot see (LODs with no polygons, merges with hand-authored meshes). | warning | §3.1, §3.5 |
+| **LOD looks merged (secondary, D15).** Runs **only for a LOD geometry with no non-zero `a3ob_lod_uid`**; where a uid is present, the uid check above is the only merge check (an added proxy or polygon must not warn). `a3ob_source_counts` exists and the current point and face counts are both higher than its first two numbers. The message names the counts and explains the same Merge behaviour (V8: two 3-point LODs merged give the first LOD's detail, with counts 6/2 against source 3/1). It covers what the uid cannot see (LODs with no polygons). | warning | §3.1, §3.5 |
 | Stale blobs / sharp extras dropped because counts changed | warning | §9.2, §11.2 |
 | Non-empty `LOD.dropped_taggs` after building (a TAGG was added before `set_mesh`); any `structure_errors()` message | error (hard stop; coding or stale-blob bug) | §11.2, §16 |
 | Any other M1 `check()` message (index out of range, proxy selection without a triangle) | warning (advisory) | §16 |
@@ -787,7 +789,7 @@ Export options that change data (lowercase: texture and material paths, selectio
 
 **Severities (D8).** Both "merged" checks are warnings, never errors. Merging LODs can be deliberate (the first LOD's
 detail wins, and the result is well defined), and legitimate modelling also adds points, so the count heuristic fires on
-innocent edits. The uid check is exact where it applies; the count heuristic stays as a secondary warning.
+innocent edits. The uid check is exact where it applies; the count heuristic is a secondary warning for LODs with no uid (D15).
 
 #### 17.1.1 Per-LOD-type rules (tier 2, D14 Q-3)
 
@@ -822,8 +824,8 @@ decoded P3D name (§7.3), case-insensitively, at the **start** of the name (A3OB
 | `T2-TRI` | Geometry-type, Shadow, VBS Underground | Every polygon is a triangle. For Geometry-type the message says that convexity is then not definite. | `is_triangulated`, `:113-121`, `:222-227` (optional for Geometry-type, strict for Shadow and Underground) |
 | `T2-CONVEX` | Geometry-type, VBS Underground | Every edge shared by two polygons is convex, or the two polygons are flat against each other (the dot product of their face normals is within 0.9999 to 1.0001). | `is_convex`, `:229-250` |
 | `T2-COMP` | Geometry-type, VBS Underground | At least one group is named `component<digits>`. Skipped for Geometry-type LODs that have an `occluder\d+` group. | `has_components`, `:252-258` |
-| `T2-MASS` | Geometry-type | `a3ob_mass` exists and the sum of all point masses is at least 0.001. | `has_mass`, `:260-267` |
-| `T2-MASSALL` | Geometry-type | Every point has an `a3ob_mass` of at least 0.001. | `no_unweighted`, `:269-282` (optional there) |
+| `T2-MASS` | Geometry only (D16) | `a3ob_mass` exists and the sum of all point masses is at least 0.001. | `has_mass`, `:260-267` |
+| `T2-MASSALL` | Geometry only (D16) | Every point has an `a3ob_mass` of at least 0.001. | `no_unweighted`, `:269-282` (optional there) |
 | `T2-SHARP` | Shadow, VBS Underground | If any polygon has smooth normals, no edge shared by two polygons may be smooth. In Houdini terms: every such edge must be in the edge group `a3ob_sharp` (§9.2). | `is_sharp`, `:338-352` |
 | `T2-NOMAT` | Shadow, VBS Underground | No polygon has a texture or a material (`a3ob_texture` and `a3ob_material` empty on all polygons). | `no_materials`, `:354-372` |
 | `T2-SHADOWRES` | Shadow | The LOD resolution index is one of 0, 10, 1000, 1010, 1020. | `only_conventional_indices`, `:374-381` (optional there) |
@@ -838,7 +840,7 @@ decoded P3D name (§7.3), case-insensitively, at the **start** of the name (A3OB
 | `T2-PATH-ENTRY` | Paths | At least one group is named `in<digits>`. | `has_entry`, `:571-577` (strict there) |
 | `T2-PATH-POS` | Paths | The same test as `T2-PATH-ENTRY`, with the message "no position points". | `has_position`, `:579-585` (optional there); see the note below |
 
-Mass rules (`T2-MASS`, `T2-MASSALL`) on Geometry Buoyancy and Geometry PhysX go beyond A3OB, which checks mass only on plain Geometry (`ValidatorLODGeometry`; the subtype validator has no mass rule). They follow D14, Q-3.
+Mass rules (`T2-MASS`, `T2-MASSALL`) apply to the plain Geometry LOD only (D16, amending D14 Q-3), as in A3OB: only `ValidatorLODGeometry.conditions` lists `has_mass` (`:292-311`), and the subtype validator for Buoyancy and PhysX (`ValidatorLODGeometrySubtype`, `:314`) has no mass rule. Revisit if the Arma 3 Samples show mass on Buoyancy or PhysX LODs.
 
 **Notes.**
 

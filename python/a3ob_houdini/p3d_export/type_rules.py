@@ -28,6 +28,7 @@ from .options import ExportOptions
 __all__ = ["Rule", "RULES", "RULE_IDS", "rule_by_id", "check_lod_rules", "GEOMETRY_TYPES", "SHADOW_TYPES"]
 
 GEOMETRY_TYPES = frozenset((LodType.GEOMETRY, LodType.GEOMETRY_BUOY, LodType.GEOMETRY_PHYSX))
+MASS_TYPES = frozenset((LodType.GEOMETRY,))
 SHADOW_TYPES = frozenset((LodType.SHADOW, LodType.SHADOW_VIEW_CARGO, LodType.SHADOW_VIEW_PILOT,
                           LodType.SHADOW_VIEW_GUNNER))
 POINT_CLOUD_TYPES = frozenset((LodType.MEMORY, LodType.LANDCONTACT, LodType.HITPOINTS))
@@ -348,8 +349,9 @@ RULES: Tuple[Rule, ...] = (
          "Geometry and underground LODs: every shared edge is convex or flat."),
     Rule("T2-COMP", "Component selections", GEOMETRY_TYPES | {LodType.UNDERGROUND}, _comp,
          "Geometry and underground LODs: a group called component01, component02, ... exists."),
-    Rule("T2-MASS", "Mass is set", GEOMETRY_TYPES, _mass, "Geometry LODs: the points have a total mass of at least 0.001."),
-    Rule("T2-MASSALL", "Every point has mass", GEOMETRY_TYPES, _massall, "Geometry LODs: every point has a mass of at least 0.001."),
+    # D16: mass is checked on the Geometry LOD only, as in A3OB (validator.py:292-311; the subtype validator has none).
+    Rule("T2-MASS", "Mass is set", MASS_TYPES, _mass, "Geometry LOD: the points have a total mass of at least 0.001."),
+    Rule("T2-MASSALL", "Every point has mass", MASS_TYPES, _massall, "Geometry LOD: every point has a mass of at least 0.001."),
     Rule("T2-SHARP", "No smooth edges", SHADOW_TYPES | {LodType.UNDERGROUND}, _sharp,
          "Shadow and underground LODs: with smooth polygons, every shared edge is in a3ob_sharp."),
     Rule("T2-NOMAT", "No materials", SHADOW_TYPES | {LodType.UNDERGROUND}, _nomat,

@@ -125,8 +125,11 @@ class TestRules(unittest.TestCase):
     def test_a_rule_applies_to_its_types_only(self):
         data = lod(LodType.VISUAL, resolution=1.0)  # not triangulated, no mass, no components: all fine for a visual LOD
         self.assertEqual(run(data), [])
-        for name in ("GEOMETRY_BUOY", "GEOMETRY_PHYSX"):
-            self.assertTrue(with_rule(run(lod(getattr(LodType, name))), "T2-MASS"))
+        self.assertTrue(with_rule(run(lod(LodType.GEOMETRY)), "T2-MASS"))
+        for name in ("GEOMETRY_BUOY", "GEOMETRY_PHYSX"):  # D16: mass is checked on the Geometry LOD only
+            texts = run(lod(getattr(LodType, name)))
+            self.assertEqual(with_rule(texts, "T2-MASS"), [])
+            self.assertEqual(with_rule(texts, "T2-MASSALL"), [])
         self.assertEqual(run(lod(LodType.FIRE_GEOMETRY)), [])  # not ported (spec 17.1.1 notes)
         self.assertEqual(run(lod(LodType.VIEW_GEOMETRY)), [])
 

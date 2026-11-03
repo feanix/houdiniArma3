@@ -23,6 +23,14 @@ for point in geo.points()[:5]:
 """
 
 
+NO_MASS = """
+geo = hou.pwd().geometry()
+for attrib in list(geo.pointAttribs()):
+    if attrib.name() in ("mass", "a3ob_mass"):
+        attrib.destroy()
+"""
+
+
 def cook(node):
     try:
         node.cook(force=True)
@@ -154,17 +162,25 @@ def main(fixtures, scratch):
     result["validate_crate"] = cook(good_validate)
     result["validate_crate_points"] = npoints(good_validate)
     result["validate_crate_prims"] = [len(good_validate.geometry().prims()), len(importer.geometry().prims())]
-    good_validate.parm("t2mass").set(0)
-    result["validate_crate_mass_off"] = cook(good_validate)
     good_validate.parm("typerules").set(0)
     result["validate_crate_rules_off"] = cook(good_validate)
     good_validate.parm("typerules").set(1)
-    good_validate.parm("t2mass").set(1)
     good_validate.parm("strict").set(1)
     result["validate_crate_strict"] = cook(good_validate)
     good_validate.parm("strict").set(0)
-    good_validate.parm("maxmessages").set(2)
+    good_validate.parm("maxmessages").set(1)
     result["validate_crate_two"] = cook(good_validate)
+
+    # D16: the crate's Buoyancy LOD has no mass and no mass warning. The Geometry LOD (index 3) without mass warns.
+    geometry = lod_chain(container, importer, 3, "geometry")
+    no_mass = container.createNode("python", "no_mass")
+    no_mass.setInput(0, geometry)
+    no_mass.parm("python").set(NO_MASS)
+    mass_validate = container.createNode("a3ob_validate", "validate_no_mass")
+    mass_validate.setInput(0, no_mass)
+    result["validate_no_mass"] = cook(mass_validate)
+    mass_validate.parm("t2mass").set(0)
+    result["validate_no_mass_mass_off"] = cook(mass_validate)
 
     # Strict export writes nothing when there are warnings.
     strict_folder = os.path.join(scratch, "strict")
