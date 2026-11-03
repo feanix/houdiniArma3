@@ -15,6 +15,7 @@ from a3ob_core.p3d import LodType
 
 from tests import hou_support as hs
 from tests import samples_support as ss
+from tests.test_permutation import bytes_by_position, interleaved_lod, pairs_by_position
 
 if hs.HAS_HOU:
     from a3ob_houdini import messages, p3d_export
@@ -71,22 +72,51 @@ class TestFileLayoutThatDoesNotSurvive(unittest.TestCase):
         self.assertEqual(out.sharp_edges(True), [(0, 1), (0, 2), (0, 3), (1, 2), (2, 3), (1, 1)])
         self.assertEqual(ss.lod_differences(lod, out), ["sharp edge order"])
 
-    def test_interleaved_proxy_moves_to_the_end_and_file_indices_do_not_follow(self):
-        """A proxy that is not at the end of the point and face lists is written at the end (spec 13.6, L1). What the
-        file keeps as indices, the editor masks and the sharp edge pairs that touch a proxy point, then points at other
-        points. Finding F-4 (OQ-11): 19 Samples LODs."""
-        lod = p3d.LOD(LodType.VISUAL, 1.0)
-        proxy = [(5.0, 0.0, 0.0), (5.0, 1.0, 0.0), (5.0, 0.0, 1.0)]
-        lod.set_mesh(proxy + SQUARE, [(0, 1, 2), (3, 4, 5), (3, 5, 6)], [UP], [0] * 9)
-        lod.add_selection("proxy:\\a3\\test\\thing.001", {0: 1.0, 1: 1.0, 2: 1.0})
-        lod.taggs.append(p3d.MaskTagg("#Hidden#", bytes([1, 0, 0, 0, 0, 0, 0]), bytes([1, 0, 0])))
-        lod.set_sharp_edges([(0, 1), (3, 4)])
+    def test_interleaved_proxy_moves_to_the_end_but_masks_and_sharp_pairs_follow(self):
+        """A proxy that is not at the end of the point and face lists is written at the end (spec 13.6, L1: the bytes
+        differ). The editor mask and the sharp edge pairs, which are kept as numbers, move with their points (task #36,
+        finding F-4 / OQ-11, 19 Samples LODs): they mark the same points by position after the round trip."""
+        lod = interleaved_lod()
         out = round_trip(lod)
-        self.assertEqual(list(out.points[-9:]), list(lod.points[:9]))  # the proxy points are now last
-        mask = [t for t in out.taggs if t.name == "#Hidden#"][0]
-        self.assertEqual(bytes(mask.vertex_bytes), bytes([1, 0, 0, 0, 0, 0, 0]))  # still point 0: now a square corner
-        # The content differs (a mask and a sharp pair now sit on other points), so the comparison names the tagg kinds.
-        self.assertEqual(ss.lod_differences(lod, out), ["content: MaskTagg, SharpEdgesTagg"])
+        self.assertEqual(list(out.points[-18:-9]), list(lod.points[:9]))  # proxy A is now after the square, B last
+        self.assertEqual(list(out.points[:12]), list(lod.points[9:21]))  # the square comes first
+        # Only the order differs: masks and pairs name the same points and faces by position.
+        self.assertEqual(ss.lod_differences(lod, out), ["point and face order", "normal table"])
+        before = [t for t in lod.taggs if t.name == "#Selected#"][0]
+        after = [t for t in out.taggs if t.name == "#Selected#"][0]
+        self.assertEqual(bytes_by_position(out, after), bytes_by_position(lod, before))
+        self.assertEqual(len(bytes_by_position(out, after)[0]), 3)
+        sharp_before = [t for t in lod.taggs if t.name == p3d.SHARP_EDGES][0]
+        sharp_after = [t for t in out.taggs if t.name == p3d.SHARP_EDGES][0]
+        self.assertEqual(pairs_by_position(out, sharp_after), pairs_by_position(lod, sharp_before))
+        self.assertEqual(len(sharp_after.pairs()), 6)
+
+    def test_a_record_that_cannot_follow_the_move_is_dropped_with_a_warning(self):
+        """An unknown TAGG may hold point numbers. When the proxies move, it is not kept pointing at other points."""
+        lod = interleaved_lod()
+        lod.taggs.append(p3d.RawTagg("#Odd#", b"abc"))
+        geo, report, _ = hs.import_model(p3d.P3DModel([lod]))
+        text = [w for w in report.texts(messages.WARNING) if "#Odd#" in w]
+        self.assertEqual(len(text), 1)
+        self.assertIn(lod.name, text[0])
+        out_report = messages.Report()
+        data = p3d_export.build_bytes([geo], None, out_report)
+        self.assertNotIn("#Odd#", [t.name for t in p3d.read_p3d(data, strict=True).lods[0].taggs])
+
+    def test_sort_sections_moves_the_face_bytes_of_an_editor_mask(self):
+        """Sort sections writes the faces in section order. A mask kept as bytes per face follows (task #36)."""
+        lod = p3d.LOD(LodType.VISUAL, 1.0)
+        lod.set_mesh(SQUARE, [(0, 1, 2), (0, 2, 3), (0, 1, 3)], [UP], [0] * 9)
+        lod.face_textures[:] = ["a.paa", "b.paa", "a.paa"]
+        lod.taggs.append(p3d.MaskTagg("#Selected#", bytes(4), bytes([7, 8, 9])))
+        geo, _, _ = hs.import_model(p3d.P3DModel([lod]))
+        report = messages.Report()
+        data = p3d_export.build_bytes([geo], p3d_export.ExportOptions(sort_sections=True), report)
+        self.assertIsNotNone(data, report.texts(messages.ERROR))
+        out = p3d.read_p3d(data, strict=True).lods[0]
+        mask = [t for t in out.taggs if t.name == "#Selected#"][0]
+        self.assertEqual(out.face_textures, ["a.paa", "a.paa", "b.paa"])  # face 1 and face 2 swapped places
+        self.assertEqual(bytes(mask.face_bytes), bytes([7, 9, 8]))
 
     def test_zero_z_comes_back_as_negative_zero(self):
         """Opening a packed LOD (the unpack verb) turns the -0.0 the import made into +0.0, and the export negates z again.

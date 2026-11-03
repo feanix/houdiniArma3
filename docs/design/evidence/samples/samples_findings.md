@@ -64,6 +64,10 @@ can have several):
 | F-4 | Interleaved proxies | 36 LODs warned at import; 17 points and faces rewritten in another order, 19 more with stale indices | The spec says L1 (13.6, "proxies are not the last points and faces"). New finding on top of it: what the file keeps as indices does not follow the moved points. 4 LODs with an editor mask and 2 with a mask and sharp pairs have the mask bytes unchanged but on other points now; 15 have sharp pairs that differ after the reorder (most likely the pairs that touch a proxy point, kept as file indices in `a3ob_sharp_extra`; not traced pair by pair). See OQ-11. |
 | F-5 | Signed zero | 1 | A point with z = +0.0 comes back as -0.0: the unpack of a packed LOD turns the -0.0 the import made into +0.0, and the export negates z again. Equal value, other bits. (`test_zero_z_comes_back_as_negative_zero`.) |
 
+**F-4 is fixed (task #36).** Masks, `#Hide#` and sharp pairs are remapped through the import permutation, so in the
+Samples the interleaved LODs differ only in point and face order (the 6 mask LODs and the 15 sharp pair LODs are
+content-correct). The pin in `tests/test_real_file_layout.py` now checks this.
+
 Each of F-1 to F-5 has a minimal synthetic reproduction in `tests/test_real_file_layout.py` (no Samples bytes) that pins
 today's behaviour, so a later fix flips it on purpose. The Samples test fails on any LOD that differs in something else.
 

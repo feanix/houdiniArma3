@@ -123,6 +123,12 @@ def lod_content(lod):
             members = sorted((point_keys[i], w) for i, w in enumerate(tagg.vertex_bytes) if w)
             faces = sorted((face_keys[i], w) for i, w in enumerate(tagg.face_bytes) if w)
             taggs.append((name, members, faces))
+        elif tagg.name == "#Hide#" and len(tagg.payload()) == lod.point_count + lod.face_count:
+            # Object Builder's hide state: one byte per point, then one per face (task #36 treats it as a mask).
+            raw = tagg.payload()
+            members = sorted((point_keys[i], w) for i, w in enumerate(raw[:lod.point_count]) if w)
+            faces = sorted((face_keys[i], w) for i, w in enumerate(raw[lod.point_count:]) if w)
+            taggs.append((name, members, faces))
         elif hasattr(tagg, "masses"):
             taggs.append((name, sorted((point_keys[i], m) for i, m in enumerate(tagg.masses))))
         elif hasattr(tagg, "edges"):
@@ -293,11 +299,10 @@ class Rig:
 #: Differences of a LOD that the Houdini geometry cannot hold. They are findings, not test failures: see
 #: docs/design/evidence/samples/samples_findings.md. A LOD whose differences are all here still has the same content.
 KNOWN_L1 = ("normal table", "padding", "sharp edge order", "signed zero")
-#: What goes wrong in a LOD with interleaved proxies (the import warns about it): its points and faces are written in
-#: another order, so the sharp edge pairs that point at proxy points and the Object Builder editor masks (both kept as
-#: file indices) point at other points.
-INTERLEAVED_L1 = ("point and face order", "content: SharpEdgesTagg", "content: MaskTagg",
-                  "content: MaskTagg, SharpEdgesTagg")
+#: What differs in a LOD with interleaved proxies (the import warns about it): its points and faces are written in
+#: another order. Since task #36 the records that hold point or face numbers (editor masks, sharp pairs) follow the move,
+#: so the order is the only difference (the content check in ``lod_content`` compares them by position).
+INTERLEAVED_L1 = ("point and face order",)
 
 
 def interleaved_lod_names(warnings):

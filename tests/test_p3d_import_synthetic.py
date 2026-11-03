@@ -180,7 +180,8 @@ class TestProxies(unittest.TestCase):
         self.assertEqual(tuple(inner.points()[1].position()), (1, 0, 0))
         self.assertEqual([v.point().number() for v in polygons(inner)[0].vertices()], [0, 3, 2, 1])
         self.assertIn("not the last points and faces", "\n".join(report.texts("warning")))
-        self.assertEqual(list(inner.attribValue("a3ob_sharp_extra")), [0, 1])  # touches a proxy point
+        # Touches a proxy point. File points 0 and 1 are export-order points 6 and 7 (task #36: the pair follows the move).
+        self.assertEqual(list(inner.attribValue("a3ob_sharp_extra")), [6, 7])
         self.assertEqual(len(list(inner.findEdgeGroup("a3ob_sharp").edges())), 1)
         self.assertEqual(list(inner.attribValue("a3ob_source_counts")), [9, 3, 11])
 

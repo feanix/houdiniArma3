@@ -111,6 +111,11 @@ what every TAGG becomes (group, attribute, packed proxy or blob) and which point
 corner map `[c0, c(n-1), ..., c1]`), vertex and face data, normals, float64 UVs, groups and weights, sharp edges, detail
 attributes, and last the packed proxies. Each LOD is packed into one prim of `geo` with the outer attribute `name`.
 
+When proxies are interleaved the import moves points and faces (mesh first, proxies last: the order the export writes).
+`permutation.Permutation` holds that move (`point_old`, `face_old`, and the derived inverse and corner order) and
+`permutation.remap_payload` rewrites a TAGG payload through it. `plan._remap_blobs` and `a3ob_sharp_extra` use it, so masks
+and sharp pairs keep marking the same points; a record that cannot be moved is dropped with a warning.
+
 ## The exporter in short
 
 `p3d_export` mirrors the importer: a `hou` layer reads, a plain-Python layer decides. `collect` (spec 3.2) finds the LODs,

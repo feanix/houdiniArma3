@@ -23,6 +23,7 @@ from a3ob_core.p3d import LOD, SelectionTagg
 from a3ob_core.p3d import model as m1
 
 from .. import messages
+from ..permutation import Permutation, remap_payload
 
 __all__ = [
     "BlobPlan", "GroupPlan", "ProxyPlan", "LodPlan", "make_plan", "houdini_corner_order", "uv_attrib_name",
@@ -53,6 +54,8 @@ class BlobPlan:
     active: int
     payload: bytes
     reason: str
+    #: The TAGG as read, so that ``_remap_blobs`` can find out what its bytes mean.
+    tagg: Optional[m1.Tagg] = None
 
 
 @dataclass
@@ -109,6 +112,8 @@ class LodPlan:
     warnings: List[str] = field(default_factory=list)
     #: ``corner_start[f]``: the file corner index where face ``f`` starts.
     corner_start: List[int] = field(default_factory=list)
+    #: File order to export order (spec 13.6). Index-bound records are remapped through it (``_remap_blobs``).
+    permutation: Optional[Permutation] = None
 
     @property
     def inline_proxy_count(self) -> int:
@@ -123,6 +128,7 @@ def make_plan(lod: LOD, lod_index: int) -> LodPlan:
     plan.corner_start = _corner_starts(lod)
     _classify_taggs(plan)
     _split_mesh(plan)
+    _remap_blobs(plan)
     _check_face_uv(plan)
     _check_proxy_order(plan)
     return plan
@@ -190,7 +196,7 @@ def _face_use_counts(lod: LOD) -> List[int]:
 
 
 def _blob(plan: LodPlan, tagg: m1.Tagg, reason: str) -> str:
-    plan.blobs.append(BlobPlan(tagg.name, tagg.active, tagg.payload(), reason))
+    plan.blobs.append(BlobPlan(tagg.name, tagg.active, tagg.payload(), reason, tagg))
     return "#?%d" % (len(plan.blobs) - 1)
 
 
@@ -296,6 +302,41 @@ def _split_mesh(plan: LodPlan) -> None:
     proxy_faces = {proxy.face for proxy in plan.proxies}
     plan.mesh_points = [i for i in range(lod.point_count) if i not in proxy_points]
     plan.mesh_faces = [i for i in range(lod.face_count) if i not in proxy_faces]
+    plan.permutation = Permutation.for_import(plan.mesh_points, plan.mesh_faces, plan.proxies, lod.face_sides)
+
+
+def _remap_blobs(plan: LodPlan) -> None:
+    """Spec 13.6: when the proxies move, every kept record that holds point, face or corner numbers moves with them.
+
+    The blobs are rewritten for the export order (see ``permutation``). A blob that cannot be rewritten is dropped
+    with a warning, and its order token goes with it (the later blob tokens are renumbered). The live sharp pairs of
+    ``a3ob_sharp_extra`` are remapped by the builder (``_write_sharp_edges``)."""
+    perm = plan.permutation
+    if perm.is_identity or not plan.blobs:
+        return
+    kept: List[BlobPlan] = []
+    new_index: Dict[int, int] = {}
+    for old_index, blob in enumerate(plan.blobs):
+        payload = remap_payload(blob.tagg, perm) if blob.tagg is not None else None
+        if payload is None:
+            _warn(plan, "the TAGG %r (record %d) is dropped because the proxies moved to the end and its point and face "
+                  "numbers cannot be moved with them" % (blob.name, old_index),
+                  "Its layout is unknown, or it does not fit the LOD")
+            continue
+        blob.payload = payload
+        new_index[old_index] = len(kept)
+        kept.append(blob)
+    if len(kept) == len(plan.blobs):
+        return
+    order, active = [], []
+    for token, byte in zip(plan.order, plan.order_active):
+        if token[:2] == "#?":
+            if int(token[2:]) not in new_index:
+                continue
+            token = "#?%d" % new_index[int(token[2:])]
+        order.append(token)
+        active.append(byte)
+    plan.blobs, plan.order, plan.order_active = kept, order, active
 
 
 def _check_face_uv(plan: LodPlan) -> None:
