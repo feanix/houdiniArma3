@@ -37,6 +37,32 @@ def _key(path):
     return os.path.normcase(os.path.abspath(path))
 
 
+def _inside_checkout(path):
+    root = _key(REPO_ROOT)
+    return _key(path).startswith(root + os.sep)
+
+
+def prefer_checkout_definitions(path):
+    """Make every definition of an installed file the preferred one, then check the node types use this checkout.
+
+    The owner's Houdini package can load other copies of the same HDAs (for example from the main checkout) before
+    the suite starts. Without this, a run on a worktree could test those copies. Fails at once if it did.
+    """
+    for definition in hou.hda.definitionsInFile(path):
+        definition.setIsPreferred(True)
+        node_type = hou.nodeType(definition.nodeTypeCategory(), definition.nodeTypeName())
+        used = node_type.definition().libraryFilePath() if node_type is not None and node_type.definition() else None
+        if used is None or _key(used) != _key(path):
+            raise RuntimeError(
+                "Node type %s resolves to %s, not to this checkout's %s. Another HDA library (often a Houdini "
+                "package) is shadowing it. Run clean: set HOUDINI_PACKAGE_SKIP=1 (skips all packages) or "
+                "HOUDINI_USER_PREF_DIR to an empty folder before starting hython."
+                % (definition.nodeTypeName(), used, path))
+        if not _inside_checkout(used):
+            raise RuntimeError("Node type %s uses %s, which is outside the checkout %s."
+                               % (definition.nodeTypeName(), used, REPO_ROOT))
+
+
 def install_hdas_for_class(paths):
     """Hold HDA files for a test class (installing those not yet loaded). Pass the result to ``uninstall_hdas``."""
     held = []
@@ -45,6 +71,7 @@ def install_hdas_for_class(paths):
         key = _key(path)
         if not _holders.get(key):
             hou.hda.installFile(path)
+            prefer_checkout_definitions(path)
         _holders[key] = _holders.get(key, 0) + 1
         held.append(path)
     return held
