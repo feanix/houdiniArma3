@@ -14,7 +14,7 @@
 	label	"File"
 	type	file
 	default	{ "" }
-	help	"The .p3d file to read. Must be an MLOD file, not a binarized one."
+	help	"The .p3d model to open. Use the editable version Object Builder saves (MLOD). Files taken out of the game's packed PBOs (binarized, ODOL) can't be opened."
 	parmtag	{ "filechooser_mode" "read" }
 	parmtag	{ "filechooser_pattern" "*.p3d" }
     }
@@ -23,7 +23,7 @@
 	label	"Reload"
 	type	button
 	default	{ "0" }
-	help	"Read the file again, even if nothing changed."
+	help	"Read the file again from disk, for example after you saved it in Object Builder."
 	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('p3d_import', 'reload', kwargs)" }
 	parmtag	{ "script_callback_language" "python" }
     }
@@ -32,13 +32,17 @@
 	label	"LODs"
 	type	string
 	default	{ "*" }
-	help	"Which LODs to import, by position in the file: * for all, or numbers and ranges like 0 2-4."
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['menu']).menu('p3d_import', 'lod_choices', kwargs)" ]
+	    language python
+	}
+	help	"Which LODs to bring in. Pick them from the menu, or type numbers or names. * means all."
     }
     parm {
 	name	"facegroups"
 	label	"Explicit Face Groups"
 	type	toggle
 	default	{ "0" }
-	help	"Always make a primitive group for every selection, not only where the face data needs one."
+	help	"A face group is a named set of faces. Every selection comes in as a group of points. Normally a face group is added only when the selection's faces are not just the faces whose points are all in it. Turn this on to get a face group for every selection, for example when you want to select or blast faces by selection name."
     }
 }

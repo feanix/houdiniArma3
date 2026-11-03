@@ -81,7 +81,7 @@ class TestHdaInHython(unittest.TestCase):
         self.assertIn("does not exist", r["missing_file_errors"][0])
         self.assertIn("cannot be read", r["garbage_file_errors"][0])
         self.assertTrue(r["garbage_geometry_empty"])
-        self.assertIn("is not a LOD number or range", r["bad_lods_errors"][0])
+        self.assertIn("runs backwards", r["bad_lods_errors"][0])
 
     def test_partial_import_warns_and_reload_button_works(self):
         r = self.result
