@@ -14,8 +14,9 @@ to a temporary file next to the target and renames it (D13). Houdini ignores err
 messages (a node can only add messages while it cooks).
 
 Not offered yet (ux-tools.md 5.9, "deferred" in the task report): Renumber components, Translate names to Czech and
-Drop UVs, which the export core does not implement, and the Preset menu, which task #17 adds. The option parameters
-are all read through ``options_from`` from this node's own values, so a preset only has to set parameters.
+Drop UVs, which the export core does not implement. The option parameters are all read through ``options_from`` from
+this node's own values, so a preset only has to set parameters: the Preset menu and the Apply button do that
+(``apply_preset``). The names of the option parameters do not change, so old scenes still load.
 """
 
 import logging
@@ -27,21 +28,23 @@ try:  # the parameter table is also read under plain Python (HDA generation, tes
 except ImportError:
     hou = None
 
-from .. import p3d_export
+from .. import p3d_export, settings as settings_module
 from ..errors import UserError
 from ..messages import ERROR, INFO, Report, format_problem
+from ..p3d_export.type_rules import RULES
 from ..params import NodeSpec, Parm, read_parms
 from . import _export_common as common
 
-__all__ = ["SPEC", "cook", "BUTTONS", "OPTION_PARMS", "run_save", "save", "save_button", "DEFAULT_PROJECT_ROOT"]
+__all__ = ["SPEC", "cook", "BUTTONS", "MENUS", "OPTION_PARMS", "run_save", "save", "save_button",
+           "DEFAULT_PROJECT_ROOT", "apply_preset", "preset_values"]
 
 NAME = "P3D Export"
 LOGGER = logging.getLogger("a3ob")
 
-#: A3OB's default project root. Task #17 puts the shelf setting in front of it (ux-tools.md 7.2).
-DEFAULT_PROJECT_ROOT = "P:\\"
+#: A3OB's default project root. The shelf setting (ux-tools.md 7.2) comes before it: see ``_values``.
+DEFAULT_PROJECT_ROOT = settings_module.DEFAULT_ROOT
 
-#: The parameters that make the exporter options. A preset (task #17) fills these.
+#: The parameters that make the exporter options. A preset fills these (except the root and the backup switch).
 OPTION_PARMS = ("selmask", "lowercase", "relpaths", "projectroot", "sortsections", "sortlods", "autocomponents",
                 "dupes", "backup")
 
@@ -61,6 +64,13 @@ SPEC = NodeSpec(
              "Every cook: check whenever the node cooks. When saving: check only on Save to Disk (for large models).",
              items=(("cook", "Every cook"), ("save", "When saving"))),
     ) + common.level_parms() + (
+        Parm("preset", "Preset", "menu", settings_module.LOSSLESS,
+             "A saved set of the options below: Lossless, Arma 3 release, or one you saved with the Project root and "
+             "presets shelf tool. Pick one and press Apply. Choosing does not change anything by itself.",
+             menu_action="presets"),
+        Parm("apply", "Apply", "button", "",
+             "Fill the options below from the chosen preset. Project Root and Keep a .bak stay as they are.",
+             action="apply"),
         Parm("selmask", "Selection Mask", "string", "* ^__*",
              "Which point groups become selections: names separated by spaces, * and ? match, ^ before a name leaves "
              "it out. Groups named in a3ob_tagg_order are always selections."),
@@ -87,8 +97,37 @@ _PENDING: Dict[str, Report] = {}
 def _values(node) -> Dict[str, object]:
     values = read_parms(node, SPEC)
     if not str(values["projectroot"]).strip():
-        values["projectroot"] = DEFAULT_PROJECT_ROOT
+        # An empty root means the shelf setting (or A3OB_PROJECT_ROOT); without either, P:\ (ux-tools.md 5.9).
+        settings, _ = settings_module.load()
+        values["projectroot"] = settings_module.effective_root(settings) or DEFAULT_PROJECT_ROOT
     return values
+
+
+def preset_values(settings, name: str) -> Dict[str, object]:
+    """The parameter values a preset sets, by parameter name. A preset that leaves an option out means its default,
+    as in ``settings.options_for``. Raises ``UserError`` for an unknown preset."""
+    options = settings_module.options_for(settings, name)
+    values: Dict[str, object] = {
+        "selmask": options.selection_mask, "lowercase": options.lowercase, "relpaths": options.relative_paths,
+        "sortsections": options.sort_sections, "sortlods": options.sort_lods,
+        "autocomponents": options.auto_components, "dupes": options.duplicate_lods,
+        "typerules": True,
+    }
+    for rule in RULES:
+        values[common.rule_parm_name(rule.id)] = rule.id not in options.rules_off
+    return values
+
+
+def apply_preset(node, name: str = "", settings=None) -> None:
+    """Set the option parameters of ``node`` from a preset (default: the node's Preset menu). Parameter names stay as
+    they are. Raises ``UserError`` for an unknown preset."""
+    if settings is None:
+        settings, _ = settings_module.load()
+    name = name or str(node.parm("preset").eval())
+    for parm_name, value in preset_values(settings, name).items():
+        parm = node.parm(parm_name)
+        if parm is not None:
+            parm.set(value)
 
 
 def cook(node, report: Report) -> None:
@@ -181,4 +220,23 @@ def _tell_user(report: Report) -> None:
         LOGGER.error("Save to Disk could not show its result:\n%s", traceback.format_exc())
 
 
-BUTTONS = {"save": save_button}
+def apply_button(kwargs) -> None:
+    """The Apply button. A bad preset name is shown to the artist; nothing is raised."""
+    node = kwargs["node"]
+    try:
+        apply_preset(node)
+    except UserError as ex:
+        if hou is not None and hou.isUIAvailable():
+            hou.ui.displayMessage(str(ex), title=NAME, severity=hou.severityType.Error)
+        else:
+            LOGGER.error("%s", ex)
+
+
+def _menu_presets(kwargs):
+    """The Preset menu: the built-in presets, then the artist's own (read when the menu opens)."""
+    settings, _ = settings_module.load()
+    return [(name, name) for name in settings_module.preset_names(settings)]
+
+
+BUTTONS = {"save": save_button, "apply": apply_button}
+MENUS = {"presets": _menu_presets}
