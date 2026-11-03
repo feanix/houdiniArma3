@@ -90,13 +90,22 @@ def _default_text(parm: Parm) -> str:
 
 
 def _parm_block(spec: NodeSpec, parm: Parm) -> str:
-    """One ``parm { ... }`` block of the DialogScript."""
+    """One ``parm { ... }`` (or ``multiparm { ... }``) block of the DialogScript."""
+    if parm.kind == "multiparm":
+        return _multiparm_block(spec, parm)
     kind = {"string": "string", "file": "file", "toggle": "toggle", "button": "button", "int": "integer",
-            "float": "float"}[parm.kind]
+            "float": "float", "menu": "string"}[parm.kind]
     lines = ["    parm {", "\tname\t%s" % _quote(parm.name), "\tlabel\t%s" % _quote(parm.label), "\ttype\t%s" % kind]
     if parm.kind in ("int", "float"):
-        lines.append("\tsize\t1")
-    lines.append("\tdefault\t{ %s }" % _quote(_default_text(parm)))
+        lines.append("\tsize\t%d" % parm.size)
+    if parm.kind == "float" and parm.size > 1:
+        lines.append("\tdefault\t{ %s }" % " ".join(_quote(str(value)) for value in parm.default))
+    else:
+        lines.append("\tdefault\t{ %s }" % _quote(_default_text(parm)))
+    if parm.kind == "menu":
+        lines.append("\tmenu {")
+        lines.extend("\t    %s\t%s" % (_quote(token), _quote(label)) for token, label in parm.items)
+        lines.append("\t}")
     if parm.help:
         lines.append("\thelp\t%s" % _quote(parm.help))
     if parm.kind == "file":
@@ -107,6 +116,16 @@ def _parm_block(spec: NodeSpec, parm: Parm) -> str:
         callback = "import a3ob_houdini.entry as e; e.button(%r, %r, kwargs)" % (spec.kind, parm.action)
         lines.append("\tparmtag\t{ \"script_callback\" %s }" % _quote(callback))
         lines.append('\tparmtag\t{ "script_callback_language" "python" }')
+    lines.append("    }")
+    return "\n".join(lines)
+
+
+def _multiparm_block(spec: NodeSpec, parm: Parm) -> str:
+    lines = ["    multiparm {", "\tname\t%s" % _quote(parm.name), "\tlabel\t%s" % _quote(parm.label),
+             "\tdefault\t%d" % int(parm.default), '\tparmtag\t{ "multistartoffset" "1" }']
+    for child in parm.children:
+        lines.append("")
+        lines.extend("    " + line if line else line for line in _parm_block(spec, child).split("\n"))
     lines.append("    }")
     return "\n".join(lines)
 

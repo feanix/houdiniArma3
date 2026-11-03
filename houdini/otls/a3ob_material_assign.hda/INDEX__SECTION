@@ -1,0 +1,14 @@
+Operator:     a3ob_material_assign
+Label:        Material Assign
+Path:         oplib:/Sop/a3ob_material_assign?Sop/a3ob_material_assign
+Icon:         SOP_python
+Table:        Sop
+License:      
+Extra:        
+User:         
+Inputs:       1 to 1
+Subnet:       false
+Python:       true
+Empty:        false
+Modified:     Mon Nov  3 12:00:00 2026
+

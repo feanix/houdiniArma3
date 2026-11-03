@@ -49,11 +49,17 @@ Type names carry no version suffix yet. A change that old scenes cannot take get
 | `messages` | no | `Report`, `message`, `warning`, `error`, text helpers (ux-tools.md section 2). |
 | `errors` | no | `UserError`. |
 | `names` | only the two group-name wrappers | D-STR helpers, `encode_group_name` / `decode_group_name`, `lod_uid`, int32 helpers. |
+| `geo_edit` | at call time | For nodes that edit their input: `copy_input` (output = copy of input 1), detail read, set and remove. |
+| `lod_props` | no | LOD Properties decisions: type menu, signature update (through `a3ob_core`), property and copy merge. |
+| `material_text` | no | Material Assign text rules: slash normalisation, procedural colour text, known endings. |
 | `lod_container` | yes (lazily) | The two shapes of geometry (LOD geometry, P3D geometry): `classify`, `lod_content`, detail copy. Extract LOD and Assemble LODs use it. |
 | `lod_match` | no | The Assemble LODs match rule (spec 3.2) as a pure function, `match_lods`. |
 | `selection_browser` | yes | Selection browser without a dialog: `list_groups`, `create_selection`, `delete_selection`, `rename_selection`. |
 | `selection_browser_dialog` | GUI only | The `hou.ui` layer called by `houdini/toolbar/a3ob_selection_browser.shelf`. |
 | `p3d_import` | `lod_builder` and `import_model` | The importer: `plan` (decisions, no `hou`), `lod_builder` (writes geometry), `proxies`, `lod_filter`. |
+
+The parameter table knows these kinds: `string`, `file`, `toggle`, `button`, `int`, `float` (with `size` for vectors),
+`menu` (with `items`, value is the token) and `multiparm` (with `children`; `read_parms` gives a list of row dicts).
 
 ## The importer in short
 
