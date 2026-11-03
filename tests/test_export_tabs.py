@@ -13,7 +13,7 @@ import tempfile
 import unittest
 
 from a3ob_core.p3d.model import SelectionTagg
-from a3ob_houdini import entry, hda_source, names, nodes, selection_browser, settings as sm
+from a3ob_houdini import entry, hda_source, names, nodes, params, selection_browser, settings as sm
 from a3ob_houdini.nodes import _export_common as common
 from a3ob_houdini.nodes import p3d_export as export_node
 from a3ob_houdini.p3d_export.type_rules import RULES
@@ -54,12 +54,13 @@ class TestExportSpec(unittest.TestCase):
         self.assertEqual([c.name for c in self.validate.parms[0].children], TAB_PARMS["tab_checking"][1:])
         self.assertEqual(self.validate.parms[0].children, self.spec.parms[3].children[1:])
 
-    def test_rule_labels_drop_the_id_and_the_tooltip_ends_with_it(self):
+    def test_rule_labels_and_tooltips_drop_the_id(self):
         for rule in RULES:
             parm = self.spec.parm_index[common.rule_parm_name(rule.id)]
             self.assertEqual(parm.label, rule.label)
             self.assertNotIn("T2-", parm.label)
-            self.assertTrue(parm.help.endswith("(Rule %s.)" % rule.id), parm.help)
+            self.assertEqual(parm.help, rule.help)  # Z1: plain words, the id stays in the messages only
+            self.assertNotIn("T2-", parm.help)
         self.assertEqual(self.spec.parm_index["t2uv2"].label, "At most 2 UV sets")
 
     def test_project_root_is_a_folder_picker_and_the_mask_a_toggle_menu(self):
@@ -75,7 +76,8 @@ class TestExportSpec(unittest.TestCase):
     def test_the_hda_has_an_python_oncreated_and_validate_has_none(self):
         files = hda_source.render(self.spec)
         section = hda_source.section_name(self.spec)
-        self.assertEqual(files[section + "/OnCreated"], "import a3ob_houdini.entry as e; e.created('p3d_export', kwargs)\n")
+        self.assertEqual(files[section + "/OnCreated"], params.CREATED_SCRIPT % "p3d_export")
+        self.assertIn("except ImportError", files[section + "/OnCreated"])  # Z7: quiet when the add-on is missing
         self.assertEqual(json.loads(files[section + "/ExtraFileOptions"]), {"OnCreated/IsPython": {"type": "bool", "value": True}})
         self.assertIn("OnCreated\tOnCreated", files[section + "/Sections.list"])
         self.assertFalse([name for name in hda_source.render(self.validate) if name.endswith("OnCreated")])

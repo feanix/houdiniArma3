@@ -239,7 +239,7 @@
     	label	"At most 2 UV sets"
     	type	toggle
     	default	{ "1" }
-    	help	"The LOD has no more than 2 UV sets. (Rule T2-UV2.)"
+    	help	"The LOD has no more than 2 UV sets."
         }
 
         parm {
@@ -247,7 +247,7 @@
     	label	"Contiguous mesh"
     	type	toggle
     	default	{ "1" }
-    	help	"Geometry, shadow and underground LODs: no flipped polygons (shared edges run in opposite directions). (Rule T2-CONTIG.)"
+    	help	"Geometry, shadow and underground LODs: no flipped polygons (shared edges run in opposite directions)."
         }
 
         parm {
@@ -255,7 +255,7 @@
     	label	"Triangulated"
     	type	toggle
     	default	{ "1" }
-    	help	"Underground LODs: every polygon is a triangle. Geometry and shadow LODs: triangles and convex quads. (Rule T2-TRI.)"
+    	help	"Underground LODs: every polygon is a triangle. Geometry and shadow LODs: triangles and convex quads."
         }
 
         parm {
@@ -263,7 +263,7 @@
     	label	"Convex mesh"
     	type	toggle
     	default	{ "1" }
-    	help	"Geometry and underground LODs: every shared edge is convex or flat. (Rule T2-CONVEX.)"
+    	help	"Geometry and underground LODs: every shared edge is convex or flat."
         }
 
         parm {
@@ -271,7 +271,7 @@
     	label	"Component selections"
     	type	toggle
     	default	{ "1" }
-    	help	"Geometry and underground LODs: a group called component01, component02, ... exists. (Rule T2-COMP.)"
+    	help	"Geometry and underground LODs: a group called component01, component02, ... exists."
         }
 
         parm {
@@ -279,7 +279,7 @@
     	label	"Mass is set"
     	type	toggle
     	default	{ "1" }
-    	help	"Geometry LOD: a note (not a warning) when the points have a total mass below 0.001. (Rule T2-MASS.)"
+    	help	"Geometry LOD: a note (not a warning) when the points have a total mass below 0.001."
         }
 
         parm {
@@ -287,7 +287,7 @@
     	label	"Every point has mass"
     	type	toggle
     	default	{ "1" }
-    	help	"Geometry LOD: every point has a mass of at least 0.001. (Rule T2-MASSALL.)"
+    	help	"Geometry LOD: every point has a mass of at least 0.001."
         }
 
         parm {
@@ -295,7 +295,7 @@
     	label	"No smooth edges"
     	type	toggle
     	default	{ "1" }
-    	help	"Shadow and underground LODs: with smooth polygons, every shared edge is in a3ob_sharp. (Rule T2-SHARP.)"
+    	help	"Shadow and underground LODs: with smooth polygons, every shared edge is in a3ob_sharp."
         }
 
         parm {
@@ -303,7 +303,7 @@
     	label	"No materials"
     	type	toggle
     	default	{ "1" }
-    	help	"Underground LODs: no polygon has a texture or material. Shadow LODs may have them. (Rule T2-NOMAT.)"
+    	help	"Underground LODs: no polygon has a texture or material. Shadow LODs may have them."
         }
 
         parm {
@@ -311,7 +311,7 @@
     	label	"Conventional shadow resolution"
     	type	toggle
     	default	{ "0" }
-    	help	"Shadow LODs: the resolution is 0, 10, 1000, 1010 or 1020. Off by default. (Rule T2-SHADOWRES.)"
+    	help	"Shadow LODs: the resolution is 0, 10, 1000, 1010 or 1020. Off by default."
         }
 
         parm {
@@ -319,7 +319,7 @@
     	label	"Shadow not disabled"
     	type	toggle
     	default	{ "0" }
-    	help	"Shadow LODs: no LODNoShadow = 1 property. Off by default. (Rule T2-SHADOWOFF.)"
+    	help	"Shadow LODs: no LODNoShadow = 1 property. Off by default."
         }
 
         parm {
@@ -327,7 +327,7 @@
     	label	"No edges in point clouds"
     	type	toggle
     	default	{ "1" }
-    	help	"Memory, land contact and hit-point LODs: no 2-point primitives. (Rule T2-PC-EDGE.)"
+    	help	"Memory, land contact and hit-point LODs: no 2-point primitives."
         }
 
         parm {
@@ -335,7 +335,7 @@
     	label	"No faces in point clouds"
     	type	toggle
     	default	{ "1" }
-    	help	"Memory, land contact and hit-point LODs: no polygons. (Rule T2-PC-FACE.)"
+    	help	"Memory, land contact and hit-point LODs: no polygons."
         }
 
         parm {
@@ -343,7 +343,7 @@
     	label	"Has polygons"
     	type	toggle
     	default	{ "1" }
-    	help	"Roadway, ground layer and paths LODs: at least one polygon. (Rule T2-RW-FACES.)"
+    	help	"Roadway, ground layer and paths LODs: at least one polygon."
         }
 
         parm {
@@ -351,7 +351,7 @@
     	label	"Roadway point limit"
     	type	toggle
     	default	{ "1" }
-    	help	"Roadway LODs: at most 255 points. (Rule T2-RW-LIMIT.)"
+    	help	"Roadway LODs: at most 255 points."
         }
 
         parm {
@@ -359,7 +359,7 @@
     	label	"Roadway sound textures"
     	type	toggle
     	default	{ "1" }
-    	help	"Roadway LODs: every polygon has a texture (the sound). (Rule T2-RW-SOUND.)"
+    	help	"Roadway LODs: every polygon has a texture (the sound)."
         }
 
         parm {
@@ -367,7 +367,7 @@
     	label	"Ground layer UV set"
     	type	toggle
     	default	{ "1" }
-    	help	"Ground layer LODs: exactly one UV set. (Rule T2-GL-UV.)"
+    	help	"Ground layer LODs: exactly one UV set."
         }
 
         parm {
@@ -375,7 +375,7 @@
     	label	"Ground layer UV values"
     	type	toggle
     	default	{ "1" }
-    	help	"Ground layer LODs: every UV is (0, 0), (1, 0), (1, 1) or (1, -1). (Rule T2-GL-UVVALUES.)"
+    	help	"Ground layer LODs: every UV is (0, 0), (1, 0), (1, 1) or (1, -1)."
         }
 
         parm {
@@ -383,7 +383,7 @@
     	label	"Path entry points"
     	type	toggle
     	default	{ "1" }
-    	help	"Paths LODs: a group called in01, in02, ... exists. (Rule T2-PATH-ENTRY.)"
+    	help	"Paths LODs: a group called in01, in02, ... exists."
         }
 
         parm {
@@ -391,7 +391,7 @@
     	label	"Path position points"
     	type	toggle
     	default	{ "1" }
-    	help	"Paths LODs: the same test as the entry rule (as in Object Builder, which tests entry points twice). (Rule T2-PATH-POS.)"
+    	help	"Paths LODs: the same test as the entry rule (as in Object Builder, which tests entry points twice)."
         }
     }
 

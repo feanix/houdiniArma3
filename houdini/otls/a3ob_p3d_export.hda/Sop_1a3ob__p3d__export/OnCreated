@@ -1,1 +1,6 @@
-import a3ob_houdini.entry as e; e.created('p3d_export', kwargs)
+try:
+    import a3ob_houdini.entry as e
+except ImportError:
+    e = None
+if e is not None:
+    e.created('p3d_export', kwargs)

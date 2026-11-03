@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- houdiniArma3: the A3OB Selection browser shelf tool (ux-tools.md section 7.3). -->
-<!-- It only calls into python/a3ob_houdini; the work is in selection_browser.py. -->
+<!-- It only calls into python/a3ob_houdini; the tool texts are for artists (a test checks them). -->
 <shelfDocument>
   <toolshelf name="a3ob" label="A3OB">
     <memberTool name="a3ob_selection_browser"/>
@@ -13,7 +13,7 @@
   </toolshelf>
 
   <tool name="a3ob_reload" label="Reload A3OB" icon="MISC_python">
-    <helpText><![CDATA[Loads the A3OB code again after the package was updated, without restarting Houdini. The work is in a3ob_houdini/reload.py.]]></helpText>
+    <helpText><![CDATA[Loads the A3OB code again after the package was updated, without restarting Houdini.]]></helpText>
     <script scriptType="python"><![CDATA[from a3ob_houdini import reload
 
 reload.reload_all()]]></script>
@@ -27,28 +27,28 @@ selection_browser_dialog.run(kwargs)]]></script>
   </tool>
 
   <tool name="a3ob_quick_export" label="Quick Export" icon="MISC_python">
-    <helpText><![CDATA[Exports the selected SOP node (or the display node of the current network) to a .p3d file with a preset. Adds no node. The work is in a3ob_houdini/quick_export.py.]]></helpText>
+    <helpText><![CDATA[Exports the selected SOP node (or the display node of the current network) to a .p3d file with a preset. Adds no node.]]></helpText>
     <script scriptType="python"><![CDATA[from a3ob_houdini import quick_export_dialog
 
 quick_export_dialog.run(kwargs)]]></script>
   </tool>
 
   <tool name="a3ob_project_settings" label="Project root and presets" icon="MISC_python">
-    <helpText><![CDATA[Sets the project root, picks, edits and deletes export presets, and sets the common data file. Stored in one JSON file in the Houdini user preferences. Changes nothing in a scene. The work is in a3ob_houdini/settings.py.]]></helpText>
+    <helpText><![CDATA[Sets the project root, picks, edits and deletes export presets, and sets the common data file. Stored in one JSON file in the Houdini user preferences. Changes nothing in a scene.]]></helpText>
     <script scriptType="python"><![CDATA[from a3ob_houdini import project_settings_dialog
 
 project_settings_dialog.run(kwargs)]]></script>
   </tool>
 
   <tool name="a3ob_new_p3d" label="New P3D" icon="MISC_python">
-    <helpText><![CDATA[Builds the starter network (Resolution 1, Geometry and Memory LODs, Assemble LODs, P3D Export) in the open SOP network or in a new Geometry object. The work is in a3ob_houdini/new_p3d.py.]]></helpText>
+    <helpText><![CDATA[Builds the starter network (Resolution 1, Geometry and Memory LODs, Assemble LODs, P3D Export) in the open SOP network or in a new Geometry object.]]></helpText>
     <script scriptType="python"><![CDATA[from a3ob_houdini import new_p3d_dialog
 
 new_p3d_dialog.run(kwargs)]]></script>
   </tool>
 
   <tool name="a3ob_batch_convert" label="Batch folder convert" icon="MISC_python">
-    <helpText><![CDATA[Re-exports every .p3d in a folder with a preset into an output folder and writes a report: identical, different or failed for each file. The sources are never changed. The work is in a3ob_houdini/batch_convert.py.]]></helpText>
+    <helpText><![CDATA[Re-exports every .p3d in a folder with a preset into an output folder and writes a report: identical, different or failed for each file. The sources are never changed.]]></helpText>
     <script scriptType="python"><![CDATA[from a3ob_houdini import batch_convert_dialog
 
 batch_convert_dialog.run(kwargs)]]></script>

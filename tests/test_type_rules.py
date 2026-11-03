@@ -184,7 +184,7 @@ class TestRules(unittest.TestCase):
         self.assertEqual(with_rule(run(data), "T2-MASS"), [])
         notes = with_rule(run_notes(data), "T2-MASS")
         self.assertEqual(len(notes), 1)
-        self.assertIn("This Geometry LOD has no mass".lower(), notes[0].lower())
+        self.assertIn("has no mass. Fine for items such as vests or scopes; physical objects need mass (rule T2-MASS)".lower(), notes[0].lower())
         self.assertIn("Fine for items such as vests or scopes; physical objects need mass", notes[0])
         data.mesh.masses = [1.0] * 8
         self.assertEqual(with_rule(run_notes(data), "T2-MASS"), [])

@@ -97,12 +97,8 @@ def cook(node, report: Report) -> None:
 
 
 def _check_base(base, lc) -> None:
-    shape = lc.classify(base)
-    if shape == lc.LOD:
-        raise UserError(format_problem(
-            None, "Input 1 is a LOD geometry, not a P3D geometry",
-            "Put it in input 2 or higher, or leave input 1 empty"))
-    if shape == lc.OTHER:
+    # A LOD geometry in input 1 never gets here: cook() treats it as a misplaced extra LOD (with a warning).
+    if lc.classify(base) == lc.OTHER:
         raise UserError(format_problem(
             None, "Input 1 is not a P3D geometry (packed LODs)", "Connect P3D Import or Assemble LODs"))
 

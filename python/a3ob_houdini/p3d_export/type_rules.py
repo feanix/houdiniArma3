@@ -239,7 +239,7 @@ def _comp(c: _Context):
 def _mass(c: _Context):
     masses = c.mesh.masses
     if masses is None or math.fsum(masses) < MASS_MINIMUM:
-        return ("this Geometry LOD has no mass. Fine for items such as vests or scopes; physical objects need mass",
+        return ("has no mass. Fine for items such as vests or scopes; physical objects need mass",
                 "Use the Mass node on physical objects")
     return None
 

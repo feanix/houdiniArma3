@@ -98,7 +98,8 @@ class TestMaterialAssignNode(NodeTestCase):
     def test_the_cook_no_longer_reads_the_old_colour(self):
         self.old_colour_node()
         self.assertEqual(self.texture_values(), {"#(argb,8,8,3)color(1.000,1.000,1.000,1.000,CO)"})
-        self.assertTrue(self.state("color")[0])  # the old fields never show
+        # The old field never shows: it is hidden in the template (Parm.hidden), not by a condition on Texture Source.
+        self.assertTrue(self.node.parmTuple("color").parmTemplate().isHidden())
 
     def test_loading_keeps_a_colour_already_picked(self):
         path = self.old_colour_node().path()

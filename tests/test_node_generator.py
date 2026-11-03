@@ -165,6 +165,15 @@ class TestHelpAndReference(unittest.TestCase):
         self.assertEqual(esc("plain text, a_b and a3ob_tagg_order"), "plain text, a_b and a3ob_tagg_order")
         self.assertEqual(esc("see [x] and `y`"), "see `[x]` and 'y'")
         self.assertEqual(esc(""), "")
+        # Only the markup is escaped; the sentence's own brackets and full stop stay outside the code span.
+        self.assertEqual(esc("internal ones (names starting with __)."), "internal ones (names starting with `__`).")
+        self.assertEqual(esc("(see __init__)"), "(see `__init__`)")
+        self.assertEqual(esc("a ((b)) c"), "a `((b))` c")
+
+    def test_the_selection_mask_help_escapes_only_the_underscores(self):
+        text = self.help(nodes.load("p3d_export").SPEC)
+        self.assertIn("(names starting with `__`)", text)
+        self.assertNotIn("`__)", text)
 
     def test_menu_choices_without_help_are_not_given_filler(self):
         for spec in nodes.all_specs().values():

@@ -86,6 +86,23 @@ FOLDER_TEXT = {"simple": "group box", "collapsible": "group box you can fold", "
 _WIKI_MARKUP = re.compile(r"[*`\[\]]|<<|>>|\(\(|\)\)|^_|_$|__|\{\{\{")
 
 
+def _split_run(run):
+    """``(head, markup, tail)``: the sentence's own punctuation around a run stays outside the code span.
+
+    That is a ``(`` before it, and ``.,;:`` and one ``)`` after it. A bracket pair that is itself markup (``((``,
+    ``))``) is kept inside."""
+    head = ""
+    if run.startswith("(") and not run.startswith("(("):
+        head, run = "(", run[1:]
+    tail = ""
+    stripped = re.search(r"[.,;:]+$", run)
+    if stripped and stripped.start() > 0:
+        run, tail = run[:stripped.start()], stripped.group(0)
+    if run.endswith(")") and not run.endswith("))") and len(run) > 1:
+        run, tail = run[:-1], ")" + tail
+    return head, run, tail
+
+
 def wiki_escape(text):
     """Text for the Help section that the wiki shows exactly as written.
 
@@ -98,13 +115,8 @@ def wiki_escape(text):
             end = i
             while end + 2 < len(parts) and _WIKI_MARKUP.search(parts[end + 2]):
                 end += 2
-            run = "".join(parts[i:end + 1])
-            tail = re.search(r"[.,;:]+$", run)  # punctuation after the run is the sentence's, not the markup's
-            if tail and tail.start() > 0:
-                run, tail = run[:tail.start()], tail.group(0)
-            else:
-                tail = ""
-            out.append("`" + run + "`" + tail)
+            head, run, tail = _split_run("".join(parts[i:end + 1]))
+            out.append(head + "`" + run + "`" + tail)
             i = end + 1
         else:
             out.append(parts[i])

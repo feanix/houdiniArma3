@@ -19,8 +19,6 @@ NAME = "Material Assign"
 
 _TEX_ON = (("settex", ("1",)),)
 _MAT_ON = (("setmat", ("1",)),)
-#: A Texture Source value that does not exist: the old colour parameter is hidden by it, always.
-LEGACY_SOURCE = "never"
 WHITE = (1.0, 1.0, 1.0, 1.0)
 
 SPEC = NodeSpec(
@@ -62,7 +60,7 @@ SPEC = NodeSpec(
              "Never shown. It only keeps the colour of scenes saved before Color became a colour picker: when a "
              "scene loads, a colour that is not white is moved into Color and this goes back to white. Change Color "
              "instead.",
-             size=4, show_when=(("texsource", (LEGACY_SOURCE,)),)),
+             size=4, hidden=True),
         Parm("raw", "Texture Text", "string", "",
              "A texture line, copied exactly as typed. It is either a path or a generated texture such as "
              "#(argb,8,8,3)color(1,0,0,1,CO), which is a plain red.",
