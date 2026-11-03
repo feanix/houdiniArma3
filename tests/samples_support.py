@@ -268,7 +268,8 @@ class Rig:
         ``report`` (the save report), ``written`` (bytes or None), ``source`` (bytes)."""
         imported, import_errors, import_seconds = self.importer(rel)
         result = {"import_errors": import_errors, "import_seconds": import_seconds, "lods": self.lod_count(imported),
-                  "import_warnings": list(imported.warnings())}
+                  # the interleaved-proxy note is an info line since task #40, so keep the messages too
+                  "import_warnings": list(imported.warnings()) + list(imported.messages())}
         with open(path(rel), "rb") as file:
             result["source"] = file.read()
         head = imported

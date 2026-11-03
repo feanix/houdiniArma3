@@ -162,8 +162,10 @@ class TestProxies(unittest.TestCase):
         self.assertEqual([p.attribValue("a3ob_proxy_index") for p in polygons(inner)], [0, 1])
         groups = {g.name() for g in inner.pointGroups()}
         self.assertEqual(len(groups), 2)
-        self.assertEqual(len(report.texts("warning")), 2)
-        self.assertIn("inline triangle", report.texts("warning")[0])
+        self.assertEqual(report.texts("warning"), [])  # info since task #40, once per LOD
+        infos = [text for text in report.texts("info") if "inline triangle" in text]
+        self.assertEqual(len(infos), 1)
+        self.assertIn("2 proxies stay inline triangles", infos[0])
 
     def test_proxy_that_is_not_last_is_still_packed_and_the_mesh_is_renumbered(self):
         lod = p3d.LOD(p3d.LodType.VISUAL, 1.0)
@@ -179,7 +181,7 @@ class TestProxies(unittest.TestCase):
         self.assertEqual(len(inner.points()), 6 + 1)  # mesh points renumbered 0..5, then the pack point
         self.assertEqual(tuple(inner.points()[1].position()), (1, 0, 0))
         self.assertEqual([v.point().number() for v in polygons(inner)[0].vertices()], [0, 3, 2, 1])
-        self.assertIn("not the last points and faces", "\n".join(report.texts("warning")))
+        self.assertIn("not the last points and faces", "\n".join(report.texts("info")))
         # Touches a proxy point. File points 0 and 1 are export-order points 6 and 7 (task #36: the pair follows the move).
         self.assertEqual(list(inner.attribValue("a3ob_sharp_extra")), [6, 7])
         self.assertEqual(len(list(inner.findEdgeGroup("a3ob_sharp").edges())), 1)

@@ -14,28 +14,30 @@ Use this node to bring an existing Arma 3 model into Houdini. A P3D file holds o
 File:
     #id: file
 
-    The .p3d file to read. Must be an MLOD file, not a binarized one.
+    The .p3d model to open. Use the editable version Object Builder saves (MLOD). Files taken out of the game's packed PBOs (binarized, ODOL) can't be opened.
 
     Type: File path. Default: (empty). Files: `*.p3d`.
 
 Reload:
     #id: reload
 
-    Read the file again, even if nothing changed.
+    Read the file again from disk, for example after you saved it in Object Builder.
 
     Type: Button.
 
 LODs:
     #id: lods
 
-    Which LODs to import, by position in the file: `*` for all, or numbers and ranges like 0 2-4.
+    Which LODs to bring in. Pick them from the menu, or type numbers or names. `*` means all. Picking from the menu replaces a `*` in the field, and a `*` next to other entries still means all.
 
-    Type: Text. Default: `*`.
+    Type: Menu (pick several; each pick adds or removes an entry in the text). Default: `*`.
+
+    The choices are made when you open the menu, from the geometry or the settings.
 
 Explicit Face Groups:
     #id: facegroups
 
-    Always make a primitive group for every selection, not only where the face data needs one.
+    A face group is a named set of faces. Every selection comes in as a group of points. Normally a face group is added only when the selection's faces are not just the faces whose points are all in it. Turn this on to get a face group for every selection, for example when you want to select or blast faces by selection name.
 
     Type: On or off. Default: Off.
 

@@ -122,7 +122,7 @@ class TestPlanRemapsBlobs(unittest.TestCase):
     def test_editor_mask_follows_the_points_and_faces(self):
         lod = interleaved_lod()
         plan = plan_mod.make_plan(lod, 0)
-        self.assertEqual(plan.warnings[-1].count("proxies are not the last"), 1)
+        self.assertEqual(plan.notes[-1].count("proxies are not the last"), 1)  # info since task #40, not a warning
         blob = plan.blobs[0]
         self.assertEqual(blob.name, "#Selected#")
         # File points A0, s1, B1 carry 1, 2, 3: they are now points 4, 1 and 8.

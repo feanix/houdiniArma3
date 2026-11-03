@@ -110,6 +110,10 @@ class LodPlan:
     order_active: List[int] = field(default_factory=list)
     needs_order_active: bool = False
     warnings: List[str] = field(default_factory=list)
+    #: Info lines: things that are fine but worth knowing (shown as info, not as warnings).
+    notes: List[str] = field(default_factory=list)
+    #: Names of the proxy selections that stay inline triangles.
+    inline_names: List[str] = field(default_factory=list)
     #: ``corner_start[f]``: the file corner index where face ``f`` starts.
     corner_start: List[int] = field(default_factory=list)
     #: File order to export order (spec 13.6). Index-bound records are remapped through it (``_remap_blobs``).
@@ -131,11 +135,31 @@ def make_plan(lod: LOD, lod_index: int) -> LodPlan:
     _remap_blobs(plan)
     _check_face_uv(plan)
     _check_proxy_order(plan)
+    _note_inline_proxies(plan)
     return plan
 
 
 def _warn(plan: LodPlan, what: str, fix: Optional[str] = None) -> None:
     plan.warnings.append(messages.format_problem(plan.lod_name, what, fix))
+
+
+def _note(plan: LodPlan, what: str, fix: Optional[str] = None) -> None:
+    """Something to tell the artist that needs no action (shown as info)."""
+    plan.notes.append(messages.format_problem(plan.lod_name, what, fix))
+
+
+def _note_inline_proxies(plan: LodPlan) -> None:
+    """One info line per LOD for all proxies that stay inline triangles."""
+    names = plan.inline_names
+    if not names:
+        return
+    shown = ", ".join(repr(name) for name in names[:3])
+    if len(names) > 3:
+        shown += " and %d more" % (len(names) - 3)
+    _note(plan, "%d %s stay inline triangles in the mesh (%s)" % (
+        len(names), "proxy" if len(names) == 1 else "proxies", shown),
+        "They do not fit the packed form (one triangle on three points that nothing else uses). The round trip is "
+        "still lossless")
 
 
 def _check_indices(plan: LodPlan) -> None:
@@ -263,9 +287,7 @@ def _classify_selection(plan: LodPlan, tagg: SelectionTagg, seen_names, seen_fol
         plan.groups.append(GroupPlan(name, tagg, (path, index)))
     else:
         plan.groups.append(GroupPlan(name, tagg))
-    _warn(plan, "the proxy %r stays an inline triangle in the mesh" % name,
-          "It does not fit the packed form (one triangle on three points that nothing else uses). The round trip "
-          "is still lossless")
+    plan.inline_names.append(name)
     return name
 
 
@@ -361,6 +383,6 @@ def _check_proxy_order(plan: LodPlan) -> None:
     faces = {proxy.face for proxy in plan.proxies}
     points = {v for proxy in plan.proxies for v in proxy.corners}
     if faces != tail_faces or points != tail_points:
-        _warn(plan, "the proxies are not the last points and faces of the LOD",
+        _note(plan, "the proxies are not the last points and faces of the LOD",
               "They are packed anyway. An untouched LOD exports the same bytes (layout record); after an edit the content "
               "is the same, but the bytes can differ")

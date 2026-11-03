@@ -51,6 +51,8 @@ def import_model(model: P3DModel, geo, source_key: str, report: Optional[message
         plan = _plan_lod(model, index)
         for text in plan.warnings:
             report.warning(text)
+        for text in plan.notes:
+            report.info(text)
         inner = lod_builder.build_lod_geometry(plan, names.lod_uid(source_key, index), options)
         _pack_lod(geo, inner, plan.lod_name)
         result.lod_count += 1

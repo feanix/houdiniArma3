@@ -86,7 +86,7 @@ def main(character, crate, scratch):
     result["garbage_file_errors"] = cook(broken)
     result["garbage_geometry_empty"] = broken.geometry() is None  # a node with an error outputs nothing
     broken.parm("file").set(crate)
-    broken.parm("lods").set("x")
+    broken.parm("lods").set("3-1")  # a name that does not exist is only a warning since task #40
     result["bad_lods_errors"] = cook(broken)
     broken.parm("lods").set("0 2-3")
     result["partial_errors"] = cook(broken)
