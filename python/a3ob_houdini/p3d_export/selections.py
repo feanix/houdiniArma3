@@ -16,6 +16,7 @@ import re
 from typing import Dict, Iterable, List, Sequence, Tuple
 
 from a3ob_core import p3d
+from a3ob_core.p3d.lod_types import LodType
 
 from .. import messages
 from .data import GroupData, LodData, MeshData
@@ -23,10 +24,20 @@ from .mesh_build import FileMesh
 from .options import ExportOptions, matches_mask
 from .proxy_rebuild import FileProxy
 
-__all__ = ["SelectionEntry", "weight_byte", "collect_selections", "add_auto_components", "GEOMETRY_TYPES"]
+__all__ = ["SelectionEntry", "weight_byte", "collect_selections", "add_auto_components", "GEOMETRY_TYPES",
+           "AUTO_COMPONENT_TYPES"]
 
-#: Geometry, Geometry Buoyancy, Geometry PhysX (A3OB ``lod_geometries``).
+#: Geometry, Geometry Buoyancy, Geometry PhysX. Used by the mass warning only (D14, Q-3). A3OB's own mass export is
+#: narrower still: Geometry only (``io/export_p3d.py`` line 579). Not the auto-components set, see below.
 GEOMETRY_TYPES = (6, 7, 8)
+#: The 14 LOD types for which A3OB makes components: ``lod_geometries`` (``utilities/data.py`` lines 132-147), tested
+#: by ``generate_components`` (``io/export_p3d.py`` line 295). D19 item 4.
+AUTO_COMPONENT_TYPES = frozenset((
+    int(LodType.GEOMETRY), int(LodType.GEOMETRY_BUOY), int(LodType.GEOMETRY_PHYSX), int(LodType.VIEW_GEOMETRY),
+    int(LodType.FIRE_GEOMETRY), int(LodType.VIEW_CARGO_GEOMETRY), int(LodType.VIEW_CARGO_FIRE_GEOMETRY),
+    int(LodType.VIEW_COMMANDER_GEOMETRY), int(LodType.VIEW_COMMANDER_FIRE_GEOMETRY),
+    int(LodType.VIEW_PILOT_GEOMETRY), int(LodType.VIEW_PILOT_FIRE_GEOMETRY), int(LodType.VIEW_GUNNER_GEOMETRY),
+    int(LodType.VIEW_GUNNER_FIRE_GEOMETRY), int(LodType.UNDERGROUND)))
 _COMPONENT = re.compile(r"component\d+", re.IGNORECASE)
 
 
@@ -160,7 +171,7 @@ def add_auto_components(data: LodData, file_mesh: FileMesh, entries: List[Select
                         report: messages.Report) -> int:
     """Auto-components option (A3OB "generate components"): for a Geometry-type LOD with no ``component<digits>``
     selection, one selection ``Component01``... per connected piece of the mesh. Returns how many were made."""
-    if data.details.lod_type not in GEOMETRY_TYPES:
+    if data.details.lod_type not in AUTO_COMPONENT_TYPES:
         return 0
     if any(_COMPONENT.match(entry.name) for entry in entries):
         return 0
