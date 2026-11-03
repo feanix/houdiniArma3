@@ -18,7 +18,7 @@ from typing import List, Optional
 from a3ob_core import p3d
 from a3ob_core.p3d import LOD, P3DError
 
-from .. import messages, names
+from .. import layout_record, messages, names
 from . import flag_check, type_rules
 from .data import LodData
 from .mesh_build import FileMesh, build_file_mesh
@@ -85,10 +85,22 @@ def build_lod(data: LodData, options: ExportOptions, report: messages.Report) ->
     ordered = order_item_list(items, data.details.tagg_order, data.details.tagg_active)
     apply_name_options(ordered, options, label, report)
     lod.taggs = [item.tagg for item in ordered]
+    _apply_layout(lod, data, label, report)
     _checks(lod, data, file_mesh, options, label, report)
     if len(report.texts(messages.ERROR)) > errors_before:
         return None
     return lod
+
+
+def _apply_layout(lod: LOD, data: LodData, label: str, report: messages.Report) -> None:
+    """Spec 19: write the file layout of the import back while the positions and topology are unchanged."""
+    if not data.details.layout:
+        return
+    reason = layout_record.apply_record(lod, data.details.layout)
+    if reason is not None:
+        report.info(messages.format_problem(
+            label, "the layout record does not match the mesh (%s), so the LOD is written in the layout of the export, "
+            "not the layout of the source file" % reason))
 
 
 def _rebuild_proxies(data: LodData, label: str, report: messages.Report) -> List[FileProxy]:

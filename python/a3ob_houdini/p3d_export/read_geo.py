@@ -56,6 +56,8 @@ def read_details(geo) -> Details:
     counts = _detail_list(geo, "a3ob_source_counts")
     details.source_counts = tuple(int(v) for v in counts) if len(counts) == 3 else None
     details.sharp_extra = [int(v) for v in _detail_list(geo, "a3ob_sharp_extra")]
+    layout = _detail(geo, "a3ob_layout", "")
+    details.layout = layout if isinstance(layout, str) else ""
     return details
 
 

@@ -3,9 +3,10 @@
 Purpose: find what Bohemia's own Object Builder files do that the synthetic fixtures never did. The default run uses one
 file per Addons folder; ``A3OB_SAMPLES_FULL=1`` runs all 34. Skips without ``hou`` or without the Samples.
 
-A file that does not come back as the same bytes is not a failure by itself. Houdini geometry cannot hold a few things a
-real file has (the layout of the normal table, the unused slot of a triangle, the order of the sharp edge pairs, the order
-of points and faces when proxies are interleaved). The test fails when a LOD differs in anything else. See
+Since task #37 (D23) every file must come back as the same bytes after Import and Lossless export, and after Import, Extract
+LOD (all), Assemble LODs and Lossless export: the layout record (spec 19) holds what Houdini geometry cannot (the layout of
+the normal table, the unused slot of a triangle, the order of the sharp edge pairs, the order of points and faces when
+proxies are interleaved, the sign of a zero). A failure names the LODs that differ. See
 docs/design/evidence/samples/samples_findings.md.
 
 SPDX-License-Identifier: GPL-3.0-or-later
@@ -19,7 +20,7 @@ from tests import samples_support as ss
 if hs.HAS_HOU:
     from a3ob_houdini import messages
 
-#: Files that must stay byte-identical (they are in the Samples, small, and come back exactly today).
+#: Small files that were identical even before the layout record (kept as a named check).
 EXACT = ("Addons/TemplateRTM/ManSkeleton_Pivots.p3d", "Addons/Test_Heli_01/Main_Rotor_F.p3d",
          "Addons/Test_Character_01/A3_headgear_template.p3d", "Addons/Test_Character_01/A3_vest_template.p3d")
 #: The time limit of ux-tools.md / task #29, seconds, for one import or one export.
@@ -58,14 +59,12 @@ class TestSamplesInHoudini(unittest.TestCase):
                 self.assertIsNotNone(r["written"], "nothing was written")
                 self.assertLess(r["import_seconds"], SLOW)
                 self.assertLess(r["export_seconds"], SLOW)
-                if r["written"] == r["source"]:
-                    continue
-                self.assertNotIn(rel, EXACT, "this file used to come back identical")
-                interleaved = ss.interleaved_lod_names(r["import_warnings"])
-                rows, unexplained = ss.compare_files(r["source"], r["written"], interleaved)
-                self.assertTrue(rows)
-                self.assertEqual(unexplained, [], "differs where %s" % ss.locate(
-                    r["source"], ss.first_difference(r["written"], r["source"])))
+                if r["written"] != r["source"]:  # D23: every Samples file comes back as the same bytes
+                    interleaved = ss.interleaved_lod_names(r["import_warnings"])
+                    rows, _ = ss.compare_files(r["source"], r["written"], interleaved)
+                    self.fail("differs where %s; LODs: %s" % (
+                        ss.locate(r["source"], ss.first_difference(r["written"], r["source"])), rows))
+                self.assertEqual(ss.sha256(r["written"]), ss.sha256(r["source"]))
 
     def test_exact_files_are_identical(self):
         for rel in EXACT:
@@ -85,6 +84,7 @@ class TestSamplesInHoudini(unittest.TestCase):
                 self.assertEqual(through["assemble_errors"], [])
                 self.assertEqual(through["report"].texts(messages.ERROR), [])
                 self.assertEqual(ss.sha256(through["written"]), ss.sha256(direct["written"]))
+                self.assertEqual(ss.sha256(through["written"]), ss.sha256(through["source"]))
                 self.assertLess(through["assemble_seconds"], SLOW)
 
     def test_release_export_runs_without_errors(self):

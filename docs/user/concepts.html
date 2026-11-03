@@ -258,12 +258,36 @@ your model. The <a href="reference/a3ob_validate.html">Validate reference</a> li
 
 <h2 id="lossless">Lossless round trips</h2>
 <p>A <strong>round trip</strong> means reading a .p3d file into Houdini and writing it out again. With the
-<kbd class="ui-menu">Lossless</kbd> preset and no edits, the new file is identical to the old one, byte for byte. The add-on
-is built so that nothing in the file is thrown away on the way through, even data Object Builder does not show: blocks
-of data it does not understand, selection weights that Object Builder itself would lose, and the stored LOD signatures are kept.</p>
-<p>This is tested on the two sample files in the add-on folder (a character and a crate). Some unusual files come back
-slightly different, for example:</p>
+<kbd class="ui-menu">Lossless</kbd> preset and no edits, the new file is identical to the old one, byte for byte. This
+holds for the two sample files in the add-on folder and for all 34 files of Bohemia's Arma 3 Samples. Nothing in the file
+is thrown away on the way through, even data Object Builder does not show: blocks of data it does not understand,
+selection weights that Object Builder itself would lose, and the stored LOD signatures are kept.</p>
+
+<h3>What stays identical, and why</h3>
+<p>Object Builder writes some things in a layout that Houdini geometry cannot hold. When you import a LOD, the add-on
+stores that layout in a small hidden record on the LOD (a detail called <code>a3ob_layout</code>). You never see it as a
+selection, and it is not an attribute you edit. It covers:</p>
 <ul>
+<li>the table of normals, including entries that repeat a vector;</li>
+<li>the unused fourth slot of every triangle;</li>
+<li>the order of the sharp edge pairs, including pairs that are not edges;</li>
+<li>the order of points and faces when proxies sit between the other points and faces;</li>
+<li>the sign of a zero in a position.</li>
+</ul>
+<p>Extract LOD and Assemble LODs pass the record on unchanged, so a LOD that goes through them and was not edited still
+comes back identical.</p>
+
+<h3>When it falls back</h3>
+<p>The record belongs to the positions and the faces it was taken from. If you move a point, delete or add a face or point,
+or reorder the faces (the Sort Sections option does), the record no longer fits. The export then ignores it and writes the
+LOD in its own plain layout: one table entry per different normal, zero in the unused slots, and so on. The content is
+still the same, and the file is valid. You get one info message that names the LOD. Edits that do not change positions or
+faces, such as materials, flags, selections or properties, leave the record valid. If you edit the normals, the layout of
+everything else still comes back.</p>
+
+<h3>Other cases</h3>
+<ul>
+<li>A LOD that did not come from an import (made by hand, or by New P3D) has no record. It is written in the plain layout, with no message.</li>
 <li>A face with fewer than three points is dropped on export, with a warning, because the file writer cannot write it.</li>
 <li>A proxy that you moved is written from its new position. A proxy that you did not touch is written as it was read.</li>
 <li>Data that depends on the number of points or faces (for example a stored sharp edge that is not a polygon edge) is

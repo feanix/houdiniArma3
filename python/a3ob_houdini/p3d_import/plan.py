@@ -362,4 +362,5 @@ def _check_proxy_order(plan: LodPlan) -> None:
     points = {v for proxy in plan.proxies for v in proxy.corners}
     if faces != tail_faces or points != tail_points:
         _warn(plan, "the proxies are not the last points and faces of the LOD",
-              "They are packed anyway. Exporting this LOD gives the same content, but the bytes can differ")
+              "They are packed anyway. An untouched LOD exports the same bytes (layout record); after an edit the content "
+              "is the same, but the bytes can differ")
