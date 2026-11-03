@@ -42,7 +42,7 @@ def write_p3d(model: P3DModel) -> bytes:
     for index, lod in enumerate(model.lods):
         try:
             _write_lod(lod, chunks)
-        except (ValueError, OverflowError, struct.error) as ex:
+        except (ValueError, TypeError, OverflowError, struct.error) as ex:
             raise P3DError("LOD %d (%s): %s" % (index, _safe_name(lod), ex)) from None
     chunks.append(bytes(model.trailing))
     return b"".join(chunks)
