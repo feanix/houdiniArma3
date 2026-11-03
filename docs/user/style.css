@@ -186,6 +186,9 @@ th { color: var(--muted); font-weight: 600; }
 table.facts { width: auto; min-width: 60%; }
 table.facts th { white-space: nowrap; padding-right: 1.5rem; }
 
+/* Screenshots stay inside the page width on narrow windows (the width and height attributes keep the shape). */
+img { max-width: 100%; height: auto; }
+
 /* A simple network diagram: boxes in a row, with an arrow between them. */
 ol.network {
   list-style: none;

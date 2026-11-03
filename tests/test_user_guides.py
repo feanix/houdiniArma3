@@ -143,12 +143,13 @@ class TestGuidesAreFilled(unittest.TestCase):
         for name in ("quick-start-arma.html", "quick-start-houdini.html"):
             self.assertGreaterEqual(parse_page(name).gui, 1, name)
 
-    def test_guides_have_one_h1_and_no_screenshots(self):
+    def test_guides_have_one_h1_and_only_the_network_screenshots(self):
+        # Images are checked in tests/test_user_docs.py (resolve, size, alt text, all used); here only: no stray <img>.
         for name in GUIDES:
             with open(os.path.join(DOCS_DIR, name), "r", encoding="utf-8") as file:
                 text = file.read()
             self.assertEqual(text.count("<h1>"), 1, name)
-            self.assertNotIn("<img", text, name)
+            self.assertEqual(text.count("<img"), text.count('<img src="img/'), name)
 
 
 class TestQuotedTextMatchesTheCode(unittest.TestCase):
@@ -323,7 +324,7 @@ class TestQuickStartsRunInHoudini(unittest.TestCase):
     def run_job_2(cls):
         geo = hou.node("/obj").createNode("geo", "job_two")
         cls.networks.append(geo)
-        imp = geo.createNode("a3ob_p3d_import")
+        imp = geo.createNode("a3ob_p3d_import", "p3d_import")  # the node names of img/edit-lod-network.png
         imp.parm("file").set(CRATE.replace("\\", "/"))
         cls.job2_import = cls.look(imp)
         empty = geo.createNode("a3ob_p3d_import", "no_file")

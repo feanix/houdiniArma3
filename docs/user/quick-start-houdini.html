@@ -119,10 +119,8 @@ Properties window: the node files are written by a script, and an edit is lost o
 made = new_p3d.build_starter(None, "my_crate")   # a new /obj/my_crate
 made.nodes["export"]                               # the nodes by name</code></pre></li>
 <li>The network has three LOD chains that meet in <code>assemble</code>, then <code>export</code>:
-<pre><code>res1_mesh (Box) -> res1_props (Resolution 1) ----------------------------\
-geometry_mesh (Box) -> geometry_triangles (Divide) -> geometry_components (Group)
-   -> geometry_mass (Mass) -> geometry_props (Geometry) -----------------> assemble -> export
-memory_points (Add) -> memory_group (Group) -> memory_props (Memory) ----/</code></pre>
+<p><img src="img/new-p3d-network.png" width="1110" height="745"
+ alt="The New P3D starter network. Left column: res1_mesh (Box) into res1_props (LOD Properties). Middle column: geometry_mesh (Box) into geometry_triangles (Divide) into geometry_components (Group) into geometry_mass (Mass) into geometry_props (LOD Properties). Right column: memory_points (Add) into memory_group (Group) into memory_props (LOD Properties). The three props nodes each connect to one input of assemble (Assemble LODs), which connects to export (P3D Export)."></p>
   The nodes <code>*_props</code> are <kbd class="ui-node">LOD Properties</kbd>, <code>assemble</code> is
   <kbd class="ui-node">Assemble LODs</kbd> with no base input and <code>export</code> is
   <kbd class="ui-node">P3D Export</kbd> with the display flag. The network already passes every check:
@@ -131,7 +129,11 @@ memory_points (Add) -> memory_group (Group) -> memory_props (Memory) ----/</code
   Keep to the rules above (3 or 4 points a polygon, triangles and a <code>component01</code> group in the Geometry LOD).
   For a quick test, change the <kbd class="ui-parm" data-node="box">Size</kbd> of <code>res1_mesh</code>. Set the real weight
   on <code>geometry_mass</code>: its <kbd class="ui-parm" data-node="a3ob_mass">Mode</kbd> is
-  <kbd class="ui-menu">Uniform total</kbd> and its message is <samp class="ui-msg">Total 100.0 kg on 8 points.</samp></li>
+  <kbd class="ui-menu">Uniform total</kbd> and its message is <samp class="ui-msg">Total 100.0 kg on 8 points.</samp>
+  <p><img src="img/replace-mesh-network.png" width="1272" height="865"
+ alt="The starter network after res1_mesh is replaced. Left column: my_model (Sphere) into place_on_ground (Transform) into res1_props (LOD Properties). Middle column: geometry_mesh (Box) into geometry_triangles (Divide) into geometry_components (Group) into geometry_mass (Mass) into geometry_props (LOD Properties). Right column: memory_points (Add) into memory_group (Group) into memory_props (LOD Properties). The three props nodes each connect to one input of assemble (Assemble LODs), which connects to export (P3D Export)."></p>
+  <p><img src="img/geometry-mass-parms.png" width="641" height="202"
+ alt="The parameter pane of geometry_mass (Mass). Mode is Uniform total. Total Mass (kg) is 100. Group is empty. Visualize is off."></p></li>
 <li>Add a <kbd class="ui-node">Validate</kbd> node after <code>assemble</code>:
   <samp class="ui-msg">3 LODs checked: 0 errors, 0 warnings.</samp> Bypass <code>geometry_mass</code> to see a note,
   <samp class="ui-msg">Geometry: has no mass</samp>, and a warning,
