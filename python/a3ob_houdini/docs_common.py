@@ -42,6 +42,10 @@ NODE_INTRO = {
         "This node is the end of a network. It checks the geometry the way Validate does and, when you press Save "
         "to Disk, writes a .p3d file you can use in Arma. The output is the same as the input, so you can keep "
         "working after it.",
+        "The options are in tabs. A new node starts from the preset that is active in the Project root and presets "
+        "tool. In Selection Mask, type group names separated by spaces; a name may use * and ?, and ^ before a name "
+        "leaves it out. The menu lists the input's point groups: picking one adds it to the mask or removes it. The "
+        "info line on the node says how many selections will be written.",
     ),
     "p3d_import": (
         "Use this node to bring an existing Arma 3 model into Houdini. A P3D file holds one or more LODs (versions "

@@ -27,7 +27,7 @@ from typing import Dict, List
 
 from .docs_common import (FOLDER_TEXT, NODE_INTRO, collapse_inputs, condition_text, default_text, input_sentence,
                           menu_texts, parm_index_for, range_text, type_text, wiki_escape)
-from .params import CALLBACK, MENU_SCRIPT, NodeSpec, Parm, hide_when_text
+from .params import CALLBACK, CREATED_SCRIPT, MENU_SCRIPT, NodeSpec, Parm, hide_when_text
 
 __all__ = ["hda_folder_name", "section_name", "render", "write", "differences"]
 
@@ -50,6 +50,15 @@ GzipContents := 1;
 MakeDefault := 1;
 PrefixDroppedParmLabel := 1;
 UnlockOnCreate := 0;
+"""
+
+#: Tells Houdini that the OnCreated section is Python, not Hscript.
+_EXTRA_FILE_OPTIONS = """{
+\t"OnCreated/IsPython":{
+\t\t"type":"bool",
+\t\t"value":true
+\t}
+}
 """
 
 _TOOLS_SHELF = """<?xml version="1.0" encoding="UTF-8"?>
@@ -301,7 +310,9 @@ def _sections_list(entries) -> str:
 def render(spec: NodeSpec) -> Dict[str, str]:
     """Every file of the node's HDA folder, as ``{relative path with "/": text}``."""
     section = section_name(spec)
-    return {
+    listed = [("DialogScript", "DialogScript"), ("PythonCook", "PythonCook"),
+              ("TypePropertiesOptions", "TypePropertiesOptions"), ("Tools.shelf", "Tools.shelf"), ("Help", "Help")]
+    files = {
         "houdini.hdalibrary": "",
         "INDEX__SECTION": _index_section(spec),
         "Sections.list": _sections_list([
@@ -312,11 +323,13 @@ def render(spec: NodeSpec) -> Dict[str, str]:
         section + "/TypePropertiesOptions": _TYPE_PROPERTIES,
         section + "/Tools.shelf": _TOOLS_SHELF % {"submenu": spec.submenu},
         section + "/Help": help_text(spec),
-        section + "/Sections.list": _sections_list([
-            ("DialogScript", "DialogScript"), ("PythonCook", "PythonCook"),
-            ("TypePropertiesOptions", "TypePropertiesOptions"), ("Tools.shelf", "Tools.shelf"),
-            ("Help", "Help")]),
     }
+    if spec.on_created:
+        files[section + "/OnCreated"] = CREATED_SCRIPT % spec.kind
+        files[section + "/ExtraFileOptions"] = _EXTRA_FILE_OPTIONS
+        listed += [("OnCreated", "OnCreated"), ("ExtraFileOptions", "ExtraFileOptions")]
+    files[section + "/Sections.list"] = _sections_list(listed)
+    return files
 
 
 def write(spec: NodeSpec, otls_dir: str) -> List[str]:

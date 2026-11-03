@@ -34,6 +34,9 @@ TYPE_PREFIX = "a3ob_"
 #: What a button, or a menu with an action, runs when it changes.
 CALLBACK = "import a3ob_houdini.entry as e; e.button(%r, %r, kwargs)"
 
+#: The OnCreated event of a node whose spec has ``on_created`` (the section text; the node is ``kwargs["node"]``).
+CREATED_SCRIPT = "import a3ob_houdini.entry as e; e.created(%r, kwargs)\n"
+
 #: The script of a menu whose items are made at the moment the menu opens (``Parm.menu_action``).
 #: Houdini evaluates it as one Python expression (``return`` is a syntax error there), so it imports inline.
 MENU_SCRIPT = "__import__('a3ob_houdini.entry', fromlist=['menu']).menu(%r, %r, kwargs)"
@@ -165,6 +168,9 @@ class NodeSpec:
     input_help: Tuple[str, ...] = ()
     #: Tab menu submenu.
     submenu: str = "A3OB"
+    #: The node module has a ``created(node)`` function that runs once when an artist makes the node (the HDA's
+    #: OnCreated event; not when a scene loads). The parameter defaults stay as the table says.
+    on_created: bool = False
     parm_index: Dict[str, Parm] = field(init=False, repr=False, compare=False, default_factory=dict)
 
     def __post_init__(self) -> None:

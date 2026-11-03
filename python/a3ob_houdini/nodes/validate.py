@@ -25,7 +25,7 @@ SPEC = NodeSpec(
     inputs=(1, 1),
     input_labels=("P3D geometry or LOD geometry",),
     input_help=("The model to check: a whole P3D from Assemble LODs, or a single LOD.",),
-    parms=common.level_parms() + common.rule_parms(),
+    parms=(common.checking_tab(), common.rules_tab()),
 )
 
 

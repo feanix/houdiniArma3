@@ -252,8 +252,8 @@ model that passes one passes the other. Each message starts with the LOD name an
 <p>Besides these, the checks include rules for the shape of each LOD type: Geometry (convex, contiguous, components, mass),
 Shadow Volume (triangles or convex quads, sharp edges; the usual-resolution and <code>LODNoShadow</code> rules are off by default), point LODs
 (no edges or faces), Roadway, Paths and more. Every such rule has its own switch on the node, named like
-<kbd class="ui-parm" data-node="a3ob_validate">T2-TRI: Triangulated</kbd>, so you can turn off a rule that does not suit
-your model. The <a href="reference/a3ob_validate.html">Validate reference</a> lists them all with their meaning. The node's
+<kbd class="ui-parm" data-node="a3ob_validate">Triangulated</kbd> (on the LOD Rules tab), so you can turn off a rule that
+does not suit your model. The rule's id, such as <code>T2-TRI</code>, ends its tooltip and appears in the messages. The <a href="reference/a3ob_validate.html">Validate reference</a> lists them all with their meaning. The node's
 <kbd class="ui-parm" data-node="a3ob_validate">Check LOD-Type Rules</kbd> switch turns all of them off at once.</p>
 
 <h2 id="lossless">Lossless round trips</h2>

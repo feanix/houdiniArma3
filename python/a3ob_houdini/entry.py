@@ -8,6 +8,7 @@ Once a node has shipped, the names and arguments here must not change. Everythin
     cook(kind, node)             -- the PythonCook of a node
     button(kind, action, kwargs) -- a button callback
     menu(kind, name, kwargs)     -- the items of a menu that is made when it opens (flat list: token, label, ...)
+    created(kind, kwargs)        -- the OnCreated event of a node that asks for it (NodeSpec.on_created)
 
 ``cook`` turns every exception into a node error: a ``UserError`` shows its own text (already in the ux-tools.md
 section 2 form); any other exception is a bug, so it shows a short text and the traceback goes to the console.
@@ -21,7 +22,7 @@ from . import messages, nodes
 from .errors import UserError
 from .messages import format_problem
 
-__all__ = ["cook", "button", "menu"]
+__all__ = ["cook", "button", "menu", "created"]
 
 LOGGER = logging.getLogger("a3ob")
 
@@ -60,6 +61,14 @@ def button(kind: str, action: str, kwargs) -> None:
         nodes.load(kind).BUTTONS[action](kwargs)
     except Exception:  # Houdini would only print it; put the traceback on the console with our logger
         LOGGER.error("button %s/%s failed:\n%s", kind, action, traceback.format_exc())
+
+
+def created(kind: str, kwargs) -> None:
+    """The OnCreated event: run the node module's ``created(node)`` once for a new node. Never raises."""
+    try:
+        nodes.load(kind).created(kwargs["node"])
+    except Exception:
+        LOGGER.error("created %s failed:\n%s", kind, traceback.format_exc())
 
 
 def menu(kind: str, name: str, kwargs) -> list:

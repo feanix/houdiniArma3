@@ -412,7 +412,7 @@ RULES: Tuple[Rule, ...] = (
     Rule("T2-PATH-ENTRY", "Path entry points", frozenset((LodType.PATHS,)), _path_entry,
          "Paths LODs: a group called in01, in02, ... exists."),
     Rule("T2-PATH-POS", "Path position points", frozenset((LodType.PATHS,)), _path_pos,
-         "Paths LODs: the same test as the entry rule (A3OB's own test, see spec 17.1.1)."),
+         "Paths LODs: the same test as the entry rule (as in Object Builder, which tests entry points twice)."),
 )
 
 RULE_IDS: Tuple[str, ...] = tuple(rule.id for rule in RULES)

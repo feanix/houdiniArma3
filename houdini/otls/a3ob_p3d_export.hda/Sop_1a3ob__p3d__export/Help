@@ -9,6 +9,8 @@
 
 This node is the end of a network. It checks the geometry the way Validate does and, when you press Save to Disk, writes a .p3d file you can use in Arma. The output is the same as the input, so you can keep working after it.
 
+The options are in tabs. A new node starts from the preset that is active in the Project root and presets tool. In Selection Mask, type group names separated by spaces; a name may use `*` and ?, and ^ before a name leaves it out. The menu lists the input's point groups: picking one adds it to the mask or removes it. The info line on the node says how many selections will be written.
+
 @inputs
 
 P3D geometry or LOD geometry:
@@ -29,6 +31,17 @@ Save to Disk:
     Check the input again and write the file. Nothing is written when there are errors.
 
     Type: Button.
+
+Keep a .bak:
+    #id: backup
+
+    When a file is overwritten, keep the old one as .bak.
+
+    Type: On or off. Default: Off.
+
+== Error Checking == (tab_checking)
+
+These parameters are in the Error Checking tab.
 
 Check:
     #id: check
@@ -75,10 +88,14 @@ Max Messages:
 
     Type: Whole number. Default: 25. Allowed: At least 1; no upper limit.
 
+== Presets == (tab_presets)
+
+These parameters are in the Presets tab.
+
 Preset:
     #id: preset
 
-    A saved set of the options below: Lossless, Arma 3 release, or one you saved with the Project root and presets shelf tool. Pick one and press Apply. Choosing does not change anything by itself.
+    A saved set of the options below: Lossless, Arma 3 release, or one you saved with the Project root and presets shelf tool. A new node starts with the preset that is active there. Pick one and press Apply. Choosing does not change anything by itself.
 
     Type: Menu. Default: Lossless.
 
@@ -91,19 +108,9 @@ Apply:
 
     Type: Button.
 
-Selection Mask:
-    #id: selmask
+== Paths & Names == (tab_paths)
 
-    Which point groups become selections: names separated by spaces, `*` and ? match, ^ before a name leaves it out. Groups named in a3ob_tagg_order are always selections.
-
-    Type: Text. Default: `* ^__*`.
-
-Lowercase:
-    #id: lowercase
-
-    Write texture and material paths, selection names (so proxy paths too) and property names and values in lower case, as Object Builder does. Warns when two names become equal.
-
-    Type: On or off. Default: Off.
+These parameters are in the Paths & Names tab.
 
 Relative Paths:
     #id: relpaths
@@ -115,35 +122,14 @@ Relative Paths:
 Project Root:
     #id: projectroot
 
-    Used with Relative Paths. Empty means the root from the shelf settings, or P:\ without one.
+    The folder that Relative Paths cuts off. Empty means the root from the shelf settings, or P:\ without one.
 
-    Type: Text. Default: (empty).
+    Type: Folder path. Default: (empty).
 
-Sort Sections:
-    #id: sortsections
+Lowercase:
+    #id: lowercase
 
-    Order the faces by texture and material, as Object Builder does. This changes the face order.
-
-    Type: On or off. Default: Off.
-
-Sort LODs:
-    #id: sortlods
-
-    Write the LODs sorted by resolution. Off keeps your order.
-
-    Type: On or off. Default: Off.
-
-Auto-Components:
-    #id: autocomponents
-
-    Geometry LODs without a component selection get one per connected piece.
-
-    Type: On or off. Default: Off.
-
-Renumber Components:
-    #id: renumber
-
-    Rename every selection that starts with component and digits to component01, component02, ... in the order they are written, per LOD. The name is lowercased and any text after the digits is lost.
+    Write texture and material paths, selection names (so proxy paths too) and property names and values in lower case, as Object Builder does. Warns when two names become equal.
 
     Type: On or off. Default: Off.
 
@@ -154,6 +140,51 @@ Translate Names to Czech:
 
     Type: On or off. Default: Off.
 
+Renumber Components:
+    #id: renumber
+
+    Rename every selection that starts with component and digits to component01, component02, ... in the order they are written, per LOD. The name is lowercased and any text after the digits is lost.
+
+    Type: On or off. Default: Off.
+
+== Selections == (tab_selections)
+
+These parameters are in the Selections tab.
+
+Selection Mask:
+    #id: selmask
+
+    Which point groups become selections in the file. Leave as is to write all of them except Houdini's internal ones (names starting with `__)`.
+
+    Type: Menu (pick several; each pick adds or removes an entry in the text). Default: `* ^__*`.
+
+    The choices are made when you open the menu, from the geometry or the settings.
+
+Auto-Components:
+    #id: autocomponents
+
+    Geometry LODs without a component selection get one per connected piece.
+
+    Type: On or off. Default: Off.
+
+== File Layout == (tab_layout)
+
+These parameters are in the File Layout tab.
+
+Sort LODs:
+    #id: sortlods
+
+    Write the LODs sorted by resolution. Off keeps your order.
+
+    Type: On or off. Default: Off.
+
+Sort Sections:
+    #id: sortsections
+
+    Order the faces by texture and material, as Object Builder does. This changes the face order.
+
+    Type: On or off. Default: Off.
+
 Drop UVs:
     #id: dropuvs
 
@@ -161,12 +192,9 @@ Drop UVs:
 
     Type: On or off. Default: Off.
 
-Keep a .bak:
-    #id: backup
+== LOD Rules == (tab_rules)
 
-    When a file is overwritten, keep the old one as .bak.
-
-    Type: On or off. Default: Off.
+These parameters are in the LOD Rules tab.
 
 Check LOD-Type Rules:
     #id: typerules
@@ -175,143 +203,143 @@ Check LOD-Type Rules:
 
     Type: On or off. Default: On.
 
-T2-UV2: At most 2 UV sets:
+At most 2 UV sets:
     #id: t2uv2
 
-    The LOD has no more than 2 UV sets.
+    The LOD has no more than 2 UV sets. (Rule T2-UV2.)
 
     Type: On or off. Default: On.
 
-T2-CONTIG: Contiguous mesh:
+Contiguous mesh:
     #id: t2contig
 
-    Geometry, shadow and underground LODs: no flipped polygons (shared edges run in opposite directions).
+    Geometry, shadow and underground LODs: no flipped polygons (shared edges run in opposite directions). (Rule T2-CONTIG.)
 
     Type: On or off. Default: On.
 
-T2-TRI: Triangulated:
+Triangulated:
     #id: t2tri
 
-    Underground LODs: every polygon is a triangle. Geometry and shadow LODs: triangles and convex quads.
+    Underground LODs: every polygon is a triangle. Geometry and shadow LODs: triangles and convex quads. (Rule T2-TRI.)
 
     Type: On or off. Default: On.
 
-T2-CONVEX: Convex mesh:
+Convex mesh:
     #id: t2convex
 
-    Geometry and underground LODs: every shared edge is convex or flat.
+    Geometry and underground LODs: every shared edge is convex or flat. (Rule T2-CONVEX.)
 
     Type: On or off. Default: On.
 
-T2-COMP: Component selections:
+Component selections:
     #id: t2comp
 
-    Geometry and underground LODs: a group called component01, component02, ... exists.
+    Geometry and underground LODs: a group called component01, component02, ... exists. (Rule T2-COMP.)
 
     Type: On or off. Default: On.
 
-T2-MASS: Mass is set:
+Mass is set:
     #id: t2mass
 
-    Geometry LOD: a note (not a warning) when the points have a total mass below 0.001.
+    Geometry LOD: a note (not a warning) when the points have a total mass below 0.001. (Rule T2-MASS.)
 
     Type: On or off. Default: On.
 
-T2-MASSALL: Every point has mass:
+Every point has mass:
     #id: t2massall
 
-    Geometry LOD: every point has a mass of at least 0.001.
+    Geometry LOD: every point has a mass of at least 0.001. (Rule T2-MASSALL.)
 
     Type: On or off. Default: On.
 
-T2-SHARP: No smooth edges:
+No smooth edges:
     #id: t2sharp
 
-    Shadow and underground LODs: with smooth polygons, every shared edge is in a3ob_sharp.
+    Shadow and underground LODs: with smooth polygons, every shared edge is in a3ob_sharp. (Rule T2-SHARP.)
 
     Type: On or off. Default: On.
 
-T2-NOMAT: No materials:
+No materials:
     #id: t2nomat
 
-    Underground LODs: no polygon has a texture or material. Shadow LODs may have them.
+    Underground LODs: no polygon has a texture or material. Shadow LODs may have them. (Rule T2-NOMAT.)
 
     Type: On or off. Default: On.
 
-T2-SHADOWRES: Conventional shadow resolution:
+Conventional shadow resolution:
     #id: t2shadowres
 
-    Shadow LODs: the resolution is 0, 10, 1000, 1010 or 1020. Off by default.
+    Shadow LODs: the resolution is 0, 10, 1000, 1010 or 1020. Off by default. (Rule T2-SHADOWRES.)
 
     Type: On or off. Default: Off.
 
-T2-SHADOWOFF: Shadow not disabled:
+Shadow not disabled:
     #id: t2shadowoff
 
-    Shadow LODs: no LODNoShadow = 1 property. Off by default.
+    Shadow LODs: no LODNoShadow = 1 property. Off by default. (Rule T2-SHADOWOFF.)
 
     Type: On or off. Default: Off.
 
-T2-PC-EDGE: No edges in point clouds:
+No edges in point clouds:
     #id: t2pcedge
 
-    Memory, land contact and hit-point LODs: no 2-point primitives.
+    Memory, land contact and hit-point LODs: no 2-point primitives. (Rule T2-PC-EDGE.)
 
     Type: On or off. Default: On.
 
-T2-PC-FACE: No faces in point clouds:
+No faces in point clouds:
     #id: t2pcface
 
-    Memory, land contact and hit-point LODs: no polygons.
+    Memory, land contact and hit-point LODs: no polygons. (Rule T2-PC-FACE.)
 
     Type: On or off. Default: On.
 
-T2-RW-FACES: Has polygons:
+Has polygons:
     #id: t2rwfaces
 
-    Roadway, ground layer and paths LODs: at least one polygon.
+    Roadway, ground layer and paths LODs: at least one polygon. (Rule T2-RW-FACES.)
 
     Type: On or off. Default: On.
 
-T2-RW-LIMIT: Roadway point limit:
+Roadway point limit:
     #id: t2rwlimit
 
-    Roadway LODs: at most 255 points.
+    Roadway LODs: at most 255 points. (Rule T2-RW-LIMIT.)
 
     Type: On or off. Default: On.
 
-T2-RW-SOUND: Roadway sound textures:
+Roadway sound textures:
     #id: t2rwsound
 
-    Roadway LODs: every polygon has a texture (the sound).
+    Roadway LODs: every polygon has a texture (the sound). (Rule T2-RW-SOUND.)
 
     Type: On or off. Default: On.
 
-T2-GL-UV: Ground layer UV set:
+Ground layer UV set:
     #id: t2gluv
 
-    Ground layer LODs: exactly one UV set.
+    Ground layer LODs: exactly one UV set. (Rule T2-GL-UV.)
 
     Type: On or off. Default: On.
 
-T2-GL-UVVALUES: Ground layer UV values:
+Ground layer UV values:
     #id: t2gluvvalues
 
-    Ground layer LODs: every UV is (0, 0), (1, 0), (1, 1) or (1, -1).
+    Ground layer LODs: every UV is (0, 0), (1, 0), (1, 1) or (1, -1). (Rule T2-GL-UVVALUES.)
 
     Type: On or off. Default: On.
 
-T2-PATH-ENTRY: Path entry points:
+Path entry points:
     #id: t2pathentry
 
-    Paths LODs: a group called in01, in02, ... exists.
+    Paths LODs: a group called in01, in02, ... exists. (Rule T2-PATH-ENTRY.)
 
     Type: On or off. Default: On.
 
-T2-PATH-POS: Path position points:
+Path position points:
     #id: t2pathpos
 
-    Paths LODs: the same test as the entry rule (A3OB's own test, see spec 17.1.1).
+    Paths LODs: the same test as the entry rule (as in Object Builder, which tests entry points twice). (Rule T2-PATH-POS.)
 
     Type: On or off. Default: On.
 

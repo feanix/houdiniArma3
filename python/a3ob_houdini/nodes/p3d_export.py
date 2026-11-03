@@ -31,13 +31,15 @@ except ImportError:
 from .. import p3d_export, settings as settings_module
 from ..errors import UserError
 from ..messages import ERROR, INFO, Report, format_problem
+from ..p3d_export.options import DEFAULT_SELECTION_MASK
 from ..p3d_export.type_rules import RULES
 from ..params import NodeSpec, Parm, read_parms
 from ..project_settings_dialog import display_path  # pure function; the module needs no hou at import
 from . import _export_common as common
 
 __all__ = ["SPEC", "cook", "BUTTONS", "MENUS", "OPTION_PARMS", "run_save", "save", "save_button",
-           "DEFAULT_PROJECT_ROOT", "apply_preset", "preset_values"]
+           "DEFAULT_PROJECT_ROOT", "apply_preset", "preset_values", "created", "selection_choices",
+           "selection_count_text"]
 
 NAME = "P3D Export"
 LOGGER = logging.getLogger("a3ob")
@@ -62,44 +64,58 @@ SPEC = NodeSpec(
              file_mode="write"),
         Parm("save", "Save to Disk", "button", "",
              "Check the input again and write the file. Nothing is written when there are errors.", action="save"),
-        Parm("check", "Check", "menu", "cook",
-             "Every cook: check whenever the node cooks. When saving: check only on Save to Disk (for large models).",
-             items=(("cook", "Every cook"), ("save", "When saving"))),
-    ) + common.level_parms() + (
-        Parm("preset", "Preset", "menu", settings_module.LOSSLESS,
-             "A saved set of the options below: Lossless, Arma 3 release, or one you saved with the Project root and "
-             "presets shelf tool. Pick one and press Apply. Choosing does not change anything by itself.",
-             menu_action="presets"),
-        Parm("apply", "Apply", "button", "",
-             "Fill the options below from the chosen preset. Project Root and Keep a .bak stay as they are.",
-             action="apply"),
-        Parm("selmask", "Selection Mask", "string", "* ^__*",
-             "Which point groups become selections: names separated by spaces, * and ? match, ^ before a name leaves "
-             "it out. Groups named in a3ob_tagg_order are always selections."),
-        Parm("lowercase", "Lowercase", "toggle", False,
-             "Write texture and material paths, selection names (so proxy paths too) and property names and values in "
-             "lower case, as Object Builder does. Warns when two names become equal."),
-        Parm("relpaths", "Relative Paths", "toggle", False,
-             "Strip the project root (or at least the drive letter) from texture, material and proxy paths."),
-        Parm("projectroot", "Project Root", "string", "",
-             "Used with Relative Paths. Empty means the root from the shelf settings, or P:\\ without one."),
-        Parm("sortsections", "Sort Sections", "toggle", False,
-             "Order the faces by texture and material, as Object Builder does. This changes the face order."),
-        Parm("sortlods", "Sort LODs", "toggle", False, "Write the LODs sorted by resolution. Off keeps your order."),
-        Parm("autocomponents", "Auto-Components", "toggle", False,
-             "Geometry LODs without a component selection get one per connected piece."),
-        Parm("renumber", "Renumber Components", "toggle", False,
-             "Rename every selection that starts with component and digits to component01, component02, ... in the "
-             "order they are written, per LOD. The name is lowercased and any text after the digits is lost."),
-        Parm("czech", "Translate Names to Czech", "toggle", False,
-             "Rename selections that have an English name from Object Builder's table (body becomes telo, weapon becomes "
-             "zbran) to the Czech name the game uses. Whole name, any case. Warns when two selections end up equal."),
-        Parm("dropuvs", "Drop UVs", "toggle", False,
-             "LODs of a type that does not use UVs (Geometry, Memory, Roadway, the fire and view geometry types) are "
-             "written without UV sets and with zero face UVs, as Object Builder does. The geometry on the node is not "
-             "changed."),
         Parm("backup", "Keep a .bak", "toggle", False, "When a file is overwritten, keep the old one as .bak."),
-    ) + common.rule_parms(),
+        common.checking_tab(
+            Parm("check", "Check", "menu", "cook",
+                 "Every cook: check whenever the node cooks. When saving: check only on Save to Disk (for large "
+                 "models).", items=(("cook", "Every cook"), ("save", "When saving")))),
+        Parm("tab_presets", "Presets", "folder", folder_type="tabs", children=(
+            Parm("preset", "Preset", "menu", settings_module.LOSSLESS,
+                 "A saved set of the options below: Lossless, Arma 3 release, or one you saved with the Project root "
+                 "and presets shelf tool. A new node starts with the preset that is active there. Pick one and press "
+                 "Apply. Choosing does not change anything by itself.", menu_action="presets"),
+            Parm("apply", "Apply", "button", "",
+                 "Fill the options below from the chosen preset. Project Root and Keep a .bak stay as they are.",
+                 action="apply"),
+        )),
+        Parm("tab_paths", "Paths & Names", "folder", folder_type="tabs", children=(
+            Parm("relpaths", "Relative Paths", "toggle", False,
+                 "Strip the project root (or at least the drive letter) from texture, material and proxy paths."),
+            Parm("projectroot", "Project Root", "dir", "",
+                 "The folder that Relative Paths cuts off. Empty means the root from the shelf settings, or P:\\ "
+                 "without one."),
+            Parm("lowercase", "Lowercase", "toggle", False,
+                 "Write texture and material paths, selection names (so proxy paths too) and property names and "
+                 "values in lower case, as Object Builder does. Warns when two names become equal."),
+            Parm("czech", "Translate Names to Czech", "toggle", False,
+                 "Rename selections that have an English name from Object Builder's table (body becomes telo, weapon "
+                 "becomes zbran) to the Czech name the game uses. Whole name, any case. Warns when two selections "
+                 "end up equal."),
+            Parm("renumber", "Renumber Components", "toggle", False,
+                 "Rename every selection that starts with component and digits to component01, component02, ... in "
+                 "the order they are written, per LOD. The name is lowercased and any text after the digits is lost."),
+        )),
+        Parm("tab_selections", "Selections", "folder", folder_type="tabs", children=(
+            Parm("selmask", "Selection Mask", "menu", DEFAULT_SELECTION_MASK,
+                 "Which point groups become selections in the file. Leave as is to write all of them except "
+                 "Houdini's internal ones (names starting with __).",
+                 menu_action="selmask_groups", menu_toggle=True),
+            Parm("autocomponents", "Auto-Components", "toggle", False,
+                 "Geometry LODs without a component selection get one per connected piece."),
+        )),
+        Parm("tab_layout", "File Layout", "folder", folder_type="tabs", children=(
+            Parm("sortlods", "Sort LODs", "toggle", False,
+                 "Write the LODs sorted by resolution. Off keeps your order."),
+            Parm("sortsections", "Sort Sections", "toggle", False,
+                 "Order the faces by texture and material, as Object Builder does. This changes the face order."),
+            Parm("dropuvs", "Drop UVs", "toggle", False,
+                 "LODs of a type that does not use UVs (Geometry, Memory, Roadway, the fire and view geometry types) "
+                 "are written without UV sets and with zero face UVs, as Object Builder does. The geometry on the "
+                 "node is not changed."),
+        )),
+        common.rules_tab(),
+    ),
+    on_created=True,
 )
 
 #: The result of the last Save to Disk of each node, shown by the next cook: node path -> raw messages.
@@ -137,10 +153,26 @@ def apply_preset(node, name: str = "", settings=None) -> None:
     if settings is None:
         settings, _ = settings_module.load()
     name = name or str(node.parm("preset").eval())
-    for parm_name, value in preset_values(settings, name).items():
+    values = preset_values(settings, name)  # raises for an unknown name before anything is changed
+    for parm_name, value in values.items():
         parm = node.parm(parm_name)
         if parm is not None:
             parm.set(value)
+    parm = node.parm("preset")
+    if parm is not None and str(parm.eval()) != name:
+        parm.set(name)  # the Preset menu shows which preset was applied
+
+
+def created(node, settings=None) -> None:
+    """D26: a new node starts from the active preset of the Project root and presets settings (Lossless without a
+    settings file). It runs once, from the HDA's OnCreated event, so the parameter defaults and old scenes stay as
+    they are. A preset that cannot be applied leaves the node as the table made it."""
+    if settings is None:
+        settings, _ = settings_module.load()
+    try:
+        apply_preset(node, settings.active_preset, settings)
+    except UserError:  # the active preset was deleted from the file by hand
+        apply_preset(node, settings_module.LOSSLESS, settings)
 
 
 def cook(node, report: Report) -> None:
@@ -159,9 +191,24 @@ def cook(node, report: Report) -> None:
     checked = common.run_checks(node, values, report, NAME)
     if checked.result.data is not None:
         report.info("%d LODs, %s if saved now." % (checked.result.lod_count, _size(len(checked.result.data))))
+        report.info(selection_count_text(checked.result.selection_counts))
     else:
         report.info("%d LODs checked: %d errors, %d warnings." % (
             checked.result.lod_count, checked.errors, checked.warnings))
+
+
+def selection_count_text(counts) -> str:
+    """The info line for Selection Mask: ``counts`` is ``[(LOD name, selections), ...]``. One LOD gives its number;
+    several give the total and, up to 6 LODs, the number per LOD."""
+    def noun(number: int) -> str:
+        return "%d selection%s" % (number, "" if number == 1 else "s")
+
+    if len(counts) == 1:
+        return "%s will be written." % noun(counts[0][1])
+    if len(counts) > 6:
+        return "%s will be written in %d LODs." % (noun(sum(number for _, number in counts)), len(counts))
+    per_lod = ", ".join("%s %d" % (name, number) for name, number in counts)
+    return "%s will be written (%s)." % (noun(sum(number for _, number in counts)), per_lod)
 
 
 def _size(count: int) -> str:
@@ -252,5 +299,31 @@ def _menu_presets(kwargs):
     return [(name, name) for name in settings_module.preset_names(settings)]
 
 
+def selection_choices(geo):
+    """``[(token, label), ...]`` for the Selection Mask menu: every point group of the input (of each LOD inside a P3D
+    geometry), once each, sorted by P3D name. The token is the Houdini group name, which is what the mask matches; the
+    label is the decoded P3D name."""
+    from .. import lod_container, selection_browser
+    if geo is None:
+        return []
+    kind = lod_container.classify(geo)
+    if kind == lod_container.P3D:
+        sources = [lod_container.lod_content(prim) for prim in geo.prims()]
+    else:
+        sources = [geo]
+    found = {}
+    for source in sources:
+        for entry in selection_browser.list_groups(source):
+            if entry.encoded:
+                found.setdefault(entry.encoded, entry.name or "(empty name)")
+    return sorted(((token, label) for token, label in found.items()), key=lambda pair: (pair[1], pair[0]))
+
+
+def _menu_selmask(kwargs):
+    """The Selection Mask menu: the input's point groups. An unconnected input gives an empty menu."""
+    node = kwargs["node"]
+    return selection_choices(node.inputGeometry(0) if node.inputs() and node.inputs()[0] is not None else None)
+
+
 BUTTONS = {"save": save_button, "apply": apply_button}
-MENUS = {"presets": _menu_presets}
+MENUS = {"presets": _menu_presets, "selmask_groups": _menu_selmask}
