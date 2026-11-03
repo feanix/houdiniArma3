@@ -1,0 +1,15 @@
+Setting breakpad minidump AppID = 502570
+SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561197972238375 [API loaded no]
+default HDA extension for this session: .hdalc
+save plain.hip -> C:/Users/tybri/AppData/Local/Temp/aesir/houdiniArma3/impl-5-a/t/q1b/plain.hip | files: ['plain.hip']
+save plain.hiplc -> C:/Users/tybri/AppData/Local/Temp/aesir/houdiniArma3/impl-5-a/t/q1b/plain.hiplc | files: ['plain.hip', 'plain.hiplc']
+save plain.hipnc -> C:/Users/tybri/AppData/Local/Temp/aesir/houdiniArma3/impl-5-a/t/q1b/plain.hipnc | files: ['plain.hip', 'plain.hiplc', 'plain.hipnc']
+header of plain.hip b'HouLC\x1a1033600baa06ae9855a09a7e5953.start\x00fplayba'
+header of plain.hiplc b'HouLC\x1a1033600baa06ae9855a09a7e5953.start\x00fplayba'
+header of plain.hipnc b'HouLC\x1a1033600baa06ae9855a09a7e5953.start\x00fplayba'
+installed C:/Users/tybri/AppData/Local/Temp/aesir/houdiniArma3/impl-5-a/t/q1/q1_test.hda
+created node of saved .hda in this Indie session: /obj/geo1/a3ob_q1_test1
+saved .hiplc referencing the HDA; size 36610
+hotl -t exit 0 | Cannot convert non-commercial HDAs
+hotl -X exit 1 | Opened C:/Users/tybri/AppData/Local/Temp/aesir/houdiniArma3/impl-5-a/t/q1b/xX/Sop_1a3ob__q1__test/Contents.contents
+ERROR?? 0 blocks

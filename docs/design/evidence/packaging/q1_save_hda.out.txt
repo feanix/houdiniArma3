@@ -1,0 +1,26 @@
+Setting breakpad minidump AppID = 502570
+SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561197972238375 [API loaded no]
+houdini 22.0.466
+licenseCategory licenseCategoryType.Indie
+isApprentice False
+isIndie (licenseCategory name) Indie
+saved to C:/Users/tybri/AppData/Local/Temp/aesir/houdiniArma3/impl-5-a/t/q1/q1_test.hda
+exists .hda True
+exists .hdalc False
+size 1558
+definition.licenseCategory? attrs: []
+definition.isInstalled True
+sections ['Contents.gz', 'CreateScript', 'DialogScript', 'InternalFileOptions']
+bytes contain b'limited' False
+bytes contain b'Limited' False
+bytes contain b'Indie' False
+bytes contain b'indie' False
+bytes contain b'commercial' False
+bytes contain b'Apprentice' False
+bytes contain b'hdalc' False
+bytes contain b'NonCommercial' False
+bytes contain b'LimitedCommercial' False
+hdalc save ok, exists: True
+file backup 0
+file q1_test.hda 1558
+file q1_test2.hdalc 1513

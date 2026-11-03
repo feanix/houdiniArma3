@@ -1,0 +1,2 @@
+import a3ob_spike.entry as e
+e.cook(hou.pwd())

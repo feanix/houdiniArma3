@@ -1,0 +1,11 @@
+CRLF in DialogScript: True
+collapsed: 1308 bytes
+loaded: ['a3ob_spike_export']
+parms: ['tag', 'path', 'save']
+default tag: 'hello'
+button callback: import a3ob_spike.entry as e; e.save(kwargs)
+--- directory form (installed as <name>.hda folder) with CRLF ---
+Unable to find dialog script for a3ob_spike_export
+	at oplib:/Sop/a3ob_spike_export?Sop/a3ob_spike_export.
+loaded from CRLF folder: ['a3ob_spike_export']
+default tag: 'hello'

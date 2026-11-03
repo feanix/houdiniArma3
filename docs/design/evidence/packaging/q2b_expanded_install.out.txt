@@ -1,0 +1,4 @@
+loaded library paths: ['a3ob_spike_export.hda (directory)']
+cooked: errors = none | tag = from-expanded-dir
+definition file is a directory: True
+exit 0

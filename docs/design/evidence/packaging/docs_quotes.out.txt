@@ -1,0 +1,138 @@
+
+## https://www.sidefx.com/Support/licensing/
+  There are a number of Houdini products that meet the needs of commercial, indie [limited commercial] and education [non-commercial] customers. Each of these categories is designed to work as a family of products that function as a complete pipeline. It is important to get the right products for your chosen category.
+  File Formats
+  .hip/.hda/.usd
+  File Formats
+  .hiplc/.hdalc/.usd
+  File Formats
+  | .hipnc/.hdanc/.usd
+  File Formats
+  | .hipnc/.hdanc/.usdnc
+
+## https://www.sidefx.com/products/compare/
+  but use different file formats and have restrictions to their usage.
+  .hiplc
+  .hipnc
+  .hipnc
+  .hdalc
+  .hdanc
+  .hdanc
+  .hdalc
+  .hdanc
+
+## https://www.sidefx.com/products/houdini-indie/
+  Houdini Indie cannot be used in the same pipeline as commercial versions of Houdini
+  Houdini Indie uses its own file format for saving scenes and assets
+
+## https://www.sidefx.com/products/houdini-apprentice/
+  version of Houdini FX which can be used by students, artists and hobbyists to create personal non-commercial projects. With Houdini Apprentice, you have access to virtually all of the features of the award-winning Houdini FX to develop your skills and work on personal projects. Apprentice lets you save to disk and render out with a watermark.
+  It must be used on Non-commercial projects
+  Houdini Apprentice cannot be used in the same pipeline as commercial/indie versions of Houdini
+  Houdini Apprentice uses its own file format for saving scenes and assets
+  Houdini Digital Assets created in Apprentice can not be used with Houdini Engine or Houdini Engine Indie
+
+## https://www.sidefx.com/Support/licensing/indie/
+  install the Houdini Engine for Unreal/Unity license because it is a commercial license that will not be able to read the HDALC files. Its presence on your server will cause problems.
+
+## https://www.sidefx.com/docs/houdini/ref/utils/hotl.html
+  You can install assets from an expanded directory directly in Houdini (without having to convert back to an
+  Storing asset definitions in version control. Since most of the contents of a library expand to plain text, version control systems can show changes to the asset as diffs.
+  Asset authors save assets in expanded format. The expanded assets are tracked with version control.
+  The three expansion options (
+  Contents.mime
+  Contents.mime
+  This option may be better for storing asset libraries in version control systems (such a Subversion and Git). The raw node definition files produced by
+  can look like text but actually contain arbitrary binary data, which may confuse version control systems.
+  Contents.mime
+
+## local help: hom.zip :: hou/hda.txt
+      calls to [Hom:hou.hda#addEventCallback].
+              
+  ::`defaultFileExtension(self)` -> `str`:
+      #cppname: HOM_hda::defaultFileExtension
+      Returns the default hda file extension for the current session based on the taint.
+  --
+              
+  ::`defaultFileExtension(self)` -> `str`:
+      #cppname: HOM_hda::defaultFileExtension
+      Returns the default hda file extension for the current session based on the taint.
+  --
+
+## local help: hom.zip :: hou/saveMode.txt
+  :: Text
+      Save in an ASCII format that is friendly to version control and can be
+      viewed and edited as plain text.  This format is compatible with Houdini 16
+      and above only and is only available with a full commercial license.
+  
+  :: Binary
+      Traditional binary hip file format.  This is both smaller and more
+  --
+
+## local help: hom.zip :: pythonsop.txt
+  == Overview ==
+  
+  * If you want to define a new, reusable geometry node using Python, see "creating a new node type" below.
+  
+  * If you just want to script a one-off change, you can use the [Python SOP|Node:sop/python] to run a Python snippet on geometry without having to create a new node type.
+  --
+  
+  NOTE:
+      Do not set node parameters inside a Python SOP.  This creates
+      broken dependencies and causes many issues.
+  
+  --
+      broken dependencies and causes many issues.
+  
+  == Creating a new node type == (node_type)
+  
+  # Choose __File > New Asset__.
+  --
+  # Choose __File > New Asset__.
+  
+  # Set the __Operator Definition__ to `python`, then set __Network type__ to __Geometry__.
+  
+  # Use the __Save to library__ option to set an OTL library file to save the new node type into.
+  --
+
+## local help: nodes.zip :: sop/python.txt
+  This node lets you modify geometry in a network using a quick ad-hoc script.
+  To create a new, reusable geometry node type using python, see
+  [creating a geometry SOP with Python|/hom/pythonsop#node_type].
+  --
+      
+  Maintain State:
+      When enabled, the underlying Python interpreter will not be cleared between cooks. This may give some performance gains, but can also lead to unexpected behaviour. It is generally recommended to leave this disabled.
+  --
+
+## local help: hom.zip :: hou/Parm.txt
+  ::`executeCallbacks(self)`:
+      #cppname: HOM_Parm::executeCallbacks
+      #status: ni
+  
+      Use [Hom:hou.Parm#pressButton].
+  
+  ::`pressButton(self, arguments={})`:
+      #cppname: HOM_Parm::pressButton
+      Emulates clicking a button parameter to trigger its callback script.
+  --
+      #status: ni
+  
+      Use [Hom:hou.Parm#pressButton].
+  
+  ::`pressButton(self, arguments={})`:
+      #cppname: HOM_Parm::pressButton
+      Emulates clicking a button parameter to trigger its callback script.
+      Raises [Hom:hou.OperationFailed] if the callback script could not be
+      run. An optional dictionary of arguments can be passed to the callback 
+  --
+  
+      Use [Hom:hou.Parm#pressButton].
+  
+  ::`pressButton(self, arguments={})`:
+      #cppname: HOM_Parm::pressButton
+      Emulates clicking a button parameter to trigger its callback script.
+      Raises [Hom:hou.OperationFailed] if the callback script could not be
+      run. An optional dictionary of arguments can be passed to the callback 
+      script. Raises `TypeError` if a n argument value type is unsupported.
+  --
