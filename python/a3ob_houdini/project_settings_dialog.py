@@ -3,12 +3,14 @@
 # houdiniArma3: a Houdini port of Arma 3 Object Builder (A3OB).
 """The dialogs of the Project root and presets shelf tool (ux-tools.md section 7.2).
 
-Only the thin layer of ``hou.ui`` calls. It needs the Houdini GUI, so it has no tests. The work is in ``settings``.
+A thin layer of ``hou.ui`` calls (no tests, they need the GUI). The text and index logic is in plain functions that
+the tests cover. The work is in ``settings``.
 The tool changes nothing in a scene.
 """
 
 import dataclasses
 import logging
+import os
 import traceback
 
 from . import settings as sm
@@ -21,12 +23,36 @@ TITLE = "A3OB Project root and presets"
 _ACTIONS = ("Project root", "Active preset", "Edit preset", "Delete preset", "Common data file", "Close")
 
 
+def display_path(path: str) -> str:
+    """A path as shown to the artist: the native slash everywhere. Display only; the JSON keeps the stored text."""
+    return os.path.normpath(path) if path else path
+
+
+def bool_options(values) -> list:
+    """The preset fields that are on/off switches, in PRESET_KEYS order."""
+    defaults = sm.ExportOptions()
+    return [field for field in sm.PRESET_KEYS if isinstance(values.get(field, getattr(defaults, field)), bool)]
+
+
+def values_from_indices(options, chosen) -> dict:
+    """Every switch in ``options`` mapped to True when its index is in ``chosen``, else False."""
+    picked = set(chosen)
+    return {field: index in picked for index, field in enumerate(options)}
+
+
+def preset_summary(name: str, options, chosen) -> str:
+    """The text of the Save / Cancel step: the preset name and the options that will be on."""
+    picked = set(chosen)
+    on = [field for index, field in enumerate(options) if index in picked]
+    return "Save preset \"%s\"?\n\nOptions that will be on:\n%s" % (name, "\n".join(on) if on else "(all off)")
+
+
 def _describe(settings) -> str:
-    lines = ["Settings file: %s" % sm.settings_path(),
-             "Project root: %s%s" % (sm.effective_root(settings),
+    lines = ["Settings file: %s" % display_path(sm.settings_path()),
+             "Project root: %s%s" % (display_path(sm.effective_root(settings)),
                                      "  (from %s)" % sm.ENV_ROOT if sm.effective_root(settings) != settings.project_root else ""),
              "Active preset: %s" % settings.active_preset,
-             "Common data file: %s" % (settings.common_data or "(none)")]
+             "Common data file: %s" % (display_path(settings.common_data) or "(none)")]
     return "\n".join(lines)
 
 
@@ -84,11 +110,17 @@ def _act(settings, action: str) -> bool:
                                         buttons=("OK", "Cancel"))
         if ok != 0:
             return False
-        options = [field for field in sm.PRESET_KEYS if isinstance(values.get(field, getattr(sm.ExportOptions(), field)), bool)]
+        options = bool_options(values)
+        # Houdini returns default_choices on Cancel, so the list cannot tell Cancel from Accept. The confirm step can.
         chosen = hou.ui.selectFromList(options, default_choices=[i for i, f in enumerate(options) if values.get(f)],
-                                       exclusive=False, title=TITLE, message="Options that are on")
-        for index, field in enumerate(options):
-            values[field] = index in chosen
+                                       exclusive=False, title=TITLE, message="Options that are on",
+                                       clear_on_cancel=True)
+        summary = preset_summary(new_name, options, chosen)
+        # Save is button 0. Cancel is the default and the close button, so closing the window writes nothing.
+        if hou.ui.displayMessage(summary, buttons=("Save", "Cancel"), default_choice=1, close_choice=1,
+                                 title=TITLE) != 0:
+            return False
+        values.update(values_from_indices(options, chosen))
         sm.save_preset(settings, new_name, values)
         return True
     if action == "Delete preset":
@@ -101,6 +133,6 @@ def _act(settings, action: str) -> bool:
         path = hou.ui.selectFile(title=TITLE, pattern="*.json", file_type=hou.fileType.Any)
         if path is None:
             return False
-        settings.common_data = hou.text.expandString(path) if path else ""
+        settings.common_data = hou.text.expandString(path) if path else ""  # stored as picked; only the display changes
         return True
     return False
