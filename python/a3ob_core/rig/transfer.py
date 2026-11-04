@@ -285,40 +285,82 @@ def inpaint(lap: Laplacian, known: np.ndarray, X_known: np.ndarray, tolerance: f
     """Solve ``L_uu X_u = -L_um X_m`` for the unknown rows (the harmonic fill). Returns ``(X, iterations)``.
 
     ``known`` is a boolean per row; ``X_known`` holds the fixed rows (the others are ignored). Jacobi-preconditioned
-    conjugate gradients, all columns at once. Every unknown row must have an edge and be connected to a known row: the
-    caller takes the others out of the system."""
+    conjugate gradients. Every unknown row must have an edge and be connected to a known row: the caller takes the
+    others out of the system.
+
+    Speed (task #72): the system is cut down to the unknown rows only, and the matrix product is one gather per
+    neighbour slot (rows are sorted by how many unknown neighbours they have, so a slot touches only the rows that have
+    it). A bone column with nothing to spread is not solved, and a column drops out as soon as it has converged. The
+    columns do not talk to each other, so each one still takes the steps it would have taken."""
     n, B = X_known.shape
     unknown = ~known
     X = np.where(known[:, None], X_known, 0.0)
     if not unknown.any():
         return X, 0
-    rhs = -(lap.times(X))[unknown]
-    diag = lap.degree[unknown][:, None]
+    rows_u = np.nonzero(unknown)[0]
+    nu = len(rows_u)
+    # The right-hand side: the pull of the known neighbours (X is zero on the unknown rows here).
+    rhs = lap.adjacency_times(X)[rows_u]
+    # The unknown-unknown part of the matrix, as slots.
+    position = np.full(n, -1, dtype=np.int64)
+    position[rows_u] = np.arange(nu)
+    r_row, r_col = position[lap.rows], position[lap.cols]
+    inner = (r_row >= 0) & (r_col >= 0)
+    r_row, r_col, r_val = r_row[inner], r_col[inner], lap.data[inner]
+    degree_inner = np.bincount(r_row, minlength=nu)
+    order = np.argsort(-degree_inner, kind="stable")  # new place -> unknown row
+    rank = np.empty(nu, dtype=np.int64)
+    rank[order] = np.arange(nu)
+    new_row, new_col = rank[r_row], rank[r_col]
+    by_row = np.argsort(new_row, kind="stable")
+    new_row, new_col, r_val = new_row[by_row], new_col[by_row], r_val[by_row]
+    first = np.concatenate([[0], np.cumsum(degree_inner[order])[:-1]])
+    slot = np.arange(len(new_row)) - first[new_row]
+    slots = []  # (neighbour, weight) per slot; slot k covers the first rows that have more than k neighbours
+    for k in range(int(degree_inner.max()) if nu else 0):
+        take = slot == k
+        slots.append((new_col[take], r_val[take][:, None]))
+    diag = lap.degree[rows_u][order][:, None]
+    rhs = rhs[order]
 
-    def apply(Xu):
-        full = np.zeros((n, B))
-        full[unknown] = Xu
-        return lap.times(full)[unknown]
+    def apply(P):
+        out = diag * P
+        for neighbour, weight in slots:
+            out[:len(neighbour)] -= weight * P[neighbour]
+        return out
 
-    x = np.zeros_like(rhs)
-    r = rhs - apply(x)
-    z = r / diag
-    p = z.copy()
-    rz = (r * z).sum(0)
-    norm0 = np.maximum(np.sqrt((rhs * rhs).sum(0)), 1e-30)
+    norm0 = np.sqrt((rhs * rhs).sum(0))
+    live = np.nonzero(norm0 > 1e-30)[0]  # the columns that have anything to spread
+    norm0 = norm0[live]
+    result = np.zeros((nu, B))
     it = 0
-    for it in range(1, max_iter + 1):
-        Ap = apply(p)
-        alpha = rz / np.maximum((p * Ap).sum(0), 1e-30)
-        x += alpha * p
-        r -= alpha * Ap
-        if (np.sqrt((r * r).sum(0)) / norm0).max() < tolerance:
-            break
+    if len(live):
+        rhs = np.ascontiguousarray(rhs[:, live])
+        x = np.zeros_like(rhs)
+        r = rhs.copy()
         z = r / diag
-        rz_new = (r * z).sum(0)
-        p = z + (rz_new / np.maximum(rz, 1e-30)) * p
-        rz = rz_new
-    X[unknown] = x
+        p = z.copy()
+        rz = (r * z).sum(0)
+        for it in range(1, max_iter + 1):
+            Ap = apply(p)
+            alpha = rz / np.maximum((p * Ap).sum(0), 1e-30)
+            x += alpha * p
+            r -= alpha * Ap
+            done = np.sqrt((r * r).sum(0)) / norm0 < tolerance
+            if done.any():
+                result[:, live[done]] = x[:, done]
+                keep = ~done
+                if not keep.any():
+                    live = live[:0]
+                    break
+                live, norm0, x, r, p, rz = live[keep], norm0[keep], x[:, keep], r[:, keep], p[:, keep], rz[keep]
+            z = r / diag
+            rz_new = (r * z).sum(0)
+            p = z + (rz_new / np.maximum(rz, 1e-30)) * p
+            rz = rz_new
+        if len(live):  # out of iterations
+            result[:, live] = x
+    X[rows_u[order]] = result
     return X, it
 
 
