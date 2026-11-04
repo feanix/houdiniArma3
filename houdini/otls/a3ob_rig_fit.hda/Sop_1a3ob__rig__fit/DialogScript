@@ -14,16 +14,17 @@
     inputlabel	3	"Sample body"
 
     parm {
-	name	"output"
-	label	"Output"
+	name	"show"
+	label	"Show"
 	type	string
-	default	{ "skeleton" }
+	default	{ "all" }
 	menu {
+	    "all"	"All"
 	    "skeleton"	"Fitted skeleton"
 	    "body"	"Fitted sample body"
 	    "landmarks"	"Landmarks"
 	}
-	help	"Which result this node gives. A Python-type Houdini node has one output, so use one Rig Fit node for each result you need (give them the same inputs and settings)."
+	help	"Which results are drawn in the viewport. The node always gives all three results as one geometry, three packed primitives named by the prim string a3ob_rig_part. This menu only hides the others from view; the output is the same for every choice. Weight Transfer takes the fitted sample body from it by itself."
     }
     parm {
 	name	"landmarks"

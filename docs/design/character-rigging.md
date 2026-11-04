@@ -813,8 +813,9 @@ Reports: section 4.4. Output: the mesh with cleaned groups and `a3ob_w_*`, plus 
 | `refine` | toggle, off | Light non-rigid refinement of the sample body with Topo Transfer (one connected component needed). |
 | `scale` | menu: Per bone length, Whole body | How bone lengths are fitted. Default Per bone length. |
 
-Outputs: 1 fitted skeleton A' (joints in the user mesh, `transform` carrying the fitted rotation); 2 fitted sample body S'
-(posed and scaled, weights kept, `a3ob_rig_origin` not set yet); 3 the landmarks as points. The artist corrects a
+Results (one output with three named parts, D40, see As built): fitted skeleton A' (joints in the user mesh, `transform`
+carrying the fitted rotation); fitted sample body S' (posed and scaled, weights kept, `a3ob_rig_origin` not set yet); the
+landmarks as points. The artist corrects a
 landmark by changing the points of its group on the user mesh (D37 Q11: landmarks are selections, like every other
 group in this add-on). The fit is a rigid fit down the hierarchy: from
 the pelvis, rotate each bone to the fitted child direction and set its length to the fitted distance. This is the step the
@@ -823,11 +824,15 @@ spike measured only indirectly; its accuracy is the main risk of the whole desig
 **As built (task #66).** Inputs: 1 your mesh, 2 the Arma skeleton, 3 the sample body (the spec said "outputs 1, 2, 3"; see
 the point below). `a3ob_core/rig/landmarks.py` (guess, symmetry, snap) and `fit.py` (the fit and the skinning of S').
 
-- **One output.** A text-authored Python-type SOP asset has exactly one output: with `Outputs: 3` in the asset, `geometry(1)`
-  inside the cook is the same geometry as output 0 (checked in hython 22.0.466), and a subnet asset with a network inside
-  cannot be authored as text from Indie (`docs/design/packaging-spike.md`, Q1/Q2). So the node has a menu `output`
-  (Fitted skeleton, Fitted sample body, Landmarks) and the artist uses one Rig Fit node per result. Open question for the
-  lead: a wrapper subnet asset with three outputs would need its network written as `Contents.mime` text by hand.
+- **One output, three named parts (D40).** A text-authored Python-type SOP asset has exactly one output: with `Outputs: 3`
+  in the asset, `geometry(1)` inside the cook is the same geometry as output 0 (checked in hython 22.0.466), and a subnet
+  asset with a network inside cannot be authored as text from Indie (`docs/design/packaging-spike.md`, Q1/Q2). The owner
+  decided (D40) on one output that holds A', S' and the landmarks as three packed geometry prims, each with the prim string
+  `a3ob_rig_part` = `fitted_skeleton`, `fitted_body` or `landmarks` (data model, rigging attributes). Weight Transfer
+  input 2 takes `fitted_body` by itself; Unpose (#67) will take `fitted_skeleton`; both through
+  `rig_weights.read_part`, which returns a geometry without the attribute as it is. The `show` menu (All, Fitted
+  skeleton, Fitted sample body, Landmarks) only sets the packed prim intrinsic `viewportlod` to hidden on the other parts,
+  so the data is the same for every value.
 - **Landmarks (14).** Point groups `lm_chin`, `lm_groin` (points on the skin, snapped) and `lm_shoulder|elbow|wrist|hip|knee|ankle_l|r`
   (joints, never snapped). `landmarks`: Auto-guess, From groups (all 14 needed) or Both (default; a group wins). `symmetry`:
   a pair of groups is averaged, one group is mirrored to the other side, two guesses are averaged, about the plane through

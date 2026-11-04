@@ -341,16 +341,18 @@ group the points around it, or add a point at the joint. Left is the +X side.</p
 </ul>
 <p>With <strong>Landmarks</strong> set to Both (the default) a landmark that has a group uses it, and the others are guessed from the
 shape of your mesh. A group always wins over the guess. Auto-guess ignores the groups; From groups needs all 14. The guess
-is a first try: set Output to Landmarks to see the points on your mesh, and correct a wrong one by making its group. A
+is a first try: set Show to Landmarks to see the points on your mesh, and correct a wrong one by making its group. A
 mesh with armour or a helmet confuses the guess most at the shoulders, elbows and wrists. <strong>Snap to Surface</strong> moves
 the chin and the groin onto your mesh. <strong>Symmetry</strong> makes left and right mirror each other.</p>
 <p>Then the skeleton is fitted from the pelvis down. Each joint is turned towards the landmarks below it, and given the length
 that puts them on the landmarks (<strong>Per bone length</strong>), or one size is used for the whole body
 (<strong>Whole body</strong>). The node says how far the joints were from their landmarks after the fit, and warns when that is
 more than 1 cm. The error of the fit is the error of everything after it, so look at that message. A Houdini node of this
-kind has one output, so <strong>Output</strong> picks the result: the fitted skeleton, the sample body posed to match your mesh
-(it keeps its weights and goes straight into Weight Transfer as the source body), or the landmarks. Use one Rig Fit node for each
-result you need, with the same inputs and settings. <strong>Refine</strong> is not available yet.</p>
+kind has one output, which holds all three results as named parts (packed primitives with the prim string
+<code>a3ob_rig_part</code>): <code>fitted_skeleton</code>, <code>fitted_body</code> (the sample body posed to match your mesh, with
+its weights) and <code>landmarks</code>. One Rig Fit node feeds Weight Transfer directly: connect its output to input 2 of
+Weight Transfer, which takes the fitted body from it by itself. <strong>Show</strong> only chooses which parts are drawn in the
+viewport; the output is the same for every choice. <strong>Refine</strong> is not available yet.</p>
 <p>P3D Export writes the weights as they are: it never changes them. Three switches on the LOD Rules tab of P3D Export and
 Validate warn when a point breaks the rules: <kbd class="ui-parm" data-node="a3ob_validate">At most 4 bones per point</kbd>,
 <kbd class="ui-parm" data-node="a3ob_validate">Bone weights add up to 1</kbd> (within 0.02) and

@@ -8,7 +8,11 @@ body to the user's mesh.
 Input 1 is the user's mesh in an A-pose (Y up, facing +Z like the sample), input 2 the Arma skeleton (Rig Skeleton), input 3
 the sample body with bone weights. The landmarks come from point groups on the mesh (``lm_*``), from a guess, or both.
 Then the skeleton is fitted down the hierarchy and the sample body is posed with it. The Arma skeleton itself is never
-changed (D37 Q7): output 1 is a working copy, ``A'``, for Weight Transfer and Unpose.
+changed (D37 Q7): the fitted skeleton ``A'`` is a working copy, for Weight Transfer and Unpose.
+
+The one output holds all three results as packed primitives (D40; a Python SOP writes only output 0). The prim string
+``a3ob_rig_part`` names each: ``fitted_skeleton``, ``fitted_body``, ``landmarks``. The Show menu only hides parts in the
+viewport. ``rig_weights.read_part`` takes a part out again.
 """
 
 import numpy as np
@@ -47,15 +51,19 @@ SPEC = NodeSpec(
                 "The sample body with its bone weights, for example Resolution 1 of the sample character from Extract "
                 "LOD. Its bones must be the ones of the skeleton."),
     parms=(
-        Parm("output", "Output", "menu", "skeleton",
-             "Which result this node gives. A Python-type Houdini node has one output, so use one Rig Fit node for each "
-             "result you need (give them the same inputs and settings).",
-             items=(("skeleton", "Fitted skeleton"), ("body", "Fitted sample body"), ("landmarks", "Landmarks")),
-             item_help=(("skeleton", "The skeleton moved into your mesh (a working copy, A'). Its joints are at your "
-                                     "landmarks and its transform holds the fitted rotation and size of each joint."),
-                        ("body", "The sample body, posed and sized to match your mesh (S'). It keeps its bone weights, "
-                                 "so it can go to Weight Transfer as the source body."),
-                        ("landmarks", "The landmarks that were used, as points with a name."))),
+        Parm("show", "Show", "menu", "all",
+             "Which results are drawn in the viewport. The node always gives all three results as one geometry, three "
+             "packed primitives named by the prim string a3ob_rig_part. This menu only hides the others from view; the "
+             "output is the same for every choice. Weight Transfer takes the fitted sample body from it by itself.",
+             items=(("all", "All"), ("skeleton", "Fitted skeleton"), ("body", "Fitted sample body"),
+                    ("landmarks", "Landmarks")),
+             item_help=(("all", "Draw the fitted skeleton, the fitted sample body and the landmarks."),
+                        ("skeleton", "Draw the skeleton moved into your mesh (fitted_skeleton, a working copy, A'). Its "
+                                     "joints are at your landmarks and its transform holds the fitted rotation and size "
+                                     "of each joint."),
+                        ("body", "Draw the sample body, posed and sized to match your mesh (fitted_body, S'). It keeps "
+                                 "its bone weights."),
+                        ("landmarks", "Draw the landmarks that were used, as points with a name (landmarks)."))),
         Parm("landmarks", "Landmarks", "menu", "both",
              "Where the landmarks come from. A landmark group is a point group on your mesh named lm_chin, lm_groin, "
              "lm_shoulder_l, lm_shoulder_r, lm_elbow_l, lm_elbow_r, lm_wrist_l, lm_wrist_r, lm_hip_l, lm_hip_r, "
@@ -142,13 +150,12 @@ def cook(node, report: Report) -> None:
     except ValueError as problem:
         raise UserError(format_problem(NAME, str(problem), "Check the landmarks")) from None
 
-    geo = node.geometry()
-    if values["output"] == "skeleton":
-        _write_skeleton(geo, node.inputGeometry(1), fitted)
-    elif values["output"] == "body":
-        _write_body(geo, sample_in, skin_points(positions_s, found.weights, rest, fitted))
-    else:
-        _write_landmarks(geo, user)
+    parts = {rig_weights.PART_SKELETON: _skeleton_geo(node.inputGeometry(1), fitted),
+             rig_weights.PART_BODY: _body_geo(sample_in, skin_points(positions_s, found.weights, rest, fitted)),
+             rig_weights.PART_LANDMARKS: _landmarks_geo(user)}
+    wanted = {"skeleton": rig_weights.PART_SKELETON, "body": rig_weights.PART_BODY, "landmarks": rig_weights.PART_LANDMARKS}
+    hidden = [name for name in parts if values["show"] != "all" and name != wanted[values["show"]]]
+    rig_weights.write_parts(node.geometry(), parts, hidden)
     _report(report, values, user, source, skeleton, fitted)
 
 
@@ -192,27 +199,32 @@ def _landmarks(mesh, mode: str, skin: np.ndarray, template, report: Report):
     return positions, source
 
 
-def _write_skeleton(geo, skeleton_in, fitted) -> None:
+def _skeleton_geo(skeleton_in, fitted):
     """A' : the input skeleton with fitted ``P`` and ``transform`` (rotation times size, as a row-vector 3x3)."""
+    geo = hou.Geometry()
     geo.copy(skeleton_in)
     geo.setPointFloatAttribValues("P", [float(v) for v in fitted.positions.reshape(-1)])
     if geo.findPointAttrib("transform") is None:
         geo.addAttrib(hou.attribType.Point, "transform", (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0))
     geo.setPointFloatAttribValues("transform", [float(v) for v in np.transpose(fitted.linear, (0, 2, 1)).reshape(-1)])
+    return geo
 
 
-def _write_body(geo, sample_in, points: np.ndarray) -> None:
+def _body_geo(sample_in, points: np.ndarray):
     """S': the sample body, posed. Everything else, the bone selections and ``a3ob_w_*`` included, stays."""
+    geo = hou.Geometry()
     geo.copy(sample_in)
     geo.setPointFloatAttribValues("P", [float(v) for v in points.reshape(-1)])
+    return geo
 
 
-def _write_landmarks(geo, user) -> None:
-    geo.clear()
+def _landmarks_geo(user):
+    geo = hou.Geometry()
     geo.addAttrib(hou.attribType.Point, "name", "")
     names = [name for name in LANDMARK_NAMES if name in user]
     geo.createPoints([tuple(float(v) for v in user[name]) for name in names])
     geo.setPointStringAttribValues("name", names)
+    return geo
 
 
 def _report(report: Report, values, user, source, skeleton, fitted) -> None:
@@ -234,7 +246,7 @@ def _report(report: Report, values, user, source, skeleton, fitted) -> None:
         report.warning(format_problem(NAME, "Refine is not available yet and was not applied"))
     guessed = [name for name in LANDMARK_NAMES if name in source and source[name] == "guess"]
     if guessed:
-        report.info("Guessed: %s. Look at the Landmarks output on your mesh; set a group to correct one." % ", ".join(guessed))
+        report.info("Guessed: %s. Look at the landmarks part (Show: Landmarks) on your mesh; set a group to correct one." % ", ".join(guessed))
 
 
 BUTTONS = {}

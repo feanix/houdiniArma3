@@ -119,12 +119,16 @@ class TestRigFitOnSamples(NodeTestCase):
             geo.createPointGroup(name).add(point)
         return make_source(self.network, geo)
 
-    def fit(self, mesh, output="skeleton", **parms):
+    def part(self, node, name):
+        """The geometry of one named part of the one output of a Rig Fit node."""
+        return rig_weights.read_part("test", node.geometry(), name)
+
+    def fit(self, mesh, show="all", **parms):
         node = self.network.createNode("a3ob_rig_fit")
         node.setInput(0, mesh)
         node.setInput(1, self.skeleton)
         node.setInput(2, self.body)
-        node.parm("output").set(output)
+        node.parm("show").set(show)
         for name, value in parms.items():
             node.parm(name).set(value)
         return node
@@ -142,7 +146,7 @@ class TestRigFitOnSamples(NodeTestCase):
         node = self.fit(mesh, "skeleton", snap=0)
         result = cook(node)
         self.assertEqual(result.errors, ())
-        geo = node.geometry()
+        geo = self.part(node, "fitted_skeleton")
         self.assertEqual(geo.pointStringAttribValues("name"), tuple(self.names))
         fitted = np.array(geo.pointFloatAttribValues("P")).reshape(-1, 3)
         error = np.linalg.norm(fitted - world_pos, axis=1)
@@ -159,7 +163,7 @@ class TestRigFitOnSamples(NodeTestCase):
         mats, world_pos, truth, posed, mesh = self.scenario()
         node = self.fit(mesh, "skeleton", snap=0)
         self.assertEqual(cook(node).errors, ())
-        matrices = np.array(node.geometry().pointFloatAttribValues("transform")).reshape(-1, 3, 3)
+        matrices = np.array(self.part(node, "fitted_skeleton").pointFloatAttribValues("transform")).reshape(-1, 3, 3)
         for number in (0, self.index["leftarm"], self.index["rightforearm"], self.index["leftleg"]):
             linear = matrices[number].T  # the node writes the row-vector form
             size = float(np.cbrt(np.linalg.det(linear)))
@@ -174,7 +178,7 @@ class TestRigFitOnSamples(NodeTestCase):
         node = self.fit(mesh, "body", snap=0)
         result = cook(node)
         self.assertEqual(result.errors, ())
-        geo, source = node.geometry(), self.body.geometry()
+        geo, source = self.part(node, "fitted_body"), self.body.geometry()
         self.assertEqual(sorted(g.name() for g in geo.pointGroups()), sorted(g.name() for g in source.pointGroups()))
         self.assertEqual(sorted(a.name() for a in geo.pointAttribs() if a.name().startswith("a3ob_w_")),
                          sorted(a.name() for a in source.pointAttribs() if a.name().startswith("a3ob_w_")))
@@ -207,7 +211,7 @@ class TestRigFitOnSamples(NodeTestCase):
         mats, world_pos, truth, posed, mesh = self.scenario()
         node = self.fit(mesh, "landmarks", snap=0)
         self.assertEqual(cook(node).errors, ())
-        geo = node.geometry()
+        geo = self.part(node, "landmarks")
         names = list(geo.pointStringAttribValues("name"))
         self.assertEqual(names, list(LANDMARK_NAMES))
         for name, point in zip(names, geo.points()):
@@ -225,14 +229,14 @@ class TestRigFitOnSamples(NodeTestCase):
         result = cook(node)
         self.assertEqual(result.errors, ())
         self.assertIn("2 from groups, 12 guessed", "\n".join(result.messages))
-        point = {n: np.array(p.position()) for n, p in zip(node.geometry().pointStringAttribValues("name"), node.geometry().points())}
+        point = {n: np.array(p.position()) for n, p in zip(self.part(node, "landmarks").pointStringAttribValues("name"), self.part(node, "landmarks").points())}
         self.assertLess(float(np.linalg.norm(point["lm_knee_l"] - truth["lm_knee_l"])), 0.002)
         # Auto-guess ignores the groups
         node = self.fit(partial, "landmarks", landmarks="guess", snap=0)
         result = cook(node)
         self.assertEqual(result.errors, ())
         self.assertIn("ignored", "\n".join(result.messages))
-        point = {n: np.array(p.position()) for n, p in zip(node.geometry().pointStringAttribValues("name"), node.geometry().points())}
+        point = {n: np.array(p.position()) for n, p in zip(self.part(node, "landmarks").pointStringAttribValues("name"), self.part(node, "landmarks").points())}
         self.assertGreater(float(np.linalg.norm(point["lm_knee_l"] - truth["lm_knee_l"])), 0.01)
 
     def test_the_auto_guess_finds_the_joints_of_the_sample_itself_and_of_a_bigger_copy(self):
@@ -241,7 +245,7 @@ class TestRigFitOnSamples(NodeTestCase):
             posed = self.posed_points(mats)
             node = self.fit(self.user_mesh(posed), "landmarks", snap=0)
             self.assertEqual(cook(node).errors, ())
-            geo = node.geometry()
+            geo = self.part(node, "landmarks")
             found = {n: np.array(p.position()) for n, p in zip(geo.pointStringAttribValues("name"), geo.points())}
             truth = self.true_landmarks(mats, world_pos)
             worst = max((float(np.linalg.norm(found[n] - truth[n])), n) for n in LANDMARK_NAMES
@@ -264,9 +268,39 @@ class TestRigFitOnSamples(NodeTestCase):
         self.assertEqual(result.errors, ())
         self.assertIn("Refine is not available", " ".join(result.warnings))
 
-    def test_the_fitted_body_goes_straight_into_weight_transfer(self):
+    def test_the_output_holds_the_three_parts_by_name_and_show_only_hides(self):
         mats, world_pos, truth, posed, mesh = self.scenario()
-        body = self.fit(mesh, "body", snap=0)
+        outputs = {}
+        for show in ("all", "skeleton", "body", "landmarks"):
+            node = self.fit(mesh, show, snap=0)
+            self.assertEqual(cook(node).errors, ())
+            geo = node.geometry()
+            prims = geo.prims()
+            self.assertEqual([p.attribValue("a3ob_rig_part") for p in prims], ["fitted_skeleton", "fitted_body", "landmarks"])
+            self.assertTrue(all(isinstance(p, hou.PackedPrim) for p in prims))
+            hidden = [p.attribValue("a3ob_rig_part") for p in prims if p.intrinsicValue("viewportlod") == "hidden"]
+            wanted = {"all": [], "skeleton": ["fitted_body", "landmarks"], "body": ["fitted_skeleton", "landmarks"],
+                      "landmarks": ["fitted_skeleton", "fitted_body"]}[show]
+            self.assertEqual(hidden, wanted)
+            outputs[show] = {name: (self.part(node, name).pointFloatAttribValues("P"),
+                                    len(self.part(node, name).prims()), len(self.part(node, name).pointGroups()))
+                             for name in ("fitted_skeleton", "fitted_body", "landmarks")}
+        for show in ("skeleton", "body", "landmarks"):
+            self.assertEqual(outputs[show], outputs["all"], show)
+
+    def test_a_plain_geometry_is_its_own_part_and_a_missing_part_is_an_error(self):
+        self.assertIs(rig_weights.read_part("test", self.body.geometry(), "fitted_body").__class__, hou.Geometry)
+        self.assertEqual(len(rig_weights.read_part("test", self.body.geometry(), "fitted_body").points()),
+                         len(self.body.geometry().points()))
+        from a3ob_houdini.errors import UserError
+        geo = hou.Geometry()
+        rig_weights.write_parts(geo, {"landmarks": hou.Geometry()})
+        with self.assertRaises(UserError):
+            rig_weights.read_part("test", geo, "fitted_body")
+
+    def test_the_fit_output_goes_straight_into_weight_transfer(self):
+        mats, world_pos, truth, posed, mesh = self.scenario()
+        body = self.fit(mesh, "all", snap=0)
         transfer = self.network.createNode("a3ob_weight_transfer")
         transfer.setInput(0, mesh)
         transfer.setInput(1, body)

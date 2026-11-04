@@ -11,7 +11,7 @@ Your own character has its own size and proportions, and the Arma skeleton and t
 
 The fit starts from landmarks, 14 named points of the body. Your mesh should stand upright (Y up), face +Z like the sample, and be in an A-pose with the arms away from the body. You can set a landmark with a point group on your mesh, named lm_chin, lm_groin, lm_shoulder_l, lm_shoulder_r, lm_elbow_l, lm_elbow_r, lm_wrist_l, lm_wrist_r, lm_hip_l, lm_hip_r, lm_knee_l, lm_knee_r, lm_ankle_l and lm_ankle_r. The average of the points of a group is the landmark. Left is the +X side. The chin and the groin are points on the skin (the chin is the tip, the groin the highest point between the legs); the others are joints, inside the body: group the points around the joint, or add a point at the joint. Landmarks that have no group are guessed from the shape of the mesh, and a group always wins over the guess. The guess is a first try: show the landmarks and correct the landmarks that are wrong.
 
-The fit goes down the skeleton from the pelvis. Each joint is turned towards the landmarks below it and given the length that puts them on the landmarks. The message of the node says how far the joints were from their landmarks after the fit, and warns when that is more than 1 cm. The node gives one of three results, chosen with Output: the fitted skeleton, the sample body posed to match your mesh (with its weights), or the landmarks as points with a name. Use one Rig Fit node for each result you need, with the same inputs and settings.
+The fit goes down the skeleton from the pelvis. Each joint is turned towards the landmarks below it and given the length that puts them on the landmarks. The message of the node says how far the joints were from their landmarks after the fit, and warns when that is more than 1 cm. The node has one output that holds three results as packed primitives, named by the prim string a3ob_rig_part: fitted_skeleton, fitted_body (the sample body posed to match your mesh, with its weights) and landmarks (points with a name). Connect it to input 2 of Weight Transfer as it is: Weight Transfer takes the fitted body from it. The Show menu only decides which results are drawn in the viewport; the output is the same for every choice.
 
 @inputs
 
@@ -26,21 +26,24 @@ Sample body:
 
 @parameters
 
-Output:
-    #id: output
+Show:
+    #id: show
 
-    Which result this node gives. A Python-type Houdini node has one output, so use one Rig Fit node for each result you need (give them the same inputs and settings).
+    Which results are drawn in the viewport. The node always gives all three results as one geometry, three packed primitives named by the prim string a3ob_rig_part. This menu only hides the others from view; the output is the same for every choice. Weight Transfer takes the fitted sample body from it by itself.
 
-    Type: Menu. Default: Fitted skeleton.
+    Type: Menu. Default: All.
+
+    All:
+        Draw the fitted skeleton, the fitted sample body and the landmarks.
 
     Fitted skeleton:
-        The skeleton moved into your mesh (a working copy, A'). Its joints are at your landmarks and its transform holds the fitted rotation and size of each joint.
+        Draw the skeleton moved into your mesh (fitted_skeleton, a working copy, A'). Its joints are at your landmarks and its transform holds the fitted rotation and size of each joint.
 
     Fitted sample body:
-        The sample body, posed and sized to match your mesh (S'). It keeps its bone weights, so it can go to Weight Transfer as the source body.
+        Draw the sample body, posed and sized to match your mesh (fitted_body, S'). It keeps its bone weights.
 
     Landmarks:
-        The landmarks that were used, as points with a name.
+        Draw the landmarks that were used, as points with a name (landmarks).
 
 Landmarks:
     #id: landmarks

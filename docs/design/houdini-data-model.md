@@ -162,10 +162,12 @@ exporter ignores all of them (they are not groups and not TAGGs).
 | `a3ob_rig_origin` | point int32 | absent (→ unknown) | Where the weights of a point came from, written by Weight Transfer: 0 no weight, 1 copied from the source body, 2 filled in (inpainted), 3 rigid piece, 4 loose (non-rigid) piece. |
 | `a3ob_rig_piece` | point int32 | absent | The number of the rigid or loose piece a point belongs to (rigid pieces first, from 0), −1 for a point outside the pieces. Written by Weight Transfer. |
 | `a3ob_rig_bone` | point string | absent (→ none) | Input to Weight Transfer: a bone name (any case) on a point of a rigid piece. The most common name among the points of the piece is the piece's one bone and wins over the choice. |
+| `a3ob_rig_part` | **prim** string | absent (→ not a Rig Fit output) | Written by Rig Fit (task #66, D40) on each of the three packed primitives of its one output: `fitted_skeleton`, `fitted_body` or `landmarks`. Weight Transfer input 2 (and Unpose, #67) read the part they need with `rig_weights.read_part`; a geometry without the attribute is used as it is. The Show menu of Rig Fit sets only the packed prim intrinsic `viewportlod` (hidden), never the data. |
 
-Rig Fit (task #66) reads **landmark point groups** on the user's mesh and writes none of the attributes above. A landmark
+Rig Fit (task #66) reads **landmark point groups** on the user's mesh and writes none of the attributes above except
+`a3ob_rig_part`. A landmark
 group is named `lm_<what>[_l|_r]` (14 names: `lm_chin`, `lm_groin`, `lm_shoulder_l|r`, `lm_elbow_l|r`, `lm_wrist_l|r`,
-`lm_hip_l|r`, `lm_knee_l|r`, `lm_ankle_l|r`); the average of its points is the landmark. Its Landmarks output is points with
+`lm_hip_l|r`, `lm_knee_l|r`, `lm_ankle_l|r`); the average of its points is the landmark. Its `landmarks` part is points with
 a string `name` (the same names). The fitted skeleton keeps the Rig Skeleton layout; its `transform` holds rotation times
 size per joint (row-vector 3x3).
 

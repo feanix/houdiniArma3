@@ -66,10 +66,11 @@ NODE_INTRO = {
         "the landmarks that are wrong.",
         "The fit goes down the skeleton from the pelvis. Each joint is turned towards the landmarks below it and given "
         "the length that puts them on the landmarks. The message of the node says how far the joints were from their "
-        "landmarks after the fit, and warns when that is more than 1 cm. The node gives one of three results, chosen "
-        "with Output: the fitted skeleton, the sample body posed to match your mesh (with its weights), or the "
-        "landmarks as points with a name. Use one Rig Fit node for each result you need, with the same inputs and "
-        "settings.",
+        "landmarks after the fit, and warns when that is more than 1 cm. The node has one output that holds three "
+        "results as packed primitives, named by the prim string a3ob_rig_part: fitted_skeleton, fitted_body (the "
+        "sample body posed to match your mesh, with its weights) and landmarks (points with a name). Connect it to "
+        "input 2 of Weight Transfer as it is: Weight Transfer takes the fitted body from it. The Show menu only "
+        "decides which results are drawn in the viewport; the output is the same for every choice.",
     ),
     "assemble_lods": (
         "A P3D file keeps several LODs (versions of the model for different viewing distances) together. After you "
