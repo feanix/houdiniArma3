@@ -1,0 +1,96 @@
+= Weight Transfer =
+
+#type: node
+#context: sop
+#internal: a3ob_weight_transfer
+#tags: arma, p3d
+
+"""Copies the bone weights of a source body (the sample character) onto your mesh, with layers for rigid and loose parts."""
+
+Copies the bone weights of a source body (for example Bohemia's sample character) onto your mesh. Each point of your mesh takes the weights of the closest point on the body when it is near enough and faces the same way. The points that don't match are filled in smoothly from their neighbours.
+
+Three groups let you treat parts of the mesh differently. Rigid parts (a helmet) get one bone or one fixed blend per piece. Loose parts (a bandolier) take the weights under them and are smoothed along the piece. Everything else is the first pass. A point string a3ob_rig_bone on a rigid piece names its bone. The result is bone selections in the model.cfg spelling, with a3ob_rig_origin (where each weight came from) and a3ob_rig_piece. Run Weight Cleanup after it.
+
+@inputs
+
+Your mesh:
+    The mesh that gets the weights. It should lie on top of the source body (fit it first).
+
+Source body:
+    The body with bone weights: bone selections (point groups with a3ob_w weights), for example the sample character from Extract LOD.
+
+Skeleton:
+    The skeleton, for example from Rig Skeleton. Its joint names decide which selections are bones and how they are spelled; its hierarchy says where a twist bone's weight goes.
+
+@parameters
+
+First Pass:
+    #id: firstpass
+
+    The base mesh (for example the uniform). It gets its weights straight from the source body. Empty means every point that is in neither of the two groups below.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
+
+Rigid Parts:
+    #id: rigid
+
+    Parts that must not stretch (a helmet, a pouch). Each connected piece gets one bone, or one fixed blend, from the first-pass points it sits on.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
+
+Loose Parts:
+    #id: nonrigid
+
+    Parts that bend (a bandolier, a cable). Each point takes the weights of the first pass under it, and the weights are smoothed along the piece.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
+
+Match Distance:
+    #id: distance
+
+    How far from the source body a point may be and still copy its weights, as a share of the size of your mesh (the diagonal of its bounding box). Points that are farther are filled in from their neighbours.
+
+    Type: Number. Default: 0.05. Allowed: At least 0; no upper limit.
+
+Match Angle:
+    #id: angle
+
+    How much the surface direction may differ, in degrees, for a point to copy weights. A point that faces another way (a sleeve against the torso) is filled in instead.
+
+    Type: Number. Default: 35. Allowed: From 0 to 180.
+
+Rigid Parts Use:
+    #id: rigid_mode
+
+    How a rigid piece is weighted.
+
+    Type: Menu. Default: Dominant bone.
+
+    Dominant bone:
+        The whole piece follows the one bone with the most weight under it (weight 1).
+
+    Fixed blend:
+        Every point gets the same mix of bones, the average under the piece.
+
+Merge Twist Bones:
+    #id: merge_twist
+
+    For a rigid piece, the weight of a twist bone (a name ending in Roll) counts for the next bone down the chain that is not a twist, so a piece on the elbow follows the forearm. Only used with Dominant bone.
+
+    Type: On or off. Default: On.
+
+Smoothing Passes:
+    #id: smooth
+
+    How many times the weights of a loose part are averaged with their neighbours along the piece.
+
+    Type: Whole number. Default: 8. Allowed: From 0 to 100.
+
+Smallest Piece:
+    #id: minpiece
+
+    A piece with fewer points than this is ignored: it gets no weights from the rigid or loose layer. Loose pieces of the source body this small (the sample's proxy triangles) are not used either.
+
+    Type: Whole number. Default: 10. Allowed: At least 1; no upper limit.
+
+The full page for this node is docs/user/reference/a3ob_weight_transfer.html in the A3OB folder. Open it in a web browser.

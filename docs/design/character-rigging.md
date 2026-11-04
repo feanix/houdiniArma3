@@ -820,7 +820,7 @@ group in this add-on). The fit is a rigid fit down the hierarchy: from
 the pelvis, rotate each bone to the fitted child direction and set its length to the fitted distance. This is the step the
 spike measured only indirectly; its accuracy is the main risk of the whole design (section 2.6, point 3).
 
-**Weight Transfer** (inputs: 1 user mesh; 2 fitted sample body S')
+**Weight Transfer** (inputs: 1 user mesh; 2 fitted sample body S'; 3 skeleton)
 
 | Parameter | Type, default | Meaning |
 |---|---|---|
@@ -834,9 +834,29 @@ spike measured only indirectly; its accuracy is the main risk of the whole desig
 | `smooth` | int, 8 | Smoothing passes along a non-rigid piece. |
 | `minpiece` | int, 10 | Pieces under this many points are ignored (as the spike). |
 
-An optional point string attribute `a3ob_rig_bone` (proposal) on a rigid piece names its bone and wins over the choice.
+An optional point string attribute `a3ob_rig_bone` on a rigid piece names its bone and wins over the choice.
 Output: weights as point groups and `a3ob_w_*`, plus `a3ob_rig_origin` and `a3ob_rig_piece`. The numpy transfer of section
 2.3, with the native VEX closest-point step available as a later speed-up.
+
+**As built (task #65).** The node has three inputs: 1 the user mesh, 2 the source body, 3 the skeleton (Rig Skeleton
+output). The skeleton gives the bone names, the `model.cfg` spelling of the written selections and the bone chain for the
+twist merge (the first child that is not a `...Roll`, going down). `rigid_mode` is `dominant` or `blend`; `distance` is a
+share of the bounding-box diagonal of the points in the three groups. The maths is `a3ob_core/rig/transfer.py`. Details
+the table does not say:
+
+- A point in `rigid` and `nonrigid` is rigid; `firstpass` never takes a point of the other two groups. With `firstpass`
+  given, a point in no group keeps the weights it had (`a3ob_rig_origin` 0). Points that only a packed prim uses (proxies)
+  are skipped as in Weight Cleanup.
+- The first pass and its inpainting see only the first-pass points and the polygons between them, so the other groups
+  cannot change it. A first-pass piece with no match at all takes the weights of its closest source point without the
+  thresholds (counted as "no match anywhere near" in the message).
+- The source body ignores pieces under `minpiece` points (the sample's proxy triangles).
+- A rigid piece takes the area-weighted average of the first-pass weights at the closest points of its surface, using
+  only points within the distance limit. `a3ob_rig_bone` names win per piece (the most common name). A loose piece takes
+  the interpolated first-pass weights per point, then `smooth` passes of half-way averaging along its edges.
+- Weights are not cleaned: run Weight Cleanup next. Selections already on the mesh stay for points no layer touched.
+- Measured (tests 2.1 and 2.2): same topology without scale, 3125 points, L1 mean 0.064 and heaviest bone changed on
+  5.0 % of the points (the spike: 0.064 and 5.1 %); a 12476-point target takes about 1.4 s in hython.
 
 **Unpose** (inputs: 1 mesh with cleaned weights; 2 fitted skeleton A'; 3 Arma skeleton A)
 

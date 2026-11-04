@@ -49,6 +49,8 @@ class Skeleton:
     rotations: List[Optional[tuple]]
     #: The detail ``a3ob_rig_discrete`` (1 or 0), or None when the skeleton does not carry it.
     discrete: Optional[int]
+    #: The parent joint number of each joint (-1 for a root), from the polylines that run parent to child.
+    parents: List[int] = dataclasses.field(default_factory=list)
 
 
 @dataclasses.dataclass
@@ -76,8 +78,12 @@ def read_skeleton(node_name: str, geo) -> Skeleton:
     rotations = [tuple(p.attribValue("transform")) if transform is not None and transform.size() == 9 else None
                  for p in joints]
     discrete = geo_edit.read_detail(geo, DISCRETE_ATTRIB)
+    parents = [-1] * len(joints)
+    for prim in geo.prims():
+        if len(prim.vertices()) == 2:
+            parents[prim.vertex(1).point().number()] = prim.vertex(0).point().number()
     return Skeleton([p.attribValue("name") for p in joints], [tuple(p.position()) for p in joints], rotations,
-                    None if discrete is None else int(discrete))
+                    None if discrete is None else int(discrete), parents)
 
 
 def read_selections(node_name: str, geo, bones) -> BoneSelections:

@@ -1,0 +1,112 @@
+# Dialog script for a3ob_weight_transfer, version 1
+
+{
+    name	a3ob_weight_transfer
+    script	a3ob_weight_transfer
+    label	"Weight Transfer"
+
+    help {
+	"Copies the bone weights of a source body (the sample character) onto your mesh, with layers for rigid and loose parts."
+    }
+
+    inputlabel	1	"Your mesh"
+    inputlabel	2	"Source body"
+    inputlabel	3	"Skeleton"
+
+    parm {
+	name	"firstpass"
+	label	"First Pass"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('weight_transfer', 'firstpass', kwargs)" ]
+	    language python
+	}
+	help	"The base mesh (for example the uniform). It gets its weights straight from the source body. Empty means every point that is in neither of the two groups below."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"rigid"
+	label	"Rigid Parts"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('weight_transfer', 'rigid', kwargs)" ]
+	    language python
+	}
+	help	"Parts that must not stretch (a helmet, a pouch). Each connected piece gets one bone, or one fixed blend, from the first-pass points it sits on."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"nonrigid"
+	label	"Loose Parts"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('weight_transfer', 'nonrigid', kwargs)" ]
+	    language python
+	}
+	help	"Parts that bend (a bandolier, a cable). Each point takes the weights of the first pass under it, and the weights are smoothed along the piece."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"distance"
+	label	"Match Distance"
+	type	float
+	size	1
+	default	{ "0.05" }
+	range	{ 0! 10 }
+	help	"How far from the source body a point may be and still copy its weights, as a share of the size of your mesh (the diagonal of its bounding box). Points that are farther are filled in from their neighbours."
+    }
+    parm {
+	name	"angle"
+	label	"Match Angle"
+	type	float
+	size	1
+	default	{ "35.0" }
+	range	{ 0! 180! }
+	help	"How much the surface direction may differ, in degrees, for a point to copy weights. A point that faces another way (a sleeve against the torso) is filled in instead."
+    }
+    parm {
+	name	"rigid_mode"
+	label	"Rigid Parts Use"
+	type	string
+	default	{ "dominant" }
+	menu {
+	    "dominant"	"Dominant bone"
+	    "blend"	"Fixed blend"
+	}
+	help	"How a rigid piece is weighted."
+    }
+    parm {
+	name	"merge_twist"
+	label	"Merge Twist Bones"
+	type	toggle
+	default	{ "1" }
+	help	"For a rigid piece, the weight of a twist bone (a name ending in Roll) counts for the next bone down the chain that is not a twist, so a piece on the elbow follows the forearm. Only used with Dominant bone."
+    }
+    parm {
+	name	"smooth"
+	label	"Smoothing Passes"
+	type	integer
+	size	1
+	default	{ "8" }
+	range	{ 0! 100! }
+	help	"How many times the weights of a loose part are averaged with their neighbours along the piece."
+    }
+    parm {
+	name	"minpiece"
+	label	"Smallest Piece"
+	type	integer
+	size	1
+	default	{ "10" }
+	range	{ 1! 10 }
+	help	"A piece with fewer points than this is ignored: it gets no weights from the rigid or loose layer. Loose pieces of the source body this small (the sample's proxy triangles) are not used either."
+    }
+}
