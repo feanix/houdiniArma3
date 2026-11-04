@@ -436,8 +436,8 @@ class TestOnSamples(NodeTestCase):
         self.assertEqual(result.errors, ())
         after = selection_weights(node.geometry(), bones)
         two = np.abs(before.sum(axis=1) - 2.0) < 1e-5
-        # The design text says 29 points; 21 sum to 2.0 over the 64 joints of this skeleton (the others are weighted
-        # to bones that have no joint here, such as weapon).
+        # 29 points are in both Spine3 and Head; 21 of them are 100 % in each (sum 2.0). The other 8 have 0.476 or 0.5
+        # in Spine3 and sum to 1.476 or 1.5 (task #63 checked this in the file, not a missing joint).
         self.assertEqual(int(two.sum()), 21)
         np.testing.assert_array_equal(np.rint(after[two] * 254).sum(axis=1), np.full(21, 254))
         self.assertLessEqual(float(np.abs(np.array(node.geometry().pointFloatAttribValues("a3ob_rig_changed"))[two] - 1.0).max()), 1e-5)

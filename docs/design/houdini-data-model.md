@@ -854,6 +854,12 @@ decoded P3D name (§7.3), case-insensitively, at the **start** of the name (A3OB
 | `T2-PATH-ENTRY` | Paths | At least one group is named `in<digits>`. | `has_entry`, `:571-577` (strict there) |
 | `T2-PATH-POS` | Paths | The same test as `T2-PATH-ENTRY`, with the message "no position points". | `has_position`, `:579-585` (optional there); see the note below |
 
+| `T2-WGT4` | Visual, View - Gunner/Pilot/Cargo, Shadow (all four) | No point is a member, with a weight above 0, of more than 4 bone selections. Not an A3OB rule (task #63, D37). Message: use Weight Cleanup. | none (`character-rigging.md` 3.2, 4.4) |
+| `T2-WGTSUM` | the same as `T2-WGT4` | The weights of the bone selections of a point (a member without `a3ob_w_<group>` has 1.0) add up to 1 within one step of 1/254, for every point that has a bone weight. Not an A3OB rule. | none |
+| `T2-WGTNONE` | the same as `T2-WGT4` | Every point has a weight above 0 in at least one bone selection. Not an A3OB rule. A member with weight 0 (byte 255) is no weight. | none |
+
+**Bone selections for the weight rules (task #63).** P3D Export and Validate have no skeleton input, so a selection is a bone selection when its decoded name equals, ignoring case, a bone of `OFP2_ManSkeleton`: the 103 names built into `p3d_export/rig_bones.py` (A3OB `utilities/data.py` `ofp2_manskeleton`; a test checks them against the Samples `model.cfg`). A LOD with no such selection is not checked; a model with another skeleton is not checked either. The three rules only look at the LOD types above (the visual, view and shadow LODs a character is weighted in, `character-rigging.md` 3.3), never at Memory, Geometry or Fire Geometry. Points that only a packed prim uses are left out. One warning per LOD and rule, naming the first point and the count. A file read from the Samples trips `T2-WGTSUM` in every weighted LOD (many points add up to 0.992); Weight Cleanup fixes that.
+
 Mass rules (`T2-MASS`, `T2-MASSALL`) apply to the plain Geometry LOD only (D16, amending D14 Q-3), as in A3OB: only `ValidatorLODGeometry.conditions` lists `has_mass` (`:292-311`), and the subtype validator for Buoyancy and PhysX (`ValidatorLODGeometrySubtype`, `:314`) has no mass rule. Revisit if the Arma 3 Samples show mass on Buoyancy or PhysX LODs.
 
 **Notes.**

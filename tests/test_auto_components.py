@@ -107,7 +107,9 @@ class TestFixtures(unittest.TestCase):
             for auto in (False, True):
                 report = messages.Report()
                 p3d_export.run([geo], ExportOptions(auto_components=auto), report)
-                self.assertEqual(report.texts(messages.WARNING), expected[name], (name, auto))
+                # Task #63: the character fixture has raw bone weights, so the new weight rules speak; they have their own tests.
+                texts = [t for t in report.texts(messages.WARNING) if "(rule T2-WGT" not in t]
+                self.assertEqual(texts, expected[name], (name, auto))
 
     def test_lossless_still_exports_both_fixtures_byte_identically(self):
         for name in hs.FIXTURE_NAMES:
