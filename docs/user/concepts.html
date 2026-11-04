@@ -172,7 +172,12 @@ add-on does not use it by accident. The Mass node can copy between the two if yo
 <li><strong>Textures and materials.</strong> Each polygon has two text attributes, <code>a3ob_texture</code> and
   <code>a3ob_material</code> (the rvmat file). They hold the text exactly as in the file, including procedural textures
   such as <code>#(argb,8,8,3)color(...)</code>. The <kbd class="ui-node">Material Assign</kbd> node sets them for a group of
-  polygons. Houdini's own material attributes are not used. A run of polygons that share a texture and material is a
+  polygons. Only the toggle <kbd class="ui-parm" data-node="a3ob_material_assign">Show in Viewport</kbd> touches Houdini's
+  own material attribute (<code>shop_materialpath</code>), to show the texture in the viewport; the export ignores it.
+  A <code>.paa</code> is shown from a <code>.png</code>, <code>.tga</code> or <code>.tif</code> of the same name next to it,
+  else from a picture decoded from the <code>.paa</code>. The rvmat is not shown. On export, every texture path that does
+  not end in <code>.paa</code> is written with <code>.paa</code> (<code>camo1_co.png</code> becomes
+  <code>camo1_co.paa</code>); the <code>.paa</code> itself must exist when you build the add-on, and making it is your job. A run of polygons that share a texture and material is a
   <em>section</em> in Object Builder. Sections are decided by polygon order, so assigning materials to scattered polygons
   splits them. The <kbd class="ui-parm" data-node="a3ob_p3d_export">Sort Sections</kbd> option groups them on export.</li>
 <li><strong>UVs.</strong> UV sets are vertex attributes: <code>uv</code> for the first set, then <code>uv2</code>,

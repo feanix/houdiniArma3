@@ -3,12 +3,13 @@
 # houdiniArma3: a Houdini port of Arma 3 Object Builder (A3OB).
 """The Material Assign node (ux-tools.md section 5.6): texture and material (rvmat) on a set of polygons.
 
-It copies its input and writes only the primitive strings ``a3ob_texture`` and ``a3ob_material`` (spec 5 and 12), on
-polygons. Houdini's ``shop_materialpath`` and ``material`` are never touched. File paths get ``\\`` for ``/``
+It copies its input and writes the primitive strings ``a3ob_texture`` and ``a3ob_material`` (spec 5 and 12), on
+polygons. Houdini's ``material`` is never touched; ``shop_materialpath`` only through "Show in Viewport"
+(``viewport_material``, task #54), which the P3D export ignores. File paths get ``\\`` for ``/``
 (D14 Q-6); procedural and custom texture text is copied as typed.
 """
 
-from .. import geo_edit, material_text, names, settings
+from .. import geo_edit, material_text, names, settings, viewport_material
 from ..errors import UserError
 from ..messages import Report, format_problem
 from ..params import NodeSpec, Parm, read_parms
@@ -47,9 +48,10 @@ SPEC = NodeSpec(
              items=(("file", "File"), ("color", "Color"), ("custom", "Custom texture text")),
              enable_when=_TEX_ON),
         Parm("texture", "Texture File", "file", "",
-             "The texture file (.paa, .tga or .png). Slashes are written as backslashes. When you export with "
-             "Relative Paths on, the path is mapped to the in-game path (see the Relative Paths tooltip of "
-             "P3D Export).",
+             "The texture file (.paa, .tga or .png). Slashes are written as backslashes. The export writes every "
+             "ending but .paa as .paa (camo1_co.png becomes camo1_co.paa); making that .paa is up to you. When you "
+             "export with Relative Paths on, the path is mapped to the in-game path (see the Relative Paths tooltip "
+             "of P3D Export).",
              file_pattern="*.paa *.tga *.png", show_when=(("texsource", ("file",)),), enable_when=_TEX_ON),
         Parm("texcolor", "Color", "color", (1.0, 1.0, 1.0, 1.0),
              "The colour of the generated texture, with alpha (each 0 to 1). Click the swatch to pick one.",
@@ -87,6 +89,14 @@ SPEC = NodeSpec(
              "Copies a frequently used material from the common data file into Material File and switches Set "
              "Material on. Add your own in the common data file of the Project root and presets tool.",
              action="fillmat", menu_action="commonmat", enable_when=_MAT_ON),
+        Parm("showviewport", "Show in Viewport", "toggle", True,
+             "On: the polygons get a Houdini material that shows their texture in the viewport (one material per "
+             "texture, in the network a3ob_viewport_materials inside the Geometry object). It only changes what "
+             "Houdini shows; the P3D export ignores it. A .paa is shown from a .png, .tga or .tif of the same name "
+             "next to it, else from a picture decoded from the .paa. A plain colour texture is shown as that "
+             "colour. The material (rvmat) is not shown. In-game paths are only shown when the file is found under "
+             "the project root. Materials that are no longer used stay in the network; they are harmless. "
+             "Off: the polygons keep the Houdini material they came with."),
     ),
     on_loaded=True,
 )
@@ -179,6 +189,10 @@ def cook(node, report: Report) -> None:
     if material is not None:
         _set_strings(geo, "a3ob_material", numbers, material)
     report.info("Set on %d polygons." % len(polygons))
+    if values["showviewport"]:
+        current = settings.load()[0]
+        viewport_material.apply(node, geo, numbers, report, settings.effective_root(current),
+                                current.paa_cache_dir or None)
 
 
 def _common_items(section: str):

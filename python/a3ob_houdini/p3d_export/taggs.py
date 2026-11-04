@@ -20,7 +20,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 from a3ob_core import binary, p3d
 from a3ob_core.p3d import P3DError
 
-from .. import messages, names
+from .. import material_text, messages, names
 from ..permutation import Permutation, remap_payload
 from .data import LodData
 from .mesh_build import FileMesh
@@ -43,7 +43,10 @@ class Item:
 
 def output_text(text: str, options: ExportOptions, mapper: Optional[PathMapper] = None, kind: str = "texture",
                 label: Optional[str] = None) -> str:
-    """Texture and material paths: mapped to the game path first, then lowercase (spec 5 "Paths", task #51)."""
+    """Texture and material paths: a texture ending but .paa becomes .paa (task #54, D29), mapped to the game path,
+    then lowercase (spec 5 "Paths", task #51)."""
+    if kind == "texture":
+        text = material_text.paa_texture(text)
     if options.relative_paths:
         text = (mapper or PathMapper(options.project_root)).map_path(text, kind, label)
     return text.lower() if options.lowercase else text

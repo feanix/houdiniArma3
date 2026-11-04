@@ -15,9 +15,10 @@
 # <https://www.gnu.org/licenses/>.
 """The text rules of the Material Assign node, without ``hou`` (ux-tools.md section 5.6, spec 5 "Paths" and 12)."""
 
+import ntpath
 from typing import Sequence
 
-__all__ = ["COLOR_TYPES", "KNOWN_EXTENSIONS", "normalise_path", "color_texture", "has_known_extension"]
+__all__ = ["COLOR_TYPES", "KNOWN_EXTENSIONS", "normalise_path", "color_texture", "paa_texture", "has_known_extension"]
 
 #: A3OB's procedural texture types (``utilities/data.py`` ``enum_texture_types``): ``(token, description)``.
 COLOR_TYPES = (
@@ -58,6 +59,17 @@ def normalise_path(path: str) -> str:
 def color_texture(color: Sequence[float], color_type: str) -> str:
     """A3OB's procedural colour texture: ``#(argb,8,8,3)color(r,g,b,a,TYPE)`` with three decimals."""
     return "#(argb,8,8,3)color(%.3f,%.3f,%.3f,%.3f,%s)" % (color[0], color[1], color[2], color[3], color_type)
+
+
+def paa_texture(text: str) -> str:
+    """The texture path as the game reads it (task #54, D29): any ending but ``.paa`` becomes ``.paa``
+    (``camo1_co.png`` -> ``camo1_co.paa``). Procedural textures (``#...``), empty text and paths with no ending stay."""
+    if not text or text.startswith("#"):
+        return text
+    stem, ending = ntpath.splitext(text)
+    if not ending or ending.lower() == ".paa":
+        return text
+    return stem + ".paa"
 
 
 def has_known_extension(path: str) -> bool:
