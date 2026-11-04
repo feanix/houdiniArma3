@@ -92,7 +92,7 @@
     	size	1
     	default	{ "25" }
     	range	{ 1! 10 }
-    	help	"How many messages the node shows. The rest are counted in one line and listed in the console."
+    	help	"How many messages the node shows. The rest are counted in one line and listed in Windows > Log Viewer (source A3OB)."
         }
     }
 

@@ -246,7 +246,7 @@ def run_save(node) -> Report:
     except Exception as ex:  # a bug: a button callback must not raise (Houdini would only print it)
         LOGGER.error("Save to Disk failed:\n%s", traceback.format_exc())
         report.error("%s: Save to Disk failed with %s: %s. This is a bug in the A3OB tools. "
-                     "Copy the console output into a bug report." % (node.path(), type(ex).__name__, ex))
+                     "Copy the details from Windows > Log Viewer (source A3OB) into a bug report." % (node.path(), type(ex).__name__, ex))
     return report
 
 

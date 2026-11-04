@@ -47,7 +47,7 @@ def level_parms() -> Tuple[Parm, ...]:
              "What to do with a LOD whose type and resolution were already written: Fail, Skip the later one, or "
              "Ignore and write both.", items=_DUPES),
         Parm("maxmessages", "Max Messages", "int", DEFAULT_MAX_MESSAGES,
-             "How many messages the node shows. The rest are counted in one line and listed in the console.",
+             "How many messages the node shows. The rest are counted in one line and listed in Windows > Log Viewer (source A3OB).",
              minimum=1),
     )
 

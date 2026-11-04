@@ -54,5 +54,5 @@ def run(kwargs) -> None:
         hou.ui.displayMessage(str(ex), severity=hou.severityType.Error, title=TITLE)
     except Exception:
         LOGGER.error("New P3D failed:\n%s", traceback.format_exc())
-        hou.ui.displayMessage("New P3D failed. This is a bug in the A3OB tools. See the console.",
+        hou.ui.displayMessage("New P3D failed. This is a bug in the A3OB tools. See Windows > Log Viewer (source A3OB).",
                               severity=hou.severityType.Error, title=TITLE)

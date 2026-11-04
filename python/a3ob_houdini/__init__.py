@@ -17,3 +17,7 @@ See NOTICE.md.
 
 SPDX-License-Identifier: GPL-3.0-or-later
 """
+
+from . import log_viewer
+
+log_viewer.install()  # the a3ob logger goes to Windows > Log Viewer (source A3OB), never to the console
