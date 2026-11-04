@@ -2,7 +2,7 @@
 
 Generated from the Aesir database, do not edit. A plan, not a promise: it changes, and decisions record why.
 
-## 0.1.0
+## 0.1.0 (ready to tag)
 
 - #046 [verified] Node messages never pop up the console: route the a3ob logger to Houdini's Log Viewer
 - #047 [verified] New node: A3OB Components (find components, convex hull per piece) (Release prep)
@@ -11,7 +11,7 @@ Generated from the Aesir database, do not edit. A plan, not a promise: it change
 - #050 [verified] Group fields become Houdini group pickers (Material Assign, Mass) (Release prep)
 - #055 [verified] Path mapping: $PBOPREFIX$ files with several keys; \server network paths (audit, Release prep)
 - #056 [merged] Docs: Concepts path mapping section ($PBOPREFIX$/HEMTT) and 'What's not here yet' (audit, Release prep)
-- #057 [open] AI disclosure in README and About page (Release prep)
+- #057 [merged] AI disclosure in README and About page (Release prep)
 
 ## Unplaced
 
