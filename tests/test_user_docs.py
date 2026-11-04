@@ -20,6 +20,11 @@ from tests.hou_support import HAS_HOU, OTLS_DIR, REPO_ROOT, hou, install_all_ass
 
 DOCS_DIR = os.path.join(REPO_ROOT, "docs", "user")
 BUILD_COMMAND = "python scripts/build_user_docs.py"
+# The only web links the pages may carry (the About page alternatives); the docs otherwise work offline.
+ALLOWED_EXTERNAL_LINKS = {
+    "https://github.com/MrClock8163/Arma3ObjectBuilder",
+    "https://store.steampowered.com/app/233800/Arma_3_Tools/",
+}
 
 
 def load_builder():
@@ -105,6 +110,8 @@ class TestSiteLinks(unittest.TestCase):
                 problems.append("%s uses %s" % (os.path.relpath(path, DOCS_DIR), parser.bad_tags))
             for link in parser.links:
                 parts = urlparse(link)
+                if link in ALLOWED_EXTERNAL_LINKS:
+                    continue
                 if parts.scheme or parts.netloc or link.startswith("/"):
                     problems.append("%s: not a relative link: %s" % (os.path.relpath(path, DOCS_DIR), link))
                     continue
