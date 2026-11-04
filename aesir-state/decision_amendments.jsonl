@@ -1,1 +1,2 @@
 {"actor": "advisor", "decision_id": 14, "id": 1, "note": "Q-3 mass scope narrowed by D16: mass rules (T2-MASS, T2-MASSALL) apply to the Geometry LOD only, as in A3OB.", "ts": "2026-11-03T16:09:05Z"}
+{"actor": "advisor", "decision_id": 39, "id": 2, "note": "Q4 answered 2026-11-04: owner OK to make Weight Cleanup ignore proxy points (like the export rules). In task #64.", "ts": "2026-11-04T17:32:00Z"}
