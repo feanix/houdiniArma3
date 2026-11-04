@@ -23,7 +23,11 @@ __all__ = ["Parm", "NodeSpec", "type_name", "read_parms", "add_spare_parms", "fl
 #: The parameter kinds the table and the generators know. ``folder`` is not a value: it only groups its children on the
 #: node (see ``Parm.folder_type``). ``dir`` is a string with a folder chooser. ``color`` is four floats (red, green,
 #: blue, alpha) with a colour swatch.
-KINDS = ("string", "file", "dir", "color", "toggle", "button", "int", "float", "menu", "multiparm", "folder")
+KINDS = ("string", "file", "dir", "color", "toggle", "button", "int", "float", "menu", "multiparm", "folder", "group")
+
+#: The two kinds of element a group picker lists (``Parm.group_type``). The tokens are also the values of a
+#: ``Group Type`` menu that a picker follows (``Parm.group_follow``), as on Houdini's own SOPs.
+GROUP_TYPES = ("prims", "points")
 
 #: The looks of a ``folder``: a group box (``simple``), a group box the artist can fold (``collapsible``), or one tab.
 #: Neighbouring ``tabs`` folders make one row of tabs.
@@ -47,6 +51,26 @@ LOADED_SCRIPT = ("try:\n    import a3ob_houdini.entry as e\nexcept ImportError:\
 #: The script of a menu whose items are made at the moment the menu opens (``Parm.menu_action``).
 #: Houdini evaluates it as one Python expression (``return`` is a syntax error there), so it imports inline.
 MENU_SCRIPT = "__import__('a3ob_houdini.entry', fromlist=['menu']).menu(%r, %r, kwargs)"
+
+#: The menu script of a group picker (kind ``group``): the groups of the input, as Houdini's own Group fields list them.
+GROUP_MENU_SCRIPT = "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu(%r, %r, kwargs)"
+
+#: The tags of the arrow button of a group picker. They are the ones Houdini's own SOPs carry (blast, delete): the
+#: button runs ``soputils.selectGroupParm``, which starts a viewport selection and writes the result into the parm.
+GROUP_ACTION_HELP = "Select geometry from an available viewport.\nShift-click to turn on Select Groups."
+GROUP_ACTION_ICON = "BUTTONS_reselect"
+
+
+def group_action_script(parm: "Parm") -> str:
+    """The ``script_action`` tag of a group picker. A picker that follows a Group Type menu hands the menu to
+    ``selectGroupParm`` (it reads the element type from it); a fixed one hands the type itself."""
+    if parm.group_follow:
+        lines = ["import soputils", "kwargs['geometrytype'] = kwargs['node'].parmTuple(%r)" % parm.group_follow]
+    else:
+        member = {"prims": "Primitives", "points": "Points"}[parm.group_type]
+        lines = ["import hou", "import soputils", "kwargs['geometrytype'] = [hou.geometryType.%s]" % member]
+    lines += ["kwargs['inputindex'] = 0", "soputils.selectGroupParm(kwargs)"]
+    return "\n".join(lines)
 
 
 @dataclass(frozen=True)
@@ -99,10 +123,20 @@ class Parm:
     #: The parameter is never shown on the node (Houdini ``invisible``). For legacy parameters that old scenes still
     #: store, so they load; the cook reads them. The docs still list them: the help text says what they are for.
     hidden: bool = False
+    #: For group pickers (kind ``group``): which groups the dropdown lists and the arrow button picks, ``prims`` or
+    #: ``points``. Ignored when ``group_follow`` names a menu.
+    group_type: str = "prims"
+    #: For group pickers: the name of a menu parameter (tokens ``prims`` / ``points``) that decides the type, like the
+    #: Group Type of Houdini's own SOPs. Empty: the type is fixed by ``group_type``.
+    group_follow: str = ""
 
     def __post_init__(self) -> None:
         if self.kind not in KINDS:
             raise ValueError("parameter %r has unknown kind %r" % (self.name, self.kind))
+        if self.kind == "group" and self.group_type not in GROUP_TYPES:
+            raise ValueError("parameter %r: group_type must be one of %s" % (self.name, ", ".join(GROUP_TYPES)))
+        if self.group_follow and self.kind != "group":
+            raise ValueError("parameter %r: only a group picker has group_follow" % self.name)
         if self.folder_type not in FOLDER_TYPES:
             raise ValueError("parameter %r: folder_type must be one of %s" % (self.name, ", ".join(FOLDER_TYPES)))
         if self.kind == "folder" and not self.children:
@@ -194,6 +228,9 @@ class NodeSpec:
             raise ValueError("node %r has a duplicate parameter name" % self.kind)
         object.__setattr__(self, "parm_index", {parm.name: parm for parm in flat})
         _check_conditions(self.kind, self.parms, set(names))
+        for parm in flat:
+            if parm.group_follow and parm.group_follow not in names:
+                raise ValueError("node %r: %r follows %r, which is not a parameter" % (self.kind, parm.name, parm.group_follow))
 
     @property
     def type_name(self) -> str:
@@ -342,6 +379,13 @@ def _template_unconditioned(spec: NodeSpec, parm: Parm):
             if parm.file_pattern:
                 tags["filechooser_pattern"] = parm.file_pattern
             template.setTags(tags)
+    elif parm.kind == "group":
+        template = hou.StringParmTemplate(
+            parm.name, parm.label, 1, default_value=(str(parm.default),), menu_type=hou.menuType.StringToggle,
+            item_generator_script=GROUP_MENU_SCRIPT % (spec.kind, parm.name),
+            item_generator_script_language=hou.scriptLanguage.Python)
+        template.setTags({"script_action": group_action_script(parm), "script_action_help": GROUP_ACTION_HELP,
+                          "script_action_icon": GROUP_ACTION_ICON})
     elif parm.kind == "menu" and parm.menu_action:
         template = hou.StringParmTemplate(
             parm.name, parm.label, 1, default_value=(str(parm.default),),

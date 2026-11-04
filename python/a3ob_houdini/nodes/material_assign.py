@@ -29,9 +29,11 @@ SPEC = NodeSpec(
     input_labels=("LOD geometry",),
     input_help=("The LOD whose polygons get the texture and material.",),
     parms=(
-        Parm("group", "Group", "string", "",
-             "Which polygons to set. Empty means all polygons. Normal Houdini group syntax; a selection with an "
-             "encoded name is easiest to pick in the Selection browser."),
+        Parm("group", "Group", "group", "",
+             "Which polygons to set. Empty means all polygons. The menu lists the groups of the input (primitive "
+             "groups or point groups, as Group Type says) and shows the P3D name of a selection; picking adds or "
+             "removes the group. The arrow button picks in the viewport. You can also type group names, patterns "
+             "or numbers like 0-3.", group_follow="grouptype"),
         Parm("grouptype", "Group Type", "menu", "prims",
              "Primitives: the polygons in the group. Points: the polygons whose points are all in the group.",
              items=(("prims", "Primitives"), ("points", "Points"))),
