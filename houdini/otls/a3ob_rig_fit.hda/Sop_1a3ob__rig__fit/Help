@@ -1,0 +1,95 @@
+= Rig Fit =
+
+#type: node
+#context: sop
+#internal: a3ob_rig_fit
+#tags: arma, p3d
+
+"""Fits the Arma skeleton and the sample body to your mesh, from landmarks that you set or that are guessed."""
+
+Your own character has its own size and proportions, and the Arma skeleton and the sample body do not match it. This node fits them to your mesh, so that Weight Transfer can copy the weights of the sample body onto your mesh, and Unpose can later bring your mesh back to the Arma rest pose. The Arma skeleton itself is never changed: the fitted skeleton is only a working copy.
+
+The fit starts from landmarks, 14 named points of the body. Your mesh should stand upright (Y up), face +Z like the sample, and be in an A-pose with the arms away from the body. You can set a landmark with a point group on your mesh, named lm_chin, lm_groin, lm_shoulder_l, lm_shoulder_r, lm_elbow_l, lm_elbow_r, lm_wrist_l, lm_wrist_r, lm_hip_l, lm_hip_r, lm_knee_l, lm_knee_r, lm_ankle_l and lm_ankle_r. The average of the points of a group is the landmark. Left is the +X side. The chin and the groin are points on the skin (the chin is the tip, the groin the highest point between the legs); the others are joints, inside the body: group the points around the joint, or add a point at the joint. Landmarks that have no group are guessed from the shape of the mesh, and a group always wins over the guess. The guess is a first try: show the landmarks and correct the landmarks that are wrong.
+
+The fit goes down the skeleton from the pelvis. Each joint is turned towards the landmarks below it and given the length that puts them on the landmarks. The message of the node says how far the joints were from their landmarks after the fit, and warns when that is more than 1 cm. The node gives one of three results, chosen with Output: the fitted skeleton, the sample body posed to match your mesh (with its weights), or the landmarks as points with a name. Use one Rig Fit node for each result you need, with the same inputs and settings.
+
+@inputs
+
+Your mesh:
+    Your character in an A-pose, standing upright (Y up) and facing +Z like the sample. It may have point groups named lm_chin, lm_groin, lm_shoulder_l and so on (see Landmarks).
+
+Skeleton:
+    The Arma skeleton, for example from Rig Skeleton. It is not changed.
+
+Sample body:
+    The sample body with its bone weights, for example Resolution 1 of the sample character from Extract LOD. Its bones must be the ones of the skeleton.
+
+@parameters
+
+Output:
+    #id: output
+
+    Which result this node gives. A Python-type Houdini node has one output, so use one Rig Fit node for each result you need (give them the same inputs and settings).
+
+    Type: Menu. Default: Fitted skeleton.
+
+    Fitted skeleton:
+        The skeleton moved into your mesh (a working copy, A'). Its joints are at your landmarks and its transform holds the fitted rotation and size of each joint.
+
+    Fitted sample body:
+        The sample body, posed and sized to match your mesh (S'). It keeps its bone weights, so it can go to Weight Transfer as the source body.
+
+    Landmarks:
+        The landmarks that were used, as points with a name.
+
+Landmarks:
+    #id: landmarks
+
+    Where the landmarks come from. A landmark group is a point group on your mesh named lm_chin, lm_groin, lm_shoulder_l, lm_shoulder_r, lm_elbow_l, lm_elbow_r, lm_wrist_l, lm_wrist_r, lm_hip_l, lm_hip_r, lm_knee_l, lm_knee_r, lm_ankle_l or lm_ankle_r. The average of the points of a group is the landmark; for a joint, group the points around it, or add a point inside the body. Left is the +X side.
+
+    Type: Menu. Default: Both.
+
+    Auto-guess:
+        Guess all landmarks from the shape of your mesh. Groups are ignored.
+
+    From groups:
+        Use only the groups. All of them must exist.
+
+    Both:
+        Use the groups that exist; guess the others. A group always wins over the guess.
+
+Snap to Surface:
+    #id: snap
+
+    Move the chin and the groin onto the closest point of your mesh. The joints lie inside the body and are never moved.
+
+    Type: On or off. Default: On.
+
+Symmetry:
+    #id: symmetry
+
+    Make the left and right landmarks mirror each other. When both sides of a pair come from groups they are averaged; when only one side does, the other side is its mirror image.
+
+    Type: On or off. Default: On.
+
+Refine:
+    #id: refine
+
+    Not available yet: the sample body is only posed and sized, not bent to your mesh. Switching it on adds a warning and changes nothing.
+
+    Type: On or off. Default: Off.
+
+Scale:
+    #id: scale
+
+    How the length of each bone is fitted.
+
+    Type: Menu. Default: Per bone length.
+
+    Per bone length:
+        Each bone gets the length that puts its end joint on the landmark.
+
+    Whole body:
+        One size for the whole skeleton. The joints are turned towards the landmarks but not moved onto them, so the quality shows how far off they are.
+
+The full page for this node is docs/user/reference/a3ob_rig_fit.html in the A3OB folder. Open it in a web browser.

@@ -163,6 +163,12 @@ exporter ignores all of them (they are not groups and not TAGGs).
 | `a3ob_rig_piece` | point int32 | absent | The number of the rigid or loose piece a point belongs to (rigid pieces first, from 0), −1 for a point outside the pieces. Written by Weight Transfer. |
 | `a3ob_rig_bone` | point string | absent (→ none) | Input to Weight Transfer: a bone name (any case) on a point of a rigid piece. The most common name among the points of the piece is the piece's one bone and wins over the choice. |
 
+Rig Fit (task #66) reads **landmark point groups** on the user's mesh and writes none of the attributes above. A landmark
+group is named `lm_<what>[_l|_r]` (14 names: `lm_chin`, `lm_groin`, `lm_shoulder_l|r`, `lm_elbow_l|r`, `lm_wrist_l|r`,
+`lm_hip_l|r`, `lm_knee_l|r`, `lm_ankle_l|r`); the average of its points is the landmark. Its Landmarks output is points with
+a string `name` (the same names). The fitted skeleton keeps the Rig Skeleton layout; its `transform` holds rotation times
+size per joint (row-vector 3x3).
+
 Constants that are not stored: `MLOD`/257 (`data_p3d.py:777-782`) and `P3DM`/28.256 (`data_p3d.py:472-478`).
 
 **File-level data (P3D-geometry detail).** M1 keeps the bytes after the last LOD as `P3DModel.trailing`. Object
