@@ -19,8 +19,8 @@ Sources checked on 2026-11-03 (task #51):
     HEMTT book, "Addon Configuration" (book/configuration/addon.md): ``ignore_pboprefix`` exists "for a mismatched
     $PBOPREFIX$", so HEMTT compares the file with the prefix it builds from ``project.toml`` (``mainprefix``,
     ``prefix``) and the addon folder name. That is rule (b).
-    The ``prefix=`` key form: Mikero's tools and Addon Builder write PBO header properties as ``key=value`` lines; HEMTT
-    writes the plain line. Both are accepted, the plain line is the one documented.
+    The ``prefix=`` key form is accepted only as a precaution: some PBO tools store header properties as ``key=value``,
+    but no source checked here shows a ``$PBOPREFIX$`` file written that way. The plain line is the documented form.
     Owner layout read-only: E:/Projects/HettycKad (mainprefix hyck, prefix ame, addons/props/$PBOPREFIX$).
 
 A path without a drive letter is not touched here. Lowercase is applied by the caller afterwards.
