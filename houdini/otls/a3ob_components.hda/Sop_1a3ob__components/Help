@@ -1,0 +1,39 @@
+= Components =
+
+#type: node
+#context: sop
+#internal: a3ob_components
+#tags: arma, p3d
+
+"""Makes the component groups (Component01, Component02, ...) of a Geometry LOD, one per connected piece."""
+
+A Geometry LOD is built of convex pieces, and each piece needs a point group called Component01, Component02 and so on. This node makes those groups for you. It can also replace each piece by its convex hull. The pieces are numbered in the order of their first polygon in the geometry.
+
+@inputs
+
+LOD geometry:
+    The Geometry LOD whose pieces become components.
+
+@parameters
+
+Mode:
+    #id: mode
+
+    What the node does with each connected piece of polygons.
+
+    Type: Menu. Default: Find components.
+
+    Find components:
+        Makes a point group for every closed piece. Pieces that are not closed get no group. The geometry is not changed.
+
+    Convex hull per piece:
+        Replaces every piece of 4 or more points by its convex hull (closed, made of triangles) and makes a point group for it. Smaller pieces, such as proxy triangles, are left as they are. The hull keeps the corner points, with their point attributes and point groups (selections). The other points of the piece are removed and leave their groups. The new triangles get default values: no UVs, normals or materials, so use Material Assign afterwards.
+
+Keep Existing Components:
+    #id: keep
+
+    Off: every group called component followed by digits (any capitals) is removed first, as in Object Builder. On: those groups stay and the new groups are numbered after the highest one.
+
+    Type: On or off. Default: Off.
+
+The full page for this node is docs/user/reference/a3ob_components.html in the A3OB folder. Open it in a web browser.

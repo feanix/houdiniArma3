@@ -105,7 +105,7 @@ this page was checked.</p>
 <table>
 <tr><th>LOD</th><th>Nodes</th><th>What is in it</th></tr>
 <tr><td>Resolution 1 (the visual model)</td><td><code>res1_mesh</code>, <code>res1_props</code></td><td>A <kbd class="ui-node">Box</kbd> of size 1 that sits on the ground. This is where your model goes.</td></tr>
-<tr><td>Geometry (collision)</td><td><code>geometry_mesh</code>, <code>geometry_triangles</code>, <code>geometry_components</code>, <code>geometry_mass</code>, <code>geometry_props</code></td><td>A second box, cut into triangles by a <kbd class="ui-node">Divide</kbd> node, a point group (a Houdini selection) named <code>component01</code> made by a <kbd class="ui-node">Group</kbd> node, and 100 kg of mass.</td></tr>
+<tr><td>Geometry (collision)</td><td><code>geometry_mesh</code>, <code>geometry_triangles</code>, <code>geometry_components</code>, <code>geometry_mass</code>, <code>geometry_props</code></td><td>A second box, cut into triangles by a <kbd class="ui-node">Divide</kbd> node, a point group (a Houdini selection) named <code>component01</code> made by a <kbd class="ui-node">Group</kbd> node (for your own model, the <kbd class="ui-node">Components</kbd> node makes these groups), and 100 kg of mass.</td></tr>
 <tr><td>Memory</td><td><code>memory_points</code>, <code>memory_group</code>, <code>memory_props</code></td><td>One point made by an <kbd class="ui-node">Add</kbd> node, in a group named <code>new_point</code>.</td></tr>
 </table>
 <p>Each <code>_props</code> node is a <kbd class="ui-node">LOD Properties</kbd> node. It says which kind of LOD the

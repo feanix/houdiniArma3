@@ -1,0 +1,32 @@
+# Dialog script for a3ob_components, version 1
+
+{
+    name	a3ob_components
+    script	a3ob_components
+    label	"Components"
+
+    help {
+	"Makes the component groups (Component01, Component02, ...) of a Geometry LOD, one per connected piece."
+    }
+
+    inputlabel	1	"LOD geometry"
+
+    parm {
+	name	"mode"
+	label	"Mode"
+	type	string
+	default	{ "find" }
+	menu {
+	    "find"	"Find components"
+	    "hull"	"Convex hull per piece"
+	}
+	help	"What the node does with each connected piece of polygons."
+    }
+    parm {
+	name	"keep"
+	label	"Keep Existing Components"
+	type	toggle
+	default	{ "0" }
+	help	"Off: every group called component followed by digits (any capitals) is removed first, as in Object Builder. On: those groups stay and the new groups are numbered after the highest one."
+    }
+}

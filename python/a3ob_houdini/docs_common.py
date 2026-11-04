@@ -30,6 +30,11 @@ NODE_INTRO = {
         "Every LOD has a type (for example Visual or Geometry), a resolution number and a list of named properties. "
         "This node sets them on the LOD geometry that comes in.",
     ),
+    "components": (
+        "A Geometry LOD is built of convex pieces, and each piece needs a point group called Component01, Component02 "
+        "and so on. This node makes those groups for you. It can also replace each piece by its convex hull. The "
+        "pieces are numbered in the order of their first polygon in the geometry.",
+    ),
     "mass": (
         "Arma needs a mass for each point of a Geometry LOD to work out how a vehicle or object moves. This node "
         "sets that mass in one of several ways.",
