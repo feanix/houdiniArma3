@@ -91,6 +91,7 @@ class TestRigSkeletonNode(NodeTestCase):
         self.assertEqual((rounded(found["Pelvis"][0]), found["Pelvis"][1]), ((0.0, 1.0, -0.5), None))
         self.assertEqual((rounded(found["head"][0]), found["head"][1]), ((0.0, 1.7, -0.25), "Spine"))
         self.assertEqual((rounded(found["Arm"][0]), found["Arm"][1]), ((0.3, 1.5, -0.5), "Spine"))
+        self.assertEqual(geo.attribValue("a3ob_rig_discrete"), 0)  # the model.cfg says isDiscrete = 0 (task #62)
         self.assertEqual(geo.findPointAttrib("transform").size(), 9)
         for point in geo.points():
             self.assertEqual(tuple(point.attribValue("transform")), (1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0))

@@ -1,0 +1,38 @@
+# Dialog script for a3ob_weights_convert, version 1
+
+{
+    name	a3ob_weights_convert
+    script	a3ob_weights_convert
+    label	"Weights Convert"
+
+    help {
+	"Converts bone weights between P3D selections (point groups) and KineFX capture weights for the skeleton."
+    }
+
+    inputlabel	1	"Geometry"
+    inputlabel	2	"Skeleton"
+
+    parm {
+	name	"mode"
+	label	"Mode"
+	type	string
+	default	{ "tocapture" }
+	menu {
+	    "tocapture"	"Selections to Capture"
+	    "toselections"	"Capture to Selections"
+	}
+	help	"Which way to convert."
+    }
+    parm {
+	name	"case"
+	label	"Selection Names"
+	type	string
+	default	{ "cfg" }
+	menu {
+	    "cfg"	"model.cfg spelling"
+	    "keep"	"Keep existing spelling"
+	}
+	help	"How a bone selection is named when it is written. Only used by Capture to Selections."
+	hidewhen	"{ mode != toselections }"
+    }
+}

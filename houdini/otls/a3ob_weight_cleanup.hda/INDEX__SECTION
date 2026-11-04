@@ -1,0 +1,14 @@
+Operator:     a3ob_weight_cleanup
+Label:        Weight Cleanup
+Path:         oplib:/Sop/a3ob_weight_cleanup?Sop/a3ob_weight_cleanup
+Icon:         SOP_python
+Table:        Sop
+License:      
+Extra:        
+User:         
+Inputs:       2 to 2
+Subnet:       false
+Python:       true
+Empty:        false
+Modified:     Mon Nov  3 12:00:00 2026
+

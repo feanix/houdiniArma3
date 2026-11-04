@@ -557,6 +557,7 @@ Facts (`character.zip` `kinefx/skeletons.txt`, `kinefx/capture.txt`; cooks in `h
 | `transform` | **identity** (world axes) for every joint (proposal). Then a joint's local rotation equals the rotation in an Arma RTM (absolute 4x3 matrices in the model frame), which keeps phase 4 simple. |
 | Primitives | a 2-point polyline from each parent to its child |
 | Built in task #61 | Exactly the table above: points with `name` and `transform`, polylines parent to child. The `transform` is a 9-float point attribute, which is how a Python SOP can write it; `kinefx::rigpose`, `kinefx::jointcaptureproximity` and `kinefx::jointdeform` accept it (test in `tests/test_node_rig_skeleton.py`). |
+| `a3ob_rig_discrete` (detail int) | Decided in task #62: the `isDiscrete` of the chosen `CfgSkeletons` class (1 or 0), written only when the model.cfg says. Weight Cleanup reads it from its second input, so the model.cfg need not be read twice. Absent means 0 (smooth skinning). |
 | Not written | The earlier proposals `a3ob_rig_skeleton`, `a3ob_rig_cfg`, `a3ob_rig_pivots` (detail) and `a3ob_rig_pivot_source` (point) are dropped: nothing needs them yet, and bones with no pivot are left out (D37 Q4), so no joint is placed by a rule. |
 
 The 64 bones with a pivot: the spike (`weight_transfer_houdini.py` block N4) built exactly this skeleton from `model.cfg`
@@ -577,12 +578,33 @@ Mapping, selections to capture (`mode = Selections to Capture`):
    not exist). Byte 255 on import is weight 0.0: a member that adds no weight (ignored, counted).
 3. Build `boneCapture_index` (bone number in the order of `boneCapture_pCaptPath`) and `boneCapture_data` per point,
    weights greater than 0 only.
-4. Build the detail arrays: `boneCapture_pCaptPath` from the skeleton `name`s, `boneCapture_pCaptData` with the inverse
-   rest 4x4 of each joint (translation `-P` with identity orientation) and 4 extra floats (taper, min/max) set to
-   neutral values. **What neutral values Joint Deform expects is a task for the phase 1 spike** (Capture Attribute Pack
-   made the same attributes in my round-trip test, `captureattribpack (round trip)` in `houdini_node_cooks.out`, so
-   copying the layout of a real Joint Capture output is the plan).
-5. Run the Capture Attribute Pack SOP (or write `boneCapture` directly).
+4. Build the detail arrays: `boneCapture_pCaptPath` from the skeleton `name`s and `boneCapture_pCaptData` (layout below).
+5. Run the Capture Attribute Pack verb (`hou.sopNodeTypeCategory().nodeVerb("captureattribpack")`) on the geometry.
+   `boneCapture` cannot be written directly: the joint names and `pCaptData` are part of the packed attribute and only
+   the verb stores them.
+
+**The `boneCapture` layout (settled in task #62, by cooking Joint Capture Proximity, Capture Attribute Unpack and
+Joint Deform).**
+
+| Item | Unpacked form (what the pack verb reads) | Packed form (what Joint Deform reads) |
+|---|---|---|
+| Per point | point int array `boneCapture_index` (region numbers) and point float array `boneCapture_data` (weights), same length per point, heaviest first (our order; Houdini does not need one) | point float array `boneCapture`: `index, weight` pairs, padded to the longest point with `-1, -1`; a point with no weight is all `-1` |
+| Regions | detail string array `boneCapture_pCaptPath`: one joint name per region, in joint (point) order of the skeleton | stored inside the attribute (no detail attribute is left) |
+| `boneCapture_pCaptData` | detail float array **with tuple size 20**, one tuple per region, in the order of `pCaptPath` (a flat array of tuple size 1 is not read by the verb and leaves the capture unusable: Joint Deform fails with "Missing Rest Point Transforms") | stored inside the attribute |
+| Also | detail float `pCaptFrame` = 0.0, detail string `pCaptSkelRoot` = "" | kept as detail attributes |
+
+The 20 floats of one region: floats 0 to 15 are the **inverse of the joint's rest matrix** as a 4x4, row-major, in
+Houdini's row-vector form (`x' = x * M`): the three rotation rows first, then the translation row. For a joint at `P` with
+identity `transform` this is the identity with `-P` in the last row (for example `0, -1, 0.5, 1` for a joint at
+`(0, 1, -0.5)`). A joint with a rotated `transform` uses the inverse of its rest matrix `[R; P]`
+(`a3ob_core.rig.weights.inverse_rest_floats`). Floats 16 to 19 are `1, 1, 1, 1` (taper and range; Joint Capture writes
+these neutral values and Joint Deform does not use them). Joint Deform matches regions to the skeleton by the joint
+`name`, and **normalises** the weights of a point, so a sum other than 1 does not change a pose; Weight Cleanup is
+for Arma, not for Houdini.
+
+Test 1.5 proves it: with these numbers Joint Deform returns every point of the sample Resolution 1 within 1e-5 at the
+rest pose, and with one joint turned it equals a numpy linear blend skinning (row-vector rotation, normalised weights)
+within 1e-5.
 
 Mapping, capture to selections (`mode = Capture to Selections`): for every region in `boneCapture_pCaptPath` that matches
 a skeleton bone ignoring case, create or update the point group and `a3ob_w_<enc>` from the weights. The group name uses
@@ -615,11 +637,23 @@ Weight Cleanup: 3125 points. 1125 had more than 4 bones (mean change 0.053, wors
 Sums were within 0.016 of 1 before, are exactly 1 now. 0 points had no weight.
 ```
 
-and as data (proposal): point float `a3ob_rig_changed` (L1 change of this point, so the Rig Check can colour it), point int
+and as data (proposal): point float `a3ob_rig_changed` (L1 change of this point, so the Rig Check can colour it; built in
+task #62), point int
 `a3ob_rig_infl_before` (bones before the clean-up), detail floats `a3ob_rig_cleanup_*` (counts and statistics). Warnings
 for: points that had no weight, a sum of 0 before the clean-up, a pruned point whose change is above `warn_change`
 (default 0.3, a parameter). The spike (`export_cleanup` in `weight_transfer_numpy.py`) measured the typical values
 (section 2.3).
+
+**As built (task #62).** Weight Cleanup has the parameters `maxbones` (4) and `threshold` (0.01) only. Not built yet, because
+no acceptance test needs them: `fill`, `warn_change`, the `group` parameter, `a3ob_rig_infl_before` and the
+`a3ob_rig_cleanup_*` details. Details of the rules as built: a point never loses its heaviest weight to the threshold
+(a point whose weights are all below it keeps the heaviest); equal weights keep the lower bone number; a negative weight
+counts as no weight; byte 255 members (weight 0.0) are counted, reported and taken out of their selection; a point with
+no weight stays empty and is a warning; when the skeleton has `a3ob_rig_discrete = 1` every point keeps its heaviest bone
+with weight 1 and the message says so. Weights Convert has `mode` and `case` (and no `group`). It reads and writes the
+point groups and `a3ob_w_*` attributes, renames an existing selection with a different spelling together with its prim
+group, `a3ob_fw_*` and its entry in `a3ob_tagg_order`, and never touches a group that is not a bone. Capture to Selections
+only rewrites the bones that have a region in the capture.
 
 Export itself does not change weights (data model section 7). So the Validate node gets three **proposed** rows next to
 the `T2-*` rules of `houdini-data-model.md` section 17.1: `T2-WGT4` (a point with more than 4 bone weights), `T2-WGTSUM`
@@ -885,7 +919,7 @@ Arma P3D", and the checks that every later phase uses.
 - The in-game result (joints off the pivots, 5th bone, sums, which LODs): needs Arma 3. The owner will test these in
   game (D37 Q8, Q9).
 - The visualiser in a Houdini window (test 2.9).
-- The exact `boneCapture_pCaptData` layout for Joint Deform (test 1.5).
+- (Settled in task #62, section 4.2:) the `boneCapture_pCaptData` layout for Joint Deform (test 1.5).
 - Fit accuracy on real, third-party meshes (tests 2.3, 2.10). The spikes use the sample itself.
 - That the engine uses linear blend skinning.
 
