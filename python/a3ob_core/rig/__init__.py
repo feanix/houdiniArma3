@@ -24,7 +24,7 @@ from .model_cfg import CfgClass, CfgError, CfgFile, Skeleton, parse_cfg, read_cf
 from .pivots import pivot_positions, read_pivots_file
 from .skeleton import SKIP_PATTERNS, Joint, SkeletonPlan, check_bones, plan_skeleton
 from .transfer import (ORIGIN_COPIED, ORIGIN_FILLED, ORIGIN_NONE, ORIGIN_NONRIGID, ORIGIN_RIGID, Piece, Settings,
-                       TransferResult, drop_small_pieces, is_twist, transfer_layers, twist_targets)
+                       TransferResult, accessory_layer, drop_small_pieces, is_twist, transfer_body, twist_targets)
 from .weights import (CAPT_FLOATS, GRID, CleanStats, capture_lists, clean_weights, grid_units, inverse_rest_floats,
                       match_bone_names, matrix_from_capture)
 
@@ -36,7 +36,7 @@ __all__ = [
     "CHIN_FROM_HEAD", "HEAD_SHARE", "body_scale", "fit_skeleton", "joint_targets", "skin_points", "swing",
     "facing_sign", "find_groin", "guess_landmarks", "make_template", "snap_to_surface", "symmetrize", "drop_small_pieces",
     "ORIGIN_COPIED", "ORIGIN_FILLED", "ORIGIN_NONE", "ORIGIN_NONRIGID", "ORIGIN_RIGID", "Piece", "Settings",
-    "TransferResult", "is_twist", "transfer_layers", "twist_targets",
+    "TransferResult", "accessory_layer", "is_twist", "transfer_body", "twist_targets",
     "CAPT_FLOATS", "GRID", "CleanStats", "capture_lists", "clean_weights", "grid_units", "inverse_rest_floats",
     "match_bone_names", "matrix_from_capture",
     "CfgClass", "CfgError", "CfgFile", "Skeleton", "parse_cfg", "read_cfg_file", "resolve_skeleton", "skeleton_names",

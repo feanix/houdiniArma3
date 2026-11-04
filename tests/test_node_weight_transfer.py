@@ -1,4 +1,4 @@
-"""The Weight Transfer node in hython (design tests 2.1 and 2.2 through the node, and the chain to Joint Deform, task #65).
+"""The Weight Transfer node in hython (design test 2.1 through the node, and the chain to Joint Deform, tasks #65 and #73).
 Needs ``hou`` with KineFX: do not run it with HOUDINI_PACKAGE_SKIP=1 (that removes every kinefx:: type).
 
 The test on the real Samples files skips when the Samples are not there.
@@ -78,10 +78,10 @@ class TransferTestCase(NodeTestCase):
         self.assertEqual(cook(node).errors, ())
         return node
 
-    def transfer(self, mesh, body, skeleton, **parms):
+    def transfer(self, mesh, source, skeleton, **parms):
         node = self.network.createNode("a3ob_weight_transfer")
         node.setInput(0, mesh)
-        node.setInput(1, body)
+        node.setInput(1, source)
         node.setInput(2, skeleton)
         for name, value in parms.items():
             node.parm(name).set(value)
@@ -89,7 +89,7 @@ class TransferTestCase(NodeTestCase):
 
     def scene(self, **parms):
         """A source tube weighted to Spine and ArmRoll (lower case selections), a target tube with a cuff on it (point
-        group ``cuff``), and the Weight Transfer node on them. Returns ``(node, target geometry, cuff mask)``."""
+        groups ``cuff`` and ``body``), and the Weight Transfer node on them. Returns ``(node, target geometry, cuff mask)``."""
         P, tris = tube(24, 16)
         W = np.zeros((len(P), 5))
         two = two_bone_weights(P)
@@ -99,108 +99,90 @@ class TransferTestCase(NodeTestCase):
         target = hou.Geometry()
         target.merge(skinned(all_P, all_tris, np.zeros((len(all_P), 5)), BONES))
         add_group(target, "cuff", cuff)
+        add_group(target, "body", ~cuff)
         mesh = make_source(self.network, target)
         node = self.transfer(mesh, body, self.skeleton(), **parms)
         return node, all_P, cuff
 
 
 class TestWeightTransferNode(TransferTestCase):
-    def test_layers_and_outputs(self):
-        node, all_P, cuff = self.scene(rigid="cuff")
+    def test_body_group_gets_the_weights_and_the_rest_is_left_alone(self):
+        node, all_P, cuff = self.scene(body="body")
         result = cook(node)
         self.assertEqual(result.errors, ())
         geo = node.geometry()
         text = "\n".join(result.messages)
         self.assertIn("First pass:", text)
-        self.assertIn("Rigid parts: 1 piece.", text)
-        self.assertIn("Loose parts: 0 pieces.", text)
+        self.assertIn("keep the weights they had", text)
         names = sorted(hou.text.decodeAttrib(g.name()) for g in geo.pointGroups())
         self.assertIn("Spine", names)  # the model.cfg spelling, not "spine"
         self.assertNotIn("spine", names)
         weights = selection_weights(geo, BONES)
         origin = np.array(geo.pointIntAttribValues("a3ob_rig_origin"))
-        piece = np.array(geo.pointIntAttribValues("a3ob_rig_piece"))
-        self.assertTrue((origin[cuff] == 3).all())
         self.assertTrue((origin[~cuff] > 0).all() and (origin[~cuff] < 3).all())
-        self.assertTrue((piece[cuff] == 0).all() and (piece[~cuff] == -1).all())
-        np.testing.assert_allclose(weights.sum(axis=1), 1.0, atol=1e-5)
-        # the cuff sits on the ArmRoll blend and follows the forearm (twist merged), every point the same
-        self.assertTrue((weights[cuff] == weights[cuff][0]).all())
-        self.assertEqual(weights[cuff][0].tolist(), [0.0, 0.0, 0.0, 0.0, 1.0])
-        self.assertIn("bone ForeArm", text)
-
-    def test_merge_twist_off_keeps_the_roll_bone_and_blend_mode_shares_a_row(self):
-        node, _, cuff = self.scene(rigid="cuff", merge_twist=0)
-        self.assertEqual(cook(node).errors, ())
-        self.assertEqual(selection_weights(node.geometry(), BONES)[cuff][0].tolist(), [0.0, 0.0, 0.0, 1.0, 0.0])
-        node.parm("rigid_mode").set("blend")
-        self.assertEqual(cook(node).errors, ())
-        rows = selection_weights(node.geometry(), BONES)[cuff]
-        self.assertTrue((np.abs(rows - rows[0]) < 1e-6).all())
-        self.assertGreater(float(rows[0][1]), 0.0)
-        self.assertIn("one fixed blend", "\n".join(node.messages()))
-
-    def test_bone_override_attribute_wins(self):
-        node, all_P, cuff = self.scene(rigid="cuff")
-        geo = hou.Geometry()
-        geo.merge(node.input(0).geometry())
-        geo.addAttrib(hou.attribType.Point, "a3ob_rig_bone", "")
-        index = int(np.nonzero(cuff)[0][3])
-        geo.point(index).setAttribValue("a3ob_rig_bone", "arm")
-        node.setInput(0, make_source(self.network, geo))
-        node.parm("rigid").set("cuff")
-        self.assertEqual(cook(node).errors, ())
-        weights = selection_weights(node.geometry(), BONES)
-        self.assertTrue((weights[cuff] == [0.0, 0.0, 1.0, 0.0, 0.0]).all())
-        self.assertIn("a3ob_rig_bone", "\n".join(node.messages()))
-
-    def test_loose_group_varies_and_smoothing_helps(self):
-        node, _, cuff = self.scene(nonrigid="cuff", smooth=0)
-        self.assertEqual(cook(node).errors, ())
-        rough = selection_weights(node.geometry(), BONES)
-        node.parm("smooth").set(20)
-        self.assertEqual(cook(node).errors, ())
-        smooth = selection_weights(node.geometry(), BONES)
-        self.assertGreater(float(np.ptp(rough[cuff][:, 3])), 0.3)
-        self.assertLess(float(np.ptp(smooth[cuff][:, 3])), float(np.ptp(rough[cuff][:, 3])))
-        origin = np.array(node.geometry().pointIntAttribValues("a3ob_rig_origin"))
-        self.assertTrue((origin[cuff] == 4).all())
-        self.assertIn("Loose parts: 1 piece.", "\n".join(node.messages()))
-
-    def test_other_selections_stay_and_untouched_points_keep_their_weights(self):
-        node, _, cuff = self.scene(firstpass="!cuff")  # first pass is everything but the cuff, which is in no layer
-        self.assertEqual(cook(node).errors, ())
-        geo = node.geometry()
-        self.assertIsNotNone(geo.findPointGroup("cuff"))
-        self.assertTrue((selection_weights(geo, BONES)[cuff] == 0).all())
-        origin = np.array(geo.pointIntAttribValues("a3ob_rig_origin"))
         self.assertTrue((origin[cuff] == 0).all())
+        self.assertTrue((weights[cuff] == 0).all())  # outside the group: no weights on a fresh mesh
+        np.testing.assert_allclose(weights[~cuff].sum(axis=1), 1.0, atol=1e-5)
+        self.assertIsNone(geo.findPointAttrib("a3ob_rig_piece"))
+
+    def test_an_empty_body_group_is_every_point(self):
+        node, _, cuff = self.scene()
+        self.assertEqual(cook(node).errors, ())
+        origin = np.array(node.geometry().pointIntAttribValues("a3ob_rig_origin"))
+        self.assertTrue((origin > 0).all())
+
+    def test_points_outside_the_group_keep_their_weights(self):
+        node, _, cuff = self.scene(body="body")
+        self.assertEqual(cook(node).errors, ())
+        again = self.network.createNode("a3ob_weight_transfer")  # a second run on the output, on the cuff only
+        again.setInput(0, node)
+        again.setInput(1, node.input(1))
+        again.setInput(2, node.input(2))
+        again.parm("body").set("cuff")
+        self.assertEqual(cook(again).errors, ())
+        weights = selection_weights(again.geometry(), BONES)
+        before = selection_weights(node.geometry(), BONES)
+        self.assertTrue((weights[cuff].sum(axis=1) > 0.99).all())
+        np.testing.assert_array_equal(weights[~cuff], before[~cuff])
+        origin = np.array(again.geometry().pointIntAttribValues("a3ob_rig_origin"))
+        self.assertTrue((origin > 0).all())  # the body points keep their origin, the cuff gets one
 
     def test_errors(self):
-        node, _, _ = self.scene(rigid="cuff")
+        node, _, _ = self.scene(body="body")
         node.setInput(1, node.input(0))  # a body with no weights
         self.assertIn("no selection of the source body", " ".join(cook(node).errors))
-        node2, _, _ = self.scene(rigid="nothing")
-        self.assertTrue(cook(node2).errors)  # Houdini cannot read the group, or no point is in a group
+        node2, _, _ = self.scene(body="nothing")
+        self.assertTrue(cook(node2).errors)  # Houdini cannot read the group, or it has no point
         node3, _, _ = self.scene()
         node3.setInput(2, node3.input(0))
         self.assertIn("not a skeleton", " ".join(cook(node3).errors))
 
+    def test_removed_parameters_are_gone(self):
+        node, _, _ = self.scene()
+        for name in ("firstpass", "rigid", "nonrigid", "rigid_mode", "merge_twist", "smooth"):
+            self.assertIsNone(node.parm(name), name)
+
 
 class TestChain(TransferTestCase):
-    """Design criterion 4: the output goes through Weight Cleanup, Weights Convert and Joint Deform with no extra step."""
+    """Design criterion 4: Weight Transfer, Accessory Weights, Weight Cleanup, Weights Convert and Joint Deform chain with
+    no extra step."""
 
-    def test_transfer_cleanup_convert_and_joint_deform(self):
-        node, all_P, cuff = self.scene(rigid="cuff")
+    def test_transfer_accessory_cleanup_convert_and_joint_deform(self):
+        node, all_P, cuff = self.scene(body="body")
         skeleton = node.input(2)
+        accessory = self.network.createNode("a3ob_accessory_weights")
+        accessory.setInput(0, node)
+        accessory.setInput(1, skeleton)
+        accessory.parm("target").set("cuff")
+        accessory.parm("source").set("body")
         cleanup = self.network.createNode("a3ob_weight_cleanup")
-        cleanup.setInput(0, node)
+        cleanup.setInput(0, accessory)
         cleanup.setInput(1, skeleton)
         convert = self.network.createNode("a3ob_weights_convert")
         convert.setInput(0, cleanup)
         convert.setInput(1, skeleton)
         convert.parm("mode").set("tocapture")
-        for step in (node, cleanup, convert):
+        for step in (node, accessory, cleanup, convert):
             self.assertEqual(cook(step).errors, (), step.path())
         deform = self.network.createNode("kinefx::jointdeform")
         deform.setInput(0, convert)
@@ -224,6 +206,7 @@ class TestChain(TransferTestCase):
         self.assertGreater(float(np.abs(expected - before).max()), 0.01)
         new = selection_weights(cleanup.geometry(), BONES)
         self.assertEqual(np.rint(new.sum(axis=1) * 254).tolist(), [254] * len(new))
+        self.assertTrue((new[cuff] == new[cuff][0]).all())  # the rigid cuff has one row
 
 
 SAMPLE = "Addons/Test_Character_01/A3_character_example.p3d"

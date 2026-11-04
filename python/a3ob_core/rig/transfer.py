@@ -14,11 +14,11 @@ All of it is numpy (scipy is not in hython). The steps:
    ``distance`` (a share of the target's bounding-box diagonal) and the normals differ by at most ``angle``. A match gets
    the source weights (barycentric). The other points get a harmonic fill: weights that minimise a cotangent Laplacian
    energy with the matched rows fixed (conjugate gradients, one column per bone, all at once).
-2. **Rigid pieces.** Each connected piece takes the area-weighted average of the first-pass weights it lies on, then
+2. **Rigid pieces** (Accessory Weights, D41). Each connected piece of the target group takes the area-weighted average of the first-pass weights it lies on, then
    either one dominant bone (weight 1) or that average as one fixed blend for every point. A ``...Roll`` (twist)
-   weight counts for the next bone down the chain that is not a twist (D37 Q12). An override bone wins.
-3. **Non-rigid pieces.** Each point takes the first-pass weights of the surface under it; the weights are then smoothed
-   along the piece's own edges.
+   weight counts for the next bone down the chain that is not a twist (D37 Q12). A chosen bone wins.
+3. **Non-rigid pieces** (Accessory Weights). Each point takes the source weights of the surface under it (the first pass
+   machinery, with the source group as the surface); the weights are then smoothed along the piece's own edges.
 
 A weight set is a dense matrix (points x bones), as in ``weights``. Only numpy features of numpy 1.26 and 2.x are used.
 """
@@ -30,7 +30,7 @@ import numpy as np
 
 __all__ = ["ORIGIN_NONE", "ORIGIN_COPIED", "ORIGIN_FILLED", "ORIGIN_RIGID", "ORIGIN_NONRIGID", "Settings", "Piece",
            "TransferResult", "point_components", "drop_small_pieces", "vertex_normals", "closest_points",
-           "surface_weights", "cotan_edges", "Laplacian", "inpaint", "first_pass", "transfer_layers",
+           "surface_weights", "cotan_edges", "Laplacian", "inpaint", "first_pass", "transfer_body", "accessory_layer",
            "twist_targets", "is_twist"]
 
 #: ``a3ob_rig_origin`` values: where the weights of a point came from.
@@ -47,7 +47,7 @@ class Settings:
     distance: float = 0.05
     #: ``Theta``: the largest angle between the normals of a match, in degrees (paper: 35).
     angle: float = 35.0
-    #: "dominant" (one bone, weight 1) or "blend" (one fixed row) for each rigid piece.
+    #: "dominant" (one bone, weight 1), "blend" (one fixed row) or "bone" (a chosen bone) for each rigid piece.
     rigid_mode: str = "dominant"
     merge_twist: bool = True
     #: Smoothing passes along a non-rigid piece.
@@ -374,13 +374,15 @@ def _normalise_rows(W: np.ndarray) -> np.ndarray:
 
 
 def first_pass(src_P: np.ndarray, src_tris: np.ndarray, src_W: np.ndarray, dst_P: np.ndarray, dst_tris: np.ndarray,
-               active: np.ndarray, reach: float, settings: Settings) -> Tuple[np.ndarray, np.ndarray, Dict[str, int]]:
+               active: np.ndarray, reach: float, settings: Settings, far_nearest: bool = False
+               ) -> Tuple[np.ndarray, np.ndarray, Dict[str, int]]:
     """Closest point match and inpainting for the ``active`` points of the target (``dst_tris`` are the triangles
     between them). ``reach`` is the largest distance of a match in the units of the points. Returns
     ``(weights, origin, info)``; inactive points get zeros and ORIGIN_NONE.
 
     A point whose component has no match at all cannot be filled from its neighbours; it takes the weights of its
-    closest source point without the thresholds (``info["fallback"]``)."""
+    closest source point without the thresholds (``info["fallback"]``). With ``far_nearest`` a point farther than
+    ``reach`` does the same, whatever its neighbours do (the accessory non-rigid mode, D41)."""
     count, bones = len(dst_P), src_W.shape[1]
     info = {"matched": 0, "filled": 0, "fallback": 0, "rejected_distance": 0, "rejected_normal": 0,
             "rejected_unweighted": 0}
@@ -413,7 +415,7 @@ def first_pass(src_P: np.ndarray, src_tris: np.ndarray, src_W: np.ndarray, dst_P
     has_match = np.zeros(int(labels.max()) + 1, dtype=bool)
     has_match[labels[index[matched]]] = True
     stuck = np.zeros(count, dtype=bool)
-    stuck[index] = ~matched & ~has_match[labels[index]]
+    stuck[index] = ~matched & (~has_match[labels[index]] | (far_nearest & ~ok_dist))
     known |= stuck
     fixed[index] = np.where(stuck[index][:, None], at, fixed[index])
     info["matched"] = int(matched.sum())
@@ -518,84 +520,105 @@ def _smooth(weights: np.ndarray, tris: np.ndarray, points: np.ndarray, passes: i
     return _normalise_rows(out)
 
 
-def transfer_layers(src_P: np.ndarray, src_tris: np.ndarray, src_W: np.ndarray, dst_P: np.ndarray,
-                    dst_tris: np.ndarray, first: np.ndarray, rigid: np.ndarray, nonrigid: np.ndarray,
-                    twist: Optional[Sequence[int]], override: Optional[Sequence[int]], settings: Settings
-                    ) -> TransferResult:
-    """The three layers of design 2.5. ``first``, ``rigid`` and ``nonrigid`` are boolean masks of the target points
-    (they must not overlap; the caller decides who wins). ``twist`` is ``twist_targets`` (None: no merge). ``override``
-    is a bone number per target point, -1 for none: the most common override of a rigid piece wins.
-
-    Raises ``ValueError`` with a plain message when the first pass has nothing to build on."""
-    count, bones = len(dst_P), src_W.shape[1]
+def transfer_body(src_P: np.ndarray, src_tris: np.ndarray, src_W: np.ndarray, dst_P: np.ndarray, dst_tris: np.ndarray,
+                  body: np.ndarray, settings: Settings) -> TransferResult:
+    """The Weight Transfer node (D41): the weights of the sample body onto the ``body`` points of the target (a boolean
+    mask), by closest point and inpainting. Points outside the mask get zeros and ORIGIN_NONE; the caller leaves them as
+    they are. Raises ``ValueError`` with a plain message when there is nothing to work on."""
+    count = len(dst_P)
     src_tris = drop_small_pieces(len(src_P), src_tris, settings.minpiece)
     if not len(src_tris):
         raise ValueError("the source body has no polygons")
     dst_tris = np.asarray(dst_tris, dtype=np.int64).reshape(-1, 3)
-    first_tris = dst_tris[first[dst_tris].all(axis=1)] if len(dst_tris) else dst_tris
-    used = first | rigid | nonrigid
-    if not used.any():
-        raise ValueError("no target point is in a group")
-    reach = settings.distance * float(np.linalg.norm(dst_P[used].max(0) - dst_P[used].min(0)))
-    weights, origin, info = first_pass(src_P, src_tris, src_W, dst_P, first_tris, first, reach, settings)
+    if not body.any():
+        raise ValueError("no target point is in the body group")
+    body_tris = dst_tris[body[dst_tris].all(axis=1)] if len(dst_tris) else dst_tris
+    reach = settings.distance * float(np.linalg.norm(dst_P[body].max(0) - dst_P[body].min(0)))
+    weights, origin, info = first_pass(src_P, src_tris, src_W, dst_P, body_tris, body, reach, settings)
+    return TransferResult(weights, origin, -np.ones(count, dtype=np.int64), [], info)
+
+
+def accessory_layer(P: np.ndarray, tris: np.ndarray, W: np.ndarray, source: np.ndarray, target: np.ndarray, mode: str,
+                    twist: Optional[Sequence[int]], bone: int, settings: Settings) -> TransferResult:
+    """The Accessory Weights node (D41). One mesh (``P``, ``tris``) holds both groups: ``source`` (points that have the
+    weights ``W``, points x bones) and ``target`` (the points to weight), boolean masks that must not overlap. ``mode`` is
+    "rigid" (``settings.rigid_mode`` "dominant", "blend" or "bone"; for "bone" the bone number is ``bone`` and the source
+    is not used) or "nonrigid". ``twist`` is ``twist_targets`` (None: no merge).
+
+    Rigid: each connected piece of the target takes the area-weighted average of the source weights near it, then one
+    bone or one fixed blend. Non-rigid: each point takes the source weights under it (distance and angle limits as the
+    body pass; a point with no source in reach takes the nearest source point), smoothed along the piece.
+    ``info["fallback"]`` counts the target points that took the nearest source point because none was in reach.
+    Raises ``ValueError`` with a plain message when there is nothing to work on."""
+    count, bones = len(P), W.shape[1]
+    tris = np.asarray(tris, dtype=np.int64).reshape(-1, 3)
+    info = {"matched": 0, "filled": 0, "fallback": 0, "rejected_distance": 0, "rejected_normal": 0,
+            "rejected_unweighted": 0, "rigid_pieces": 0, "nonrigid_pieces": 0, "ignored_pieces": 0,
+            "unweighted_pieces": 0, "far_points": 0}
+    weights = np.zeros((count, bones))
+    origin = np.zeros(count, dtype=np.int64)
     piece_of = -np.ones(count, dtype=np.int64)
     pieces: List[Piece] = []
-    info.update({"rigid_pieces": 0, "nonrigid_pieces": 0, "ignored_pieces": 0, "unweighted_pieces": 0,
-                 "far_points": 0, "overrides": 0})
-    layered = rigid | nonrigid
-    if not layered.any():
-        return TransferResult(weights, origin, piece_of, pieces, info)
-    if not len(first_tris) or not (weights.sum(axis=1) > 0).any():
-        raise ValueError("the rigid and non-rigid groups need first-pass points with polygons to take their weights from")
-    merge = np.zeros((bones, bones))
-    merge[np.arange(bones), np.arange(bones) if twist is None or not settings.merge_twist else list(twist)] = 1.0
-
-    for layer, mask in (("rigid", rigid), ("nonrigid", nonrigid)):
-        found, ignored = _piece_points(count, dst_tris, mask, settings.minpiece)
-        info["ignored_pieces"] += ignored
-        for points, tris in found:
-            at, dist, _tri, _bary = surface_weights(dst_P[points], dst_P, first_tris, weights)
-            number = len(pieces)
-            piece = Piece(number, layer, len(points))
-            piece_of[points] = number
-            if layer == "rigid":
-                new = _rigid_piece(piece, points, tris, at, dist, reach, dst_P, override, merge, settings, bones, info)
-                origin[points] = ORIGIN_RIGID
-                info["rigid_pieces"] += 1
+    if not target.any():
+        raise ValueError("no point is in the target group")
+    use_source = not (mode == "rigid" and settings.rigid_mode == "bone")
+    src_tris = tris[source[tris].all(axis=1)] if len(tris) else tris
+    if use_source and not len(src_tris):
+        raise ValueError("the source group has no polygons")
+    used = target | source if use_source else target  # the size that the distance is a share of
+    reach = settings.distance * float(np.linalg.norm(P[used].max(0) - P[used].min(0)))
+    found, info["ignored_pieces"] = _piece_points(count, tris, target, settings.minpiece)
+    if mode == "rigid":
+        merge = np.zeros((bones, bones))
+        merge[np.arange(bones), np.arange(bones) if twist is None or not settings.merge_twist else list(twist)] = 1.0
+        for points, piece_tris in found:
+            piece = Piece(len(pieces), "rigid", len(points))
+            if use_source:
+                at, dist, _tri, _bary = surface_weights(P[points], P, src_tris, W)
             else:
-                new = np.zeros((count, bones))
-                new[points] = at
-                new = _smooth(new, tris, points, settings.smooth)[points]
-                piece.how = "smooth"
-                origin[points] = ORIGIN_NONRIGID
-                info["nonrigid_pieces"] += 1
-            weights[points] = new
-            if layer == "nonrigid" and not (new.sum(axis=1) > 0).any():
+                at, dist = np.zeros((len(points), bones)), np.zeros(len(points))
+            weights[points] = _rigid_piece(piece, points, piece_tris, at, dist, reach, P, bone, merge, settings, bones,
+                                           info)
+            origin[points] = ORIGIN_RIGID
+            piece_of[points] = piece.number
+            info["rigid_pieces"] += 1
+            info["unweighted_pieces"] += int(piece.how == "none")
+            pieces.append(piece)
+    else:
+        active = np.zeros(count, dtype=bool)
+        for points, _piece_tris in found:
+            active[points] = True
+        if active.any():
+            active_tris = tris[active[tris].all(axis=1)] if len(tris) else tris
+            norm = _normalise_rows(W)
+            weights, _origin, got = first_pass(P, src_tris, norm, P, active_tris, active, reach, settings, True)
+            for key in ("matched", "filled", "fallback", "rejected_distance", "rejected_normal", "rejected_unweighted"):
+                info[key] = got[key]
+        for points, piece_tris in found:
+            piece = Piece(len(pieces), "nonrigid", len(points), how="smooth")
+            weights[points] = _smooth(weights, piece_tris, points, settings.smooth)[points]
+            if not (weights[points].sum(axis=1) > 0).any():
                 piece.how = "none"
+            origin[points] = ORIGIN_NONRIGID
+            piece_of[points] = piece.number
+            info["nonrigid_pieces"] += 1
             info["unweighted_pieces"] += int(piece.how == "none")
             pieces.append(piece)
     return TransferResult(weights, origin, piece_of, pieces, info)
 
 
-def _rigid_piece(piece: Piece, points, tris, at, dist, reach, dst_P, override, merge, settings, bones, info
-                 ) -> np.ndarray:
+def _rigid_piece(piece: Piece, points, tris, at, dist, reach, dst_P, bone, merge, settings, bones, info) -> np.ndarray:
     """The weight rows of every point of a rigid piece."""
-    chosen = -1
-    if override is not None:
-        given = np.asarray(override)[points]
-        given = given[given >= 0]
-        if len(given):
-            chosen = int(np.bincount(given).argmax())
-            info["overrides"] += 1
-    if chosen >= 0:
-        piece.bone, piece.how = chosen, "override"
+    if settings.rigid_mode == "bone":
+        piece.bone, piece.how = bone, "chosen"
         row = np.zeros(bones)
-        row[chosen] = 1.0
+        row[bone] = 1.0
         return np.tile(row, (len(points), 1))
     near = dist <= reach
     info["far_points"] += int((~near).sum())
-    if not near.any():
+    if not near.any():  # nothing in reach: the nearest source weights count
         near = np.ones(len(points), dtype=bool)
+        info["fallback"] += len(points)
     area = _point_areas(dst_P, tris, points)
     average = (area[near, None] * at[near]).sum(0)
     if average.sum() <= 1e-9:

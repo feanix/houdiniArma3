@@ -1,0 +1,111 @@
+= Accessory Weights =
+
+#type: node
+#context: sop
+#internal: a3ob_accessory_weights
+#tags: arma, p3d
+
+"""Weights accessories (a helmet, pouches, a strap) from points that already have weights: the body or another accessory."""
+
+Accessories do not follow the skin: a helmet turns with the head, a pouch with the belt, a bandolier bends with the chest. This node weights them from points that already have weights. Put the accessory points in the Target Group and the points that give the weights in the Source Group: the body, or another accessory (a pouch can take its weights from the belt). Chain one node per accessory after Weight Transfer, and run Weight Cleanup last.
+
+Rigid mode gives every connected piece of the target one bone or one fixed blend. Auto picks the bone with the most source weight under the piece (a twist bone counts for the next bone down the chain); Fixed blend gives every point the average; Bone gives every piece the bone you pick from the menu of the skeleton. Non-rigid mode lets each point take the source weights under it and smooths them along the piece. A target point with no source point within the distance limit takes the nearest weighted source point, and the node warns with the count. The result is bone selections, a3ob_rig_origin (3 rigid, 4 non-rigid) and a3ob_rig_piece (the number of the rigid or non-rigid piece, which Unpose uses).
+
+@inputs
+
+Your mesh:
+    The mesh with the weighted body (from Weight Transfer) and the accessories. Both groups below are point groups of this mesh.
+
+Skeleton:
+    The skeleton, for example from Rig Skeleton; the output of Rig Fit goes here as it is (its fitted skeleton is used). Its joint names decide which selections are bones and how they are spelled; its hierarchy says where a twist bone's weight goes.
+
+@parameters
+
+Target Group:
+    #id: target
+
+    The accessory points to weight. Required. Each connected piece of the group is one piece.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
+
+Source Group:
+    #id: source
+
+    The points that give the weights: the body, or another accessory that already has weights. Points of it with no bone weight are ignored, with a warning. Not used when Rigid uses a picked bone.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
+
+Mode:
+    #id: mode
+
+    How the accessory is weighted.
+
+    Type: Menu. Default: Rigid.
+
+    Rigid:
+        Every connected piece of the target follows one bone or one fixed blend (a helmet, a pouch).
+
+    Non-rigid:
+        Each point takes the weights of the source under it, smoothed along the piece (a bandolier, a cable).
+
+Rigid Uses:
+    #id: use
+
+    How a rigid piece is weighted.
+
+    Type: Menu. Default: Auto. Shown when: Mode is Rigid.
+
+    Auto:
+        The whole piece follows the one bone with the most source weight under it (weight 1).
+
+    Fixed blend:
+        Every point gets the same mix of bones, the average of the source under the piece.
+
+    Bone:
+        Every piece follows the bone you pick below.
+
+Bone:
+    #id: bone
+
+    The bone every rigid piece follows. The menu lists the bones of the skeleton on input 2.
+
+    Type: Menu. Default: head. Shown when: Mode is Rigid and Rigid Uses is Bone.
+
+    The choices are made when you open the menu, from the geometry or the settings.
+
+Merge Twist Bones:
+    #id: merge_twist
+
+    The weight of a twist bone (a name ending in Roll) counts for the next bone down the chain that is not a twist, so a piece on the elbow follows the forearm.
+
+    Type: On or off. Default: On. Shown when: Mode is Rigid and Rigid Uses is Auto.
+
+Match Distance:
+    #id: distance
+
+    How far from the source a target point may be and still count, as a share of the size of the target and source groups together (the diagonal of their bounding box). A point with no source this close takes the nearest weighted source point, with a warning.
+
+    Type: Number. Default: 0.05. Allowed: At least 0; no upper limit.
+
+Match Angle:
+    #id: angle
+
+    How much the surface direction may differ, in degrees, for a point to copy weights. A point that faces another way is filled in from its neighbours on the piece.
+
+    Type: Number. Default: 35. Allowed: From 0 to 180. Shown when: Mode is Non-rigid.
+
+Smoothing Passes:
+    #id: smooth
+
+    How many times the weights are averaged with their neighbours along the piece.
+
+    Type: Whole number. Default: 8. Allowed: From 0 to 100. Shown when: Mode is Non-rigid.
+
+Smallest Piece:
+    #id: minpiece
+
+    A piece of the target with fewer points than this is ignored: it gets no weights.
+
+    Type: Whole number. Default: 10. Allowed: At least 1; no upper limit.
+
+The full page for this node is docs/user/reference/a3ob_accessory_weights.html in the A3OB folder. Open it in a web browser.

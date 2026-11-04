@@ -44,11 +44,25 @@ NODE_INTRO = {
         "Copies the bone weights of a source body (for example Bohemia's sample character) onto your mesh. Each point "
         "of your mesh takes the weights of the closest point on the body when it is near enough and faces the same "
         "way. The points that don't match are filled in smoothly from their neighbours.",
-        "Three groups let you treat parts of the mesh differently. Rigid parts (a helmet) get one bone or one fixed "
-        "blend per piece. Loose parts (a bandolier) take the weights under them and are smoothed along the piece. "
-        "Everything else is the first pass. A point string a3ob_rig_bone on a rigid piece names its bone. The result "
-        "is bone selections in the model.cfg spelling, with a3ob_rig_origin (where each weight came from) and "
-        "a3ob_rig_piece. Run Weight Cleanup after it.",
+        "The node weights only the body: the tight polygons that follow the skin (skin, undergarments, shoes). Put "
+        "them in the Body group; empty means every point. Points outside the group keep the weights they have, none "
+        "on a fresh mesh. Weight a helmet, pouches or straps with Accessory Weights after this node. The result is bone "
+        "selections in the model.cfg spelling, with a3ob_rig_origin (where each weight came from). Run Weight Cleanup "
+        "last.",
+    ),
+    "accessory_weights": (
+        "Accessories do not follow the skin: a helmet turns with the head, a pouch with the belt, a bandolier bends with "
+        "the chest. This node weights them from points that already have weights. Put the accessory points in the Target "
+        "Group and the points that give the weights in the Source Group: the body, or another accessory (a pouch can "
+        "take its weights from the belt). Chain one node per accessory after Weight Transfer, and run Weight Cleanup "
+        "last.",
+        "Rigid mode gives every connected piece of the target one bone or one fixed blend. Auto picks the bone with "
+        "the most source weight under the piece (a twist bone counts for the next bone down the chain); Fixed blend "
+        "gives every point the average; Bone gives every piece the bone you pick from the menu of the skeleton. "
+        "Non-rigid mode lets each point take the source weights under it and smooths them along the piece. A target "
+        "point with no source point within the distance limit takes the nearest weighted source point, and the node "
+        "warns with the count. The result is bone selections, a3ob_rig_origin (3 rigid, 4 non-rigid) and a3ob_rig_piece "
+        "(the number of the rigid or non-rigid piece, which Unpose uses).",
     ),
     "rig_landmarks": (
         "Rig Fit fits the skeleton to 14 landmarks of your character. This node is the easy way to set them: it has one "

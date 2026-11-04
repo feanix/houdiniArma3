@@ -28,9 +28,9 @@
 <main>
 <p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
 <h1>Weight Transfer</h1>
-<p class="lead">Copies the bone weights of a source body (the sample character) onto your mesh, with layers for rigid and loose parts.</p>
+<p class="lead">Copies the bone weights of a source body (the sample character) onto the body of your mesh. Accessories are weighted by Accessory Weights.</p>
 <p>Copies the bone weights of a source body (for example Bohemia&#x27;s sample character) onto your mesh. Each point of your mesh takes the weights of the closest point on the body when it is near enough and faces the same way. The points that don&#x27;t match are filled in smoothly from their neighbours.</p>
-<p>Three groups let you treat parts of the mesh differently. Rigid parts (a helmet) get one bone or one fixed blend per piece. Loose parts (a bandolier) take the weights under them and are smoothed along the piece. Everything else is the first pass. A point string a3ob_rig_bone on a rigid piece names its bone. The result is bone selections in the model.cfg spelling, with a3ob_rig_origin (where each weight came from) and a3ob_rig_piece. Run Weight Cleanup after it.</p>
+<p>The node weights only the body: the tight polygons that follow the skin (skin, undergarments, shoes). Put them in the Body group; empty means every point. Points outside the group keep the weights they have, none on a fresh mesh. Weight a helmet, pouches or straps with Accessory Weights after this node. The result is bone selections in the model.cfg spelling, with a3ob_rig_origin (where each weight came from). Run Weight Cleanup last.</p>
 <table class="facts">
 <tr><th>Houdini name</th><td><code>a3ob_weight_transfer</code></td></tr>
 <tr><th>Where to find it</th><td>Tab menu, A3OB, Weight Transfer</td></tr>
@@ -40,29 +40,13 @@
 <ol>
 <li value="1">Input 1: Your mesh. The mesh that gets the weights. It should lie on top of the source body (fit it first).</li>
 <li value="2">Input 2: Source body. The body with bone weights: bone selections (point groups with a3ob_w weights), for example the sample character from Extract LOD. The output of Rig Fit goes here as it is: its fitted sample body is used.</li>
-<li value="3">Input 3: Skeleton. The skeleton, for example from Rig Skeleton. Its joint names decide which selections are bones and how they are spelled; its hierarchy says where a twist bone&#x27;s weight goes.</li>
+<li value="3">Input 3: Skeleton. The skeleton, for example from Rig Skeleton. Its joint names decide which selections are bones and how they are spelled.</li>
 </ol>
 <h2>Parameters</h2>
 <p>Parameters are in the order they appear on the node.</p>
-<section class="parm" id="firstpass">
-<h3>First Pass <code>firstpass</code></h3>
-<p>The base mesh (for example the uniform). It gets its weights straight from the source body. Empty means every point that is in neither of the two groups below.</p>
-<dl>
-<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
-<dt>Default</dt><dd>(empty)</dd>
-</dl>
-</section>
-<section class="parm" id="rigid">
-<h3>Rigid Parts <code>rigid</code></h3>
-<p>Parts that must not stretch (a helmet, a pouch). Each connected piece gets one bone, or one fixed blend, from the first-pass points it sits on.</p>
-<dl>
-<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
-<dt>Default</dt><dd>(empty)</dd>
-</dl>
-</section>
-<section class="parm" id="nonrigid">
-<h3>Loose Parts <code>nonrigid</code></h3>
-<p>Parts that bend (a bandolier, a cable). Each point takes the weights of the first pass under it, and the weights are smoothed along the piece.</p>
+<section class="parm" id="body">
+<h3>Body <code>body</code></h3>
+<p>The tight body-conforming polygons: skin, undergarments, shoes. They get their weights from the source body. Empty means every point. Points outside the group keep the weights they have (none on a fresh mesh): weight them with Accessory Weights.</p>
 <dl>
 <dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
 <dt>Default</dt><dd>(empty)</dd>
@@ -86,39 +70,9 @@
 <dt>Allowed</dt><dd>From 0 to 180</dd>
 </dl>
 </section>
-<section class="parm" id="rigid_mode">
-<h3>Rigid Parts Use <code>rigid_mode</code></h3>
-<p>How a rigid piece is weighted.</p>
-<dl>
-<dt>Type</dt><dd>Menu</dd>
-<dt>Default</dt><dd>Dominant bone</dd>
-</dl>
-<p>Choices:</p>
-<ul>
-<li>Dominant bone <code>dominant</code>: The whole piece follows the one bone with the most weight under it (weight 1).</li>
-<li>Fixed blend <code>blend</code>: Every point gets the same mix of bones, the average under the piece.</li>
-</ul>
-</section>
-<section class="parm" id="merge_twist">
-<h3>Merge Twist Bones <code>merge_twist</code></h3>
-<p>For a rigid piece, the weight of a twist bone (a name ending in Roll) counts for the next bone down the chain that is not a twist, so a piece on the elbow follows the forearm. Only used with Dominant bone.</p>
-<dl>
-<dt>Type</dt><dd>On or off</dd>
-<dt>Default</dt><dd>On</dd>
-</dl>
-</section>
-<section class="parm" id="smooth">
-<h3>Smoothing Passes <code>smooth</code></h3>
-<p>How many times the weights of a loose part are averaged with their neighbours along the piece.</p>
-<dl>
-<dt>Type</dt><dd>Whole number</dd>
-<dt>Default</dt><dd>8</dd>
-<dt>Allowed</dt><dd>From 0 to 100</dd>
-</dl>
-</section>
 <section class="parm" id="minpiece">
 <h3>Smallest Piece <code>minpiece</code></h3>
-<p>A piece with fewer points than this is ignored: it gets no weights from the rigid or loose layer. Loose pieces of the source body this small (the sample&#x27;s proxy triangles) are not used either.</p>
+<p>Loose pieces of the source body with fewer points than this are not used (the sample&#x27;s proxy triangles).</p>
 <dl>
 <dt>Type</dt><dd>Whole number</dd>
 <dt>Default</dt><dd>10</dd>

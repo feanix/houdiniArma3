@@ -305,23 +305,37 @@ at all), and the node message gives the counts, the points with no bone weight (
 Proxy points are left out: they are not counted as having no bone weight, and their weights don't change. On the Samples
 character, Cleanup adjusts about 1,850 points by rounding them onto the 1/254 grid with an exact sum of 1. The largest
 change is about 0.04, shown in <code>a3ob_rig_changed</code>. Points already on the grid with a sum of 1 don't change.</p>
-<h3 id="rigging-transfer">Weights for your own mesh: Weight Transfer</h3>
-<p>The <kbd class="ui-node">Weight Transfer</kbd> node copies the bone weights of a source body (for example the sample
-character, taken out of its P3D with Extract LOD) onto your mesh. It has three inputs: your mesh, the source body, and the
-skeleton from Rig Skeleton. Put your mesh on top of the body first: a point copies the weights of the closest point on the
-body when it is near enough (<strong>Match Distance</strong>, a share of the size of your mesh) and faces the same way
-(<strong>Match Angle</strong>). The points that don't match are filled in smoothly from their neighbours. Run Weight Cleanup
-after it.</p>
-<p>Three point groups let you treat parts differently. <strong>First Pass</strong> is the base mesh and, when empty, every point
-that is in neither of the other two. <strong>Rigid Parts</strong> (a helmet, a pouch) get one bone per connected piece, or one
-fixed blend: the piece takes the average of the weights it sits on. With <strong>Merge Twist Bones</strong> on, the weight of a twist
-bone (<code>LeftArmRoll</code>) counts for the next bone down the chain (<code>LeftForeArm</code>), so a piece on the elbow follows the
-forearm. To choose the bone yourself, put its name in the point string attribute <code>a3ob_rig_bone</code> on the piece.
-<strong>Loose Parts</strong> (a bandolier) take the first-pass weights under each point and are then smoothed along the piece.</p>
-<p>The node writes bone selections with the <code>model.cfg</code> spelling and two point attributes that tell you where each
-weight came from: <code>a3ob_rig_origin</code> (0 none, 1 copied, 2 filled in, 3 rigid piece, 4 loose piece) and
-<code>a3ob_rig_piece</code> (the piece number, -1 outside the pieces). The weights are only as good as the fit: a mesh that is
-off the body by a few centimetres gets many filled-in points.</p>
+<h3 id="rigging-transfer">Weights for your own mesh: Weight Transfer and Accessory Weights</h3>
+<p>Weights are made in layers, one node for each. The <kbd class="ui-node">Weight Transfer</kbd> node weights only the body: the
+tight polygons that follow the skin (skin, undergarments, shoes). It copies the bone weights of a source body (for example the
+sample character, taken out of its P3D with Extract LOD, or the fitted body from Rig Fit) onto your mesh. It has three inputs:
+your mesh, the source body, and the skeleton from Rig Skeleton. Put your mesh on top of the body first: a point copies the
+weights of the closest point on the body when it is near enough (<strong>Match Distance</strong>, a share of the size of your
+mesh) and faces the same way (<strong>Match Angle</strong>). The points that don't match are filled in smoothly from their
+neighbours. Put the body polygons in the <strong>Body</strong> point group; empty means every point. Points outside the group keep
+the weights they have, which is none on a fresh mesh.</p>
+<p>Accessories (a helmet, pouches, a bandolier) do not follow the skin, so the <kbd class="ui-node">Accessory Weights</kbd> node
+weights them. Put one node after Weight Transfer for each accessory, with two point groups on the same mesh: the
+<strong>Target Group</strong> (the accessory points to weight) and the <strong>Source Group</strong> (the points that give the
+weights: the body, or another accessory). Its second input is the skeleton. A source point with no weight is ignored, with a
+warning that counts them. A target point with no source point within the distance limit takes the nearest weighted source
+point, also with a warning.</p>
+<ul>
+<li><strong>Rigid</strong> (a helmet, a pouch): each connected piece of the target takes the average of the source weights it
+sits on, then follows one bone or one fixed blend. <strong>Auto</strong> picks the bone with the most weight; with
+<strong>Merge Twist Bones</strong> on, the weight of a twist bone (<code>LeftArmRoll</code>) counts for the next bone down the
+chain (<code>LeftForeArm</code>), so a piece on the elbow follows the forearm. <strong>Fixed blend</strong> gives every point the
+same mix. <strong>Bone</strong> gives every piece the bone you pick from the menu of the skeleton, whatever is under it.</li>
+<li><strong>Non-rigid</strong> (a bandolier, a cable): each point takes the source weights under it, then the weights are
+smoothed along the piece (<strong>Smoothing Passes</strong>).</li>
+</ul>
+<p>A chain looks like this: Weight Transfer (body), Accessory Weights (helmet, Rigid, Bone <code>head</code>), Accessory Weights
+(pouch, Rigid, source = the belt group), then Weight Cleanup. The pouch takes its weights from the belt, which is an accessory
+that was weighted by an earlier node. Run Weight Cleanup last.</p>
+<p>The nodes write bone selections with the <code>model.cfg</code> spelling and point attributes that tell you where each
+weight came from: <code>a3ob_rig_origin</code> (0 none, 1 copied, 2 filled in, 3 rigid piece, 4 non-rigid piece) and, from
+Accessory Weights, <code>a3ob_rig_piece</code> (the piece number, -1 outside the pieces; the numbers go on counting along the
+chain). The weights are only as good as the fit: a mesh that is off the body by a few centimetres gets many filled-in points.</p>
 
 <h3 id="rigging-fit">Fitting the skeleton to your mesh: Rig Fit</h3>
 <p>Weight Transfer needs your mesh and the source body to lie on top of each other. Your character has its own size and
