@@ -214,6 +214,26 @@ class TestLayers(unittest.TestCase):
             run(self.src, self.all_P, self.all_tris, self.none, self.cuff, self.none)
 
 
+class TestInpaint(unittest.TestCase):
+    def test_matches_a_direct_solve_and_skips_empty_columns(self):
+        # Purpose: the cut-down conjugate gradient (task #72) must give the harmonic fill a dense solve gives.
+        P, tris = tube(6, 10)
+        ei, ej, w = transfer.cotan_edges(P, tris)
+        lap = transfer.Laplacian(len(P), ei, ej, w)
+        known = np.zeros(len(P), dtype=bool)
+        known[:10] = known[-10:] = True
+        X = np.zeros((len(P), 3))
+        X[:10, 0] = 1.0
+        X[-10:, 1] = 1.0  # the third column has nothing to spread
+        got, _ = transfer.inpaint(lap, known, X, 1e-9, 2000)
+        L = lap.times(np.eye(len(P)))
+        u = ~known
+        want = X.copy()
+        want[u] = np.linalg.solve(L[np.ix_(u, u)], -L[np.ix_(u, known)] @ X[known])
+        self.assertLess(np.abs(got - want).max(), 1e-6)
+        self.assertEqual(float(np.abs(got[:, 2]).max()), 0.0)
+
+
 class TestTwist(unittest.TestCase):
     def test_names(self):
         self.assertTrue(is_twist("LeftArmRoll"))
