@@ -87,3 +87,15 @@ def menu(kind: str, name: str, kwargs) -> list:
     except Exception:
         LOGGER.error("menu %s/%s failed:\n%s", kind, name, traceback.format_exc())
         return []
+
+
+def group_menu(kind: str, name: str, kwargs) -> list:
+    """The items of a group picker (``Parm`` kind ``group``), flat as Houdini wants them. Never raises."""
+    try:
+        from . import group_menu as picker
+        node = kwargs["node"]
+        return [text for pair in picker.menu_items(node, nodes.load(kind).SPEC.parm_index[name], kwargs.get("parm"))
+                for text in pair]
+    except Exception:
+        LOGGER.error("group menu %s/%s failed:\n%s", kind, name, traceback.format_exc())
+        return []

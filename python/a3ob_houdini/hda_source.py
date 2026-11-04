@@ -27,7 +27,8 @@ from typing import Dict, List
 
 from .docs_common import (FOLDER_TEXT, NODE_INTRO, collapse_inputs, condition_text, default_text, input_sentence,
                           menu_texts, parm_index_for, range_text, type_text, wiki_escape)
-from .params import CALLBACK, CREATED_SCRIPT, LOADED_SCRIPT, MENU_SCRIPT, NodeSpec, Parm, hide_when_text
+from .params import (CALLBACK, CREATED_SCRIPT, GROUP_ACTION_HELP, GROUP_ACTION_ICON, GROUP_MENU_SCRIPT, LOADED_SCRIPT,
+                     MENU_SCRIPT, NodeSpec, Parm, group_action_script, hide_when_text)
 
 __all__ = ["hda_folder_name", "section_name", "render", "write", "differences"]
 
@@ -120,7 +121,8 @@ def _parm_block(spec: NodeSpec, parm: Parm) -> str:
     if parm.kind == "folder":
         return _folder_block(spec, parm)
     kind = {"string": "string", "file": "file", "dir": "directory", "color": "color4", "toggle": "toggle",
-            "button": "button", "int": "integer", "float": "float", "menu": "string"}[parm.kind]
+            "button": "button", "int": "integer", "float": "float", "menu": "string",
+            "group": "string"}[parm.kind]
     if parm.kind == "float" and parm.size == 3:
         kind = "vector"  # Houdini names the components tx, ty, tz
     lines = ["    parm {", "\tname\t%s" % _quote(parm.name), "\tlabel\t%s" % _quote(parm.label), "\ttype\t%s" % kind]
@@ -136,7 +138,10 @@ def _parm_block(spec: NodeSpec, parm: Parm) -> str:
         lines.append("\trange\t{ %s }" % _range_text(parm))
     if parm.kind == "color":
         lines.append("\trange\t{ 0 1 }")
-    if parm.kind == "menu" and parm.menu_action:
+    if parm.kind == "group":
+        lines += ["\tmenutoggle {", "\t    [ %s ]" % _quote(GROUP_MENU_SCRIPT % (spec.kind, parm.name)),
+                  "\t    language python", "\t}"]
+    elif parm.kind == "menu" and parm.menu_action:
         lines.append("\tmenutoggle {" if parm.menu_toggle else "\tmenu {")
         lines.append("\t    [ %s ]" % _quote(MENU_SCRIPT % (spec.kind, parm.menu_action)))
         lines.append("\t    language python")
@@ -153,6 +158,10 @@ def _parm_block(spec: NodeSpec, parm: Parm) -> str:
         lines.append("\tinvisible")
     if parm.show_when:
         lines.append("\thidewhen\t%s" % _quote(hide_when_text(parm.show_when)))
+    if parm.kind == "group":
+        lines.append("\tparmtag\t{ \"script_action\" %s }" % _quote(group_action_script(parm)))
+        lines.append("\tparmtag\t{ \"script_action_help\" %s }" % _quote(GROUP_ACTION_HELP))
+        lines.append("\tparmtag\t{ \"script_action_icon\" %s }" % _quote(GROUP_ACTION_ICON))
     if parm.kind == "file":
         lines.append('\tparmtag\t{ "filechooser_mode" "%s" }' % parm.file_mode)
         if parm.file_pattern:

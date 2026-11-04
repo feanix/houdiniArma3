@@ -70,7 +70,14 @@
 	label	"Group"
 	type	string
 	default	{ "" }
-	help	"The points to change, as a group name or point numbers (for example 0-3). Empty means all points."
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('mass', 'group', kwargs)" ]
+	    language python
+	}
+	help	"The points to change. Empty means all points. The menu lists the point groups of the input and shows the P3D name of a selection; picking adds or removes the group. The arrow button picks points in the viewport. You can also type group names, patterns or point numbers (for example 0-3)."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
     }
     parm {
 	name	"visualize"

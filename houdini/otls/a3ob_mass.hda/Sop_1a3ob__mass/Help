@@ -72,9 +72,9 @@ Value (old scenes):
 Group:
     #id: group
 
-    The points to change, as a group name or point numbers (for example 0-3). Empty means all points.
+    The points to change. Empty means all points. The menu lists the point groups of the input and shows the P3D name of a selection; picking adds or removes the group. The arrow button picks points in the viewport. You can also type group names, patterns or point numbers (for example 0-3).
 
-    Type: Text. Default: (empty).
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
 
 Visualize:
     #id: visualize

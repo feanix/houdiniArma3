@@ -71,7 +71,11 @@ SPEC = NodeSpec(
              "Not shown. Scenes saved before the three mass parameters existed stored the number here. When a scene "
              "loads, a number of 0 or more is moved into the parameter of the current mode and this goes back to "
              "-1. A new node leaves it at -1.", hidden=True),
-        Parm("group", "Group", "string", "", "The points to change, as a group name or point numbers (for example 0-3). Empty means all points."),
+        Parm("group", "Group", "group", "",
+             "The points to change. Empty means all points. The menu lists the point groups of the input and shows "
+             "the P3D name of a selection; picking adds or removes the group. The arrow button picks points in the "
+             "viewport. You can also type group names, patterns or point numbers (for example 0-3).",
+             group_type="points"),
         Parm("visualize", "Visualize", "toggle", False,
              "Colour the points in the viewport by their mass: blue is the least mass, red the most, black no mass. "
              "This is a node visualizer, so the geometry (and any Cd it has) is not changed. The export ignores it.",

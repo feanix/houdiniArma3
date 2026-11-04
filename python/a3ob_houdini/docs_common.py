@@ -77,6 +77,7 @@ KIND_TEXT = {
     "dir": "Folder path",
     "color": "Colour with alpha",
     "folder": "Group",
+    "group": "Group picker",
 }
 
 #: What the three folder looks are called for an artist.
@@ -197,6 +198,10 @@ def type_text(parm):
     text = KIND_TEXT[parm.kind]
     if parm.kind == "menu" and parm.menu_toggle:
         text = "Menu (pick several; each pick adds or removes an entry in the text)"
+    if parm.kind == "group":
+        text = ("Group picker (text; the menu lists the %s of the input, the arrow button picks in the viewport)"
+                % ("groups of the kind the Group Type menu sets" if parm.group_follow else
+                   "point groups" if parm.group_type == "points" else "primitive groups"))
     if parm.kind == "folder":
         text = "Group (%s)" % FOLDER_TEXT[parm.folder_type]
     elif parm.size > 1 and parm.kind != "color":

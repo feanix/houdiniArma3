@@ -68,6 +68,14 @@ Parm("color", "Color", "color", (1.0, 1.0, 1.0, 1.0), "...")
 # read_parms gives the string as typed. The default may be any text.
 Parm("lods", "LODs", "menu", "*", "...", menu_action="lod_choices", menu_toggle=True)
 
+# Group picker: kind "group", a string that behaves like the Group field of Houdini's own SOPs. The dropdown lists the
+# input's groups (toggle menu, hou.SopNode.generateInputGroupMenu, via entry.group_menu / group_menu.py) and the arrow
+# button runs soputils.selectGroupParm (tags script_action, script_action_help, script_action_icon). group_type is
+# "prims" or "points"; group_follow names a menu with those tokens (Group Type) that the picker obeys instead.
+# read_parms gives the string as typed, so names, patterns and numbers (0-3) still work in the cook.
+Parm("group", "Group", "group", "", "...", group_follow="grouptype")
+Parm("group", "Group", "group", "", "...", group_type="points")
+
 # Menu choices that need their own help: item_help=((token, text), ...). A menu whose help reads
 # "Intro. Label A: text; Label B: text" is split by itself. A choice with no text is only listed by name.
 ```
