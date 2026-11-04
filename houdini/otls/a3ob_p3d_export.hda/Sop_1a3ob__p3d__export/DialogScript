@@ -6,7 +6,7 @@
     label	"P3D Export"
 
     help {
-	"Checks a P3D geometry or a LOD geometry like Validate and writes it as a .p3d file when Save to Disk is pressed. The output is the input."
+	"Checks a P3D geometry or a LOD geometry like Validate and writes it as a .p3d file when Save to Disk is pressed. The output is the input. Shadow and underground LODs are always written with hard edges (the geometry here is not changed)."
     }
 
     inputlabel	1	"P3D geometry or LOD geometry"
@@ -288,14 +288,6 @@
     	type	toggle
     	default	{ "1" }
     	help	"Geometry LOD: every point has a mass of at least 0.001."
-        }
-
-        parm {
-    	name	"t2sharp"
-    	label	"No smooth edges"
-    	type	toggle
-    	default	{ "1" }
-    	help	"Shadow and underground LODs: with smooth polygons, every shared edge is in a3ob_sharp."
         }
 
         parm {

@@ -28,7 +28,7 @@
 <main>
 <p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
 <h1>P3D Export</h1>
-<p class="lead">Checks a P3D geometry or a LOD geometry like Validate and writes it as a .p3d file when Save to Disk is pressed. The output is the input.</p>
+<p class="lead">Checks a P3D geometry or a LOD geometry like Validate and writes it as a .p3d file when Save to Disk is pressed. The output is the input. Shadow and underground LODs are always written with hard edges (the geometry here is not changed).</p>
 <p>This node is the end of a network. It checks the geometry the way Validate does and, when you press Save to Disk, writes a .p3d file you can use in Arma. The output is the same as the input, so you can keep working after it.</p>
 <p>The options are in tabs. A new node starts from the preset that is active in the Project root and presets tool. In Selection Mask, type group names separated by spaces; a name may use * and ?, and ^ before a name leaves it out. The menu lists the input&#x27;s point groups: picking one adds it to the mask or removes it. The info line on the node says how many selections will be written.</p>
 <table class="facts">
@@ -311,14 +311,6 @@
 <section class="parm" id="t2massall">
 <h3>Every point has mass <code>t2massall</code></h3>
 <p>Geometry LOD: every point has a mass of at least 0.001.</p>
-<dl>
-<dt>Type</dt><dd>On or off</dd>
-<dt>Default</dt><dd>On</dd>
-</dl>
-</section>
-<section class="parm" id="t2sharp">
-<h3>No smooth edges <code>t2sharp</code></h3>
-<p>Shadow and underground LODs: with smooth polygons, every shared edge is in a3ob_sharp.</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>

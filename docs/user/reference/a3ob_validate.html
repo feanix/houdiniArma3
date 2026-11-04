@@ -28,7 +28,7 @@
 <main>
 <p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
 <h1>Validate</h1>
-<p class="lead">Checks a P3D geometry or a LOD geometry the way the export does and shows what is wrong. Changes nothing.</p>
+<p class="lead">Checks a P3D geometry or a LOD geometry the way the export does and shows what is wrong. Changes nothing. Shadow and underground LODs are always written with hard edges, so the message line says when the export will do that.</p>
 <p>Run this node before you export. It looks for problems that Arma would reject or that break the model, and lists them as messages on the node. It does not change the geometry.</p>
 <table class="facts">
 <tr><th>Houdini name</th><td><code>a3ob_validate</code></td></tr>
@@ -153,14 +153,6 @@
 <section class="parm" id="t2massall">
 <h3>Every point has mass <code>t2massall</code></h3>
 <p>Geometry LOD: every point has a mass of at least 0.001.</p>
-<dl>
-<dt>Type</dt><dd>On or off</dd>
-<dt>Default</dt><dd>On</dd>
-</dl>
-</section>
-<section class="parm" id="t2sharp">
-<h3>No smooth edges <code>t2sharp</code></h3>
-<p>Shadow and underground LODs: with smooth polygons, every shared edge is in a3ob_sharp.</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>

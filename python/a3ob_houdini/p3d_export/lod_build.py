@@ -21,6 +21,7 @@ from a3ob_core.p3d import LOD, P3DError
 from .. import layout_record, messages, names
 from . import flag_check, type_rules
 from .data import LodData
+from .harden import harden_lod
 from .mesh_build import FileMesh, build_file_mesh
 from .options import ExportOptions
 from .path_map import PathMapper
@@ -74,6 +75,7 @@ def build_lod(data: LodData, options: ExportOptions, report: messages.Report,
             label, "the LOD type %s with resolution %s cannot be written: %s" % (
                 data.details.lod_type, data.details.resolution, ex), "Change a3ob_lod_type or a3ob_lod_resolution"))
         return None
+    data = harden_lod(data, report)  # task #48: Shadow and Underground LODs are always written with hard edges
     proxies = _rebuild_proxies(data, label, report)
     file_mesh = build_file_mesh(data, proxies, options, report)
     _apply_path_options(file_mesh, options, mapper, label)

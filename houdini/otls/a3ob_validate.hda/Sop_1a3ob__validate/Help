@@ -5,7 +5,7 @@
 #internal: a3ob_validate
 #tags: arma, p3d
 
-"""Checks a P3D geometry or a LOD geometry the way the export does and shows what is wrong. Changes nothing."""
+"""Checks a P3D geometry or a LOD geometry the way the export does and shows what is wrong. Changes nothing. Shadow and underground LODs are always written with hard edges, so the message line says when the export will do that."""
 
 Run this node before you export. It looks for problems that Arma would reject or that break the model, and lists them as messages on the node. It does not change the geometry.
 
@@ -111,13 +111,6 @@ Every point has mass:
     #id: t2massall
 
     Geometry LOD: every point has a mass of at least 0.001.
-
-    Type: On or off. Default: On.
-
-No smooth edges:
-    #id: t2sharp
-
-    Shadow and underground LODs: with smooth polygons, every shared edge is in a3ob_sharp.
 
     Type: On or off. Default: On.
 

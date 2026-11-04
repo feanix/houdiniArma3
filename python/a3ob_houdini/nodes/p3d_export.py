@@ -55,7 +55,8 @@ SPEC = NodeSpec(
     kind="p3d_export",
     label="P3D Export",
     summary="Checks a P3D geometry or a LOD geometry like Validate and writes it as a .p3d file when Save to Disk is "
-            "pressed. The output is the input.",
+            "pressed. The output is the input. Shadow and underground LODs are always written with hard edges (the "
+            "geometry here is not changed).",
     inputs=(1, 1),
     input_labels=("P3D geometry or LOD geometry",),
     input_help=("The model to check and write: a whole P3D from Assemble LODs, or a single LOD.",),

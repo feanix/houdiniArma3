@@ -250,11 +250,15 @@ model that passes one passes the other. Each message starts with the LOD name an
 <tr><td>a LOD transform is not the identity</td><td>The LOD item was moved or mirrored in Houdini. The move is baked in when the file is written. Check the result in Object Builder.</td></tr>
 </table>
 <p>Besides these, the checks include rules for the shape of each LOD type: Geometry (convex, contiguous, components, mass),
-Shadow Volume (triangles or convex quads, sharp edges; the usual-resolution and <code>LODNoShadow</code> rules are off by default), point LODs
+Shadow Volume (triangles or convex quads; the usual-resolution and <code>LODNoShadow</code> rules are off by default), point LODs
 (no edges or faces), Roadway, Paths and more. Every such rule has its own switch on the node, named like
 <kbd class="ui-parm" data-node="a3ob_validate">Triangulated</kbd> (on the LOD Rules tab), so you can turn off a rule that
 does not suit your model. The rule's id, such as <code>T2-TRI</code>, ends its tooltip and appears in the messages. The <a href="reference/a3ob_validate.html">Validate reference</a> lists them all with their meaning. The node's
 <kbd class="ui-parm" data-node="a3ob_validate">Check LOD-Type Rules</kbd> switch turns all of them off at once.</p>
+<p><strong>Shadow and underground LODs are always written with hard edges.</strong> Every export does this, with every preset, and there is no switch for it:
+every edge of these LODs goes into the sharp edge list of the file, and each polygon gets its own face normal. The message
+&quot;Shadow Volume 0: all edges written as sharp (shadow LODs need hard edges)&quot; says it happened. A LOD that was
+already sharp is written unchanged, and you get no message. The geometry in Houdini is not changed, only the file.</p>
 
 <h2 id="lossless">Lossless round trips</h2>
 <p>A <strong>round trip</strong> means reading a .p3d file into Houdini and writing it out again. With the
