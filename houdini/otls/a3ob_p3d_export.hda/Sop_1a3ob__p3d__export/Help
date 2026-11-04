@@ -84,7 +84,7 @@ Duplicate LODs:
 Max Messages:
     #id: maxmessages
 
-    How many messages the node shows. The rest are counted in one line and listed in the console.
+    How many messages the node shows. The rest are counted in one line and listed in Windows > Log Viewer (source A3OB).
 
     Type: Whole number. Default: 25. Allowed: At least 1; no upper limit.
 

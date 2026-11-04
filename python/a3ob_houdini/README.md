@@ -16,7 +16,7 @@ Every A3OB node is a Python-type SOP asset written as text. It is never saved fr
 
 The `PythonCook` of an asset is one line: `import a3ob_houdini.entry as e; e.cook('<kind>', hou.pwd())`. Nothing else
 lives in the asset. `entry.cook` turns every exception into a node error (a `UserError` shows its own text; any other
-exception shows a short "bug" text and the traceback goes to the console). If the HDA route is ever dropped,
+exception shows a short "bug" text and the traceback goes to the Log Viewer). If the HDA route is ever dropped,
 `params.add_spare_parms` builds the same parameters on a Python SOP that calls the same entry function.
 
 A Python-type SOP starts with a copy of its first input, so a node that edits its input writes straight into

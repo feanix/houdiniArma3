@@ -9,7 +9,7 @@ while a node works, and shows them on the node at the end.
 
 Text shape: ``<LOD name>: <what is wrong>. <how to fix it>.`` Element numbers are listed (first 5, then
 "and 12 more"). At most ``MAX_MESSAGES`` are shown on the node; the rest are counted in one summary line. The full
-list always goes to the console through the ``a3ob`` logger.
+list goes to the Log Viewer (source A3OB) through the ``a3ob`` logger, when messages had to be cut.
 
 The helpers ``message``, ``warning`` and ``error`` act on a node straight away. They need a Houdini node, but this
 module does not import ``hou``, so the text helpers can be tested under plain Python.
@@ -24,6 +24,9 @@ __all__ = [
 ]
 
 LOGGER = logging.getLogger("a3ob")
+
+#: Node path -> the full list this node last sent to the log (only when it had to cut messages).
+_LAST_SENT = {}
 
 MAX_MESSAGES = 25
 INFO = "info"
@@ -89,19 +92,27 @@ class Report:
         if len(ordered) <= max_messages:
             return ordered
         shown = ordered[:max_messages - 1]
-        shown.append((INFO, "%d more messages are not shown. See the console for the full list."
+        shown.append((INFO, "%d more messages are not shown. See Windows > Log Viewer (source A3OB) for the full list."
                       % (len(ordered) - len(shown))))
         return shown
 
 
 def show_on_node(node, report: Report, max_messages: Optional[int] = None) -> None:
-    """Put the report on a Houdini node and the full list on the console. The limit is ``report.max_messages``
-    unless one is given."""
+    """Put the report on a Houdini node. When messages had to be cut, the full list also goes to the Log Viewer,
+    unless this node sent the same list on its previous cook. The limit is ``report.max_messages`` unless one is
+    given."""
     if max_messages is None:
         max_messages = report.max_messages
-    for kind, text in report.items:
-        level = {INFO: logging.INFO, WARNING: logging.WARNING, ERROR: logging.ERROR}[kind]
-        LOGGER.log(level, "%s: %s", node.path(), text)
+    path = node.path()
+    if len(report.items) > max_messages:
+        items = tuple(report.items)
+        if _LAST_SENT.get(path) != items:
+            _LAST_SENT[path] = items
+            for kind, text in report.items:
+                level = {INFO: logging.INFO, WARNING: logging.WARNING, ERROR: logging.ERROR}[kind]
+                LOGGER.log(level, "%s: %s", path, text)
+    else:
+        _LAST_SENT.pop(path, None)
     for kind, text in report.lines(max_messages):
         if kind == ERROR:
             node.addError(text)
