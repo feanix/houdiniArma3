@@ -72,7 +72,8 @@ the messages quoted here.</p>
 <dd>Arma tools keep source files on a virtual drive, <strong>P:</strong>. Paths inside a finished P3D are relative to it, so a
   texture at <code>P:\my_mod\data\crate_co.paa</code> is stored as <code>my_mod\data\crate_co.paa</code>. The add-on calls
   the start of the path the <strong>project root</strong> (default <code>P:\</code>). Set it with the
-  <kbd class="ui-shelf">Project root and presets</kbd> shelf tool or on the export node.
+  <kbd class="ui-shelf">Project root and presets</kbd> shelf tool or on the export node. Files in a HEMTT project or next
+  to a <code>$PBOPREFIX$</code> file get their game path from that instead.
   See <a href="concepts.html#paths">Concepts</a>.</dd>
 <dt>Rules of the format</dt>
 <dd>A polygon has 3 or 4 points. A Geometry LOD should be triangles and have at least one point group named

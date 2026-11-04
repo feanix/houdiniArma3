@@ -39,7 +39,7 @@
 <li><a href="#proxies">Proxies</a></li>
 <li><a href="#mass">Mass</a></li>
 <li><a href="#surface">Textures, UVs and sharp edges</a></li>
-<li><a href="#paths">The P drive and the project root</a></li>
+<li><a href="#paths">Game paths: the P drive, HEMTT and the project root</a></li>
 <li><a href="#presets">Presets</a></li>
 <li><a href="#validator">The checks: errors and warnings</a></li>
 <li><a href="#lossless">Lossless round trips</a></li>
@@ -181,12 +181,36 @@ add-on does not use it by accident. The Mass node can copy between the two if yo
 <li><strong>Sharp edges.</strong> The edges that Object Builder marks sharp are the edge group <code>a3ob_sharp</code>.</li>
 </ul>
 
-<h2 id="paths">The P drive and the project root</h2>
+<h2 id="paths">Game paths: the P drive, HEMTT and the project root</h2>
 <p>Arma tools expect your source files on a virtual drive, usually called <strong>P:</strong> (the P drive). A texture
 that lives at <code>P:\my_mod\data\crate_co.paa</code> is known to the game as <code>my_mod\data\crate_co.paa</code>.
 The part that stands for the drive is the <strong>project root</strong>, by default <code>P:\</code>.</p>
-<p>The <kbd class="ui-parm" data-node="a3ob_p3d_export">Relative Paths</kbd> option cuts the project root off the front of
-every texture, material and proxy path when a file is written. The root comes from the
+<p>The <kbd class="ui-parm" data-node="a3ob_p3d_export">Relative Paths</kbd> option turns the full path of every texture,
+material and proxy file into the path the game uses, when a file is written. For each path it tries these four steps in
+order, and the first one that fits wins:</p>
+<ol>
+<li><strong>A <code>$PBOPREFIX$</code> file.</strong> The add-on looks in the folder of the file, then in each folder above it, for
+  a file called <code>$PBOPREFIX$</code>. The nearest one gives the prefix: the text of its first line (a file with
+  <code>key=value</code> lines is read by its <code>prefix</code> line only). The rest of the path below that folder is added
+  to the prefix.</li>
+<li><strong>A HEMTT project.</strong> If there is no such file, the add-on looks above the file for a folder with
+  <code>.hemtt/project.toml</code>. If the file lies in <code>addons\&lt;name&gt;</code> of that project, the prefix is
+  <code>mainprefix\prefix\addons\&lt;name&gt;</code>, built from the two values in <code>project.toml</code>, which is
+  how HEMTT names the addon.</li>
+<li><strong>The project root.</strong> Otherwise the project root is cut off the front of the path.</li>
+<li><strong>The drive letter.</strong> If the file is not under the project root either, only the drive letter is removed
+  (a path that starts with <code>\\server</code> is kept as it is). The export warns you, because the result is probably not
+  the path you want.</li>
+</ol>
+<p>Example with a HEMTT layout. The folder <code>addons/props</code> holds a <code>$PBOPREFIX$</code> file with the line
+<code>mymod\addons\props</code>. A texture at
+<code>...\addons\props\wallScreen\camo1_co.paa</code> is written as
+<code>mymod\addons\props\wallScreen\camo1_co.paa</code>. Without that file, a <code>project.toml</code> with
+<code>mainprefix = "mymod"</code> and <code>prefix = "stuff"</code> would give
+<code>mymod\stuff\addons\props\wallScreen\camo1_co.paa</code> instead.</p>
+<p>Typing the in-game path directly also works: a path with no drive letter, such as
+<code>mymod\addons\props\wallScreen\camo1_co.paa</code>, is never changed.</p>
+<p>The project root (step 3) comes from the
 <kbd class="ui-parm" data-node="a3ob_p3d_export">Project Root</kbd> parameter of the export node. If that is empty, it comes
 from the <kbd class="ui-shelf">Project root and presets</kbd> shelf tool. If that has none either, it is <code>P:\</code>. You can
 also set the environment variable <code>A3OB_PROJECT_ROOT</code>, which wins over the shelf setting.</p>
@@ -201,7 +225,7 @@ name. Two presets come with the add-on. You can save more with the <kbd class="u
 <table>
 <tr><th>Option</th><th><kbd class="ui-menu">Lossless</kbd></th><th><kbd class="ui-menu">Arma 3 release</kbd></th><th>What it does</th></tr>
 <tr data-option="lowercase"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Lowercase</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Writes texture and material paths, selection names and property names and values in lower case, as Object Builder does. Warns if two names become the same.</td></tr>
-<tr data-option="relative_paths"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Relative Paths</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Cuts the project root off texture, material and proxy paths.</td></tr>
+<tr data-option="relative_paths"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Relative Paths</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Turns texture, material and proxy paths into game paths: by the nearest <code>$PBOPREFIX$</code> file, else by the HEMTT addon rule, else by cutting the project root. See <a href="#paths">Game paths</a>.</td></tr>
 <tr data-option="sort_sections"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Sort Sections</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Orders the polygons by texture and material. This changes the polygon order.</td></tr>
 <tr data-option="sort_lods"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Sort LODs</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Writes the LODs sorted by resolution. Off keeps your order.</td></tr>
 <tr data-option="auto_components"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Auto-Components</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Geometry LODs with no component selection get one for each connected piece.</td></tr>
