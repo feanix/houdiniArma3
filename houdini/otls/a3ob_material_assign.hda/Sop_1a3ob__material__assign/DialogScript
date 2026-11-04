@@ -183,4 +183,14 @@
 	default	{ "1" }
 	help	"On: the polygons get a Houdini material that shows their texture in the viewport (one material per texture, in the network a3ob_viewport_materials inside the Geometry object). It only changes what Houdini shows; the P3D export ignores it. A .paa is shown from a .png, .tga or .tif of the same name next to it, else from a picture decoded from the .paa. A plain colour texture is shown as that colour. The material (rvmat) is not shown. In-game paths are only shown when the file is found under the project root. Materials that are no longer used stay in the network; they are harmless. Off: the polygons keep the Houdini material they came with."
     }
+    parm {
+	name	"reloadtex"
+	label	"Reload Textures"
+	type	button
+	default	{ "0" }
+	help	"Use it after you change a texture file outside Houdini."
+	disablewhen	"{ showviewport != 1 }"
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('material_assign', 'reloadtex', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
 }

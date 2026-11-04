@@ -9,6 +9,9 @@ polygons. Houdini's ``material`` is never touched; ``shop_materialpath`` only th
 (D14 Q-6); procedural and custom texture text is copied as typed.
 """
 
+import logging
+import traceback
+
 from .. import geo_edit, material_text, names, settings, viewport_material
 from ..errors import UserError
 from ..messages import Report, format_problem
@@ -17,6 +20,8 @@ from ..params import NodeSpec, Parm, read_parms
 __all__ = ["SPEC", "cook", "BUTTONS", "MENUS", "loaded"]
 
 NAME = "Material Assign"
+LOGGER = logging.getLogger("a3ob")
+_PENDING = {}  # node path -> Report from the Reload Textures button, shown by the next cook
 
 _TEX_ON = (("settex", ("1",)),)
 _MAT_ON = (("setmat", ("1",)),)
@@ -98,6 +103,9 @@ SPEC = NodeSpec(
              "colour. The material (rvmat) is not shown. In-game paths are only shown when the file is found under "
              "the project root. Materials that are no longer used stay in the network; they are harmless. "
              "Off: the polygons keep the Houdini material they came with."),
+        Parm("reloadtex", "Reload Textures", "button", "",
+             "Use it after you change a texture file outside Houdini.", action="reloadtex",
+             enable_when=(("showviewport", ("1",)),)),
     ),
     on_loaded=True,
 )
@@ -169,6 +177,9 @@ def _set_strings(geo, name: str, numbers, text: str) -> None:
 def cook(node, report: Report) -> None:
     """Copy the input and set the texture and material strings."""
     values = read_parms(node, SPEC)
+    pending = _PENDING.pop(node.path(), None)  # the answer of the Reload Textures button
+    if pending is not None:
+        report.items.extend(pending.items)
     geo = geo_edit.copy_input(node, NAME)
     texture = _texture_text(values) if values["settex"] else None
     material = (material_text.normalise_path(_check_text(values["material"], "The material"))
@@ -222,5 +233,32 @@ def fill_mat(kwargs) -> None:
     _fill(kwargs, "materials", "material", "setmat", 1)
 
 
-BUTTONS = {"fillproc": fill_proc, "fillmat": fill_mat}
+def reload_textures(kwargs) -> None:
+    """The Reload Textures button: decode the shown .paa again, make the viewport reload the pictures, cook again.
+    Never raises; a failure shows on the node. With nothing shown it only says so."""
+    node = kwargs["node"]
+    report = Report()
+    try:
+        if not node.parm("showviewport").eval():
+            report.info("Reload Textures: Show in Viewport is off, so no texture is shown.")
+        else:
+            current = settings.load()[0]
+            images = viewport_material.reload_shown(node.geometry(), settings.effective_root(current),
+                                                    current.paa_cache_dir or None)
+            if images:
+                report.info("Reloaded %d texture%s." % (len(images), "" if len(images) == 1 else "s"))
+            else:
+                report.info("Reload Textures: no texture is shown, so there is nothing to reload.")
+    except Exception as ex:  # a button callback must not raise (Houdini would only print it)
+        LOGGER.error("Reload Textures failed:\n%s", traceback.format_exc())
+        report.warning(format_problem(NAME, "Reload Textures failed (%s: %s)" % (type(ex).__name__, ex),
+                                      "Check the texture files, then press the button again"))
+    _PENDING[node.path()] = report  # the cook shows it: messages added outside a cook do not stay on the node
+    try:
+        node.cook(force=True)
+    except Exception:  # hou.OperationFailed when the node has errors: they show anyway
+        pass
+
+
+BUTTONS = {"fillproc": fill_proc, "fillmat": fill_mat, "reloadtex": reload_textures}
 MENUS = {"commonproc": lambda kwargs: _common_items("procedurals"), "commonmat": lambda kwargs: _common_items("materials")}
