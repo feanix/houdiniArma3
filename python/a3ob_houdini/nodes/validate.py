@@ -10,7 +10,8 @@ It changes nothing: the output is the input. It runs the same code as P3D Export
 model that passes one passes the other.
 """
 
-from ..messages import Report
+from ..messages import INFO, Report
+from ..p3d_export.harden import HARDEN_NOTE
 from ..params import NodeSpec, read_parms
 from . import _export_common as common
 
@@ -21,7 +22,8 @@ NAME = "Validate"
 SPEC = NodeSpec(
     kind="validate",
     label="Validate",
-    summary="Checks a P3D geometry or a LOD geometry the way the export does and shows what is wrong. Changes nothing.",
+    summary="Checks a P3D geometry or a LOD geometry the way the export does and shows what is wrong. Changes nothing. Shadow and underground LODs "
+            "are always written with hard edges, so the message line says when the export will do that.",
     inputs=(1, 1),
     input_labels=("P3D geometry or LOD geometry",),
     input_help=("The model to check: a whole P3D from Assemble LODs, or a single LOD.",),
@@ -33,7 +35,11 @@ def cook(node, report: Report) -> None:
     """The output is the input (a Python-type SOP starts with a copy of it). Only the messages are new."""
     values = read_parms(node, SPEC)
     checked = common.run_checks(node, values, report, NAME)
-    report.info("%d LODs checked: %d errors, %d warnings." % (checked.result.lod_count, checked.errors, checked.warnings))
+    text = "%d LODs checked: %d errors, %d warnings." % (checked.result.lod_count, checked.errors, checked.warnings)
+    hardened = sum(1 for kind, line in checked.raw if kind == INFO and HARDEN_NOTE in line)
+    if hardened:
+        text += " The export will write %d shadow or underground LODs with all edges sharp." % hardened
+    report.info(text)
 
 
 BUTTONS = {}

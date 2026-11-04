@@ -6,7 +6,7 @@
     label	"Validate"
 
     help {
-	"Checks a P3D geometry or a LOD geometry the way the export does and shows what is wrong. Changes nothing."
+	"Checks a P3D geometry or a LOD geometry the way the export does and shows what is wrong. Changes nothing. Shadow and underground LODs are always written with hard edges, so the message line says when the export will do that."
     }
 
     inputlabel	1	"P3D geometry or LOD geometry"
@@ -125,14 +125,6 @@
     	type	toggle
     	default	{ "1" }
     	help	"Geometry LOD: every point has a mass of at least 0.001."
-        }
-
-        parm {
-    	name	"t2sharp"
-    	label	"No smooth edges"
-    	type	toggle
-    	default	{ "1" }
-    	help	"Shadow and underground LODs: with smooth polygons, every shared edge is in a3ob_sharp."
         }
 
         parm {

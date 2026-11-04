@@ -60,7 +60,7 @@ class TestExportAssets(unittest.TestCase):
         # The tabs are folder templates (Houdini names the later tabs of a row itself): leave them out.
         validate["parms"] = [name for name in validate["parms"] if not name.startswith("tab_")]
         self.assertEqual(validate["parms"][:4], ["errorlevel", "strict", "dupes", "maxmessages"])
-        self.assertEqual(len(validate["parms"]), 4 + 1 + 20)
+        self.assertEqual(len(validate["parms"]), 4 + 1 + 19)
         self.assertEqual(validate["pythoncook"], "import a3ob_houdini.entry as e; e.cook('validate', hou.pwd())")
         self.assertEqual(validate["submenu"], [["A3OB"]])
         export = types["a3ob_p3d_export"]

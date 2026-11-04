@@ -91,7 +91,6 @@ def failing_examples():
     massless = lod(LodType.GEOMETRY)
     massless.mesh.masses = [1.0] * 7 + [0.0]
     examples["T2-MASSALL"] = massless
-    examples["T2-SHARP"] = lod(LodType.SHADOW, resolution=1000.0, flat=False)
     textured = lod(LodType.UNDERGROUND)
     textured.mesh.polys[2].texture = "a.paa"
     examples["T2-NOMAT"] = textured
@@ -130,7 +129,7 @@ class TestRules(unittest.TestCase):
     def test_every_rule_has_a_failing_example_and_a_switch(self):
         examples = failing_examples()
         self.assertEqual(sorted(examples), sorted(type_rules.RULE_IDS))
-        self.assertEqual(len(set(type_rules.RULE_IDS)), 20)
+        self.assertEqual(len(set(type_rules.RULE_IDS)), 19)
         for rule_id, data in examples.items():
             with self.subTest(rule=rule_id):
                 texts = run_all(data)
@@ -257,13 +256,6 @@ class TestRules(unittest.TestCase):
         self.assertEqual(len(with_rule(run(data), "T2-COMP")), 1)
         self.assertEqual(with_rule(run(data, auto_components=True), "T2-COMP"), [])
 
-    def test_sharp_edge_group_or_flat_polygons_pass(self):
-        smooth = lod(LodType.SHADOW, resolution=1000.0, flat=False)
-        self.assertEqual(len(with_rule(run(smooth), "T2-SHARP")), 1)
-        smooth.mesh.sharp = [(a, b) for face in CUBE_FACES for a, b in zip(face, face[1:] + face[:1])]
-        self.assertEqual(with_rule(run(smooth), "T2-SHARP"), [])
-        self.assertEqual(with_rule(run(lod(LodType.SHADOW, resolution=1000.0)), "T2-SHARP"), [])
-
     def test_conventional_shadow_resolutions_pass(self):
         for resolution in (0.0, 10.0, 1000.0, 1010.0, 1020.0):
             self.assertEqual(with_rule(run(lod(LodType.SHADOW, resolution=resolution)), "T2-SHADOWRES"), [])
@@ -288,7 +280,7 @@ class TestRules(unittest.TestCase):
         defaults = {parm.name: parm.default for parm in common.rule_parms()}
         self.assertEqual([name for name, value in defaults.items() if value is False], ["t2shadowres", "t2shadowoff"])
         names = [common.rule_parm_name(rule_id) for rule_id in type_rules.RULE_IDS]
-        self.assertEqual(len(set(names)), 20)
+        self.assertEqual(len(set(names)), 19)
 
     def test_rules_run_in_the_build_and_the_switches_silence_them(self):
         data = failing_examples()["T2-SHADOWRES"]

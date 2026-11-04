@@ -5,7 +5,7 @@
 #internal: a3ob_p3d_export
 #tags: arma, p3d
 
-"""Checks a P3D geometry or a LOD geometry like Validate and writes it as a .p3d file when Save to Disk is pressed. The output is the input."""
+"""Checks a P3D geometry or a LOD geometry like Validate and writes it as a .p3d file when Save to Disk is pressed. The output is the input. Shadow and underground LODs are always written with hard edges (the geometry here is not changed)."""
 
 This node is the end of a network. It checks the geometry the way Validate does and, when you press Save to Disk, writes a .p3d file you can use in Arma. The output is the same as the input, so you can keep working after it.
 
@@ -249,13 +249,6 @@ Every point has mass:
     #id: t2massall
 
     Geometry LOD: every point has a mass of at least 0.001.
-
-    Type: On or off. Default: On.
-
-No smooth edges:
-    #id: t2sharp
-
-    Shadow and underground LODs: with smooth polygons, every shared edge is in a3ob_sharp.
 
     Type: On or off. Default: On.
 

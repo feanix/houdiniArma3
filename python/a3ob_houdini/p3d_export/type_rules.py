@@ -42,8 +42,6 @@ MASS_MINIMUM = 0.001
 ROADWAY_POINT_LIMIT = 255
 #: A3OB ``is_convex_edge_internal``: two faces whose normals have a dot product in this range are flat against each other.
 FLAT_RANGE = (0.9999, 1.0001)
-#: A smooth polygon (for ``T2-SHARP``): a vertex normal that is further from the face normal than this.
-SMOOTH_DOT = 0.9999
 UV_TOLERANCE = 1e-4
 
 _COMPONENT = re.compile(r"component\d+", re.IGNORECASE)
@@ -254,33 +252,6 @@ def _massall(c: _Context):
     return None
 
 
-def _smooth(c: _Context, poly: Poly) -> bool:
-    """A polygon is smooth when its vertex normals differ from its face normal, or when it has none (the export then
-    computes smooth normals, split only along ``a3ob_sharp``)."""
-    if poly.normals is None:
-        return True
-    face = c.normal(poly)
-    if face is None:
-        return False
-    for normal in poly.normals:
-        length = math.sqrt(_dot(normal, normal))
-        if length == 0.0 or _dot(normal, face) / length < SMOOTH_DOT:
-            return True
-    return False
-
-
-def _sharp(c: _Context):
-    if not any(_smooth(c, poly) for poly in c.polys):
-        return None
-    sharp = {(min(a, b), max(a, b)) for a, b in (c.mesh.sharp or ())}
-    for edge, users in c.edges.items():
-        if len(users) == 2 and edge not in sharp:
-            return ("the mesh has smooth edges: the edge between polygons %d and %d is not in a3ob_sharp although "
-                    "some polygons are smooth" % (c.polys[users[0][0]].number, c.polys[users[1][0]].number),
-                    "Put the edges of a shadow volume in the a3ob_sharp edge group")
-    return None
-
-
 def _nomat(c: _Context):
     # D24: Shadow Volume LODs may carry a texture or material (foliage alpha shadows in Bohemia's own files).
     if c.lod_type in SHADOW_TYPES:
@@ -390,8 +361,6 @@ RULES: Tuple[Rule, ...] = (
     Rule("T2-MASS", "Mass is set", MASS_TYPES, _mass,
          "Geometry LOD: a note (not a warning) when the points have a total mass below 0.001.", info=True),
     Rule("T2-MASSALL", "Every point has mass", MASS_TYPES, _massall, "Geometry LOD: every point has a mass of at least 0.001."),
-    Rule("T2-SHARP", "No smooth edges", SHADOW_TYPES | {LodType.UNDERGROUND}, _sharp,
-         "Shadow and underground LODs: with smooth polygons, every shared edge is in a3ob_sharp."),
     Rule("T2-NOMAT", "No materials", SHADOW_TYPES | {LodType.UNDERGROUND}, _nomat,
          "Underground LODs: no polygon has a texture or material. Shadow LODs may have them."),
     Rule("T2-SHADOWRES", "Conventional shadow resolution", SHADOW_TYPES, _shadowres,
