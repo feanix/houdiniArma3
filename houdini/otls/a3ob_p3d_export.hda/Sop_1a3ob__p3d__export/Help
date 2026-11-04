@@ -203,6 +203,13 @@ Check LOD-Type Rules:
 
     Type: On or off. Default: On.
 
+Triangulate Where Needed:
+    #id: triangulate
+
+    Divide only the polygons that break the rules, in the written file (the geometry on the node is not changed): polygons with more than 4 points in any LOD, quads that are not convex in Geometry and Shadow Volume LODs, and every quad in Underground LODs. Triangles and allowed quads are left as they are. Uses Divide with Convex Polygons, Maximum Edges 3 and Avoid Small Angles, and warns for each LOD it changed. Off: those polygons stay and the checks report them.
+
+    Type: On or off. Default: On.
+
 At most 2 UV sets:
     #id: t2uv2
 

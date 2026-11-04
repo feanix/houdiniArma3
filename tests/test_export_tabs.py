@@ -45,7 +45,7 @@ class TestExportSpec(unittest.TestCase):
         for folder in folders[:-1]:
             self.assertEqual([c.name for c in folder.children], TAB_PARMS[folder.name])
         rules = folders[-1].children
-        self.assertEqual([c.name for c in rules], ["typerules"] + [common.rule_parm_name(r.id) for r in RULES])
+        self.assertEqual([c.name for c in rules], ["typerules", "triangulate"] + [common.rule_parm_name(r.id) for r in RULES])
 
     def test_validate_has_the_same_checking_and_rules_tabs_from_the_same_lists(self):
         self.assertEqual([(p.name, p.label) for p in self.validate.parms],

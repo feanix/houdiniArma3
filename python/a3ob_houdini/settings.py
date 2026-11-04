@@ -46,7 +46,8 @@ RELEASE = "Arma 3 release"
 PRESET_KEYS = tuple(field.name for field in dataclasses.fields(ExportOptions) if field.name != "project_root")
 
 _ALL_OFF = {"lowercase": False, "relative_paths": False, "sort_sections": False, "sort_lods": False,
-            "auto_components": False, "renumber_components": False, "czech_names": False, "drop_uvs": False}
+            "auto_components": False, "renumber_components": False, "czech_names": False, "drop_uvs": False,
+            "triangulate": True}  # task #49 (D28): on in both; a preset without the key reads the default, which is on
 
 #: Q-5, D14, D17. Lossless is all off (the ExportOptions defaults). Arma 3 release is A3OB's defaults (ux-tools.md 5.9):
 #: relative paths, sort sections, sort LODs (D19), lowercase, generate components and drop UVs on (spec 18.1: A3OB drops

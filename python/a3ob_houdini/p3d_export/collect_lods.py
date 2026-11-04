@@ -21,7 +21,9 @@ from .. import messages
 from . import transforms
 from .collect_plan import LOD, classify, decode_trailing, group_prims
 from .data import Collection, LodData
+from .options import ExportOptions
 from .read_geo import read_details, read_mesh, read_proxies
+from .triangulate import triangulate_lod
 
 __all__ = ["collect", "unpack_lod"]
 
@@ -29,11 +31,15 @@ TYPE_ATTRIB = "a3ob_lod_type"
 TRAILING_ATTRIB = "a3ob_file_trailing"
 
 
-def collect(geometries: Sequence["hou.Geometry"], report: messages.Report) -> Collection:
-    """The LODs of ``geometries`` in order (spec 3.2). Collection errors go to ``report``; check ``has_errors``."""
+def collect(geometries: Sequence["hou.Geometry"], report: messages.Report,
+            options: Optional[ExportOptions] = None) -> Collection:
+    """The LODs of ``geometries`` in order (spec 3.2). Collection errors go to ``report``; check ``has_errors``.
+
+    With ``options.triangulate`` (task #49, D28) the polygons that break the rules are divided first (see
+    ``triangulate``). Without ``options`` nothing is changed."""
     result = Collection()
     for number, geo in enumerate(geometries):
-        _collect_geometry(geo, number, report, result)
+        _collect_geometry(geo, number, report, result, options)
     _collect_trailing(geometries, report, result)
     return result
 
@@ -50,7 +56,8 @@ def unpack_lod(prims: Sequence["hou.Prim"]) -> "hou.Geometry":
     return result
 
 
-def _collect_geometry(geo, number: int, report: messages.Report, result: Collection) -> None:
+def _collect_geometry(geo, number: int, report: messages.Report, result: Collection,
+                      options: Optional[ExportOptions]) -> None:
     prims = geo.prims()
     packed = sum(1 for prim in prims if isinstance(prim, hou.PackedPrim))
     kind, problem = classify(geo.findGlobalAttrib(TYPE_ATTRIB) is not None, len(prims), packed, len(geo.points()),
@@ -60,14 +67,15 @@ def _collect_geometry(geo, number: int, report: messages.Report, result: Collect
         report.error(messages.format_problem(None, "%s: %s" % (where, problem)))
         return
     if kind == LOD:
-        _add_lod(result, geo, False, report)
+        _add_lod(result, geo, False, report, options)
         return
     infos = [(prim.intrinsicValue("typename") == "PackedFragment", prim.intrinsicValue("geometryid")) for prim in prims]
     for group in group_prims(infos):
-        _collect_packed_lod([prims[i] for i in group], where, report, result)
+        _collect_packed_lod([prims[i] for i in group], where, report, result, options)
 
 
-def _collect_packed_lod(prims: List["hou.Prim"], where: str, report: messages.Report, result: Collection) -> None:
+def _collect_packed_lod(prims: List["hou.Prim"], where: str, report: messages.Report, result: Collection,
+                        options: Optional[ExportOptions]) -> None:
     first = prims[0]
     matrix = tuple(first.fullTransform().asTuple())
     mirrored = transforms.det3(matrix) < 0.0
@@ -77,7 +85,7 @@ def _collect_packed_lod(prims: List["hou.Prim"], where: str, report: messages.Re
             None, "%s: packed prim %d has no LOD data (no a3ob_lod_type) inside" % (where, first.number()),
             "Only packed LODs can be in a P3D geometry. Delete it, or make it a LOD"))
         return
-    data = _add_lod(result, content, mirrored, report)
+    data = _add_lod(result, content, mirrored, report, options)
     label = data.label
     if len(prims) > 1:
         report.warning(messages.format_problem(
@@ -93,13 +101,21 @@ def _collect_packed_lod(prims: List["hou.Prim"], where: str, report: messages.Re
             "It is baked into the points once. Apply it before the export if you do not want that"))
 
 
-def _add_lod(result: Collection, content, mirrored: bool, report: messages.Report) -> LodData:
+def _add_lod(result: Collection, content, mirrored: bool, report: messages.Report,
+             options: Optional[ExportOptions] = None) -> LodData:
     index = len(result.lods)
     details = read_details(content)
     probe = LodData(index, None, details)  # only for the label
     label = probe.label
     mesh = read_mesh(content, label, report)
     data = LodData(index, mesh, details, read_proxies(content, label, report), mirrored)
+    if options is not None:
+        divided, _ = triangulate_lod(content, data, options, report)
+        if divided is not None:  # task #49: read the divided copy; its read messages were reported above already
+            quiet = messages.Report()
+            details = read_details(divided)
+            mesh = read_mesh(divided, label, quiet)
+            data = LodData(index, mesh, details, read_proxies(divided, label, quiet), mirrored)
     result.lods.append(data)
     return data
 

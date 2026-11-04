@@ -56,6 +56,9 @@ class ExportOptions:
     czech_names: bool = False
     #: D17 (spec 18.4): LODs of a type that does not use UVs are written without them.
     drop_uvs: bool = False
+    #: Task #49 (D28): divide the polygons that break the rules (more than 4 points; quads that T2-TRI rejects) in the
+    #: written file. On by default; a model that already passes is written unchanged either way.
+    triangulate: bool = True
     #: Ids of the tier-2 per-LOD-type rules that are switched off (spec 17.1.1, for example ``"T2-TRI"``). All are on by
     #: default except the two in ``DEFAULT_RULES_OFF`` (D24). They only change which warnings appear, never the bytes.
     rules_off: Tuple[str, ...] = field(default_factory=lambda: DEFAULT_RULES_OFF)

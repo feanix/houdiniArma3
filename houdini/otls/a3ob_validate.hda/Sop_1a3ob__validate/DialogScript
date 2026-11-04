@@ -72,6 +72,14 @@
         }
 
         parm {
+    	name	"triangulate"
+    	label	"Triangulate Where Needed"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Divide only the polygons that break the rules, in the written file (the geometry on the node is not changed): polygons with more than 4 points in any LOD, quads that are not convex in Geometry and Shadow Volume LODs, and every quad in Underground LODs. Triangles and allowed quads are left as they are. Uses Divide with Convex Polygons, Maximum Edges 3 and Avoid Small Angles, and warns for each LOD it changed. Off: those polygons stay and the checks report them."
+        }
+
+        parm {
     	name	"t2uv2"
     	label	"At most 2 UV sets"
     	type	toggle
