@@ -21,6 +21,11 @@ Sources checked on 2026-11-03 (task #51):
     ``prefix``) and the addon folder name. That is rule (b).
     The ``prefix=`` key form is accepted only as a precaution: some PBO tools store header properties as ``key=value``,
     but no source checked here shows a ``$PBOPREFIX$`` file written that way. The plain line is the documented form.
+    Task #55: a file with several ``key=value`` lines (``product=arma3``, ``prefix=...``) is read by its ``prefix`` key
+    only, and one with no prefix key gives no prefix. No HEMTT or Addon Builder source was found that documents this
+    multi-key form (hemtt.dev was not reachable from here); it follows the owner's decision. A plain one-line file is
+    the documented form and reads as before.
+    A path that starts with two backslashes (``\\\\server\\share\\...``) is absolute here, like a drive path.
     Owner layout read-only: E:/Projects/HettycKad (mainprefix hyck, prefix ame, addons/props/$PBOPREFIX$).
 
 A path without a drive letter is not touched here. Lowercase is applied by the caller afterwards.
@@ -58,15 +63,18 @@ def read_prefix_file(path: str) -> str:
             raw = handle.read(4096)
     except OSError:
         return ""
-    for line in raw.decode("utf-8-sig", errors="replace").splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        match = _KEY_FORM.match(line)
-        if match:
-            line = match.group(1).strip().rstrip(";")
-        return _clean_prefix(line)
-    return ""
+    lines = [line.strip() for line in raw.decode("utf-8-sig", errors="replace").splitlines()]
+    lines = [line for line in lines if line]
+    if not lines:
+        return ""
+    if any("=" in line for line in lines):
+        # key=value file: only the prefix key counts (any line); product=, version= and the rest are ignored
+        for line in lines:
+            match = _KEY_FORM.match(line)
+            if match:
+                return _clean_prefix(match.group(1).strip().rstrip(";"))
+        return ""
+    return _clean_prefix(lines[0])
 
 
 def _hemtt_values(toml_path: str) -> Optional[Tuple[str, str]]:
@@ -162,7 +170,8 @@ class PathMapper:
         """The game path for ``path``. A path without a drive letter comes back as typed."""
         if not path or not self.enabled:
             return path
-        if not _DRIVE.match(path):
+        network = path.replace("/", "\\").startswith("\\\\")  # \\server\share\... counts as absolute
+        if not network and not _DRIVE.match(path):
             return path.lstrip("\\") if path.startswith("\\") else path
         path = path.replace("/", "\\")
         if kind == "proxy" and path.lower().endswith(".p3d"):
@@ -184,6 +193,8 @@ class PathMapper:
         if stripped is not None:
             return stripped
         self._warn(path, kind, label)
+        if network:
+            return path  # no drive letter to remove: written as typed (with backslashes)
         return _DRIVE.sub("", path).lstrip("\\")
 
     def _done(self, path: str, kind: str, source: str, prefix: str, result: str) -> str:
@@ -197,8 +208,9 @@ class PathMapper:
             return
         self._warned.add(key)
         self.warnings.append(messages.format_problem(
-            label, "the %s path %s matches no $PBOPREFIX$ file, no HEMTT addon folder and not the project root, so only "
-            "the drive letter was removed" % (kind, path),
+            label, "the %s path %s matches no $PBOPREFIX$ file, no HEMTT addon folder and not the project root, so "
+            "%s" % (kind, path, "it was written as it is" if path.startswith("\\\\")
+                    else "only the drive letter was removed"),
             "Put the file in an addon folder that has a $PBOPREFIX$ file, or set the project root so it holds the file"))
 
     def map_proxy_name(self, name: str, label: Optional[str] = None) -> str:

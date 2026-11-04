@@ -73,6 +73,44 @@ class TestMapper(TreeCase):
         self.assertEqual(path_map.read_prefix_file(empty), "")
         self.assertEqual(path_map.read_prefix_file(self.at("forms", "missing", "$PBOPREFIX$")), "")
 
+    def test_a_multi_key_file_uses_the_prefix_key(self):
+        write(self.at("addons", "props", "$PBOPREFIX$"), "product=arma3\r\nprefix=x\\mymod\\addons\\props\r\nversion=1\r\n")
+        got = PathMapper().map_path(self.at("addons", "props", "w", "a.paa"), "texture")
+        self.assertEqual(got, "x\\mymod\\addons\\props\\w\\a.paa")
+
+    def test_a_key_only_file_without_a_prefix_key_falls_through(self):
+        write(self.at("addons", "props", "$PBOPREFIX$"), "product=arma3\nversion=1\n")
+        write(self.at(".hemtt", "project.toml"), 'prefix = "ame"\nmainprefix = "hyck"\n')
+        got = PathMapper().map_path(self.at("addons", "props", "a.paa"), "texture")
+        self.assertEqual(got, "hyck\\ame\\addons\\props\\a.paa")  # the HEMTT rule, as if the file were not there
+        self.assertEqual(path_map.read_prefix_file(self.at("addons", "props", "$PBOPREFIX$")), "")
+
+    def test_a_one_line_plain_file_still_works(self):
+        write(self.at("addons", "props", "$PBOPREFIX$"), "x\\mymod\\addons\\props")
+        got = PathMapper().map_path(self.at("addons", "props", "a.paa"), "texture")
+        self.assertEqual(got, "x\\mymod\\addons\\props\\a.paa")
+
+    def test_an_unmatched_network_path_warns_and_is_not_stripped(self):
+        for typed in ("\\\\server\\share\\data\\tex.paa", "//server/share/data/tex.paa"):
+            with self.subTest(typed=typed):
+                mapper = PathMapper()
+                got = mapper.map_path(typed, "texture", "LOD 1")
+                self.assertEqual(got, "\\\\server\\share\\data\\tex.paa")
+                self.assertEqual(len(mapper.warnings), 1)
+                self.assertIn("\\\\server\\share\\data\\tex.paa", mapper.warnings[0])
+
+    def test_a_network_path_under_a_prefix_file_maps_through_it(self):
+        # Mocked lookup: a UNC temp tree cannot be built on every machine.
+        unc = "\\\\server\\share\\mod\\addons\\props"
+        real_isfile = os.path.isfile
+        want = os.path.join(unc, "$PBOPREFIX$")
+        with mock.patch.object(path_map.os.path, "isfile", lambda p: p == want or real_isfile(p)), \
+                mock.patch.object(path_map, "read_prefix_file", lambda p: "x\\mymod\\addons\\props"):
+            mapper = PathMapper()
+            got = mapper.map_path("//server/share/mod/addons/props/w/a.paa", "texture")
+        self.assertEqual(got, "x\\mymod\\addons\\props\\w\\a.paa")
+        self.assertEqual(mapper.warnings, [])
+
     def test_nested_addons_pick_the_nearest_prefix(self):
         write(self.at("addons", "utilities", "$PBOPREFIX$"), "hyck\\ame\\addons\\utilities")
         write(self.at("addons", "utilities", "optre", "$PBOPREFIX$"), "hyck\\ame\\addons\\utilities\\optre")
