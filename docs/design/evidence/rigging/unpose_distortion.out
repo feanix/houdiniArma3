@@ -1,0 +1,83 @@
+Setting breakpad minidump AppID = 502570
+SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561197972238375 [API loaded no]
+numpy 2.3.2, python 3.13.10
+skeleton: 64 bones with a pivot; 2 weighted bones have no pivot: ['weapon', 'launcher']
+source: sample Resolution 1 body, 3125 points, 3125 with weights
+user mesh stand-in: sample body subdivided once, 12476 points, 24916 triangles; joint zone = second-largest weight > 0.25: 4457 points
+
+== A pose only: arms 20 deg down, legs 8 deg apart ==
+   the pose moves points by mean 13.2 cm, max 26.0 cm
+   weights: matched 12144 of 12476, 72 points had > 4 influences before the clean-up
+   unpose with true weights          all    n 12476  mean 0.03 cm  median 0.01  p95 0.14  max 0.22
+   unpose with transferred, cleaned  all    n 12476  mean 0.18 cm  median 0.15  p95 0.54  max 0.87
+      region torso                       n  1852  mean 0.12 cm  median 0.09  p95 0.39  max 0.66
+      region arm                         n  2192  mean 0.25 cm  median 0.24  p95 0.51  max 0.80
+      region hand                        n  4812  mean 0.11 cm  median 0.00  p95 0.39  max 0.83
+      region leg                         n  2112  mean 0.30 cm  median 0.28  p95 0.70  max 0.87
+      region foot                        n  1508  mean 0.17 cm  median 0.00  p95 0.80  max 0.83
+      joint zones                        n  4457  mean 0.24 cm  median 0.20  p95 0.61  max 0.86
+      not joint zones                    n  8019  mean 0.14 cm  median 0.09  p95 0.51  max 0.87
+      edge length after unpose / true: median 1.000  p1 0.799  p99 1.417
+
+== B lengths only: arms +10 %, legs +8 % ==
+   the pose moves points by mean 2.4 cm, max 4.3 cm
+   weights: matched 12115 of 12476, 81 points had > 4 influences before the clean-up
+   unpose with true weights          all    n 12476  mean 0.01 cm  median 0.00  p95 0.03  max 0.05
+   unpose with transferred, cleaned  all    n 12476  mean 0.20 cm  median 0.17  p95 0.61  max 1.08
+      region torso                       n  1852  mean 0.12 cm  median 0.09  p95 0.39  max 0.66
+      region arm                         n  2192  mean 0.30 cm  median 0.32  p95 0.59  max 0.80
+      region hand                        n  4812  mean 0.15 cm  median 0.00  p95 0.55  max 1.08
+      region leg                         n  2112  mean 0.30 cm  median 0.27  p95 0.69  max 0.87
+      region foot                        n  1508  mean 0.17 cm  median 0.00  p95 0.81  max 0.84
+      joint zones                        n  4457  mean 0.28 cm  median 0.27  p95 0.67  max 1.06
+      not joint zones                    n  8019  mean 0.16 cm  median 0.09  p95 0.55  max 1.08
+      edge length after unpose / true: median 1.000  p1 0.745  p99 1.547
+
+== C pose + lengths + whole body +5 % ==
+   the pose moves points by mean 13.2 cm, max 24.9 cm
+   weights: matched 12142 of 12476, 68 points had > 4 influences before the clean-up
+   unpose with true weights          all    n 12476  mean 0.03 cm  median 0.01  p95 0.12  max 0.19
+   unpose with transferred, cleaned  all    n 12476  mean 0.18 cm  median 0.15  p95 0.55  max 0.88
+      region torso                       n  1852  mean 0.12 cm  median 0.09  p95 0.39  max 0.66
+      region arm                         n  2192  mean 0.26 cm  median 0.25  p95 0.51  max 0.83
+      region hand                        n  4812  mean 0.12 cm  median 0.00  p95 0.41  max 0.87
+      region leg                         n  2112  mean 0.31 cm  median 0.28  p95 0.70  max 0.88
+      region foot                        n  1508  mean 0.17 cm  median 0.00  p95 0.82  max 0.85
+      joint zones                        n  4457  mean 0.25 cm  median 0.21  p95 0.62  max 0.86
+      not joint zones                    n  8019  mean 0.14 cm  median 0.09  p95 0.52  max 0.88
+      edge length after unpose / true: median 0.999  p1 0.786  p99 1.441
+
+== D = C, but the fit is off by about 1 deg and 1 % per bone (random) ==
+   the pose moves points by mean 13.2 cm, max 24.9 cm
+   weights: matched 8202 of 12476, 3381 points had > 4 influences before the clean-up
+   unpose with true weights          all    n 12476  mean 1.43 cm  median 1.53  p95 2.52  max 2.91
+   unpose with transferred, cleaned  all    n 12476  mean 1.43 cm  median 1.50  p95 2.52  max 2.92
+      region torso                       n  1852  mean 0.58 cm  median 0.41  p95 1.42  max 1.57
+      region arm                         n  2192  mean 1.17 cm  median 1.19  p95 1.45  max 1.97
+      region hand                        n  4812  mean 1.89 cm  median 1.85  p95 2.49  max 2.73
+      region leg                         n  2112  mean 0.87 cm  median 0.76  p95 1.82  max 2.11
+      region foot                        n  1508  mean 2.12 cm  median 2.08  p95 2.87  max 2.92
+      joint zones                        n  4457  mean 1.30 cm  median 1.33  p95 2.26  max 2.92
+      not joint zones                    n  8019  mean 1.50 cm  median 1.57  p95 2.57  max 2.92
+      edge length after unpose / true: median 0.999  p1 0.639  p99 2.090
+
+== E = C, but the fit is off by about 2.5 deg and 2 % per bone (random) ==
+   the pose moves points by mean 13.2 cm, max 24.9 cm
+   weights: matched 6885 of 12476, 4459 points had > 4 influences before the clean-up
+   unpose with true weights          all    n 12476  mean 3.58 cm  median 3.84  p95 6.41  max 7.31
+   unpose with transferred, cleaned  all    n 12476  mean 3.56 cm  median 3.75  p95 6.39  max 7.39
+      region torso                       n  1852  mean 1.40 cm  median 0.97  p95 3.47  max 3.92
+      region arm                         n  2192  mean 2.90 cm  median 2.96  p95 3.67  max 4.07
+      region hand                        n  4812  mean 4.80 cm  median 4.67  p95 6.34  max 6.77
+      region leg                         n  2112  mean 2.05 cm  median 1.77  p95 4.49  max 5.12
+      region foot                        n  1508  mean 5.30 cm  median 5.16  p95 7.24  max 7.39
+      joint zones                        n  4457  mean 3.22 cm  median 3.33  p95 5.81  max 7.15
+      not joint zones                    n  8019  mean 3.74 cm  median 3.97  p95 6.52  max 7.39
+      edge length after unpose / true: median 1.000  p1 0.604  p99 2.151
+
+== rigid accessory: a cuff of the body points within 7 cm of the left elbow, pushed 1.5 cm out, elbow bent 45 deg ==
+   cuff: 135 points, 214 triangles; piece-average weights: LeftArmRoll 0.73, LeftForeArm 0.24, LeftArm 0.03
+   dominant bone of the piece: LeftArmRoll (truth: LeftForeArm)
+   per-point first-pass weights       offset from true rest: mean 2.60 cm max 5.25 cm | edge length ratio p1 0.676 median 0.964 p99 1.271
+   one dominant bone                  offset from true rest: mean 3.26 cm max 5.39 cm | edge length ratio p1 1.000 median 1.000 p99 1.000
+   one fixed blend (piece average)    offset from true rest: mean 2.59 cm max 4.30 cm | edge length ratio p1 1.001 median 1.034 p99 1.059

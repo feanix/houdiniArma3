@@ -1,0 +1,119 @@
+Setting breakpad minidump AppID = 502570
+SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561197972238375 [API loaded no]
+Houdini 22.0.466, licence licenseCategoryType.Indie
+
+== Existence of the nodes (exact type names) ==
+   kinefx::skeleton                         present
+   kinefx::rigpose                          present
+   kinefx::rigmatchpose                     present
+   kinefx::mappoints                        present
+   kinefx::skeletonblend::2.0               present
+   kinefx::fullbodyik                       present
+   kinefx::rigdoctor                        present
+   kinefx::jointdeform                      present
+   kinefx::jointcapturebiharmonic           present
+   kinefx::jointcaptureproximity            present
+   kinefx::jointcapturepaint                present
+   kinefx::capturepackedgeo                 present
+   kinefx::attachjointgeo                   present
+   kinefx::biped_setup                      present
+   kinefx::biped_retarget                   present
+   kinefx::orientjoints                     present
+   kinefx::rigstashpose                     present
+   kinefx::skeletonmirror                   present
+   kinefx::rigmirrorpose                    present
+   kinefx::fbikconfiguretargets             present
+   kinefx::configurejoints                  present
+   kinefx::dembones_skinningconverter       present
+   apex::autorigbuilder                     present
+   apex::autorigcomponent::3.0              present
+   apex::packcharacter                      present
+   bonedeform                               present
+   bonecapturebiharmonic                    present
+   captureproximity                         present
+   capture                                  present
+   capturecorrect                           present
+   bonecapturelines                         present
+   captureattribunpack                      present
+   captureattribpack                        present
+   capturemirror                            present
+   captureoverride                          present
+   weightarraybiharmonic                    present
+   weightarrayinterpolate                   present
+   topotransfer                             present
+   topolandmark                             present
+   shrinkwrap                               present
+   attribtransfer                           present
+   matchtopology                            present
+   attribblur                               present
+   attribsmooth                             MISSING
+   smooth                                   present
+   polyreduce                               present
+   remesh                                   present
+   tetconform                               present
+   tetembed                                 present
+   ml_deform                                present
+   xform                                    present
+   pointdeform                              present
+   skin                                     present
+
+== Inputs and outputs (min/max inputs, input names, output names) ==
+   kinefx::skeleton                         inputs 0-1 ['input1'] | outputs ['output1']
+   kinefx::rigpose                          inputs 1-1 ['input1'] | outputs ['output1']
+   kinefx::rigmatchpose                     inputs 2-2 ['input1', 'input2'] | outputs ['output1', 'output2']
+   kinefx::mappoints                        inputs 2-2 ['input1', 'input2'] | outputs ['output1', 'output2']
+   kinefx::skeletonblend::2.0               inputs 1-2 ['input1', 'input2'] | outputs ['output1']
+   kinefx::fullbodyik                       inputs 1-2 ['input1', 'input2'] | outputs ['output1', 'output2']
+   kinefx::rigdoctor                        inputs 1-1 ['input1'] | outputs ['output1']
+   kinefx::jointdeform                      inputs 3-3 ['input1', 'input2', 'input3'] | outputs ['output1']
+   kinefx::jointcapturebiharmonic           inputs 2-3 ['input1', 'input2', 'input3'] | outputs ['output1', 'output2', 'output3']
+   kinefx::jointcaptureproximity            inputs 2-3 ['input1', 'input2', 'input3'] | outputs ['output1', 'output2', 'output3']
+   kinefx::jointcapturepaint                inputs 2-3 ['input1', 'input2', 'input3'] | outputs ['output1', 'output2', 'output3']
+   kinefx::capturepackedgeo                 inputs 2-2 ['input1', 'input2'] | outputs ['output1']
+   kinefx::biped_setup                      inputs 1-1 ['input1'] | outputs ['output1']
+   kinefx::skeletonmirror                   inputs 1-1 ['input1'] | outputs ['output1']
+   kinefx::rigstashpose                     inputs 1-2 ['input1', 'input2'] | outputs ['output1', 'output2']
+   apex::autorigbuilder                     inputs 0-2 ['input1', 'input2'] | outputs ['output1', 'output2']
+   bonedeform                               inputs 1-3 ['input1', 'input2', 'input3'] | outputs ['output1']
+   captureattribunpack                      inputs 1-1 ['input1'] | outputs ['output1']
+   captureattribpack                        inputs 1-1 ['input1'] | outputs ['output1']
+   topotransfer                             inputs 2-4 ['input1', 'input2', 'input3', 'input4'] | outputs ['output1']
+   topolandmark                             inputs 2-4 ['input1', 'input2', 'input3', 'input4'] | outputs ['output1', 'output2']
+   attribtransfer                           inputs 2-2 ['input1', 'input2'] | outputs ['output1']
+   attribblur                               inputs 1-2 ['input1', 'input2'] | outputs ['output1']
+   weightarrayinterpolate                   inputs 2-2 ['input1', 'input2'] | outputs ['output1']
+   shrinkwrap                               inputs 1-1 ['input1'] | outputs ['output1']
+
+== Cooks on made-up data ==
+   tube                                     cook 0.000s  480 pts 466 prims  errors=[] warnings=[]
+   triangulate                              cook 0.000s  480 pts 956 prims  errors=[] warnings=[]
+   python skeleton (3 joints)               cook 0.001s  3 pts 2 prims  errors=[] warnings=[]
+   kinefx::skeleton (no input)              cook 0.006s  0 pts 0 prims  errors=[] warnings=[]
+   jointcapturebiharmonic                   cook 0.659s  480 pts 956 prims  errors=[] warnings=[]
+     point attribs                          ['P', 'boneCapture']
+     boneCapture sample                     (2.0, 0.9446806907653809, 1.0, 0.05531931295990944, -1.0, -1.0)
+   jointcaptureproximity                    cook 0.002s  480 pts 956 prims  errors=[] warnings=[]
+     boneCapture sample                     (1.0, 0.4584295153617859, 2.0, 0.5415704846382141)
+   rigpose                                  cook 0.005s  3 pts 2 prims  errors=[] warnings=[]
+   jointdeform                              cook 0.001s  480 pts 956 prims  errors=[] warnings=[]
+   captureattribunpack                      cook 0.000s  480 pts 956 prims  errors=[] warnings=[]
+     point attribs                          ['P', 'boneCapture_data', 'boneCapture_index']
+     detail attribs                         ['boneCapture_pCaptData', 'boneCapture_pCaptPath', 'pCaptFrame', 'pCaptSkelRoot']
+   captureattribpack (round trip)           cook 0.000s  480 pts 956 prims  errors=[] warnings=[]
+     point attribs                          ['P', 'boneCapture']
+   rigdoctor                                cook 0.013s  3 pts 2 prims  errors=[] warnings=[]
+   skeletonblend 2.0                        cook 0.000s  3 pts 2 prims  errors=[] warnings=[]
+   rigmatchpose                             cook 0.033s  3 pts 2 prims  errors=[] warnings=[]
+   mappoints                                cook 0.005s  3 pts 2 prims  errors=[] warnings=[]
+   fullbodyik (no targets)                  cook 0.235s  3 pts 2 prims  errors=[] warnings=[]
+   biped_setup                              cook FAILED: The attempted operation failed.
+Error while cooking. | errors=['Invalid source /obj/rigging_spike/biped_setup1/VALIDATE/attribvop1.\n(Error:       Characterization is missing required key <C_pelvis>\nCharacterization is missing required key <C_spine>\nCharacterization is missing required key <L_arm>\nCharacterization is missing required key <R_arm>\nCharacterization ']
+   rigstashpose                             cook 0.022s  3 pts 2 prims  errors=[] warnings=[]
+   skeletonmirror                           cook 0.082s  3 pts 2 prims  errors=[] warnings=[]
+   orientjoints                             cook 0.286s  3 pts 2 prims  errors=[] warnings=[]
+   topolandmark                             cook 0.013s  0 pts 0 prims  errors=[] warnings=[]
+   topotransfer (no landmarks)              cook 0.000s  480 pts 956 prims  errors=[] warnings=['At least one valid landmark pair is required. Enter the state to start creating landmark p']
+   weightarraybiharmonic                    cook FAILED: The attempted operation failed.
+Error while cooking. | errors=['Index array attribute missing', 'Failed to compute weights']
+   shrinkwrap                               cannot wire 2 inputs (node takes 1)
+   apex::autorigbuilder (no input)          cook 1.252s  3 pts 3 prims  errors=[] warnings=[]
