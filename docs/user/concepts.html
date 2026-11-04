@@ -305,6 +305,24 @@ at all), and the node message gives the counts, the points with no bone weight (
 Proxy points are left out: they are not counted as having no bone weight, and their weights don't change. On the Samples
 character, Cleanup adjusts about 1,850 points by rounding them onto the 1/254 grid with an exact sum of 1. The largest
 change is about 0.04, shown in <code>a3ob_rig_changed</code>. Points already on the grid with a sum of 1 don't change.</p>
+<h3 id="rigging-transfer">Weights for your own mesh: Weight Transfer</h3>
+<p>The <kbd class="ui-node">Weight Transfer</kbd> node copies the bone weights of a source body (for example the sample
+character, taken out of its P3D with Extract LOD) onto your mesh. It has three inputs: your mesh, the source body, and the
+skeleton from Rig Skeleton. Put your mesh on top of the body first: a point copies the weights of the closest point on the
+body when it is near enough (<strong>Match Distance</strong>, a share of the size of your mesh) and faces the same way
+(<strong>Match Angle</strong>). The points that don't match are filled in smoothly from their neighbours. Run Weight Cleanup
+after it.</p>
+<p>Three point groups let you treat parts differently. <strong>First Pass</strong> is the base mesh and, when empty, every point
+that is in neither of the other two. <strong>Rigid Parts</strong> (a helmet, a pouch) get one bone per connected piece, or one
+fixed blend: the piece takes the average of the weights it sits on. With <strong>Merge Twist Bones</strong> on, the weight of a twist
+bone (<code>LeftArmRoll</code>) counts for the next bone down the chain (<code>LeftForeArm</code>), so a piece on the elbow follows the
+forearm. To choose the bone yourself, put its name in the point string attribute <code>a3ob_rig_bone</code> on the piece.
+<strong>Loose Parts</strong> (a bandolier) take the first-pass weights under each point and are then smoothed along the piece.</p>
+<p>The node writes bone selections with the <code>model.cfg</code> spelling and two point attributes that tell you where each
+weight came from: <code>a3ob_rig_origin</code> (0 none, 1 copied, 2 filled in, 3 rigid piece, 4 loose piece) and
+<code>a3ob_rig_piece</code> (the piece number, -1 outside the pieces). The weights are only as good as the fit: a mesh that is
+off the body by a few centimetres gets many filled-in points.</p>
+
 <p>P3D Export writes the weights as they are: it never changes them. Three switches on the LOD Rules tab of P3D Export and
 Validate warn when a point breaks the rules: <kbd class="ui-parm" data-node="a3ob_validate">At most 4 bones per point</kbd>,
 <kbd class="ui-parm" data-node="a3ob_validate">Bone weights add up to 1</kbd> (within 0.02) and

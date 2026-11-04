@@ -152,6 +152,17 @@ geometry from a base P3D geometry plus edited LOD geometries. With its `replace`
 | `a3ob_sharp_extra` | detail int32[] (flat pairs) | absent | `#SharpEdges#` pairs that are not polygon edges (§9.2). |
 | `a3ob_layout` | detail string (base64 of zlib) | absent | The file layout Houdini cannot hold (normal table, triangle pads, sharp pair order, interleaved proxy order, signed zero), bound to the positions and topology it was taken from (D23, §19). Ignored with an info line when the mesh changed. |
 
+**Rigging attributes (decided in tasks #62 and #65; `character-rigging.md` 4.4 and 6.2).** The rig nodes write them; the
+exporter ignores all of them (they are not groups and not TAGGs).
+
+| Attribute | Class / storage | Default | Meaning and source |
+|---|---|---|---|
+| `a3ob_rig_discrete` | detail int32 | absent (→ 0) | `isDiscrete` of the `model.cfg` skeleton class, written by Rig Skeleton. Weight Cleanup reads it. |
+| `a3ob_rig_changed` | point float | absent | L1 change of a point's bone weights by Weight Cleanup. |
+| `a3ob_rig_origin` | point int32 | absent (→ unknown) | Where the weights of a point came from, written by Weight Transfer: 0 no weight, 1 copied from the source body, 2 filled in (inpainted), 3 rigid piece, 4 loose (non-rigid) piece. |
+| `a3ob_rig_piece` | point int32 | absent | The number of the rigid or loose piece a point belongs to (rigid pieces first, from 0), −1 for a point outside the pieces. Written by Weight Transfer. |
+| `a3ob_rig_bone` | point string | absent (→ none) | Input to Weight Transfer: a bone name (any case) on a point of a rigid piece. The most common name among the points of the piece is the piece's one bone and wins over the choice. |
+
 Constants that are not stored: `MLOD`/257 (`data_p3d.py:777-782`) and `P3DM`/28.256 (`data_p3d.py:472-478`).
 
 **File-level data (P3D-geometry detail).** M1 keeps the bytes after the last LOD as `P3DModel.trailing`. Object

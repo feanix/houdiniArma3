@@ -40,6 +40,16 @@ NODE_INTRO = {
         "gives the counts and lists the points with no weight. If the model.cfg class of the skeleton has isDiscrete "
         "= 1, every point keeps only its heaviest bone.",
     ),
+    "weight_transfer": (
+        "Copies the bone weights of a source body (for example Bohemia's sample character) onto your mesh. Each point "
+        "of your mesh takes the weights of the closest point on the body when it is near enough and faces the same "
+        "way. The points that don't match are filled in smoothly from their neighbours.",
+        "Three groups let you treat parts of the mesh differently. Rigid parts (a helmet) get one bone or one fixed "
+        "blend per piece. Loose parts (a bandolier) take the weights under them and are smoothed along the piece. "
+        "Everything else is the first pass. A point string a3ob_rig_bone on a rigid piece names its bone. The result "
+        "is bone selections in the model.cfg spelling, with a3ob_rig_origin (where each weight came from) and "
+        "a3ob_rig_piece. Run Weight Cleanup after it.",
+    ),
     "assemble_lods": (
         "A P3D file keeps several LODs (versions of the model for different viewing distances) together. After you "
         "edit LODs one at a time, this node puts them back together.",
