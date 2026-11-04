@@ -124,6 +124,7 @@ Type names carry no version suffix yet. A change that old scenes cannot take get
 | `errors` | no | `UserError`. |
 | `names` | only the two group-name wrappers | D-STR helpers, `encode_group_name` / `decode_group_name`, `lod_uid`, int32 helpers. |
 | `mass_math` | no | The arithmetic of the Mass node: closed components, volume, colour ramp, centre of mass. |
+| `hull_math` | no | 3D convex hull in plain Python (`convex_hull`); the Components node's hull mode uses it (this Houdini build has no hull verb). |
 | `geo_edit` | at call time | For nodes that edit their input: `copy_input` (output = copy of input 1), detail read, set and remove. |
 | `lod_props` | no | LOD Properties decisions: type menu, signature update (through `a3ob_core`), property and copy merge. |
 | `material_text` | no | Material Assign text rules: slash normalisation, procedural colour text, known endings. |

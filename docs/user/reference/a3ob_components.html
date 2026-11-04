@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Components - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
+<h1>Components</h1>
+<p class="lead">Makes the component groups (Component01, Component02, ...) of a Geometry LOD, one per connected piece.</p>
+<p>A Geometry LOD is built of convex pieces, and each piece needs a point group called Component01, Component02 and so on. This node makes those groups for you. It can also replace each piece by its convex hull. The pieces are numbered in the order of their first polygon in the geometry.</p>
+<table class="facts">
+<tr><th>Houdini name</th><td><code>a3ob_components</code></td></tr>
+<tr><th>Where to find it</th><td>Tab menu, A3OB, Components</td></tr>
+<tr><th>Inputs</th><td>1</td></tr>
+</table>
+<h2>Inputs</h2>
+<ol>
+<li value="1">Input 1: LOD geometry. The Geometry LOD whose pieces become components.</li>
+</ol>
+<h2>Parameters</h2>
+<p>Parameters are in the order they appear on the node.</p>
+<section class="parm" id="mode">
+<h3>Mode <code>mode</code></h3>
+<p>What the node does with each connected piece of polygons.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>Find components</dd>
+</dl>
+<p>Choices:</p>
+<ul>
+<li>Find components <code>find</code>: Makes a point group for every closed piece. Pieces that are not closed get no group. The geometry is not changed.</li>
+<li>Convex hull per piece <code>hull</code>: Replaces every piece of 4 or more points by its convex hull (closed, made of triangles) and makes a point group for it. Smaller pieces, such as proxy triangles, are left as they are.</li>
+</ul>
+</section>
+<section class="parm" id="keep">
+<h3>Keep Existing Components <code>keep</code></h3>
+<p>Off: every group called component followed by digits (any capitals) is removed first, as in Object Builder. On: those groups stay and the new groups are numbered after the highest one.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>Off</dd>
+</dl>
+</section>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>
