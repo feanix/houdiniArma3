@@ -16,6 +16,14 @@ __all__ = ["NODE_INTRO", "KIND_TEXT", "FOLDER_TEXT", "number_text", "default_tex
 
 #: A short introduction for each node page, in plain words. The parameter list below it comes from the node's table.
 NODE_INTRO = {
+    "rig_skeleton": (
+        "Builds the Arma 3 character skeleton as a KineFX skeleton (the kind that Rig Pose and Joint Deform use). The "
+        "bones and their parents come from a model.cfg. Where each joint sits comes from a separate pivots .p3d file: "
+        "the model.cfg only names the game's packed pivots file, which can't be read.",
+        "The face bones (Face_*) and the eyes are left out. A bone with no pivot is left out and listed on the node. "
+        "A new node starts from the Samples files when the Arma 3 Samples folder is set in the Project root and "
+        "presets tool.",
+    ),
     "assemble_lods": (
         "A P3D file keeps several LODs (versions of the model for different viewing distances) together. After you "
         "edit LODs one at a time, this node puts them back together.",

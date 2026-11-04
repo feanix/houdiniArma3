@@ -50,6 +50,7 @@
 <li><a href="a3ob_p3d_export.html">P3D Export</a><span>Checks a P3D geometry or a LOD geometry like Validate and writes it as a .p3d file when Save to Disk is pressed. The output is the input. Shadow and underground LODs are always written with hard edges (the geometry here is not changed).</span></li>
 <li><a href="a3ob_p3d_import.html">P3D Import</a><span>Reads an Arma 3 .p3d file (MLOD) and outputs one packed primitive per LOD.</span></li>
 <li><a href="a3ob_proxy.html">Proxy</a><span>Adds proxies (references to other .p3d files, such as weapon slots or seats) as packed primitives.</span></li>
+<li><a href="a3ob_rig_skeleton.html">Rig Skeleton</a><span>Builds the Arma 3 character skeleton as a KineFX skeleton, from a model.cfg and a pivots .p3d file.</span></li>
 <li><a href="a3ob_validate.html">Validate</a><span>Checks a P3D geometry or a LOD geometry the way the export does and shows what is wrong. Changes nothing. Shadow and underground LODs are always written with hard edges, so the message line says when the export will do that.</span></li>
 </ul>
 <h2>Shelf tools</h2>
@@ -59,7 +60,7 @@
 <li><a href="tool-a3ob_quick_export.html">Quick Export</a><span>Exports the selected SOP node (or the display node of the current network) to a .p3d file with a preset. Adds no node.</span></li>
 <li><a href="tool-a3ob_new_p3d.html">New P3D</a><span>Builds the starter network (Resolution 1, Geometry and Memory LODs, Assemble LODs, P3D Export) in the open SOP network or in a new Geometry object.</span></li>
 <li><a href="tool-a3ob_batch_convert.html">Batch folder convert</a><span>Re-exports every .p3d in a folder with a preset into an output folder and writes a report: identical, different or failed for each file. The sources are never changed.</span></li>
-<li><a href="tool-a3ob_project_settings.html">Project root and presets</a><span>Sets the project root, picks, edits and deletes export presets, and sets the common data file. Stored in one JSON file in the Houdini user preferences. Changes nothing in a scene.</span></li>
+<li><a href="tool-a3ob_project_settings.html">Project root and presets</a><span>Sets the project root, picks, edits and deletes export presets, sets the common data file, and sets the Arma 3 Samples folder that the rigging nodes start from. Stored in one JSON file in the Houdini user preferences. Changes nothing in a scene.</span></li>
 <li><a href="tool-a3ob_reload.html">Reload A3OB</a><span>Loads the A3OB code again after the package was updated, without restarting Houdini.</span></li>
 </ul>
 </main>

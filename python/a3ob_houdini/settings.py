@@ -8,7 +8,7 @@
 
 No ``hou`` is needed. The settings are one JSON file in the Houdini user preferences folder:
 
-    {"project_root": "P:\\", "active_preset": "Lossless", "common_data": "", "presets": {"mine": {"lowercase": true}}}
+    {"project_root": "P:\\", "active_preset": "Lossless", "common_data": "", "samples_dir": "", "presets": {"mine": {"lowercase": true}}}
 
 Where the file lives, in this order: the environment variable ``A3OB_SETTINGS`` (a full file path); else
 ``HOUDINI_USER_PREF_DIR`` (the variable, or Houdini's own value when ``hou`` is there); else ``~/.a3ob``. The
@@ -31,13 +31,20 @@ from .p3d_export.options import ExportOptions
 __all__ = [
     "ENV_FILE", "ENV_ROOT", "DEFAULT_ROOT", "BUILTIN_PRESETS", "LOSSLESS", "RELEASE", "Settings", "settings_path",
     "load", "save", "preset_names", "get_preset", "options_for", "effective_root", "set_project_root", "save_preset",
-    "delete_preset", "set_active_preset", "common_data",
+    "delete_preset", "set_active_preset", "common_data", "ENV_SAMPLES", "effective_samples", "samples_defaults",
 ]
 
 ENV_FILE = "A3OB_SETTINGS"
 ENV_ROOT = "A3OB_PROJECT_ROOT"
 FILE_NAME = "a3ob_settings.json"
 DEFAULT_ROOT = "P:\\"
+ENV_SAMPLES = "A3OB_SAMPLES"
+#: Where Steam puts the Arma 3 Samples: the standard install, and the library of the machine this was built on.
+STEAM_SAMPLES = ("C:/Program Files (x86)/Steam/steamapps/common/Arma 3 Samples",
+                 "E:/SteamLibrary/steamapps/common/Arma 3 Samples")
+#: The Samples files the Rig Skeleton node starts from (relative to the Samples folder).
+SAMPLES_CFG = ("Addons", "Test_Character_01", "model.cfg")
+SAMPLES_PIVOTS = ("Addons", "TemplateRTM", "ManSkeleton_Pivots.p3d")
 
 LOSSLESS = "Lossless"
 RELEASE = "Arma 3 release"
@@ -90,6 +97,9 @@ class Settings:
     common_data: str = ""
     #: Folder for decoded .paa pictures (task #53); empty means ``$HOUDINI_TEMP_DIR/a3ob_paa_cache``.
     paa_cache_dir: str = ""
+    #: The Arma 3 Samples folder (the one that holds ``Addons``), stored once for the rigging nodes (D37 Q1). Empty
+    #: means: the environment variable ``A3OB_SAMPLES``, else the Steam folder when it exists (``effective_samples``).
+    samples_dir: str = ""
     presets: Dict[str, Dict[str, Any]] = dataclasses.field(default_factory=dict)
     #: Top-level keys this version does not know, kept for the next save.
     extra: Dict[str, Any] = dataclasses.field(default_factory=dict)
@@ -158,7 +168,7 @@ def load(path: Optional[str] = None) -> Tuple[Settings, List[str]]:
     if not isinstance(raw, dict):
         return settings, ["The settings file %s does not hold a JSON object. The defaults are used" % path]
     for key, value in raw.items():
-        if key in ("project_root", "active_preset", "common_data", "paa_cache_dir"):
+        if key in ("project_root", "active_preset", "common_data", "paa_cache_dir", "samples_dir"):
             if isinstance(value, str):
                 setattr(settings, key, value)
             else:
@@ -182,7 +192,8 @@ def save(settings: Settings, path: Optional[str] = None) -> str:
     path = path or settings_path()
     data = dict(settings.extra)
     data.update(project_root=settings.project_root, active_preset=settings.active_preset,
-                common_data=settings.common_data, paa_cache_dir=settings.paa_cache_dir, presets=settings.presets)
+                common_data=settings.common_data, paa_cache_dir=settings.paa_cache_dir, samples_dir=settings.samples_dir,
+                presets=settings.presets)
     temp = "%s.%d.tmp" % (path, os.getpid())
     try:
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
@@ -218,6 +229,30 @@ def get_preset(settings: Settings, name: str) -> Dict[str, Any]:
 def effective_root(settings: Settings) -> str:
     """The project root in use: the environment variable, else the stored value, else ``P:\\``."""
     return os.environ.get(ENV_ROOT, "").strip() or settings.project_root or DEFAULT_ROOT
+
+
+def effective_samples(settings: Settings) -> str:
+    """The Arma 3 Samples folder in use: the environment variable, else the stored value, else the first Steam folder
+    that exists. Empty when there is none. A stored or environment folder is returned as typed (it may be wrong; the
+    caller says so when it needs a file from it)."""
+    explicit = os.environ.get(ENV_SAMPLES, "").strip() or settings.samples_dir.strip()
+    if explicit:
+        return explicit
+    for folder in STEAM_SAMPLES:
+        if os.path.isdir(os.path.join(folder, "Addons")):
+            return folder
+    return ""
+
+
+def samples_defaults(settings: Settings) -> Tuple[str, str]:
+    """``(model.cfg, pivots .p3d)`` of the Samples character, for a new Rig Skeleton node. A path whose file is not
+    there comes back empty."""
+    root = effective_samples(settings)
+    found = []
+    for parts in (SAMPLES_CFG, SAMPLES_PIVOTS):
+        path = os.path.join(root, *parts) if root else ""
+        found.append(path.replace("\\", "/") if path and os.path.isfile(path) else "")
+    return found[0], found[1]
 
 
 def options_for(settings: Settings, name: Optional[str] = None) -> ExportOptions:
