@@ -63,15 +63,17 @@ def cache_name(source: str) -> str:
     return "%s_%s.png" % (stem, digest)
 
 
-def cached_image(source: str, cache_folder: Optional[str] = None) -> str:
-    """The path of a PNG for the .paa ``source``; decodes and writes it only when it is not in the cache yet."""
+def cached_image(source: str, cache_folder: Optional[str] = None, force: bool = False) -> str:
+    """The path of a PNG for the .paa ``source``; decodes and writes it only when it is not in the cache yet.
+
+    ``force`` decodes again and rewrites the PNG even when the cache key still matches (Reload Textures, task #59)."""
     try:
         name = cache_name(source)
     except OSError as ex:
         raise paa.PaaError("%s cannot be read (%s)" % (source, ex.strerror or ex)) from None
     folder = cache_dir(cache_folder)
     target = os.path.join(folder, name)
-    if os.path.isfile(target):
+    if os.path.isfile(target) and not force:
         return target
     width, height, rgba = paa.decode_paa(source)
     try:

@@ -59,8 +59,8 @@ def _find(path: str, root: str) -> Optional[str]:
     return candidate if os.path.isfile(candidate) else None
 
 
-def resolve(text: str, project_root: str, cache_folder: Optional[str] = None) -> Shown:
-    """What the viewport can show for texture line ``text``. Never raises."""
+def resolve(text: str, project_root: str, cache_folder: Optional[str] = None, force: bool = False) -> Shown:
+    """What the viewport can show for texture line ``text``. Never raises. ``force`` decodes a .paa again."""
     from a3ob_core.paa import PaaError
     from . import paa_cache
     line = text.strip()
@@ -88,11 +88,39 @@ def resolve(text: str, project_root: str, cache_folder: Optional[str] = None) ->
         return Shown(INGAME if _is_ingame(line) else MISSING, path=line, text=text)
     if extension == ".paa":
         try:
-            return Shown("image", path=paa_cache.cached_image(found_path, cache_folder), text=text,
+            return Shown("image", path=paa_cache.cached_image(found_path, cache_folder, force), text=text,
                          label=line)
         except PaaError as ex:
             return Shown(FAILED, path=found_path, text=str(ex))
     return Shown("image", path=found_path, text=text)
+
+
+def drop_viewport_images() -> None:
+    """Make Houdini's viewport read its texture files from disk again.
+
+    Houdini 22.0.466 help, commands/glcache: ``glcache -c`` "Clear the texture cache. This will reload textures files
+    that are out of date that are currently in use and those that are not in use." commands/texcache says that
+    ``texcache -c`` clears Houdini's own image cache and that "to reset the viewport textures, glcache should be
+    used"; the shelf tool Clear Texture Cache runs ``texcache -c``. So both run. Headless hython has no viewport:
+    the commands run without error there, but nothing can be seen to reload (checked, task #59)."""
+    import hou
+    hou.hscript("texcache -c")
+    hou.hscript("glcache -c")
+
+
+def reload_shown(geo, project_root: str, cache_folder: Optional[str] = None) -> List[str]:
+    """Reload Textures (task #59): decode every shown .paa again, then drop the viewport's cached images.
+
+    Returns the picture files shown for the texture lines of ``geo``; empty when there are none (then nothing is
+    dropped). Never raises for a bad texture; ``resolve`` gives it a reason instead."""
+    if geo.findPrimAttrib("a3ob_texture") is None:
+        return []
+    texts = sorted(set(geo.primStringAttribValues("a3ob_texture")))
+    shown = [resolve(text, project_root, cache_folder, force=True) for text in texts]
+    images = sorted({item.path for item in shown if item.kind == "image"})
+    if images:
+        drop_viewport_images()
+    return images
 
 
 def _material_name(shown: Shown) -> str:

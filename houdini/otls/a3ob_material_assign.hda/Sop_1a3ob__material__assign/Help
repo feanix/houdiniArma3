@@ -133,4 +133,11 @@ Show in Viewport:
 
     Type: On or off. Default: On.
 
+Reload Textures:
+    #id: reloadtex
+
+    Use it after you change a texture file outside Houdini.
+
+    Type: Button. Editable when: Show in Viewport is on.
+
 The full page for this node is docs/user/reference/a3ob_material_assign.html in the A3OB folder. Open it in a web browser.

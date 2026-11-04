@@ -13,7 +13,7 @@ import unittest
 from unittest import mock
 
 from a3ob_core import paa, png
-from a3ob_houdini import material_text, viewport_material
+from a3ob_houdini import entry, material_text, paa_cache, viewport_material
 from a3ob_houdini.p3d_export import ExportOptions
 from tests.hou_support import HAS_HOU, hou
 from tests.mass_proxy_support import NodeTestCase, cook, make_source
@@ -102,6 +102,27 @@ class TestResolve(Folder):
         shown = self.resolve("mod\\x_co.paa")  # the sibling next to the (missing) .paa under the root
         self.assertEqual(shown.kind, "image")
         self.assertEqual(self.resolve("mod\\gone_co.paa").kind, "ingame")
+
+
+RED565, BLUE565 = 0xF800, 0x001F
+
+
+def write_paa(target, color):
+    with open(target, "wb") as file:
+        file.write(make_paa(paa.TYPE_DXT1, 4, 4, block_dxt1(color, color, [0] * 16)))
+
+
+class TestForce(Folder):
+    def test_force_decodes_again_when_the_key_matches(self):
+        source = self.make_paa("tex", "f_co.paa")
+        cached = paa_cache.cached_image(source, self.cache)
+        with open(cached, "wb") as file:
+            file.write(b"stale")
+        self.assertEqual(paa_cache.cached_image(source, self.cache), cached)
+        self.assertEqual(open(cached, "rb").read(), b"stale")  # no force: the entry is used as it is
+        self.assertEqual(paa_cache.cached_image(source, self.cache, force=True), cached)
+        width, height, rgba = paa.decode_paa(source)
+        self.assertEqual(open(cached, "rb").read(), png.encode_png(width, height, rgba))
 
 
 @unittest.skipUnless(HAS_HOU, "needs hou (run under hython)")
@@ -262,6 +283,98 @@ class TestViewportNode(NodeTestCase, Folder):
         red, green, blue = picture.getPixelByUV("C", file_u, houdini_v)
         self.assertGreater(red, green + 0.05)
         self.assertGreater(red, blue + 0.05)  # the top left is the red pixel: no extra V flip in the material
+
+    def press(self, node):
+        entry.button("material_assign", "reloadtex", {"node": node})
+
+    def test_button_exists_and_depends_on_show_in_viewport(self):
+        node = self.assign()
+        parm = node.parm("reloadtex")
+        self.assertIsNotNone(parm)
+        conditions = parm.parmTemplate().conditionals()
+        self.assertEqual(conditions[hou.parmCondType.DisableWhen], "{ showviewport != 1 }")
+
+    def test_replaced_paa_gives_a_new_decoded_image(self):
+        source = self.make_paa("tex", "g_co.paa")
+        write_paa(source, RED565)
+        node = self.assign(source)
+        cook(node)
+        old = self.material(node).evalParm("basecolor_texture")
+        write_paa(source, BLUE565)
+        os.utime(source, ns=(1, 1))  # another modification time, so the cache key changes
+        with mock.patch.object(viewport_material, "drop_viewport_images") as drop:
+            self.press(node)
+        self.assertEqual(drop.call_count, 1)
+        self.assertEqual(node.errors(), ())
+        new = self.material(node).evalParm("basecolor_texture")
+        self.assertNotEqual(old, new)
+        width, height, rgba = paa.decode_paa(source)
+        with open(new, "rb") as file:
+            self.assertEqual(file.read(), png.encode_png(width, height, rgba))
+
+    def test_same_key_entry_is_rebuilt(self):
+        source = self.make_paa("tex", "h_co.paa")
+        node = self.assign(source)
+        cook(node)
+        cached = self.material(node).evalParm("basecolor_texture")
+        with open(cached, "wb") as file:
+            file.write(b"stale")
+        with mock.patch.object(viewport_material, "drop_viewport_images") as drop:
+            self.press(node)
+        self.assertEqual(drop.call_count, 1)
+        self.assertNotEqual(open(cached, "rb").read(), b"stale")
+        self.assertIn("Reloaded 1 texture.", node.messages())
+
+    def test_png_texture_reloads_once_per_press(self):
+        node = self.assign(self.make_png("tex", "i_co.png"))
+        cook(node)
+        with mock.patch.object(viewport_material, "drop_viewport_images") as drop:
+            self.press(node)
+            self.press(node)
+        self.assertEqual(drop.call_count, 2)
+
+    def test_sibling_image_case(self):
+        source = self.make_paa("tex", "j_co.paa")
+        image = self.make_png("tex", "j_co.png")
+        node = self.assign(source)
+        cook(node)
+        with mock.patch.object(viewport_material, "drop_viewport_images") as drop:
+            self.press(node)
+        self.assertEqual(drop.call_count, 1)
+        self.assertEqual(self.material(node).evalParm("basecolor_texture"), image.replace("\\", "/"))
+
+    def test_nothing_shown_gives_one_info_line(self):
+        node = self.assign(self.make_png("tex", "k_co.png"), showviewport=0)
+        cook(node)
+        with mock.patch.object(viewport_material, "drop_viewport_images") as drop:
+            self.press(node)
+        self.assertEqual(drop.call_count, 0)
+        self.assertEqual((node.errors(), node.warnings()), ((), ()))
+        self.assertEqual(len([text for text in node.messages() if text.startswith("Reload Textures")]), 1)
+        # on, but no texture file found
+        node.parm("showviewport").set(1)
+        node.parm("texture").set(self.path("none_co.png").replace("\\", "/"))
+        cook(node)
+        with mock.patch.object(viewport_material, "drop_viewport_images") as drop:
+            self.press(node)
+        self.assertEqual(drop.call_count, 0)
+        self.assertEqual(node.errors(), ())
+        self.assertEqual(len([text for text in node.messages() if text.startswith("Reload Textures")]), 1)
+
+    def test_failure_shows_on_the_node_and_does_not_raise(self):
+        node = self.assign(self.make_png("tex", "l_co.png"))
+        cook(node)
+        with mock.patch.object(viewport_material, "drop_viewport_images", side_effect=RuntimeError("boom")):
+            self.press(node)  # must not raise
+        self.assertTrue(any("Reload Textures failed" in text for text in node.warnings()))
+
+    def test_the_real_drop_commands_run_headless(self):
+        calls = []
+        real = hou.hscript
+        with mock.patch.object(hou, "hscript", side_effect=lambda text: calls.append(text) or real(text)):
+            viewport_material.drop_viewport_images()
+        self.assertEqual(calls, ["texcache -c", "glcache -c"])
+
 
 
 @unittest.skipUnless(HAS_HOU, "needs hou (run under hython)")
