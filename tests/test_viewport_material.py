@@ -151,6 +151,16 @@ class TestViewportNode(NodeTestCase, Folder):
         self.assertEqual(material.evalParm("basecolor_useTexture"), 1)
         self.assertEqual(material.evalParm("basecolor_texture"), image.replace("\\", "/"))
 
+    def test_texture_material_is_not_tinted_and_reuse_heals(self):
+        node = self.assign(self.make_png("tex", "tint_co.png"))
+        cook(node)
+        material = self.material(node)
+        self.assertEqual(tuple(material.evalParmTuple("basecolor")), (1.0, 1.0, 1.0))
+        material.parmTuple("basecolor").set((0.2, 0.2, 0.2))  # as the old code left it
+        node.cook(force=True)
+        self.assertEqual(self.material(node), material)
+        self.assertEqual(tuple(material.evalParmTuple("basecolor")), (1.0, 1.0, 1.0))
+
     def test_paa_uses_the_sibling_png(self):
         paa_file = self.make_paa("tex", "d_co.paa")
         image = self.make_png("tex", "d_co.png")
@@ -162,6 +172,7 @@ class TestViewportNode(NodeTestCase, Folder):
         paa_file = self.make_paa("tex", "e_co.paa")
         node = self.assign(paa_file)
         self.assertEqual(cook(node).errors, ())
+        self.assertEqual(self.material(node).name(), "e_co")  # named after the .paa, not the cache file
         texture = self.material(node).evalParm("basecolor_texture")
         self.assertTrue(texture.startswith(self.cache.replace("\\", "/")), texture)
         self.assertTrue(os.path.isfile(texture))
