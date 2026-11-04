@@ -11,10 +11,13 @@
 # <https://www.gnu.org/licenses/>.
 """Pure-Python core of the houdiniArma3 port: file formats and algorithms.
 
-This package must never import ``hou``, ``bpy`` or any third-party module (no numpy). It runs on plain CPython 3.12+
-and on hython 3.13, so it can be tested outside Houdini.
+This package must never import ``hou``, ``bpy`` or any third-party module, with one exception: ``paa`` tries to import
+numpy and falls back to plain Python without it. It runs on plain CPython 3.12+ and on hython 3.13, so it can be tested
+outside Houdini.
 
 Subpackages and modules:
+
+- ``a3ob_core.paa``: PAA texture reader (DXT1, DXT5, LZO) to RGBA8; ``a3ob_core.png``: PNG writer.
 
 - ``a3ob_core.binary``: little-endian readers and writers for the BI generic data types.
 - ``a3ob_core.p3d``: lossless reader/writer and semantic API for P3D MLOD files.
