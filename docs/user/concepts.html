@@ -209,7 +209,7 @@ order, and the first one that fits wins:</p>
 <code>mainprefix = "mymod"</code> and <code>prefix = "stuff"</code> would give
 <code>mymod\stuff\addons\props\wallScreen\camo1_co.paa</code> instead.</p>
 <p>Typing the in-game path directly also works: a path with no drive letter, such as
-<code>mymod\addons\props\wallScreen\camo1_co.paa</code>, is never changed.</p>
+<code>mymod\addons\props\wallScreen\camo1_co.paa</code>, is kept as typed (apart from one leading backslash, which is dropped).</p>
 <p>The project root (step 3) comes from the
 <kbd class="ui-parm" data-node="a3ob_p3d_export">Project Root</kbd> parameter of the export node. If that is empty, it comes
 from the <kbd class="ui-shelf">Project root and presets</kbd> shelf tool. If that has none either, it is <code>P:\</code>. You can
