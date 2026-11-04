@@ -49,7 +49,10 @@ SPEC = NodeSpec(
             ("find", "Makes a point group for every closed piece. Pieces that are not closed get no group. The "
                      "geometry is not changed."),
             ("hull", "Replaces every piece of 4 or more points by its convex hull (closed, made of triangles) and "
-                     "makes a point group for it. Smaller pieces, such as proxy triangles, are left as they are."),
+                     "makes a point group for it. Smaller pieces, such as proxy triangles, are left as they are. The "
+                     "hull keeps the corner points, with their point attributes and point groups (selections). "
+                     "The other points of the piece are removed and leave their groups. The new triangles get "
+                     "default values: no UVs, normals or materials, so use Material Assign afterwards."),
         )),
         Parm("keep", "Keep Existing Components", "toggle", False,
              "Off: every group called component followed by digits (any capitals) is removed first, as in Object "
