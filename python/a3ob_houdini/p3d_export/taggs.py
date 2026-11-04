@@ -43,9 +43,9 @@ class Item:
 
 def output_text(text: str, options: ExportOptions, mapper: Optional[PathMapper] = None, kind: str = "texture",
                 label: Optional[str] = None) -> str:
-    """Texture and material paths: a texture ending but .paa becomes .paa (task #54, D29), mapped to the game path,
-    then lowercase (spec 5 "Paths", task #51)."""
-    if kind == "texture":
+    """Texture and material paths: with ``paa_textures`` a texture ending but .paa becomes .paa (task #54, D34), then
+    mapped to the game path, then lowercase (spec 5 "Paths", task #51)."""
+    if kind == "texture" and options.paa_textures:
         text = material_text.paa_texture(text)
     if options.relative_paths:
         text = (mapper or PathMapper(options.project_root)).map_path(text, kind, label)

@@ -370,7 +370,7 @@ differ (§3.4). The node does that step itself for a stored signature and says s
 | Viewport: in-game path (no drive letter) not found under the project root | One info line per node, no warning per texture (waits for path mapping, #52). |
 | Viewport: texture line that is neither a file nor a plain colour | One info line; no material. |
 
-Export (D29): a texture path that does not end in `.paa` is written with `.paa`; making that file is the user's job.
+Export (D34, amends D29): only with the export option Write Textures as .paa (`paatextures`; on in the Arma 3 release preset, off in Lossless) is a texture path that does not end in `.paa` written with `.paa`; making that file is the user's job. Otherwise paths are written as read.
 
 **Notes.** Sections are the runs of equal texture and material in prim order (§12). Assigning a material to scattered
 faces fragments them. Turn on **Sort sections** on the export (5.9) to group them. A3OB turns that on by default
@@ -465,6 +465,7 @@ failed save leaves the old file alone.
 | **Selection mask** | `selmask` | `* ^__*` | Which point groups become selections (spec §7.2, D7 OQ-9). A group whose decoded name is in `a3ob_tagg_order` is always a selection. |
 | **Lowercase** | `lowercase` | **off** | Lowercases the same things A3OB does: texture and material paths, selection names (so proxy paths too) and property names and values (`io/data_p3d.py` line 752). The spec only names paths (§5); all four are lowercased (Q-12, D14), the tooltip says so, and a warning appears when lowering the case makes two selection names equal (spec section 17.1, task #7). |
 | **Relative paths** | `relpaths` | **off** | Makes paths relative to `projectroot`; at least the drive letter is stripped (`utilities/generic.py` lines 174-216). |
+| **Write Textures as .paa** | `paatextures` | **off** (on in Arma 3 release) | D34 (amends D29): a texture path whose ending is not `.paa` is written with `.paa`; procedural textures and `.paa` paths are unchanged; making the file is the user's job. A saved preset without the key follows its `relative_paths` value. |
 | Project root | `projectroot` | empty = the shelf setting | Falls back to the root from [7.2](#72-project-root-and-presets) (A3OB default `P:\`). Used only when `relpaths` is on. |
 | **Sort sections** | `sortsections` | **off** | Orders faces by texture and material pair (`io/export_p3d.py` line 255). Changes the face order, so a round trip becomes L1. |
 | **Sort LODs** | `sortlods` | **off** | Sorts by signature, as A3OB always does (`io/export_p3d.py` line 716). On in `Arma 3 release` (D19). |

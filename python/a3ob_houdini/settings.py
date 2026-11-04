@@ -45,7 +45,7 @@ RELEASE = "Arma 3 release"
 #: The option names a preset may hold: the fields of ``ExportOptions`` except the project root (that is a setting).
 PRESET_KEYS = tuple(field.name for field in dataclasses.fields(ExportOptions) if field.name != "project_root")
 
-_ALL_OFF = {"lowercase": False, "relative_paths": False, "sort_sections": False, "sort_lods": False,
+_ALL_OFF = {"lowercase": False, "relative_paths": False, "paa_textures": False,"sort_sections": False, "sort_lods": False,
             "auto_components": False, "renumber_components": False, "czech_names": False, "drop_uvs": False,
             "triangulate": True}  # task #49 (D28): on in both; a preset without the key reads the default, which is on
 
@@ -54,7 +54,7 @@ _ALL_OFF = {"lowercase": False, "relative_paths": False, "sort_sections": False,
 #: UVs always, and has renumber and Czech names off); duplicate LODs stay on Fail.
 BUILTIN_PRESETS: Dict[str, Dict[str, Any]] = {
     LOSSLESS: dict(_ALL_OFF),
-    RELEASE: dict(_ALL_OFF, lowercase=True, relative_paths=True, sort_sections=True, auto_components=True,
+    RELEASE: dict(_ALL_OFF, lowercase=True, relative_paths=True, paa_textures=True, sort_sections=True, auto_components=True,
                   sort_lods=True, drop_uvs=True),
 }
 
@@ -223,6 +223,10 @@ def effective_root(settings: Settings) -> str:
 def options_for(settings: Settings, name: Optional[str] = None) -> ExportOptions:
     """``ExportOptions`` for a preset (default: the active one), with the project root filled in."""
     values = get_preset(settings, name or settings.active_preset)
+    # A saved preset from before "Write Textures as .paa" (task #54, D34) has no such key. It follows Relative Paths:
+    # release-style presets (relative paths on) write .paa, Lossless-style ones (off) keep the paths as read.
+    if "paa_textures" not in values:
+        values["paa_textures"] = bool(values.get("relative_paths", False))
     return ExportOptions(project_root=effective_root(settings), **values)
 
 

@@ -90,6 +90,7 @@ def options_from(values: Dict[str, object]) -> ExportOptions:
         selection_mask=str(values.get("selmask", DEFAULT_SELECTION_MASK)),
         lowercase=bool(values.get("lowercase", False)),
         relative_paths=bool(values.get("relpaths", False)),
+        paa_textures=bool(values.get("paatextures", False)),
         project_root=str(values.get("projectroot", "")),
         sort_sections=bool(values.get("sortsections", False)),
         sort_lods=bool(values.get("sortlods", False)),

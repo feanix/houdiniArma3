@@ -14,6 +14,7 @@ from unittest import mock
 
 from a3ob_core import paa, png
 from a3ob_houdini import material_text, viewport_material
+from a3ob_houdini.p3d_export import ExportOptions
 from tests.hou_support import HAS_HOU, hou
 from tests.mass_proxy_support import NodeTestCase, cook, make_source
 from tests.test_node_proxy import cube_geometry
@@ -273,7 +274,10 @@ class TestExportEnding(unittest.TestCase):
         names = ["a\\camo1_co.png", "a\\b_co.tga", "a\\c_co.tif", "a\\d_co.paa", "#(argb,8,8,3)color(1,0,0,1,CO)"]
         for number, name in enumerate(names):
             edited.prims()[number].setAttribValue("a3ob_texture", name)
-        model, report, _ = export([edited])
+        model, report, _ = export([edited], ExportOptions(paa_textures=True))
         written = model.lods[0].face_textures
         self.assertEqual(written[:5], ["a\\camo1_co.paa", "a\\b_co.paa", "a\\c_co.paa", "a\\d_co.paa", names[4]])
         self.assertEqual(report.texts("error"), [])
+        # D34: with the option off (Lossless) the paths are written as they are.
+        model, _, _ = export([edited])
+        self.assertEqual(model.lods[0].face_textures[:5], names)

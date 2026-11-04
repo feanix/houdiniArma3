@@ -126,6 +126,13 @@ Project Root:
 
     Type: Folder path. Default: (empty).
 
+Write Textures as .paa:
+    #id: paatextures
+
+    Write a texture path that ends in .png, .tga, .tif or any other picture ending as .paa (camo1_co.png becomes camo1_co.paa). Procedural textures and paths that already end in .paa are not changed. The game reads .paa only, and making the .paa file exist before you build the PBO is your job. Off: paths are written as they are. On in the Arma 3 release preset.
+
+    Type: On or off. Default: Off.
+
 Lowercase:
     #id: lowercase
 

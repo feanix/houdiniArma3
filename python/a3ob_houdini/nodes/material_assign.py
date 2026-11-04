@@ -48,8 +48,9 @@ SPEC = NodeSpec(
              items=(("file", "File"), ("color", "Color"), ("custom", "Custom texture text")),
              enable_when=_TEX_ON),
         Parm("texture", "Texture File", "file", "",
-             "The texture file (.paa, .tga or .png). Slashes are written as backslashes. The export writes every "
-             "ending but .paa as .paa (camo1_co.png becomes camo1_co.paa); making that .paa is up to you. When you "
+             "The texture file (.paa, .tga or .png). Slashes are written as backslashes. When Write Textures as "
+             ".paa is on (as in the Arma 3 release preset), the export writes every ending but .paa as .paa "
+             "(camo1_co.png becomes camo1_co.paa); making that .paa is up to you. When you "
              "export with Relative Paths on, the path is mapped to the in-game path (see the Relative Paths tooltip "
              "of P3D Export).",
              file_pattern="*.paa *.tga *.png", show_when=(("texsource", ("file",)),), enable_when=_TEX_ON),

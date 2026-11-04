@@ -45,6 +45,8 @@ class ExportOptions:
     selection_mask: str = DEFAULT_SELECTION_MASK
     lowercase: bool = False
     relative_paths: bool = False
+    #: Task #54 (D34): a texture ending but .paa is written as .paa. On in the Arma 3 release preset only.
+    paa_textures: bool = False
     project_root: str = ""
     sort_sections: bool = False
     sort_lods: bool = False

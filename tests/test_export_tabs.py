@@ -26,7 +26,7 @@ TABS = (("tab_checking", "Error Checking"), ("tab_presets", "Presets"), ("tab_pa
 TAB_PARMS = {
     "tab_checking": ["check", "errorlevel", "strict", "dupes", "maxmessages"],
     "tab_presets": ["preset", "apply"],
-    "tab_paths": ["relpaths", "projectroot", "lowercase", "czech", "renumber"],
+    "tab_paths": ["relpaths", "projectroot", "paatextures", "lowercase", "czech", "renumber"],
     "tab_selections": ["selmask", "autocomponents"],
     "tab_layout": ["sortlods", "sortsections", "dropuvs"],
 }
@@ -131,7 +131,7 @@ class TestExportNodes(NodeTestCase):
         self.use_settings(sm.RELEASE)
         node = self.network.createNode("a3ob_p3d_export")
         self.assertEqual(node.parm("preset").eval(), sm.RELEASE)  # the menu shows which preset was applied
-        for name in ("lowercase", "relpaths", "sortsections", "autocomponents", "sortlods"):
+        for name in ("lowercase", "relpaths", "paatextures", "sortsections", "autocomponents", "sortlods"):
             self.assertTrue(node.parm(name).eval(), name)
         self.assertEqual(node.parm("file").eval().endswith(".p3d"), True)
 
@@ -139,7 +139,7 @@ class TestExportNodes(NodeTestCase):
         self.use_settings(None)
         node = self.network.createNode("a3ob_p3d_export")
         self.assertEqual(node.parm("preset").eval(), sm.LOSSLESS)
-        for name in ("lowercase", "relpaths", "sortsections", "autocomponents", "sortlods", "dropuvs"):
+        for name in ("lowercase", "relpaths", "paatextures", "sortsections", "autocomponents", "sortlods", "dropuvs"):
             self.assertFalse(node.parm(name).eval(), name)
 
     def test_the_active_preset_can_be_one_of_the_artists_own(self):
