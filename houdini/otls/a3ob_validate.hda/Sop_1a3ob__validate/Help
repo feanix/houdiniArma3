@@ -50,7 +50,7 @@ Duplicate LODs:
 Max Messages:
     #id: maxmessages
 
-    How many messages the node shows. The rest are counted in one line and listed in the console.
+    How many messages the node shows. The rest are counted in one line and listed in Windows > Log Viewer (source A3OB).
 
     Type: Whole number. Default: 25. Allowed: At least 1; no upper limit.
 
@@ -62,6 +62,13 @@ Check LOD-Type Rules:
     #id: typerules
 
     Warn about what Object Builder's validator would: rules for geometry, shadow, roadway and other LOD types. Each rule has its own switch below.
+
+    Type: On or off. Default: On.
+
+Triangulate Where Needed:
+    #id: triangulate
+
+    Divide only the polygons that break the rules, in the written file (the geometry on the node is not changed): polygons with more than 4 points in any LOD, quads that are not convex in Geometry and Shadow Volume LODs, and every quad in Underground LODs. Triangles and allowed quads are left as they are. Uses Divide with Convex Polygons, Maximum Edges 3 and Avoid Small Angles, and warns for each LOD it changed. Off: those polygons stay and the checks report them.
 
     Type: On or off. Default: On.
 

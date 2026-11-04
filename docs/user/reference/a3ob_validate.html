@@ -81,7 +81,7 @@
 </section>
 <section class="parm" id="maxmessages">
 <h3>Max Messages <code>maxmessages</code></h3>
-<p>How many messages the node shows. The rest are counted in one line and listed in the console.</p>
+<p>How many messages the node shows. The rest are counted in one line and listed in Windows &gt; Log Viewer (source A3OB).</p>
 <dl>
 <dt>Type</dt><dd>Whole number</dd>
 <dt>Default</dt><dd>25</dd>
@@ -97,6 +97,14 @@
 <section class="parm" id="typerules">
 <h3>Check LOD-Type Rules <code>typerules</code></h3>
 <p>Warn about what Object Builder&#x27;s validator would: rules for geometry, shadow, roadway and other LOD types. Each rule has its own switch below.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>On</dd>
+</dl>
+</section>
+<section class="parm" id="triangulate">
+<h3>Triangulate Where Needed <code>triangulate</code></h3>
+<p>Divide only the polygons that break the rules, in the written file (the geometry on the node is not changed): polygons with more than 4 points in any LOD, quads that are not convex in Geometry and Shadow Volume LODs, and every quad in Underground LODs. Triangles and allowed quads are left as they are. Uses Divide with Convex Polygons, Maximum Edges 3 and Avoid Small Angles, and warns for each LOD it changed. Off: those polygons stay and the checks report them.</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>

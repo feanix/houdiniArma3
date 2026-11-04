@@ -232,11 +232,20 @@ name. Two presets come with the add-on. You can save more with the <kbd class="u
 <tr data-option="renumber_components"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Renumber Components</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">Off</td><td>Renames <code>component</code> selections to <code>component01</code>, <code>component02</code> and so on, in the order they are written.</td></tr>
 <tr data-option="czech_names"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Translate Names to Czech</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">Off</td><td>Renames selections that have an English name in Object Builder's table (such as <code>body</code>) to the Czech name the game uses (<code>telo</code>).</td></tr>
 <tr data-option="drop_uvs"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Drop UVs</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Writes no UVs for LOD types that do not use them (Geometry, Memory and the other collision and point types). The geometry in Houdini does not change.</td></tr>
+<tr data-option="triangulate"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Triangulate Where Needed</kbd></th><td data-preset="Lossless">On</td><td data-preset="Arma 3 release">On</td><td>Divides only the polygons that break the rules, in the written file: more than 4 points in any LOD, quads that are not convex in Geometry and Shadow Volume LODs, and every quad in Underground LODs. See below.</td></tr>
 </table>
 <p><kbd class="ui-menu">Lossless</kbd> turns every option that changes data off. <kbd class="ui-menu">Arma 3 release</kbd> is the set
 that Object Builder uses by default. The two Czech and Renumber options are off in both, as in Object Builder.
 <kbd class="ui-parm" data-node="a3ob_p3d_export">Duplicate LODs</kbd> stays on Fail in both. A preset does not change
 <kbd class="ui-parm" data-node="a3ob_p3d_export">Project Root</kbd> or <kbd class="ui-parm" data-node="a3ob_p3d_export">Keep a .bak</kbd>.</p>
+<p><strong>Triangulate Where Needed</strong> is on in both presets, because a P3D face has 3 or 4 points and the game wants
+triangles in some LODs. The export runs Houdini's own Divide (Convex Polygons on, Maximum Edges 3, Avoid Small Angles on)
+on the bad polygons of each LOD and leaves every other polygon as it is, so a model that already passes is written
+exactly as before. Groups, UVs, textures and materials carry over to the new triangles. The geometry on the node does
+not change, and each LOD it touched gets a warning with the number of polygons. A Divide node placed after Assemble LODs
+cannot do this, because it sees the packed LODs, not the polygons inside. To control the result yourself, put a Divide on
+the LOD's own branch before Assemble LODs. The <kbd class="ui-node">Validate</kbd> node has the
+same switch in its LOD Rules tab. Switch it off and the checks report those polygons as errors or warnings, as before.</p>
 <p>Choosing a preset in the menu changes nothing by itself: press Apply. After Apply you can still switch single options
 on or off on the node. Each option has a full entry in the <a href="reference/a3ob_p3d_export.html">P3D Export reference</a>.</p>
 
@@ -251,7 +260,7 @@ model that passes one passes the other. Each message starts with the LOD name an
   starts with Error). <kbd class="ui-parm" data-node="a3ob_validate">Warnings Count As Errors</kbd> does the reverse, for a strict
   check before a release. Saving always stops on a real error.</li>
 <li>A node shows at most 25 messages (<kbd class="ui-parm" data-node="a3ob_validate">Max Messages</kbd>). The rest are counted,
-  and listed in the Houdini console.</li>
+  and listed in Windows &gt; Log Viewer (source A3OB).</li>
 </ul>
 
 <h3>Errors you are likely to meet</h3>
@@ -267,7 +276,8 @@ model that passes one passes the other. Each message starts with the LOD name an
 <h3>Warnings you are likely to meet</h3>
 <table>
 <tr><th>Message starts with</th><th>Meaning and fix</th></tr>
-<tr><td><samp class="ui-msg">Geometry: the mesh is not triangulated</samp></td><td>An underground LOD must be made of triangles. A collision or shadow LOD may also hold convex quads, so this message means a quad that is not convex or a polygon with 5 or more points. Add a Divide node (Convex Polygons on).</td></tr>
+<tr><td><samp class="ui-msg">Geometry: 1 polygons triangulated</samp></td><td>The export divided the polygons that break the rules (see <kbd class="ui-parm" data-node="a3ob_p3d_export">Triangulate Where Needed</kbd> below) and tells you how many. Nothing to fix unless you want to control the result: then put a Divide on the LOD's branch.</td></tr>
+<tr><td><samp class="ui-msg">Geometry: the mesh is not triangulated</samp></td><td>Only with <kbd class="ui-parm" data-node="a3ob_p3d_export">Triangulate Where Needed</kbd> off. An underground LOD must be made of triangles. A collision or shadow LOD may also hold convex quads, so this message means a quad that is not convex or a polygon with 5 or more points. Add a Divide node (Convex Polygons on).</td></tr>
 <tr><td><samp class="ui-msg">Geometry: the LOD has no component selections</samp></td><td>Add a point group named <code>component01</code> (and <code>component02</code> and so on for more pieces). The Selection browser can add the Group node.</td></tr>
 <tr><td><samp class="ui-msg">Geometry: has no mass</samp></td><td>This is a note, not a warning. It is fine for items such as vests or scopes. A physical object needs mass: add a <kbd class="ui-node">Mass</kbd> node. When a Geometry LOD has mass, every point needs at least 0.001 kg or the point-mass warning appears.</td></tr>
 <tr><td>The LODs look merged</td><td>You joined LODs with a Merge node. Pack them with Assemble LODs instead.</td></tr>

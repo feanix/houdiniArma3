@@ -12,7 +12,7 @@ Once a node has shipped, the names and arguments here must not change. Everythin
     loaded(kind, kwargs)         -- the OnLoaded event of a node that asks for it (NodeSpec.on_loaded)
 
 ``cook`` turns every exception into a node error: a ``UserError`` shows its own text (already in the ux-tools.md
-section 2 form); any other exception is a bug, so it shows a short text and the traceback goes to the console.
+section 2 form); any other exception is a bug, so it shows a short text and the traceback goes to the Log Viewer.
 Callbacks never raise either (Houdini ignores errors in callbacks, so they report their own, spike finding Q4).
 """
 
@@ -46,10 +46,10 @@ def cook(kind: str, node) -> None:
         _load(kind).cook(node, report)
     except UserError as ex:
         report.error(str(ex))
-    except Exception as ex:  # a bug in A3OB tools: show it on the node, keep the details on the console
+    except Exception as ex:  # a bug in A3OB tools: show it on the node, keep the details in the Log Viewer
         LOGGER.error("%s", traceback.format_exc())
         report.error("%s: %s failed with %s: %s. This is a bug in the A3OB tools. "
-                     "Copy the console output into a bug report." % (
+                     "Copy the details from Windows > Log Viewer (source A3OB) into a bug report." % (
                          kind, node.path(), type(ex).__name__, ex))
     if report.has_errors:
         node.geometry().clear()
@@ -60,7 +60,7 @@ def button(kind: str, action: str, kwargs) -> None:
     """Run the callback of a button parameter. Never raises."""
     try:
         nodes.load(kind).BUTTONS[action](kwargs)
-    except Exception:  # Houdini would only print it; put the traceback on the console with our logger
+    except Exception:  # Houdini would only print it; put the traceback in the Log Viewer with our logger
         LOGGER.error("button %s/%s failed:\n%s", kind, action, traceback.format_exc())
 
 

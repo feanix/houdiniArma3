@@ -16,7 +16,7 @@ Every A3OB node is a Python-type SOP asset written as text. It is never saved fr
 
 The `PythonCook` of an asset is one line: `import a3ob_houdini.entry as e; e.cook('<kind>', hou.pwd())`. Nothing else
 lives in the asset. `entry.cook` turns every exception into a node error (a `UserError` shows its own text; any other
-exception shows a short "bug" text and the traceback goes to the console). If the HDA route is ever dropped,
+exception shows a short "bug" text and the traceback goes to the Log Viewer). If the HDA route is ever dropped,
 `params.add_spare_parms` builds the same parameters on a Python SOP that calls the same entry function.
 
 A Python-type SOP starts with a copy of its first input, so a node that edits its input writes straight into
@@ -209,6 +209,11 @@ same for the same input. `build_lod` also runs `flag_check` (flag values Object 
 of all, `build_lod` calls `harden.harden_lod` (task #48): Shadow and Underground LODs always get every edge in
 `#SharpEdges#` and face normals, in the written file only. Packed
 proxies with a collapsed or isosceles triangle are warned about in `proxy_rebuild`.
+
+Before that, `collect` (`collect_lods._add_lod`) calls `triangulate.triangulate_lod` (task #49, D28; `ExportOptions.triangulate`,
+the `triangulate` parameter in the LOD Rules tab, on in both presets): the polygons that the checks reject (more than 4
+points; quads that T2-TRI rejects) are divided with the Divide verb on a copy of the LOD geometry, with one warning per
+LOD. This is the one place for it, so Validate, P3D Export, Quick Export and Batch convert all do it.
 
 ### The Validate and P3D Export nodes
 

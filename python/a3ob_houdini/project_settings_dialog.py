@@ -74,7 +74,7 @@ def run(kwargs) -> None:
         hou.ui.displayMessage(str(ex), severity=hou.severityType.Error, title=TITLE)
     except Exception:
         LOGGER.error("Project settings failed:\n%s", traceback.format_exc())
-        hou.ui.displayMessage("The settings tool failed. This is a bug in the A3OB tools. See the console.",
+        hou.ui.displayMessage("The settings tool failed. This is a bug in the A3OB tools. See Windows > Log Viewer (source A3OB).",
                               severity=hou.severityType.Error, title=TITLE)
 
 

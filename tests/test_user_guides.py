@@ -371,7 +371,9 @@ class TestQuickStartsRunInHoudini(unittest.TestCase):
         for key in ("geometry_mass", "geometry_components"):
             made.nodes[key].bypass(True)
         cls.make_concave_quad(made.nodes["geometry_triangles"])
-        cls.rules_probe = cls.look(validate)
+        cls.rules_probe = cls.look(validate)  # task #49: Triangulate Where Needed is on, so it divides the quad
+        validate.parm("triangulate").set(0)  # off: the check reports the quad as it did before
+        cls.rules_probe_off = cls.look(validate)
 
     @classmethod
     def make_concave_quad(cls, triangles):
@@ -496,9 +498,10 @@ class TestQuickStartsRunInHoudini(unittest.TestCase):
 
     def test_the_validator_messages_the_concepts_page_quotes_exist(self):
         text = " ".join(self.rules_probe[1] + self.rules_probe[2])  # the mass message is an info note since D24
-        for start in ("Geometry: the mesh is not triangulated", "Geometry: the LOD has no component selections",
+        for start in ("Geometry: 1 polygons triangulated", "Geometry: the LOD has no component selections",
                       "Geometry: has no mass"):
             self.assertIn(start, text)
+        self.assertIn("Geometry: the mesh is not triangulated", " ".join(self.rules_probe_off[1]))
 
 
 if __name__ == "__main__":

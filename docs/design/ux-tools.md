@@ -86,8 +86,9 @@ behaviour for "the file cannot be written", and wrong for "you might want to loo
    name from `a3ob_core` (`format_lod_name`), for example `Resolution 1` or `Geometry`. Element numbers are listed
    (first 5, then "and 12 more").
 3. **No wall of text.** A node shows at most 25 messages (parm `maxmessages` on Validate and Export). The summary line
-   says how many were left out. The full list also goes to the Houdini console, like A3OB's console log
-   (`utilities/logger.py`).
+   says how many were left out. When messages were cut, the full list also goes to Windows > Log Viewer
+   (source A3OB), once per change (A3OB's `utilities/logger.py` printed to the console; Houdini's console window
+   would pop up, so we use the Log Viewer, task #46).
 4. **A summary message** (info) on every A3OB node says what it did: "9 LODs, 11 packed proxies" or
    "2 replaced, 7 passed through".
 5. **The viewport is never blanked by a warning.** To see geometry while an error is active, put the display flag on

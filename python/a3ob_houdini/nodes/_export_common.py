@@ -47,7 +47,7 @@ def level_parms() -> Tuple[Parm, ...]:
              "What to do with a LOD whose type and resolution were already written: Fail, Skip the later one, or "
              "Ignore and write both.", items=_DUPES),
         Parm("maxmessages", "Max Messages", "int", DEFAULT_MAX_MESSAGES,
-             "How many messages the node shows. The rest are counted in one line and listed in the console.",
+             "How many messages the node shows. The rest are counted in one line and listed in Windows > Log Viewer (source A3OB).",
              minimum=1),
     )
 
@@ -56,7 +56,13 @@ def rule_parms() -> Tuple[Parm, ...]:
     """The master switch and one switch per tier-2 rule (spec 17.1.1, on except the two of D24)."""
     parms = [Parm("typerules", "Check LOD-Type Rules", "toggle", True,
                   "Warn about what Object Builder's validator would: rules for geometry, shadow, roadway and other "
-                  "LOD types. Each rule has its own switch below.")]
+                  "LOD types. Each rule has its own switch below."),
+             Parm("triangulate", "Triangulate Where Needed", "toggle", True,
+                  "Divide only the polygons that break the rules, in the written file (the geometry on the node is not "
+                  "changed): polygons with more than 4 points in any LOD, quads that are not convex in Geometry and "
+                  "Shadow Volume LODs, and every quad in Underground LODs. Triangles and allowed quads are left as "
+                  "they are. Uses Divide with Convex Polygons, Maximum Edges 3 and Avoid Small Angles, and warns for "
+                  "each LOD it changed. Off: those polygons stay and the checks report them.")]
     for rule in RULES:
         # The rule id is not in the label or the tooltip; it stays in the messages, so it can be searched for.
         parms.append(Parm(rule_parm_name(rule.id), rule.label, "toggle", rule.default_on, rule.help))
@@ -92,6 +98,7 @@ def options_from(values: Dict[str, object]) -> ExportOptions:
         renumber_components=bool(values.get("renumber", False)),
         czech_names=bool(values.get("czech", False)),
         drop_uvs=bool(values.get("dropuvs", False)),
+        triangulate=bool(values.get("triangulate", True)),
         rules_off=tuple(rules_off),
     )
 

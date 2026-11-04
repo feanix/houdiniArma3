@@ -55,7 +55,7 @@
     	size	1
     	default	{ "25" }
     	range	{ 1! 10 }
-    	help	"How many messages the node shows. The rest are counted in one line and listed in the console."
+    	help	"How many messages the node shows. The rest are counted in one line and listed in Windows > Log Viewer (source A3OB)."
         }
     }
 
@@ -69,6 +69,14 @@
     	type	toggle
     	default	{ "1" }
     	help	"Warn about what Object Builder's validator would: rules for geometry, shadow, roadway and other LOD types. Each rule has its own switch below."
+        }
+
+        parm {
+    	name	"triangulate"
+    	label	"Triangulate Where Needed"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Divide only the polygons that break the rules, in the written file (the geometry on the node is not changed): polygons with more than 4 points in any LOD, quads that are not convex in Geometry and Shadow Volume LODs, and every quad in Underground LODs. Triangles and allowed quads are left as they are. Uses Divide with Convex Polygons, Maximum Edges 3 and Avoid Small Angles, and warns for each LOD it changed. Off: those polygons stay and the checks report them."
         }
 
         parm {

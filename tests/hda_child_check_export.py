@@ -124,6 +124,7 @@ def main(fixtures, scratch):
     with open(target, "wb") as file:
         file.write(b"old file")
     bad = export_node(container, pentagon, target, "export_bad")
+    bad.parm("triangulate").set(0)  # task #49: with it on the pentagon is divided; off keeps the error of this check
     result["bad_cook"] = cook(bad)
     result["bad_geometry_points"] = npoints(bad)
     bad.parm("save").pressButton()
@@ -138,6 +139,7 @@ def main(fixtures, scratch):
     except UserError as ex:
         result["script_save"] = str(ex)
     missing = export_node(container, pentagon, os.path.join(scratch, "bad2", "x.p3d"), "export_bad2")
+    missing.parm("triangulate").set(0)
     missing.parm("save").pressButton()
     result["bad2_exists"] = os.path.exists(os.path.join(scratch, "bad2"))
     result["bad2_errors"] = list(missing.errors())
@@ -145,12 +147,14 @@ def main(fixtures, scratch):
     # Validate and Export give the same messages. Validate: error level and warning level.
     validate = container.createNode("a3ob_validate", "validate_bad")
     validate.setInput(0, pentagon)
+    validate.parm("triangulate").set(0)
     result["validate_bad"] = cook(validate)
     result["validate_bad_points"] = npoints(validate)
     validate.parm("errorlevel").set("warning")
     result["validate_bad_soft"] = cook(validate)
     result["validate_bad_soft_points"] = npoints(validate)
     soft_export = export_node(container, pentagon, os.path.join(folder, "soft.p3d"), "export_soft")
+    soft_export.parm("triangulate").set(0)
     soft_export.parm("errorlevel").set("warning")
     result["export_bad_soft"] = cook(soft_export)
     soft_export.parm("save").pressButton()
