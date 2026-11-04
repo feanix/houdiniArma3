@@ -307,7 +307,7 @@ character, Cleanup adjusts about 1,850 points by rounding them onto the 1/254 gr
 change is about 0.04, shown in <code>a3ob_rig_changed</code>. Points already on the grid with a sum of 1 don't change.</p>
 <p>P3D Export writes the weights as they are: it never changes them. Three switches on the LOD Rules tab of P3D Export and
 Validate warn when a point breaks the rules: <kbd class="ui-parm" data-node="a3ob_validate">At most 4 bones per point</kbd>,
-<kbd class="ui-parm" data-node="a3ob_validate">Bone weights add up to 1</kbd> (within one step of 1/254) and
+<kbd class="ui-parm" data-node="a3ob_validate">Bone weights add up to 1</kbd> (within 0.02) and
 <kbd class="ui-parm" data-node="a3ob_validate">Every point has a bone weight</kbd>. These two nodes have no skeleton input, so a
 selection counts as a bone selection when its name is one of the bones of the standard Arma 3 man skeleton
 (<code>OFP2_ManSkeleton</code>, upper and lower case don't matter). A model with another skeleton is not checked. The checks
