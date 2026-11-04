@@ -88,6 +88,8 @@ class Settings:
     project_root: str = DEFAULT_ROOT
     active_preset: str = LOSSLESS
     common_data: str = ""
+    #: Folder for decoded .paa pictures (task #53); empty means ``$HOUDINI_TEMP_DIR/a3ob_paa_cache``.
+    paa_cache_dir: str = ""
     presets: Dict[str, Dict[str, Any]] = dataclasses.field(default_factory=dict)
     #: Top-level keys this version does not know, kept for the next save.
     extra: Dict[str, Any] = dataclasses.field(default_factory=dict)
@@ -156,7 +158,7 @@ def load(path: Optional[str] = None) -> Tuple[Settings, List[str]]:
     if not isinstance(raw, dict):
         return settings, ["The settings file %s does not hold a JSON object. The defaults are used" % path]
     for key, value in raw.items():
-        if key in ("project_root", "active_preset", "common_data"):
+        if key in ("project_root", "active_preset", "common_data", "paa_cache_dir"):
             if isinstance(value, str):
                 setattr(settings, key, value)
             else:
@@ -180,7 +182,7 @@ def save(settings: Settings, path: Optional[str] = None) -> str:
     path = path or settings_path()
     data = dict(settings.extra)
     data.update(project_root=settings.project_root, active_preset=settings.active_preset,
-                common_data=settings.common_data, presets=settings.presets)
+                common_data=settings.common_data, paa_cache_dir=settings.paa_cache_dir, presets=settings.presets)
     temp = "%s.%d.tmp" % (path, os.getpid())
     try:
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
