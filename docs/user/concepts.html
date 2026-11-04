@@ -175,9 +175,11 @@ add-on does not use it by accident. The Mass node can copy between the two if yo
   polygons. Only the toggle <kbd class="ui-parm" data-node="a3ob_material_assign">Show in Viewport</kbd> touches Houdini's
   own material attribute (<code>shop_materialpath</code>), to show the texture in the viewport; the export ignores it.
   A <code>.paa</code> is shown from a <code>.png</code>, <code>.tga</code> or <code>.tif</code> of the same name next to it,
-  else from a picture decoded from the <code>.paa</code>. The rvmat is not shown. On export, every texture path that does
+  else from a picture decoded from the <code>.paa</code>. The rvmat is not shown. On export, when <kbd class="ui-parm" data-node="a3ob_p3d_export">Write Textures as .paa</kbd> is on (it is in the
+  <kbd class="ui-menu">Arma 3 release</kbd> preset, not in <kbd class="ui-menu">Lossless</kbd>), every texture path that does
   not end in <code>.paa</code> is written with <code>.paa</code> (<code>camo1_co.png</code> becomes
-  <code>camo1_co.paa</code>); the <code>.paa</code> itself must exist when you build the add-on, and making it is your job. A run of polygons that share a texture and material is a
+  <code>camo1_co.paa</code>); the <code>.paa</code> itself must exist when you build the add-on, and making it is your job.
+  With it off, texture paths are written exactly as they are. A run of polygons that share a texture and material is a
   <em>section</em> in Object Builder. Sections are decided by polygon order, so assigning materials to scattered polygons
   splits them. The <kbd class="ui-parm" data-node="a3ob_p3d_export">Sort Sections</kbd> option groups them on export.</li>
 <li><strong>UVs.</strong> UV sets are vertex attributes: <code>uv</code> for the first set, then <code>uv2</code>,
@@ -231,6 +233,7 @@ name. Two presets come with the add-on. You can save more with the <kbd class="u
 <tr><th>Option</th><th><kbd class="ui-menu">Lossless</kbd></th><th><kbd class="ui-menu">Arma 3 release</kbd></th><th>What it does</th></tr>
 <tr data-option="lowercase"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Lowercase</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Writes texture and material paths, selection names and property names and values in lower case, as Object Builder does. Warns if two names become the same.</td></tr>
 <tr data-option="relative_paths"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Relative Paths</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Turns texture, material and proxy paths into game paths: by the nearest <code>$PBOPREFIX$</code> file, else by the HEMTT addon rule, else by cutting the project root. See <a href="#paths">Game paths</a>.</td></tr>
+<tr data-option="paa_textures"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Write Textures as .paa</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Writes a texture path that ends in <code>.png</code>, <code>.tga</code>, <code>.tif</code> or another picture ending as <code>.paa</code>. Procedural textures and <code>.paa</code> paths are not changed. A saved preset without this option follows its Relative Paths value.</td></tr>
 <tr data-option="sort_sections"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Sort Sections</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Orders the polygons by texture and material. This changes the polygon order.</td></tr>
 <tr data-option="sort_lods"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Sort LODs</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Writes the LODs sorted by resolution. Off keeps your order.</td></tr>
 <tr data-option="auto_components"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Auto-Components</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Geometry LODs with no component selection get one for each connected piece.</td></tr>

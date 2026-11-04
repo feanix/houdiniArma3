@@ -271,7 +271,7 @@ class Rig:
                   # the interleaved-proxy note is an info line since task #40, so keep the messages too
                   "import_warnings": list(imported.warnings()) + list(imported.messages())}
         with open(path(rel), "rb") as file:
-            result["source"] = expected_bytes(file.read())
+            result["source"] = file.read()
         head = imported
         if via_assemble and not import_errors:
             assemble = self.container.createNode("a3ob_assemble_lods")
@@ -304,21 +304,6 @@ KNOWN_L1 = ("normal table", "padding", "sharp edge order", "signed zero")
 #: another order. Since task #36 the records that hold point or face numbers (editor masks, sharp pairs) follow the move,
 #: so the order is the only difference (the content check in ``lod_content`` compares them by position).
 INTERLEAVED_L1 = ("point and face order",)
-
-
-def expected_bytes(source):
-    """What the export must write for a source file (task #54, D29): the same bytes, except that a texture path that
-    does not end in .paa (the Samples use .tga) is written with .paa. A file with only .paa textures is returned as is."""
-    from a3ob_core import p3d
-    from a3ob_houdini import material_text
-    model = p3d.read_p3d(source, strict=False)
-    changed = False
-    for lod in model.lods:
-        wanted = [material_text.paa_texture(text) for text in lod.face_textures]
-        if wanted != list(lod.face_textures):
-            lod.face_textures = wanted
-            changed = True
-    return p3d.write_p3d(model) if changed else source
 
 
 def interleaved_lod_names(warnings):

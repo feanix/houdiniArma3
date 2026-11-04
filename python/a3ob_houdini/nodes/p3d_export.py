@@ -48,7 +48,7 @@ LOGGER = logging.getLogger("a3ob")
 DEFAULT_PROJECT_ROOT = settings_module.DEFAULT_ROOT
 
 #: The parameters that make the exporter options. A preset fills these (except the root and the backup switch).
-OPTION_PARMS = ("selmask", "lowercase", "relpaths", "projectroot", "sortsections", "sortlods", "autocomponents",
+OPTION_PARMS = ("selmask", "lowercase", "relpaths", "paatextures", "projectroot", "sortsections", "sortlods", "autocomponents",
                 "renumber", "czech", "dropuvs", "dupes", "backup")
 
 SPEC = NodeSpec(
@@ -92,6 +92,11 @@ SPEC = NodeSpec(
                  "Used by Relative Paths only when the file has no $PBOPREFIX$ file and is not in a HEMTT addon: "
                  "this folder is cut off the start of the path. Empty means the root from the shelf settings, or "
                  "P:\\ without one."),
+            Parm("paatextures", "Write Textures as .paa", "toggle", False,
+                 "Write a texture path that ends in .png, .tga, .tif or any other picture ending as .paa "
+                 "(camo1_co.png becomes camo1_co.paa). Procedural textures and paths that already end in .paa are "
+                 "not changed. The game reads .paa only, and making the .paa file exist before you build the PBO is "
+                 "your job. Off: paths are written as they are. On in the Arma 3 release preset."),
             Parm("lowercase", "Lowercase", "toggle", False,
                  "Write texture and material paths, selection names (so proxy paths too) and property names and "
                  "values in lower case, as Object Builder does. Warns when two names become equal."),
@@ -145,6 +150,7 @@ def preset_values(settings, name: str) -> Dict[str, object]:
     options = settings_module.options_for(settings, name)
     values: Dict[str, object] = {
         "selmask": options.selection_mask, "lowercase": options.lowercase, "relpaths": options.relative_paths,
+        "paatextures": options.paa_textures,
         "sortsections": options.sort_sections, "sortlods": options.sort_lods,
         "autocomponents": options.auto_components, "renumber": options.renumber_components,
         "czech": options.czech_names, "dropuvs": options.drop_uvs, "dupes": options.duplicate_lods,

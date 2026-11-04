@@ -68,7 +68,7 @@ class TestExportAssets(unittest.TestCase):
         self.assertEqual(export["inputs"], [1, 1])
         export["parms"] = [name for name in export["parms"] if not name.startswith("tab_")]
         self.assertEqual(export["parms"][:4], ["file", "save", "backup", "check"])
-        for name in ("errorlevel", "strict", "dupes", "maxmessages", "selmask", "lowercase", "relpaths", "projectroot",
+        for name in ("errorlevel", "strict", "dupes", "maxmessages", "selmask", "lowercase", "relpaths", "paatextures", "projectroot",
                      "sortsections", "sortlods", "autocomponents", "backup", "typerules", "t2tri"):
             self.assertIn(name, export["parms"])
         self.assertEqual(export["pythoncook"], "import a3ob_houdini.entry as e; e.cook('p3d_export', hou.pwd())")

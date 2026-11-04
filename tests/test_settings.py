@@ -46,6 +46,24 @@ class TestBuiltInPresets(unittest.TestCase):
         self.assertEqual(options.duplicate_lods, "fail")
         self.assertTrue(options.sort_lods)  # D19: A3OB always sorts LODs
 
+    def test_paa_textures_option_task_54(self):
+        """D34: on in Arma 3 release, off in Lossless; it decides whether output_text rewrites the ending; a saved
+        preset without the key follows its Relative Paths value."""
+        from a3ob_houdini.p3d_export.taggs import output_text
+        self.assertFalse(sm.options_for(sm.Settings(), sm.LOSSLESS).paa_textures)
+        self.assertTrue(sm.options_for(sm.Settings(), sm.RELEASE).paa_textures)
+        on, off = ExportOptions(paa_textures=True), ExportOptions()
+        for text in ("a\\camo1_co.png", "a\\b_co.tga", "a\\c_co.tif"):
+            self.assertEqual(output_text(text, on), text.rsplit(".", 1)[0] + ".paa")
+            self.assertEqual(output_text(text, off), text)
+        for text in ("a\\d_co.paa", "#(argb,8,8,3)color(1,0,0,1,CO)"):
+            self.assertEqual(output_text(text, on), text)
+        settings = sm.Settings(presets={"old_rel": {"relative_paths": True}, "old_plain": {"lowercase": True},
+                                        "explicit": {"relative_paths": True, "paa_textures": False}})
+        self.assertTrue(sm.options_for(settings, "old_rel").paa_textures)
+        self.assertFalse(sm.options_for(settings, "old_plain").paa_textures)
+        self.assertFalse(sm.options_for(settings, "explicit").paa_textures)
+
     def test_d17_options_in_the_presets(self):
         """Spec 18.1 and D19: Lossless has all three D17 options off; release has only drop_uvs (and sort_lods) on."""
         lossless = ExportOptions(**sm.BUILTIN_PRESETS[sm.LOSSLESS])
