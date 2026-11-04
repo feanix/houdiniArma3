@@ -1,0 +1,267 @@
+Setting breakpad minidump AppID = 502570
+SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561197972238375 [API loaded no]
+== Houdini 22.0.466, node types whose name or label matches a rigging keyword ==
+-- category Sop: 206 matches
+   Object/musclerig::musclerigstrokebuilder             Muscle Rig Stroke Builder
+   Object/riggedmuscle::musclestrokebuilder             Muscle Stroke Builder
+   agentconfigurejoints                                 Agent Configure Joints
+   agentconfigurejoints::2.0                            Agent Configure Joints
+   apex::addcharacterpicker                             APEX Add Character Picker
+   apex::addgroom                                       APEX Add Groom
+   apex::addmldeformer                                  APEX Add ML Deformer
+   apex::addwrinkles                                    APEX Add Wrinkles
+   apex::animationfromskeleton                          APEX Animation from Skeleton
+   apex::autorigbuilder                                 APEX AutoRig Builder
+   apex::autorigcomponent                               APEX Autorig Component
+   apex::autorigcomponent::2.0                          APEX Autorig Component
+   apex::autorigcomponent::3.0                          APEX AutoRig Component
+   apex::buildfkgraph                                   APEX Build FK Graph
+   apex::channelprimitivesfrommotionclip                Channel Primitives from MotionClip
+   apex::configurecharacter                             APEX Configure Character
+   apex::configurecontrols                              APEX Configure Controls
+   apex::configuregraph                                 APEX Configure Graph
+   apex::controlextract                                 APEX Control Extract
+   apex::controlextract::2.0                            APEX Control Extract
+   apex::controlupdateparms                             APEX Control Update Parms
+   apex::fetchgroom                                     APEX Fetch Groom
+   apex::graph                                          APEX Graph 
+   apex::invokegraph                                    APEX Invoke Graph
+   apex::layoutgraph                                    APEX Layout Graph
+   apex::mapcharacter                                   APEX Map Character
+   apex::mergegraph                                     APEX Merge Graph
+   apex::packcharacter                                  APEX Pack Character
+   apex::rigpose                                        APEX Rig Pose 
+   apex::sceneaddanimation                              APEX Scene Add Animation
+   apex::sceneaddanimation::2.0                         APEX Scene Add Animation
+   apex::sceneaddcamera                                 APEX Scene Add Camera
+   apex::sceneaddcharacter                              APEX Scene Add Character
+   apex::sceneaddprop                                   APEX Scene Add Prop
+   apex::sceneanimate                                   APEX Scene Animate
+   apex::scenecopyanimation                             APEX Scene Copy Animation
+   apex::sceneimportanimation                           APEX Scene Import Animation
+   apex::sceneinvoke                                    APEX Scene Invoke
+   apex::sceneinvoke::2.0                               APEX Scene Invoke
+   apex::scenemerge                                     APEX Scene Merge
+   apex::script                                         APEX Script
+   apex::unpackcharacter                                APEX Unpack Character
+   armaturecapture                                      Armature Capture
+   bonecapturebiharmonic                                Bone Capture Biharmonic
+   bonecapturelines                                     Bone Capture Lines
+   bonedeform                                           Bone Deform
+   bonelink                                             Bone Link
+   cameratopoints                                       Camera to Points
+   capture                                              Bone Capture
+   captureattribpack                                    Capture Attribute Pack
+   captureattribunpack                                  Capture Attribute Unpack
+   capturecorrect                                       Capture Correct
+   capturelayerpaint::2.0                               Capture Layer Paint
+   capturemirror                                        Capture Mirror
+   captureoverride                                      Capture Override
+   captureproximity                                     Bone Capture Proximity
+   clothcapture                                         Cloth Capture
+   copytopoints                                         Copy to Points
+   copytopoints::2.0                                    Copy to Points
+   cregion                                              Capture Region
+   crowdmotionpathtrigger                               Crowd MotionPath Trigger
+   dembones_skinningconverter::1.0                      Dem Bones Skinning Converter
+   guideskinattriblookup                                Guide Skin Attribute Lookup
+   kinefx::adapttoterrain                               Adapt to Terrain
+   kinefx::adapttoterrain::2.0                          Adapt to Terrain
+   kinefx::agentanimationunpack                         Agent Animation Unpack
+   kinefx::agentcharacterunpack                         Agent Character Unpack
+   kinefx::agentfromrig                                 Agent from Rig
+   kinefx::agentposefromrig                             Agent Pose from Rig
+   kinefx::attachjointgeo                               Attach Joint Geo
+   kinefx::attribtransformcompute                       Attribute Transform Compute
+   kinefx::attribtransformextract                       Attribute Transform Extract
+   kinefx::biped_retarget                               Biped Retarget
+   kinefx::biped_setup                                  Biped Setup
+   kinefx::capturepackedgeo                             Capture Packed Geometry
+   kinefx::characterblendshapechannels                  Character Blend Shape Channels
+   kinefx::characterblendshapes                         Character Blend Shapes
+   kinefx::characterblendshapesadd                      Character Blend Shapes Add
+   kinefx::characterblendshapesextract                  Character Blend Shapes Extract
+   kinefx::characterio                                  Character I/O
+   kinefx::characterio::2.0                             Character I/O
+   kinefx::characterpack                                Character Pack
+   kinefx::characterunpack                              Character Unpack
+   kinefx::computerigpose                               Compute Rig Pose
+   kinefx::computetransform                             Compute Transform
+   kinefx::configureclipinfo                            Configure Clip Info
+   kinefx::configurejointlimits                         Configure Joint Limits
+   kinefx::configurejoints                              Configure Joints
+   kinefx::configurerigvis                              Configure Rig Visualizers
+   kinefx::configurerigvis::2.0                         Configure Rig Visualizers
+   kinefx::deletejoints                                 Delete Joints
+   kinefx::dembones_skinningconverter                   Dem Bones Skinning Converter
+   kinefx::dynamicwarp                                  Dynamic Warp
+   kinefx::extractlocomotion                            Extract Locomotion
+   kinefx::fbikconfiguretargets                         Full Body IK Configure Targets
+   kinefx::fbxanimimport                                FBX Animation Import
+   kinefx::fbxcharacterimport                           FBX Character Import
+   kinefx::fbxskinimport                                FBX Skin Import
+   kinefx::fktransfer                                   FK Transfer
+   kinefx::fullbodyik                                   Full Body IK
+   kinefx::gltfanimimport                               GLTF Animation Import
+   kinefx::gltfcharacterimport                          GLTF Character Import
+   kinefx::gltfskinimport                               GLTF Skin Import
+   kinefx::groupjoints                                  Group Joints
+   kinefx::ikchains                                     IK Chains
+   kinefx::ikchains::2.0                                IK Chains
+   kinefx::jointcapturebiharmonic                       Joint Capture Biharmonic
+   kinefx::jointcapturepaint                            Joint Capture Paint
+   kinefx::jointcaptureproximity                        Joint Capture Proximity
+   kinefx::jointdeform                                  Joint Deform
+   kinefx::mappoints                                    Map Points
+   kinefx::mocapimport                                  Mocap Import
+   kinefx::mocapstream                                  Mocap Stream
+   kinefx::motionclip                                   MotionClip
+   kinefx::motionclipblend                              MotionClip Blend
+   kinefx::motionclipblend::2.0                         MotionClip Blend
+   kinefx::motionclipcycle                              MotionClip Cycle
+   kinefx::motionclipcycle::2.0                         MotionClip Cycle
+   kinefx::motionclipevaluate                           MotionClip Evaluate
+   kinefx::motionclipextract                            MotionClip Extract
+   kinefx::motionclipextractkeyposes                    MotionClip Extract Key Poses
+   kinefx::motionclipextractlocomotion                  MotionClip Extract Locomotion
+   kinefx::motionclipposedelete                         MotionClip Pose Delete
+   kinefx::motionclipposedelete::2.0                    MotionClip Pose Delete
+   kinefx::motionclipposeinsert                         MotionClip Pose Insert
+   kinefx::motionclipretime                             MotionClip Retime
+   kinefx::motionclipsequence                           MotionClip Sequence
+   kinefx::motionclipsequence::2.0                      MotionClip Sequence
+   kinefx::motionclipupdate                             MotionClip Update
+   kinefx::motionmixer                                  Motion Mixer
+   kinefx::motionmixerfetch                             Motion Mixer Fetch
+   kinefx::orientjoints                                 Orient Joints
+   kinefx::orientjoints::2.0                            Orient Joints
+   kinefx::parentjoints                                 Parent Joints
+   kinefx::pendulummotion                               Pendulum Motion
+   kinefx::posedifference                               Pose Difference
+   kinefx::projectilemotion                             Projectile Motion
+   kinefx::ragdollcollisionshapes                       Ragdoll Collision Shapes
+   kinefx::ragdollcollisionshapes::2.0                  Ragdoll Collision Shapes
+   kinefx::ragdollsolver                                Ragdoll Solver
+   kinefx::ragdollsolver::2.0                           Ragdoll Solver
+   kinefx::reversefoot                                  Reverse Foot
+   kinefx::rigattribvop                                 Rig Attribute VOP
+   kinefx::rigattribwrangle                             Rig Attribute Wrangle
+   kinefx::rigcopytransforms                            Rig Copy Transforms
+   kinefx::rigdoctor                                    Rig Doctor
+   kinefx::rigmatchpose                                 Rig Match Pose
+   kinefx::rigmirrorpose                                Rig Mirror Pose
+   kinefx::rigpose                                      Rig Pose
+   kinefx::rigpython                                    Rig Python
+   kinefx::rigstashpose                                 Rig Stash Pose
+   kinefx::rop_fbxanimoutput                            ROP FBX Animation Output
+   kinefx::rop_fbxcharacteroutput                       ROP FBX Character Output
+   kinefx::rop_gltfcharacteroutput                      ROP GLTF Character Output
+   kinefx::scenecharacterexport                         Scene Character Export
+   kinefx::scenecharacterimport                         Scene Character Import
+   kinefx::secondarymotion                              Secondary Motion
+   kinefx::skeleton                                     Skeleton
+   kinefx::skeletonblend                                Skeleton Blend
+   kinefx::skeletonblend::2.0                           Skeleton Blend
+   kinefx::skeletonblend::3.0                           Skeleton Blend
+   kinefx::skeletonmirror                               Skeleton Mirror
+   kinefx::smoothmotion                                 Smooth Motion
+   kinefx::stabilizejoint                               Stabilize Joint
+   kinefx::usdanimimport                                UsdSkel Animation Import
+   kinefx::usdcharacterimport                           UsdSkel Character Import
+   kinefx::usdskinimport                                UsdSkel Skin Import
+   kinefx::visrig                                       Visualize Rig
+   matchtopology                                        Match Topology
+   ml_attribgenerate                                    ML Attribute Generate
+   ml_deform                                            ML Deform
+   ml_example                                           ML Example
+   ml_exampledecompose                                  ML Example Decompose
+   ml_exampleimport                                     ML Example Import
+   ml_examplepartition                                  ML Example Partition
+   ml_extractexample                                    ML Extract Example
+   ml_posedeserialize                                   ML Pose Deserialize
+   ml_posegenerate                                      ML Pose Generate
+   ml_poseserialize                                     ML Pose Serialize
+   ml_regressioninference                               ML Regression Inference
+   ml_regressionkernel                                  ML Regression Kernel
+   ml_regressionlinear                                  ML Regression Linear
+   ml_regressionproximity                               ML Regression Proximity
+   ml_volumetilecomponent                               ML Volume Tile Component
+   ml_volumetileinference                               ML Volume Tile Inference
+   ml_volumeupres                                       ML Volume Upres
+   pointcapture                                         Point Capture
+   proximity                                            Proximity
+   rbdcarrig                                            RBD Car Rig
+   skin                                                 Skin
+   skindeform                                           Skin Deform
+   skinproperties                                       Skin Properties
+   skinsolidify                                         Skin Solidify
+   skinsolidify::2.0                                    Skin Solidify
+   skinsolvervellum                                     Skin Solver Vellum
+   testsim_ragdoll                                      Test Simulation: Ragdoll
+   testsim_ragdoll::2.0                                 Test Simulation: Ragdoll
+   topobuild                                            TopoBuild
+   topoflow                                             Topo Flow
+   topoflowsample                                       Topo Flow Sample
+   topolandmark                                         Topo Landmark
+   toposlidebycurverefs                                 Topo Slide by Curve References
+   topotransfer                                         Topo Transfer
+   vdbtopologytosdf                                     VDB Topology to SDF
+   weightarraybiharmonic                                Weight Array Biharmonic
+   wirecapture                                          Wire Capture
+-- category Object: 4 matches
+   autobonechaininterface                               Auto Bone Chain Interface
+   bone                                                 Bone
+   ragdollrunexample                                    Ragdoll Run Example
+   stereocamrig                                         Stereo Camera
+-- category Dop: 6 matches
+   crowdtrigger                                         Crowd Trigger
+   crowdtrigger::2.0                                    Crowd Trigger
+   crowdtriggerlogic                                    Crowd Trigger Logic
+   crowdtriggerlogic::2.0                               Crowd Trigger Logic
+   popproximity                                         POP Proximity
+   rigidbodysolver                                      Rigid Body Solver
+   (the KineFX/APEX nodes only exist when the default Houdini packages load: do NOT set HOUDINI_PACKAGE_SKIP)
+
+== Python modules inside hython ==
+   numpy                  OK  2.3.2
+   scipy                  NO  (ModuleNotFoundError: No module named 'scipy')
+   scipy.sparse           NO  (ModuleNotFoundError: No module named 'scipy')
+   scipy.sparse.linalg    NO  (ModuleNotFoundError: No module named 'scipy')
+   scipy.spatial          NO  (ModuleNotFoundError: No module named 'scipy')
+   torch                  NO  (ModuleNotFoundError: No module named 'torch')
+   sklearn                NO  (ModuleNotFoundError: No module named 'sklearn')
+   igl                    NO  (ModuleNotFoundError: No module named 'igl')
+   trimesh                NO  (ModuleNotFoundError: No module named 'trimesh')
+   open3d                 NO  (ModuleNotFoundError: No module named 'open3d')
+   pymeshlab              NO  (ModuleNotFoundError: No module named 'pymeshlab')
+   numba                  NO  (ModuleNotFoundError: No module named 'numba')
+   cv2                    NO  (ModuleNotFoundError: No module named 'cv2')
+   networkx               NO  (ModuleNotFoundError: No module named 'networkx')
+   onnxruntime            NO  (ModuleNotFoundError: No module named 'onnxruntime')
+   PySide6                OK  6.8.3
+
+== Create + cook, Indie licence check (licence: licenseCategoryType.Indie) ==
+   exact type skeleton                           missing
+   exact type rigpose                            missing
+   exact type rigmatchpose                       missing
+   exact type mappoints                          missing
+   exact type skeletonblend                      missing
+   exact type fullbodyik                         missing
+   exact type rigdoctor                          missing
+   exact type bonedeform                         present
+   exact type jointdeform                        missing
+   exact type capturepackage                     missing
+   exact type bonecapture                        missing
+   exact type bonecapturebiharmonic              present
+   exact type jointcapturebiharmonic             missing
+   exact type capturepoximity                    missing
+   exact type captureproximity                   present
+   exact type capturecorrect                     present
+   exact type bonecapturelines                   present
+   exact type capturelayerpaint                  present
+   exact type attribtransfer                     present
+   exact type autorigbuilder                     missing
+   exact type apex_autorig                       missing
+   exact type skeletonmirror                     missing
+   exact type kinefx::skeleton                   present
+   exact type kinefx::rigpose                    present

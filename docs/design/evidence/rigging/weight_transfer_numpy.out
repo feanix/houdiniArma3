@@ -1,0 +1,69 @@
+Setting breakpad minidump AppID = 502570
+SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561197972238375 [API loaded no]
+numpy 2.3.2, python 3.13.10
+source: LOD Resolution 1, 3125 points, 6229 triangles, 65 bones, bbox diagonal 2.163 m
+
+== target A m=0.00 same topology, scale (1.0, 1.0, 1.0) about the bbox centre + 2 mm jitter: 3125 points, 6229 triangles ==
+   thresholds: distance 5% of diagonal (0.108 m), normal 30 deg
+   matched 2886, inpainted 239 (rejected: distance 0, normal 239, unweighted source 0)
+   time: closest 0.62s, thresholds 0.00s, laplacian 0.00s, inpaint 0.12s (CG 13 it, residual 1.6e-06) total 0.75s
+   inpainted + normalised             L1 mean 0.0643 median 0.0184 p95 0.3185 max 1.427 | dominant bone changed 5.12% | >4 influences 12 | unweighted 0
+   export clean-up (max 4, normalise, 1/254 grid): 47 points had more than 4; L1 change per point mean 0.0001 max 0.032; sum deviation from 1 after snapping: mean 0.0004 max 0.0039
+   matched points only                L1 mean 0.0571 median 0.0173 p95 0.2556 max 1.427 | dominant bone changed 5.06% | >4 influences 8 | unweighted 239
+   candidate search check: 0.0% of 200 sampled queries missed the true closest triangle
+
+== target A m=0.02 same topology, scale (1.01, 1.02, 1.03) about the bbox centre + 2 mm jitter: 3125 points, 6229 triangles ==
+   thresholds: distance 5% of diagonal (0.108 m), normal 30 deg
+   matched 2377, inpainted 748 (rejected: distance 0, normal 748, unweighted source 0)
+   time: closest 0.59s, thresholds 0.00s, laplacian 0.00s, inpaint 0.23s (CG 28 it, residual 4.1e-06) total 0.82s
+   inpainted + normalised             L1 mean 0.1392 median 0.0656 p95 0.5869 max 1.470 | dominant bone changed 9.02% | >4 influences 93 | unweighted 0
+   export clean-up (max 4, normalise, 1/254 grid): 349 points had more than 4; L1 change per point mean 0.0018 max 0.327; sum deviation from 1 after snapping: mean 0.0005 max 0.0039
+   matched points only                L1 mean 0.1003 median 0.0509 p95 0.3924 max 1.470 | dominant bone changed 7.78% | >4 influences 9 | unweighted 748
+   candidate search check: 0.0% of 200 sampled queries missed the true closest triangle
+
+== target A m=0.05 same topology, scale (1.025, 1.05, 1.075) about the bbox centre + 2 mm jitter: 3125 points, 6229 triangles ==
+   thresholds: distance 5% of diagonal (0.108 m), normal 30 deg
+   matched 1955, inpainted 1170 (rejected: distance 0, normal 1170, unweighted source 0)
+   time: closest 0.57s, thresholds 0.00s, laplacian 0.00s, inpaint 0.43s (CG 49 it, residual 4.0e-06) total 1.00s
+   inpainted + normalised             L1 mean 0.2885 median 0.1662 p95 1.0634 max 1.648 | dominant bone changed 15.33% | >4 influences 495 | unweighted 0
+   export clean-up (max 4, normalise, 1/254 grid): 892 points had more than 4; L1 change per point mean 0.0291 max 0.909; sum deviation from 1 after snapping: mean 0.0007 max 0.0039
+   matched points only                L1 mean 0.1862 median 0.1201 p95 0.6818 max 1.635 | dominant bone changed 11.71% | >4 influences 7 | unweighted 1170
+   candidate search check: 0.0% of 200 sampled queries missed the true closest triangle
+
+== target A m=0.10 same topology, scale (1.05, 1.1, 1.15) about the bbox centre + 2 mm jitter: 3125 points, 6229 triangles ==
+   thresholds: distance 5% of diagonal (0.108 m), normal 30 deg
+   matched 1690, inpainted 1435 (rejected: distance 0, normal 1435, unweighted source 0)
+   time: closest 0.57s, thresholds 0.01s, laplacian 0.00s, inpaint 0.44s (CG 49 it, residual 1.6e-06) total 1.02s
+   inpainted + normalised             L1 mean 0.4234 median 0.2880 p95 1.3578 max 2.000 | dominant bone changed 23.17% | >4 influences 721 | unweighted 0
+   export clean-up (max 4, normalise, 1/254 grid): 1125 points had more than 4; L1 change per point mean 0.0528 max 1.217; sum deviation from 1 after snapping: mean 0.0008 max 0.0039
+   matched points only                L1 mean 0.3243 median 0.2208 p95 1.0000 max 2.000 | dominant bone changed 20.71% | >4 influences 11 | unweighted 1435
+   candidate search check: 0.0% of 200 sampled queries missed the true closest triangle
+
+== target B LOD2 (Resolution 2) midpoint-subdivided: 6260 points, 12484 triangles ==
+   thresholds: distance 2% of diagonal (0.043 m), normal 30 deg
+   matched 2694, inpainted 3566 (rejected: distance 1012, normal 2554, unweighted source 0)
+   time: closest 1.14s, thresholds 0.01s, laplacian 0.01s, inpaint 1.39s (CG 80 it, residual 2.3e-06) total 2.55s
+   inpainted + normalised             L1 mean 0.4738 median 0.3581 p95 1.3170 max 2.000 | dominant bone changed 24.74% | >4 influences 2093 | unweighted 70
+   export clean-up (max 4, normalise, 1/254 grid): 2924 points had more than 4; L1 change per point mean 0.0635 max 1.232; sum deviation from 1 after snapping: mean 0.0009 max 0.0039
+   matched points only                L1 mean 0.3437 median 0.2469 p95 1.0000 max 1.744 | dominant bone changed 21.23% | >4 influences 6 | unweighted 3566
+   thresholds: distance 5% of diagonal (0.108 m), normal 30 deg
+   matched 3411, inpainted 2849 (rejected: distance 0, normal 2849, unweighted source 0)
+   time: closest 1.14s, thresholds 0.01s, laplacian 0.01s, inpaint 1.28s (CG 77 it, residual 3.4e-06) total 2.44s
+   inpainted + normalised             L1 mean 0.4136 median 0.2966 p95 1.2703 max 1.744 | dominant bone changed 22.33% | >4 influences 1556 | unweighted 0
+   export clean-up (max 4, normalise, 1/254 grid): 2325 points had more than 4; L1 change per point mean 0.0567 max 1.233; sum deviation from 1 after snapping: mean 0.0008 max 0.0039
+   matched points only                L1 mean 0.3150 median 0.2238 p95 0.9006 max 1.744 | dominant bone changed 18.70% | >4 influences 10 | unweighted 2849
+   candidate search check: 0.0% of 200 sampled queries missed the true closest triangle
+
+== target C LOD1 (Resolution 1) midpoint-subdivided (timing): 12476 points, 24916 triangles ==
+   thresholds: distance 2% of diagonal (0.043 m), normal 30 deg
+   matched 4822, inpainted 7654 (rejected: distance 2432, normal 5222, unweighted source 0)
+   time: closest 2.25s, thresholds 0.02s, laplacian 0.01s, inpaint 6.69s (CG 129 it, residual 1.0e-05) total 8.97s
+   inpainted + normalised             L1 mean 0.5259 median 0.3613 p95 1.6024 max 2.000 | dominant bone changed 27.34% | >4 influences 3255 | unweighted 70
+   export clean-up (max 4, normalise, 1/254 grid): 5921 points had more than 4; L1 change per point mean 0.0505 max 1.163; sum deviation from 1 after snapping: mean 0.0008 max 0.0039
+   matched points only                L1 mean 0.3424 median 0.2353 p95 1.0000 max 2.000 | dominant bone changed 21.94% | >4 influences 30 | unweighted 7654
+   thresholds: distance 5% of diagonal (0.108 m), normal 30 deg
+   matched 6156, inpainted 6320 (rejected: distance 0, normal 6320, unweighted source 0)
+   time: closest 2.28s, thresholds 0.02s, laplacian 0.01s, inpaint 4.84s (CG 94 it, residual 1.8e-05) total 7.15s
+   inpainted + normalised             L1 mean 0.4060 median 0.2757 p95 1.2761 max 2.000 | dominant bone changed 21.79% | >4 influences 2556 | unweighted 0
+   export clean-up (max 4, normalise, 1/254 grid): 4802 points had more than 4; L1 change per point mean 0.0459 max 1.164; sum deviation from 1 after snapping: mean 0.0008 max 0.0039
+   matched points only                L1 mean 0.3199 median 0.2193 p95 0.9470 max 2.000 | dominant bone changed 19.53% | >4 influences 41 | unweighted 6320

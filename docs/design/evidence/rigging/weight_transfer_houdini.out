@@ -1,0 +1,63 @@
+Setting breakpad minidump AppID = 502570
+SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561197972238375 [API loaded no]
+Houdini 22.0.466, numpy 2.3.2
+
+== N1: Attribute Transfer SOP, one float attribute per bone (65 attributes), point to point ==
+  A scaled copy, 3125 pts | samples 1, radius 0.108 m | cook 0.04s | points without weights 0
+   N1 transferred, normalised         L1 mean 0.3826 median 0.1976 p95 1.5000 max 2.000 | dominant bone changed 21.60% | >4 influences 0 | unweighted 0
+  A scaled copy, 3125 pts | samples 4, radius 0.108 m | cook 0.01s | points without weights 0
+   N1 transferred, normalised         L1 mean 0.3902 median 0.2278 p95 1.3417 max 2.000 | dominant bone changed 24.10% | >4 influences 60 | unweighted 0
+  B subdivided LOD2, 6260 pts | samples 1, radius 0.108 m | cook 0.06s | points without weights 0
+   N1 transferred, normalised         L1 mean 0.4026 median 0.2697 p95 1.4004 max 2.000 | dominant bone changed 21.12% | >4 influences 0 | unweighted 0
+  B subdivided LOD2, 6260 pts | samples 4, radius 0.108 m | cook 0.01s | points without weights 0
+   N1 transferred, normalised         L1 mean 0.3815 median 0.2473 p95 1.2502 max 2.000 | dominant bone changed 22.94% | >4 influences 107 | unweighted 0
+  C subdivided LOD1, 12476 pts | samples 1, radius 0.108 m | cook 0.05s | points without weights 0
+   N1 transferred, normalised         L1 mean 0.3940 median 0.2032 p95 1.4079 max 2.000 | dominant bone changed 20.89% | >4 influences 0 | unweighted 0
+  C subdivided LOD1, 12476 pts | samples 4, radius 0.108 m | cook 0.01s | points without weights 0
+   N1 transferred, normalised         L1 mean 0.3837 median 0.2459 p95 1.3020 max 2.000 | dominant bone changed 22.32% | >4 influences 245 | unweighted 0
+
+== N1b: Attribute Transfer on boneCapture (packed) and on the unpacked arrays ==
+  built unpacked arrays on the source: 0.04s, errors=()
+   array attr boneCapture_index present: True
+   array attr boneCapture_data present: True
+  Attribute Transfer on array attributes: errors=() warnings=(); has index=True data=True
+   sample point 100: index (16, 54, 55) data (0.4881889820098877, 0.4881889820098877, 0.015748031437397003)
+   (one nearest source point is copied; a blend of several source points is NOT possible with arrays)
+  captureattribpack on the transferred arrays: errors=(); boneCapture present=True
+
+== N2: VEX wrangle, closest point on the source surface + normal check (65 bones) ==
+  A scaled copy, 3125 pts | cook 0.12s | accepted 1585, rejected 1540 (errors=())
+   N2 accepted points only            L1 mean 0.3237 median 0.2215 p95 1.0000 max 2.000 | dominant bone changed 21.14% | >4 influences 10 | unweighted 1540
+  B subdivided LOD2, 6260 pts | cook 0.01s | accepted 3356, rejected 2904 (errors=())
+   N2 accepted points only            L1 mean 0.3108 median 0.2217 p95 0.8677 max 2.000 | dominant bone changed 18.80% | >4 influences 11 | unweighted 2904
+  C subdivided LOD1, 12476 pts | cook 0.02s | accepted 5844, rejected 6632 (errors=())
+   N2 accepted points only            L1 mean 0.3196 median 0.2238 p95 0.9170 max 2.000 | dominant bone changed 20.09% | >4 influences 41 | unweighted 6632
+
+== N3: Attribute Blur SOP as the fill for rejected points (target A) ==
+  iterations 50: cook 1.20s, errors=() warnings=()
+   N2 + N3 blur(50)                   L1 mean 0.4424 median 0.3064 p95 1.3809 max 2.000 | dominant bone changed 23.52% | >4 influences 827 | unweighted 0
+  iterations 200: cook 1.61s, errors=() warnings=()
+   N2 + N3 blur(200)                  L1 mean 0.4541 median 0.3194 p95 1.4044 max 2.000 | dominant bone changed 23.74% | >4 influences 912 | unweighted 0
+  iterations 800: cook 4.57s, errors=() warnings=()
+   N2 + N3 blur(800)                  L1 mean 0.4541 median 0.3194 p95 1.4044 max 2.000 | dominant bone changed 23.74% | >4 influences 912 | unweighted 0
+  numpy CG fill on the same points: 0.51s, 59 iterations
+   N2 + numpy CG inpaint              L1 mean 0.4337 median 0.2953 p95 1.3795 max 2.000 | dominant bone changed 23.62% | >4 influences 799 | unweighted 0
+
+== N5: fit first. Topo Transfer SOP (non-rigid, no landmarks) deforms the sample body onto the target ==
+  Then the weights ride on the deformed template and the closest-point transfer starts from an aligned mesh.
+  scaled copy, 3103 points: cook 2.66s warnings=[]
+   distance of each template point to its true counterpart (m): before mean 0.0467 max 0.0860 | after mean 0.0204 max 0.0711
+   closest-point transfer, template = no fit: matched 1672, inpainted 1431, transfer 1.07s
+   no fit + inpaint                   L1 mean 0.4238 median 0.2867 p95 1.3587 max 2.000 | dominant bone changed 23.27% | >4 influences 721 | unweighted 0
+   closest-point transfer, template = Topo Transfer fit: matched 2457, inpainted 646, transfer 0.85s
+   Topo Transfer fit + inpaint        L1 mean 0.3359 median 0.1887 p95 1.2285 max 2.000 | dominant bone changed 19.69% | >4 influences 30 | unweighted 0
+
+== N4: Joint Capture Proximity / Biharmonic from the pivots skeleton, no sample weights ==
+  skeleton from model.cfg + pivots: 64 joints with a pivot
+  skeleton SOP: 64 points 63 prims, errors=()
+  proximity: cook 0.02s errors=[] warnings=[]
+   captured joints: 64, example path 'Pelvis'
+   proximity vs Bohemia weights       L1 mean 0.7591 median 0.7901 p95 1.7008 max 2.000 | dominant bone changed 35.49% | >4 influences 0 | unweighted 0
+  biharmonic: cook 2.44s errors=[] warnings=[]
+   captured joints: 64, example path 'Spine'
+   biharmonic vs Bohemia weights      L1 mean 0.4818 median 0.4514 p95 1.1997 max 1.849 | dominant bone changed 25.60% | >4 influences 253 | unweighted 0

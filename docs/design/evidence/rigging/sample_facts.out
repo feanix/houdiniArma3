@@ -1,0 +1,60 @@
+model.cfg OFP2_ManSkeleton: 103 bones, 67 without Face_*/Eye*
+
+A3_character_example.p3d: 12 LODs
+i   LOD                        points  faces   sels  bones    w>0  maxinf  sum_min  sum_max distinct weight bytes
+0   Resolution 1                 3158   6235     84     65   3143       4   0.9843   1.0000 201 (lowest byte step: 1/254)
+      points per influence count: {1: 809, 2: 1602, 3: 656, 4: 76}; unweighted points: 15
+      non-bone selections (19): proxy:\A3\Characters_F\Proxies\weapon.001, proxy:\A3\Characters_F\Proxies\pistol.001, hl, injury_body, injury_hands, injury_legs, camo, proxy:\A3\Characters_F\Proxies\binoculars.001, proxy:\A3\Characters_F\Proxies\launcher.001, proxy:\A3\Characters_F\Proxies\flag.001, proxy:\A3\Characters_F\Proxies\equipment.001, proxy:\A3\Characters_F\Proxies\backpack.001 ...
+      body bones with no selection here: 2
+1   Resolution 2                 1604   3127     84     65   1589       4   0.9843   1.0000 192 (lowest byte step: 1/254)
+      points per influence count: {1: 279, 2: 825, 3: 429, 4: 56}; unweighted points: 15
+      non-bone selections (19): proxy:\A3\Characters_F\Proxies\weapon.001, hl, injury_body, injury_legs, injury_hands, camo, proxy:\A3\Characters_F\Proxies\pistol.001, proxy:\A3\Characters_F\Proxies\binoculars.001, proxy:\A3\Characters_F\Proxies\launcher.001, proxy:\A3\Characters_F\Proxies\flag.001, proxy:\A3\Characters_F\Proxies\equipment.001, proxy:\A3\Characters_F\Proxies\backpack.001 ...
+      body bones with no selection here: 2
+2   Resolution 3                 1045   1998     85     65   1033       4   0.9843   1.0000 177 (lowest byte step: 1/254)
+      points per influence count: {1: 342, 2: 427, 3: 224, 4: 40}; unweighted points: 12
+      non-bone selections (20): proxy:\A3\Characters_F\Proxies\weapon.001, hl, injury_body, camo, proxy:\A3\Characters_F\Proxies\pistol.001, injury_legs, proxy:\A3\Characters_F\Proxies\binoculars.001, proxy:\A3\Characters_F\Proxies\launcher.001, proxy:\A3\Characters_F\Proxies\flag.001, proxy:\A3\Characters_F\Proxies\equipment.001, proxy:\A3\Characters_F\Proxies\backpack.001, proxy:\A3\Characters_F\Proxies\headgear.001 ...
+      body bones with no selection here: 2
+3   Resolution 4                  487    894     49     31    475       4   0.9843   2.0000 139 (lowest byte step: 1/254)
+      points per influence count: {1: 156, 2: 199, 3: 96, 4: 24}; unweighted points: 12
+      non-bone selections (18): proxy:\A3\Characters_F\Proxies\weapon.001, hl, injury_body, camo, proxy:\A3\Characters_F\Proxies\pistol.001, proxy:\A3\Characters_F\Proxies\launcher.001, proxy:\A3\Characters_F\Proxies\flag.001, proxy:\A3\Characters_F\Proxies\equipment.001, proxy:\A3\Characters_F\Proxies\backpack.001, proxy:\A3\Characters_F\Proxies\headgear.001, -proxies, proxy:\A3\characters_f\Heads\bysta.001 ...
+      body bones with no selection here: 36
+4   View - Pilot                 3291   6355     83     65   3279       4   0.9843   1.0000 211 (lowest byte step: 1/254)
+      points per influence count: {1: 938, 2: 1607, 3: 658, 4: 76}; unweighted points: 12
+      non-bone selections (18): hl, injury_body, camo, proxy:\A3\Characters_F\Proxies\weapon.001, injury_legs, injury_hands, proxy:\A3\Characters_F\Proxies\pistol.001, proxy:\A3\Characters_F\Proxies\launcher.001, proxy:\A3\Characters_F\Proxies\flag.001, proxy:\A3\Characters_F\Proxies\equipment.001, proxy:\A3\Characters_F\Proxies\backpack.001, proxy:\A3\Characters_F\Proxies\hmd.001 ...
+      body bones with no selection here: 2
+5   Shadow Volume 0               409    779     73     65    403       4   0.9843   1.0000 112 (lowest byte step: 1/254)
+      points per influence count: {1: 57, 2: 223, 3: 102, 4: 21}; unweighted points: 6
+      non-bone selections (8): proxy:\A3\Characters_F\Proxies\weapon.001, proxy:\A3\Characters_F\Proxies\pistol.001, proxy:\A3\Characters_F\Proxies\launcher.001, proxy:\A3\Characters_F\Proxies\flag.001, proxy:\A3\Characters_F\Proxies\equipment.001, proxy:\A3\Characters_F\Proxies\backpack.001, proxy:\A3\Characters_F\Proxies\hmd.001, -proxies
+      body bones with no selection here: 2
+6   Shadow Volume 10              139    264     34     31    139       4   0.9921   1.0000 16 (lowest byte step: 1/254)
+      points per influence count: {1: 87, 2: 37, 3: 9, 4: 6}; unweighted points: 0
+      non-bone selections (3): proxy:\A3\Characters_F\Proxies\weapon.001, proxy:\A3\Characters_F\Proxies\launcher.001, -proxies
+      body bones with no selection here: 36
+7   Geometry                       42     54     44      0      0       0        -        - -
+      no bone selections; selections: Component01, Component03, 1a, 2a, 3a, 4a, 5a, 6a, 7a, 8a, 1c, 2c
+8   Memory                         44      4     56     23     43       1   0.9961   1.0000 2 (lowest byte step: 1/254)
+      points per influence count: {1: 43}; unweighted points: 1
+      non-bone selections (33): aimPoint, footstepR, footstepL, aiming_axis, head_axis, pilot, rearm, rearm2, granat, granat2, lelbow, lwrist ...
+      body bones with no selection here: 44
+9   Land Contact                    1      0      0      0      0       0        -        - -
+      no bone selections; selections: 
+10  Hit-points                     38      0     33     22     38       1   1.0000   1.0000 1 (lowest byte step: 1/254)
+      points per influence count: {1: 38}; unweighted points: 0
+      non-bone selections (11): body, legs, hands, head_hit, L_Femur_hit, R_Femur_hit, hand_r, leg_r, leg_l, hand_l, arms
+      body bones with no selection here: 46
+11  Fire Geometry                1000   1770    100     34   1000       1   1.0000   1.0000 1 (lowest byte step: 1/254)
+      points per influence count: {1: 1000}; unweighted points: 0
+      non-bone selections (66): Component01, Component02, Component03, Component04, Component05, Component06, Component07, Component08, Component09, Component10, Component11, Component12 ...
+      body bones with no selection here: 33
+
+ManSkeleton_Pivots.p3d: 1 LODs
+  LOD 0 Memory: 85 points, 0 faces, 65 selections
+    selections with exactly one point: 56; names that are model.cfg bones: 64
+    names that are not bones (case-insensitive): ['Hips']
+    bones (body) with no pivot selection: ['Camera', 'launcher', 'weapon']
+    e.g. Hips -> point [(-0.0, 0.0, -0.0), (-0.0, 0.0, -0.0)]
+
+Other sample models in Test_Character_01 (LOD list, bone-weighted LODs)
+  A3_character_template.p3d: Resolution 1(2375pts,59bonesel); Resolution 2(1193pts,59bonesel); Resolution 3(827pts,60bonesel); Resolution 4(361pts,25bonesel); View - Pilot(2508pts,59bonesel); Shadow Volume 0(329pts,59bonesel); Shadow Volume 10(139pts,31bonesel); Geometry(42pts,0bonesel); Memory(44pts,23bonesel); Land Contact(1pts,0bonesel); Hit-points(38pts,21bonesel); Fire Geometry(1000pts,34bonesel)
+  A3_vest_example.p3d: Resolution 1(1291pts,12bonesel); Resolution 2(786pts,10bonesel); Resolution 3(473pts,10bonesel); Resolution 4(285pts,10bonesel); Resolution 5(128pts,10bonesel); Shadow Volume 0(344pts,10bonesel); Geometry(0pts,0bonesel)
+  A3_headgear_example.p3d: Resolution 1(200pts,1bonesel); Resolution 2(115pts,1bonesel); Resolution 3(43pts,1bonesel); View - Pilot(0pts,0bonesel); Shadow Volume 0(38pts,1bonesel); Geometry(0pts,0bonesel)
