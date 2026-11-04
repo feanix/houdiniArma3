@@ -41,6 +41,7 @@
 <li><a href="#surface">Textures, UVs and sharp edges</a></li>
 <li><a href="#paths">Game paths: the P drive, HEMTT and the project root</a></li>
 <li><a href="#presets">Presets</a></li>
+<li><a href="#rigging">Rigging</a></li>
 <li><a href="#validator">The checks: errors and warnings</a></li>
 <li><a href="#lossless">Lossless round trips</a></li>
 </ul>
@@ -256,6 +257,26 @@ the LOD's own branch before Assemble LODs. The <kbd class="ui-node">Validate</kb
 same switch in its LOD Rules tab. Switch it off and the checks report those polygons as errors or warnings, as before.</p>
 <p>Choosing a preset in the menu changes nothing by itself: press Apply. After Apply you can still switch single options
 on or off on the node. Each option has a full entry in the <a href="reference/a3ob_p3d_export.html">P3D Export reference</a>.</p>
+
+<h2 id="rigging">Rigging</h2>
+<p>A character in Arma 3 moves with a fixed skeleton: the same bones, with the same names, for every soldier. The
+<kbd class="ui-node">Rig Skeleton</kbd> node builds that skeleton in Houdini as a KineFX skeleton, so Rig Pose, Joint Deform and
+the other KineFX nodes can use it. It needs two files.</p>
+<ul>
+<li>A <code>model.cfg</code>. It lists the bones, each with its parent, in a <code>CfgSkeletons</code> class. A file can hold
+several classes: pick one in the Skeleton menu. The node reads exactly the file you pick. Arma itself also reads a
+<code>&lt;foldername&gt;.cfg</code> (it wins over <code>model.cfg</code>) and a <code>&lt;modelname&gt;.cfg</code>, so if your
+skeleton is in one of those, pick that file. <code>#include</code> lines are not followed.</li>
+<li>A <strong>pivots</strong> <code>.p3d</code> file. It says where each joint sits. The <code>model.cfg</code> only names the
+game's own pivots file (<code>pivotsModel</code>), which is packed and can't be read, so you point at an editable copy. Its
+Memory LOD has one selection per bone, and the first point of the selection is the pivot. The Arma 3 Samples have
+one: <code>ManSkeleton_Pivots.p3d</code>.</li>
+</ul>
+<p>Set the <strong>Arma 3 Samples folder</strong> once in the <kbd class="ui-shelf">Project root and presets</kbd> tool (it
+finds the Steam folder by itself when it exists). A new Rig Skeleton node then starts from the Samples files. Each joint is
+named as in the <code>model.cfg</code> and sits at its pivot. The face bones (<code>Face_*</code>) and the eyes are left out. A
+bone with no pivot (the Samples have none for <code>Camera</code>, <code>weapon</code> and <code>launcher</code>) is left out and
+listed on the node, and a pivot that is not a bone (the Samples' <code>Hips</code>) is ignored and listed too.</p>
 
 <h2 id="validator">The checks: errors and warnings</h2>
 <p>The <kbd class="ui-node">Validate</kbd> node and the cook of <kbd class="ui-node">P3D Export</kbd> run the same checks, so a

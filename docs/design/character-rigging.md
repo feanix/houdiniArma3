@@ -2,8 +2,9 @@
 
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-Status: first revision (2026-11-04), task #60, owner decision D36. This is a design document. It contains no product
-code. The spike scripts are in `scripts/spikes/rigging/` and their printed output is in
+Status: second revision (2026-11-04): task #60, owner decision D36; the owner's answers D37 and the verified wiki facts
+were added in task #61. This is a design document. The product code it describes is built phase by phase (the Rig
+Skeleton node is the first). The spike scripts are in `scripts/spikes/rigging/` and their printed output is in
 `docs/design/evidence/rigging/`. Nothing from the Arma 3 Samples is stored in the repository: the spikes read the
 Samples from the owner's disk at run time and print numbers and names only.
 
@@ -36,7 +37,11 @@ takes Bohemia's rigged sample body, and gets weights on their own mesh with litt
 
 **What the owner must decide** is in section 6.5 (numbered open questions).
 
-## 0.1 Owner decisions so far (D36, 2026-11-04)
+## 0.1 Owner decisions so far (D36 and D37, 2026-11-04)
+
+The owner answered the 14 open questions of section 6.5 in D37 (`decision show D37`). Each answer is recorded under its
+question there, and the sections that depend on it now say the decided behaviour.
+
 
 These come from `python .aesir-pkg/aesir_run.py decision show D36` and task #60. They are fixed inputs to this design.
 
@@ -76,8 +81,8 @@ Route B also gives the fit for free: the fitted sample body tells us where every
 
 Facts below are checked in hython 22.0.466 or cited. A claim I could not check is marked **(unverified)**. Several web
 pages were read through a fetch tool that returns a summary written by a small model, so exact licence text should be
-re-read before we depend on it. The Bohemia wiki returned HTTP 403 to that tool; pages marked "via search summary" were
-not read in full.
+re-read before we depend on it. The Bohemia wiki returned HTTP 403 to that tool. The wiki facts in section 3.1 were
+afterwards checked in a browser by the advisor (2026-11-04) and are marked "wiki, verified".
 
 ### 1.1 Houdini 22.0.466 native tools (criterion 1a)
 
@@ -205,8 +210,14 @@ What matters for us:
 | | Approach | Why |
 |---|---|---|
 | **First (build phase 2)** | Landmarks (auto-guessed, user-correctable, about 11 to 13) then a **rigid fit of the sample body and the 65 pivots down the Arma hierarchy**; optional **Houdini Topo Transfer** as a light non-rigid refinement; then transfer and unpose. | Only numpy and built-in nodes. The same workflow users know from Mixamo. It uses our fixed hierarchy. The user can correct each step. Quality is as good as the landmarks. |
-| **Later** | An own **non-rigid ICP** (Amberg 2007) of the sample body onto the user mesh, started from the first approach's pose. Optionally an **external Make-It-Animatable import** to auto-guess the landmarks, if the owner has a CUDA GPU. | NICP removes most manual landmarks and fits different proportions. Make-It-Animatable is the only learned tool found whose joints map by name to our bones. |
+| **Later** | An own **non-rigid ICP** (Amberg 2007) of the sample body onto the user mesh, started from the first approach's pose. Optionally an **external Make-It-Animatable import** to auto-guess the landmarks. The owner has an NVIDIA RTX 50-series
+GPU (about 20 GB VRAM, 64 GB RAM), so an optional external learned-landmark step is acceptable later (D37 Q10). | NICP removes most manual landmarks and fits different proportions. Make-It-Animatable is the only learned tool found whose joints map by name to our bones. |
 | Not recommended | UniRig, RigNet, TARig (own skeleton, old or heavy stacks). A full Pinocchio port (big job, assumes a watertight mesh). | |
+
+Decided inputs (D37): the user mesh is in an **A-pose** (Q5), it is an **adult humanoid** (Q7), landmarks are **point
+groups** on the mesh (Q11), and the Arma skeleton is **never changed for body shape**, female shapes included (Q7): the
+fit moves the sample body and the joints inside the user's mesh, and the unpose brings the mesh back onto the fixed
+Arma pivots. The incoming mesh carries no joint data (Q6).
 
 The first approach does not need a fit for the first build phase (section 6.3, phase 1). A user who already has a mesh
 in the Arma rest pose, made from the sample, can go straight to a transfer (section 2.3 shows how fast it degrades with
@@ -315,7 +326,8 @@ bones move alike (`LeftArm` and `LeftArmRoll`). A pose test (section 2.6, phase 
 5. **Fallback** for parts with no counterpart in the sample (a shoulder bag, a tail): Joint Capture Biharmonic from the
    fitted skeleton, or `kinefx::capturepackedgeo` (rigid).
 
-Where the code lives: pure numpy in a new hou-free package `a3ob_core/rig/` (proposal), node glue in
+Where the code lives: pure numpy in a new hou-free package `a3ob_core/rig/` (decided, D37 Q14: it may need numpy; it
+exists since task #61), node glue in
 `python/a3ob_houdini/nodes/`, as the existing nodes do (`docs/design/ux-tools.md` section 1).
 
 ### 2.5 Layered weighting, how it maps to the method
@@ -323,7 +335,7 @@ Where the code lives: pure numpy in a new hou-free package `a3ob_core/rig/` (pro
 | Layer (group field) | Source of the weights | Mechanism |
 |---|---|---|
 | First pass (base clothing) | The fitted sample body | Sections 2.1 to 2.4. Everything not in the other two groups. |
-| Rigid accessories | The first-pass points the piece sits on | Per connected piece: take the first-pass weights of the nearest first-pass points (distance limit), average them (area weighted), then either **one dominant bone** (weight 1.0) or **one fixed blend** (the average, same for every point of the piece). Paper idea 3.4, at piece level. A user override picks the bone. |
+| Rigid accessories | The first-pass points the piece sits on | Per connected piece: take the first-pass weights of the nearest first-pass points (distance limit), average them (area weighted), then either **one dominant bone** (weight 1.0) or **one fixed blend** (the average, same for every point of the piece). Paper idea 3.4, at piece level. A user override picks the bone. Twist (`...Roll`) weight goes to the next non-twist bone when the dominant bone is chosen (D37 Q12). |
 | Non-rigid accessories | The first-pass points they sit on | Per point: transfer from the first pass, then smooth along the piece only (Laplacian smoothing on the piece's own edges, a few iterations). The paper assumes connected pieces (section 5 of the paper), which fits. |
 
 Order: first pass, then the other two (they read the first pass). A piece is a connected set of primitives (by
@@ -401,13 +413,13 @@ The cuff truth is an assumption (rigid on `LeftForeArm`).
 
 ### 3.1 Rules
 
-Sources marked "search summary" are Bohemia wiki pages that returned 403 to the fetch tool; I saw only a search
-summary. Treat them as leads, to be verified in a browser.
+The Bohemia wiki pages returned 403 to the fetch tool. The advisor then read them in a browser (2026-11-04); the
+facts marked "wiki, verified" below are theirs. The forum post is still only a search summary.
 
 | Rule | Source | Our rule |
 |---|---|---|
-| **At most 4 bones per point.** | BI wiki "Arma 3 Modding Characters": "Use only Skin modifier for weighting, use max 4 bones per vertex" (via search summary, https://community.bistudio.com/wiki/Arma_3_Modding_Characters). A3OB docs: it can select points "assigned to more than 4 bones" and "prune the weakest" (https://mrcmodding.gitbook.io/arma-3-object-builder/tools/rigging); code `utilities/rigging.py:72` (select `bones > 4`) and `:75-105` (keep top 4 by weight). The sample never exceeds 4 (table below). One forum user says Arma ignores the extra bones and writes to the RPT log (search summary, https://forums.bohemia.net/forums/topic/207475-advice-on-texturing/?page=2). | Hard limit 4. Prune the weakest, renormalise. What the engine does with a 5th bone is not stated by any source I could read. |
-| **Weight steps.** | The wiki (search summary of https://community.bistudio.com/wiki/P3D_Named_Selections) says one byte per point; its formulas did not agree with each other in the summary. The real files and the M1 reader are clear: byte `b` decodes to `(255 - b) / 254`, byte 1 is 1.0, byte 255 is a member with weight 0.0 (`python/a3ob_core/p3d/model.py:104-124`, `decode_weight`, `encode_weight`; data model section 7.1). | The grid is **k/254** with k from 0 to 254, **not 1/255**. The task text says 1/255; the file says 1/254. Because 254 divides evenly, a sum of exactly 1.0 is always possible. |
+| **At most 4 bones per point.** | BI wiki "Arma 3: Modding Characters" (wiki, verified; https://community.bistudio.com/wiki/Arma_3_Modding_Characters): "use max 4 bones per vertex". The page recommends transferring the skinning from the example character (3ds Max Skin Wrap), which is the same idea as ours. It also says helmets and glasses need an empty View Pilot LOD, and a chin strap can be skinned to `Face_Jawbone`. A3OB docs: it can select points "assigned to more than 4 bones" and "prune the weakest" (https://mrcmodding.gitbook.io/arma-3-object-builder/tools/rigging); code `utilities/rigging.py:72` (select `bones > 4`) and `:75-105` (keep top 4 by weight). The sample never exceeds 4 (table below). One forum user says Arma ignores the extra bones and writes to the RPT log (a forum post seen only in a search summary, unverified, https://forums.bohemia.net/forums/topic/207475-advice-on-texturing/?page=2). | Hard limit 4. Prune the weakest, renormalise. What the engine does with a 5th bone is not stated by any source I could read. |
+| **Weight steps.** | The wiki page "P3D Named Selections" is unofficial: its formulas are "found by experimenting" and give conflicting decodes (wiki, verified; https://community.bistudio.com/wiki/P3D_Named_Selections). The real files settle it. A3OB `data_p3d.py` `decode_weight` is `(255 - b) / 254`, and the sample's Resolution 1 has 201 distinct weight bytes with `b = 2` never used, which rules out the page's 1 % step variant. Our reader agrees: byte 1 is 1.0, byte 255 is a member with weight 0.0 (`python/a3ob_core/p3d/model.py:104-124`, `decode_weight`, `encode_weight`; data model section 7.1). | The grid is **k/254** with k from 0 to 254, **not 1/255**. The task text says 1/255; the file says 1/254. Because 254 divides evenly, a sum of exactly 1.0 is always possible. |
 | **Sums.** | A3OB treats `abs(sum - 1) > 0.01` as unnormalised (`utilities/rigging.py:30`). The sample's sums run 0.984 to 1.0 (table below), and 29 points of Resolution 4 are 100 % `Spine3` and 100 % `Head` at once (sum 2.0). No source says whether the engine normalises. | Normalise to exactly 1 on the grid (section 3.2). This is our rule, not Bohemia's. |
 | **Which LODs carry weights.** | Not stated by any source I could read. From the sample (table below). | Follow the sample (section 3.3). |
 | **Only bone-named selections are weights.** | A3OB docs: the skeleton is needed "so that only the actual bone selections are affected, and selections meant for hiddenSelections are left alone". `sections[]` in the `model.cfg` lists texture and hidden-selection names, not bones (Samples `Test_Character_01/model.cfg:154-159`). | Never weight a name that is not a bone. Match bone names **case-insensitively** (the sample's selections are `Head`, `Neck`, `Weapon`; the bones are `head`, `neck`, `weapon`; evidence below). |
@@ -419,7 +431,8 @@ summary. Treat them as leads, to be verified in a browser.
 matrix. RTM transforms are absolute matrices in the rest frame (armaio docs, https://armaio.readthedocs.io/latest/rtm/plain/).
 If the mesh joints sit elsewhere than the pivots, the points swing about the wrong centre: elbows and knees pinch or
 shear and limbs change length. That is the reason for fit, rig, unpose. Section 2.6 measures what the unpose recovers
-in Houdini. The in-game look is a check for the owner (open question Q-9). This design has no Arma runtime to test it.
+in Houdini. The in-game look is a check the owner will do in game (D37 Q9, section 6.5). This design has no Arma runtime
+to test it.
 
 **Sample facts** (`scripts/spikes/rigging/sample_facts.py`, output `docs/design/evidence/rigging/sample_facts.out`):
 
@@ -428,8 +441,13 @@ in Houdini. The in-game look is a check for the owner (open question Q-9). This 
   parent `""` (`:15 "Pelvis",""`). `pivotsModel` is a game path (`:132`, `A3\anims_f\data\skeleton\SkeletonPivots.p3d`).
   `CfgModels` links `class A3_character_example: ArmaMan {}` and `skeletonName = "OFP2_ManSkeleton"` (`:154-165`).
   `TemplateRTM/model.cfg` has `ManSkeleton` with `pivotsModel="Samples_F\TemplateRTM\ManSkeleton_Pivots.p3d"` (`:126`).
-  `isDiscrete = 0` means smooth skinning; "discrete skinning" is 0 or 100 % per point (via search summary of
-  https://community.bistudio.com/wiki/CFG).
+  The BI wiki page "Model Config" (wiki, verified; https://community.bistudio.com/wiki/Model_Config) says:
+  `skeletonBones` are `"<bone>", "<parent>"` pairs, with an empty parent for a root; `skeletonInherit` inherits all the
+  bones of another skeleton; `isDiscrete = 1` means 0 or 100 % per vertex and `0` means partial weights (smooth
+  skinning). It marks `pivotsModel` as "(A2 only)", although the A3 Samples use it (as the sample files above show). The
+  Rig Skeleton node does not need it (it reads the editable pivots file). Whether joints off the pivots matter in
+  game is for the owner's in-game test (D37 Q9). File naming (same page): a `<foldername>.cfg` takes precedence over
+  `model.cfg`, and `<modelname>.cfg` is read alongside. The node reads the one file the user picks, and its tooltip says so.
 - `ManSkeleton_Pivots.p3d`: one LOD ("Memory"), 85 points, 65 selections. 64 are `model.cfg` bones (case-insensitive).
   The 65th is `Hips` (two points at the origin), which is not a bone. 56 selections have one point; the others 2 to 7
   points that coincide or sit in a small cluster (`LeftHand`: 4 points at the same place). The pivot is the **first
@@ -476,7 +494,7 @@ in Houdini. The in-game look is a check for the owner (open question Q-9). This 
 Follow the sample. Weight Resolution 1 to 4, View - Pilot and the Shadow Volume LODs. Memory, Hit-points and Fire
 Geometry use one rigid bone per point. The Geometry LOD gets no bone selections. The sample's Resolution 4 and Shadow
 Volume 10 use only 31 bones (the main body bones, no fingers). Which LODs the engine really needs is not stated; keep
-the sample's pattern (question Q-8).
+the sample's pattern (decided, D37 Q8).
 
 ### 3.4 A3OB rigging inventory
 
@@ -538,8 +556,8 @@ Facts (`character.zip` `kinefx/skeletons.txt`, `kinefx/capture.txt`; cooks in `h
 | `name` | the `model.cfg` spelling of the bone (for example `head`) |
 | `transform` | **identity** (world axes) for every joint (proposal). Then a joint's local rotation equals the rotation in an Arma RTM (absolute 4x3 matrices in the model frame), which keeps phase 4 simple. |
 | Primitives | a 2-point polyline from each parent to its child |
-| Detail `a3ob_rig_skeleton` (string), `a3ob_rig_cfg`, `a3ob_rig_pivots` (paths) | where it came from |
-| Point `a3ob_rig_pivot_source` (int) | 0 = from the pivots file, 1 = placed by a rule (bones without a pivot) |
+| Built in task #61 | Exactly the table above: points with `name` and `transform`, polylines parent to child. The `transform` is a 9-float point attribute, which is how a Python SOP can write it; `kinefx::rigpose`, `kinefx::jointcaptureproximity` and `kinefx::jointdeform` accept it (test in `tests/test_node_rig_skeleton.py`). |
+| Not written | The earlier proposals `a3ob_rig_skeleton`, `a3ob_rig_cfg`, `a3ob_rig_pivots` (detail) and `a3ob_rig_pivot_source` (point) are dropped: nothing needs them yet, and bones with no pivot are left out (D37 Q4), so no joint is placed by a rule. |
 
 The 64 bones with a pivot: the spike (`weight_transfer_houdini.py` block N4) built exactly this skeleton from `model.cfg`
 and the pivots file; Joint Capture accepted it ("64 joints").
@@ -568,7 +586,7 @@ Mapping, selections to capture (`mode = Selections to Capture`):
 
 Mapping, capture to selections (`mode = Capture to Selections`): for every region in `boneCapture_pCaptPath` that matches
 a skeleton bone ignoring case, create or update the point group and `a3ob_w_<enc>` from the weights. The group name uses
-the `model.cfg` spelling by default (option: keep an existing spelling); question Q-3. Names that are not bones are left
+the `model.cfg` spelling (decided, D37 Q3; the node keeps an option to keep an existing spelling). Names that are not bones are left
 untouched. Regions of the capture that are not in the skeleton are an error.
 
 The numpy working form inside the nodes is a dense `(points, bones)` matrix `W` built from the canonical form. Memory is
@@ -697,7 +715,8 @@ shows a weight difference.
 ```
 
 Notes: the existing P3D nodes carry the sample into Houdini unchanged; there is no "sample loader" node. The Samples
-path is the artist's own (section 0.1). A user mesh already in the Arma rest pose, made from the sample, skips Rig Fit
+path is the artist's own (section 0.1), stored once in the project settings (D37 Q1) and defaulted to the Steam folder
+when it exists. A user mesh already in the Arma rest pose, made from the sample, skips Rig Fit
 and Unpose.
 
 ### 6.2 Nodes (all proposals)
@@ -714,12 +733,19 @@ parameter table in `python/a3ob_houdini` builds the HDA (D13); each node shows a
 | `cfg` | file | The `model.cfg` to read. Parsed by an own small parser (A3OB shows a pure parser works; `cfgconvert` is only a fallback for binarised files). |
 | `skeleton` | menu | The `CfgSkeletons` classes of the file (class name, bone count), or the class named by a `CfgModels` entry (`skeletonName`). `skeletonInherit` is merged, parent first, duplicates dropped by lower-case name (`io/import_mcfg.py:109-126`). |
 | `pivots` | file, default Samples `TemplateRTM/ManSkeleton_Pivots.p3d` | An editable pivots P3D. The pivot is the first point of the bone's selection in the Memory LOD (A3OB convention). |
-| `skip` | string, `Face_* Eye*` | Bones left out (face, out of scope). A pattern list. |
-| `missing` | menu: Place at parent, Leave out | Bones with no pivot (`Camera`, `weapon`, `launcher` in the sample). Default Leave out. |
-| `unknown` | menu: Warn, Ignore | Pivot selections that are not bones (the sample's `Hips`). Default Ignore, with an info line. |
+There are no parameters for the next three rules: the owner decided them (D36, D37 Q4), so the node does them always.
 
-Messages: bones read, bones with a pivot, skipped, missing; an error for duplicate names, a parent after its child, a
-name over 31 characters or not ASCII (A3OB validator rules). Output: section 4.1.
+- `Face_*` and `Eye*` bones are left out (the face is out of scope).
+- A bone with no pivot (`Camera`, `weapon`, `launcher` in the sample) is left out and reported as missing.
+- A pivot selection that is not a bone (the sample's `Hips`) is ignored and reported.
+
+Messages (as built in task #61): an info line with the counts ("64 joints from the 103 bones of OFP2_ManSkeleton. Left
+out: 36 face and eye bones, 3 with no pivot. 1 pivot ignored."), a line with the names with no pivot, a line with the
+ignored pivots; a warning for `#include` lines that were not followed and for a joint whose parent was left out; an error for
+duplicate names, a parent after its child, a name over 31 characters or not ASCII (A3OB validator rules), an empty
+or missing file (the text names the setting to change), and a skeleton or pivots file that cannot be read. The node
+reads the one `model.cfg` the user picks (section 3.1, "Model Config"). A new node starts from the Samples files when the
+Samples folder is set once in the project settings (D37 Q1). Output: section 4.1.
 
 **Weights Convert** (input: geometry; with an optional second input, a skeleton)
 
@@ -742,19 +768,20 @@ name over 31 characters or not ASCII (A3OB validator rules). Output: section 4.1
 
 Reports: section 4.4. Output: the mesh with cleaned groups and `a3ob_w_*`, plus `a3ob_rig_changed`, `a3ob_rig_infl_before`.
 
-**Rig Fit** (inputs: 1 user mesh; 2 Arma skeleton; 3 sample body with weights; 4 optional landmarks)
+**Rig Fit** (inputs: 1 user mesh, A-pose, with optional landmark point groups; 2 Arma skeleton; 3 sample body with weights)
 
 | Parameter | Type, default | Meaning |
 |---|---|---|
-| `landmarks` | menu: Auto-guess, From input 4, Both | Auto-guess places the standard 11 to 13 points (chin, groin, wrists, elbows, knees, ankles, shoulders, hips) from the mesh, assuming a T or A pose (question Q-5). Input 4 is points with a `name` string; they win over the guess. |
+| `landmarks` | menu: Auto-guess, From groups, Both | Auto-guess places the standard 11 to 13 points (chin, groin, wrists, elbows, knees, ankles, shoulders, hips) from the mesh. The input mesh is in an A-pose (D37 Q5). From groups reads the landmarks as **point groups (selections) on the user mesh**, one group per landmark (D37 Q11); the average of a group's points is the landmark. They win over the guess. |
 | `snap` | toggle, on | Snap landmarks to the mesh surface. |
 | `symmetry` | toggle, on | Mirror left and right landmarks. |
 | `refine` | toggle, off | Light non-rigid refinement of the sample body with Topo Transfer (one connected component needed). |
 | `scale` | menu: Per bone length, Whole body | How bone lengths are fitted. Default Per bone length. |
 
 Outputs: 1 fitted skeleton A' (joints in the user mesh, `transform` carrying the fitted rotation); 2 fitted sample body S'
-(posed and scaled, weights kept, `a3ob_rig_origin` not set yet); 3 the landmarks as points (so the artist can drag
-them: a Transform or Edit SOP in the network, fed back into input 4). The fit is a rigid fit down the hierarchy: from
+(posed and scaled, weights kept, `a3ob_rig_origin` not set yet); 3 the landmarks as points. The artist corrects a
+landmark by changing the points of its group on the user mesh (D37 Q11: landmarks are selections, like every other
+group in this add-on). The fit is a rigid fit down the hierarchy: from
 the pelvis, rotate each bone to the fitted child direction and set its length to the fitted distance. This is the step the
 spike measured only indirectly; its accuracy is the main risk of the whole design (section 2.6, point 3).
 
@@ -768,7 +795,7 @@ spike measured only indirectly; its accuracy is the main risk of the whole desig
 | `distance` | float, 0.05 | `D` as a share of the bounding-box diagonal (paper default). |
 | `angle` | float, 35 | `Theta` in degrees (paper default). |
 | `rigid_mode` | menu: Dominant bone, Fixed blend | Per piece. |
-| `merge_twist` | toggle, off | Count a `...Roll` weight towards the bone it twists with when choosing the dominant bone. Off, because the spike's cuff shows the right choice depends on the piece (section 2.6). |
+| `merge_twist` | toggle, on | Decided (D37 Q12): for a rigid piece, a `...Roll` (twist) weight goes to the next non-twist bone down the chain when choosing the dominant bone (in the spike's cuff, `LeftArmRoll` counts for `LeftForeArm`). The per-piece override `a3ob_rig_bone` below still wins. |
 | `smooth` | int, 8 | Smoothing passes along a non-rigid piece. |
 | `minpiece` | int, 10 | Pieces under this many points are ignored (as the spike). |
 
@@ -827,7 +854,7 @@ Arma P3D", and the checks that every later phase uses.
 |---|---|
 | 2.1 | Weight Transfer, same topology, no scale (the spike's target A, m = 0): L1 mean at most 0.07 and the heaviest bone changed on at most 6 % of the points (spike: 0.064 and 5.1 %); 12k points in under 10 s in hython. |
 | 2.2 | Layered groups: with a rigid group containing a cuff, every point of a piece gets identical weights (dominant bone: one bone, weight 1.0; fixed blend: the same row). With a non-rigid group, the weights vary along the piece but the difference between neighbours is smaller than in the unsmoothed transfer. The first pass is unchanged by the other two groups. |
-| 2.3 | Rig Fit on a scaled-and-posed copy of the sample (arms 20 degrees down, lengths +10 %, body +5 %, as spike scenario C) places the joints within 1.5 cm of the true joints, and the unpose result is within 1 cm of the true rest (max) with a mean under 0.3 cm. If the landmark auto-guess misses this, the test uses input 4. |
+| 2.3 | Rig Fit on a scaled-and-posed copy of the sample (arms 20 degrees down, lengths +10 %, body +5 %, as spike scenario C) places the joints within 1.5 cm of the true joints, and the unpose result is within 1 cm of the true rest (max) with a mean under 0.3 cm. If the landmark auto-guess misses this, the test uses landmark point groups. |
 | 2.4 | The fit-quality measure of section 2.6, point 3 is a message of Rig Fit (joint distance after the fit to the landmarks) and a warning above 1 cm. |
 | 2.5 | Unpose reproduces the spike's table: with the true weights and a perfect skeleton, the error is below 0.01 cm; the rigid pieces keep their edge lengths to within 0.1 %. |
 | 2.6 | Rig Check computes the attributes of section 5.2 on made-up cases with known answers: one point with 5 bones is `a3ob_rig_infl` 5; a joint placed outside a sphere has a negative `a3ob_rig_joint_depth`; a piece whose points favour two bones has a `a3ob_rig_straddle` of the right share. |
@@ -855,45 +882,60 @@ Arma P3D", and the checks that every later phase uses.
 
 ### 6.4 What stays unverified until built or seen
 
-- The in-game result (joints off the pivots, 5th bone, sums, which LODs): needs Arma 3. Owner checks (questions Q-8, Q-9).
+- The in-game result (joints off the pivots, 5th bone, sums, which LODs): needs Arma 3. The owner will test these in
+  game (D37 Q8, Q9).
 - The visualiser in a Houdini window (test 2.9).
 - The exact `boneCapture_pCaptData` layout for Joint Deform (test 1.5).
 - Fit accuracy on real, third-party meshes (tests 2.3, 2.10). The spikes use the sample itself.
 - That the engine uses linear blend skinning.
 
-### 6.5 Open questions for the owner
+### 6.5 Questions for the owner, with the answers (D37, 2026-11-04)
 
 1. **Samples path.** The Rig Skeleton and the sample body need the Samples folder. Should the add-on remember one path in
    the project settings (the settings dialog already stores a project root), or ask on each node?
+   **Answer (D37 Q1):** one path, stored once in the project settings and the file `a3ob_settings.json` (field "Arma 3 Samples folder" in the project settings dialog). It defaults to the Steam folder when that exists. A new Rig Skeleton node starts from it.
 2. **Weight grid.** The task text says 1/255. The real files and our M1 code say 1/254 (`(255 - b) / 254`). This design
    uses 1/254 with an exact sum of 1. OK?
+   **Answer (D37 Q2):** yes. The grid is 1/254 and every sum is exactly 1.
 3. **Selection name spelling.** The sample's selections are `Head`, `Neck`, `Weapon`; the bones are `head`, `neck`,
    `weapon`. The engine matches ignoring case; Object Builder's animation preview needs matching case (`io/data_rtm.py:155-159`).
    Default to the `model.cfg` spelling when writing selections?
+   **Answer (D37 Q3):** write the bone selections with the `model.cfg` spelling.
 4. **Bones with no pivot** (`Camera`, `weapon`, `launcher`) and the pivots file's `Hips`. Default to leaving them out of
    the skeleton and ignoring `Hips`. Is there any case where they must be rigged?
+   **Answer (D37 Q4):** `Camera`, `weapon` and `launcher` are left out and `Hips` of the pivots file is ignored. The Rig Skeleton node reports them.
 5. **Pose of the user meshes.** T-pose, A-pose, the Arma sample pose, or anything? The landmark auto-guess and the rigid
    fit assume a roughly standing, limbs-apart pose.
+   **Answer (D37 Q5):** the input meshes are in an **A-pose**.
 6. **Test characters.** One or two real third-party characters (uniform plus vest, helmet, pack; one with other
    proportions) for tests 2.3 and 2.10. Single watertight mesh, or several separate pieces?
+   **Answer (D37 Q6):** the owner's `exportTests/testChar/testChar.fbx`: a single mesh with a helmet, pauldrons, knee pads, a bandolier, pouches and a holster (a CC-BY-4.0 Sketchfab asset, never committed). Its existing JOINTS/WEIGHTS and the glTF are ignored: incoming meshes are assumed to carry no joint data.
 7. **How different can the proportions be** (child, very tall, stylised)? The spike covers bone lengths of +10 %, size +5 %.
+   **Answer (D37 Q7):** adult humanoids only. The skeleton is never changed for body shape, female shapes included.
 8. **Which LODs need weights.** We follow the sample (section 3.3). Is a missing weight on Shadow Volume or Memory a
    problem you have seen in game? Can you check one case: a character with only Resolution 1 weighted?
+   **Answer (D37 Q8):** follow the sample's LOD set (section 3.3).
 9. **In-game behaviour with joints off the pivots, with more than 4 bones, and with sums not 1.** These are not in any
    source I could read. Can you test one model in game for each?
+   **Answer (D37 Q9):** the owner will test in game: joints off the pivots, a fifth bone, and sums not 1.
 10. **Learned landmarks.** Is an optional external step (Make-It-Animatable, PyTorch and a CUDA GPU) acceptable later? Do
     you have a CUDA GPU?
+    **Answer (D37 Q10):** the owner has an NVIDIA RTX 50-series GPU (about 20 GB VRAM, 64 GB RAM). An optional external learned-landmark step is acceptable later.
 11. **Landmark clicks.** Is it acceptable to confirm or correct about 11 to 13 landmarks in phase 2, or must the fit be
     fully automatic?
+    **Answer (D37 Q11):** landmarks are fine, given as point groups (selections).
 12. **Twist (`...Roll`) bones.** In the Arma hierarchy `LeftArmRoll` sits between `LeftArm` and `LeftForeArm`. A rigid piece
     at the elbow can have `LeftArmRoll` as its heaviest bone yet needs to follow `LeftForeArm` (section 2.6). Keep the
     default (heaviest wins, with an override) or always merge twist weights into the forearm?
+    **Answer (D37 Q12):** for rigid pieces the twist (Roll) weight goes to the next non-twist bone, with an override.
 13. **Weights in the fitted pose or the rest pose?** Weight Transfer and Cleanup run in the fitted pose. The Unpose then
     applies those weights. After Unpose, the weights are exported unchanged. OK, or should they be recomputed after the
     unpose by a second transfer from the sample body at the Arma rest pose (a re-transfer would remove the shear of
     section 2.6, point 4, but needs the sample to match the unposed mesh)?
+    **Answer (D37 Q13):** weights from the fitted pose, exported unchanged after the unpose.
 14. **Package of the pure code.** A new `a3ob_core/rig/` that needs numpy, where the rest of `a3ob_core` does not (only
     `paa.py` uses it, as an optional import). Acceptable, since the rig nodes only run inside Houdini?
+    **Answer (D37 Q14):** `a3ob_core/rig` may need numpy.
 
 ## 7. Interpretations and gaps in this document
 
@@ -903,7 +945,9 @@ Arma P3D", and the checks that every later phase uses.
   build", because the task's phase 1 (skeleton, weights, clean-up) needs no fit.
 - Houdini 22 features were checked by name and cook in hython; behaviours that need the viewer (landmark placement, the
   Autorig Builder, Topo Landmark) were read from the help only.
-- Not read: the Bohemia wiki pages (HTTP 403); the sample's engine behaviour; HumanRig's repo; Pinocchio's LGPL version;
+- The Bohemia wiki pages returned HTTP 403 to the fetch tool; the advisor read the three pages of section 3.1 in a browser
+  (2026-11-04) and their facts are recorded there.
+- Not read: the sample's engine behaviour; HumanRig's repo; Pinocchio's LGPL version;
   AccuRIG's landmark count.
 
 ## 8. Reproduce

@@ -1,0 +1,14 @@
+Operator:     a3ob_rig_skeleton
+Label:        Rig Skeleton
+Path:         oplib:/Sop/a3ob_rig_skeleton?Sop/a3ob_rig_skeleton
+Icon:         SOP_python
+Table:        Sop
+License:      
+Extra:        
+User:         
+Inputs:       0 to 0
+Subnet:       false
+Python:       true
+Empty:        false
+Modified:     Mon Nov  3 12:00:00 2026
+

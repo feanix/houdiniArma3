@@ -188,6 +188,39 @@ class TestFileAndEnvironment(Scratch):
             sm.save(sm.Settings(), os.path.join(blocker, "s.json"))
 
 
+class TestSamplesFolder(Scratch):
+    """The Arma 3 Samples folder, stored once for the rigging nodes (D37 Q1, task #61)."""
+
+    def test_the_folder_is_saved_and_loaded(self):
+        sm.save(sm.Settings(samples_dir="D:/Arma 3 Samples"), self.path)
+        loaded, problems = sm.load(self.path)
+        self.assertEqual((loaded.samples_dir, problems), ("D:/Arma 3 Samples", []))
+        self.write('{"samples_dir": 5}')
+        self.assertEqual(sm.load(self.path)[0].samples_dir, "")  # a bad value is ignored with a message
+
+    def test_the_variable_wins_over_the_stored_folder_and_the_steam_folder_is_the_last_default(self):
+        with mock.patch.dict(os.environ, {sm.ENV_SAMPLES: "C:/from/env"}):
+            self.assertEqual(sm.effective_samples(sm.Settings(samples_dir="D:/stored")), "C:/from/env")
+        with mock.patch.dict(os.environ, {sm.ENV_SAMPLES: ""}):
+            self.assertEqual(sm.effective_samples(sm.Settings(samples_dir="D:/stored")), "D:/stored")
+            steam = os.path.join(self.folder.name, "Samples")
+            os.makedirs(os.path.join(steam, "Addons"))
+            with mock.patch.object(sm, "STEAM_SAMPLES", (os.path.join(self.folder.name, "none"), steam)):
+                self.assertEqual(sm.effective_samples(sm.Settings()), steam)
+            with mock.patch.object(sm, "STEAM_SAMPLES", (os.path.join(self.folder.name, "none"),)):
+                self.assertEqual(sm.effective_samples(sm.Settings()), "")
+
+    def test_defaults_name_the_files_only_when_they_exist(self):
+        root = os.path.join(self.folder.name, "Samples")
+        with mock.patch.dict(os.environ, {sm.ENV_SAMPLES: ""}):
+            self.assertEqual(sm.samples_defaults(sm.Settings(samples_dir=root)), ("", ""))
+            os.makedirs(os.path.join(root, *sm.SAMPLES_CFG[:-1]))
+            open(os.path.join(root, *sm.SAMPLES_CFG), "w").close()
+            cfg, pivots = sm.samples_defaults(sm.Settings(samples_dir=root))
+            self.assertTrue(cfg.endswith("Test_Character_01/model.cfg"))
+            self.assertEqual(pivots, "")
+
+
 class TestPresetEditing(unittest.TestCase):
     def test_builtin_names_are_protected(self):
         settings = sm.Settings()

@@ -1,0 +1,39 @@
+= Rig Skeleton =
+
+#type: node
+#context: sop
+#internal: a3ob_rig_skeleton
+#tags: arma, p3d
+
+"""Builds the Arma 3 character skeleton as a KineFX skeleton, from a model.cfg and a pivots .p3d file."""
+
+Builds the Arma 3 character skeleton as a KineFX skeleton (the kind that Rig Pose and Joint Deform use). The bones and their parents come from a model.cfg. Where each joint sits comes from a separate pivots .p3d file: the model.cfg only names the game's packed pivots file, which can't be read.
+
+The face bones (`Face_*`) and the eyes are left out. A bone with no pivot is left out and listed on the node. A new node starts from the Samples files when the Arma 3 Samples folder is set in the Project root and presets tool.
+
+@parameters
+
+Model Config:
+    #id: cfg
+
+    The model.cfg that holds the skeleton. This node reads exactly this one file. Arma also reads a <foldername>.cfg (which wins over model.cfg) and a <modelname>.cfg next to the model; if your skeleton is in one of those, pick that file. #include lines are not followed.
+
+    Type: File path. Default: (empty). Files: `*.cfg`.
+
+Skeleton:
+    #id: skeleton
+
+    Which skeleton class of the file to build (the classes in CfgSkeletons, with their bone count). Empty means the first one that has bones. A class that inherits (skeletonInherit) gets the bones of the class it inherits from first.
+
+    Type: Menu. Default: (none).
+
+    The choices are made when you open the menu, from the geometry or the settings.
+
+Pivots File:
+    #id: pivots
+
+    An editable pivots .p3d: its Memory LOD has one named selection per bone, and the first point of a selection is that bone's pivot. The game file named by pivotsModel in the model.cfg is packed and can't be read, so you point at the editable one here (the Samples have ManSkeleton_Pivots.p3d).
+
+    Type: File path. Default: (empty). Files: `*.p3d`.
+
+The full page for this node is docs/user/reference/a3ob_rig_skeleton.html in the A3OB folder. Open it in a web browser.

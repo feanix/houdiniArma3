@@ -20,7 +20,7 @@ __all__ = ["run"]
 
 LOGGER = logging.getLogger("a3ob")
 TITLE = "A3OB Project root and presets"
-_ACTIONS = ("Project root", "Active preset", "Edit preset", "Delete preset", "Common data file", "Close")
+_ACTIONS = ("Project root", "Active preset", "Edit preset", "Delete preset", "Common data file", "Arma 3 Samples folder", "Close")
 
 
 def display_path(path: str) -> str:
@@ -52,7 +52,8 @@ def _describe(settings) -> str:
              "Project root: %s%s" % (display_path(sm.effective_root(settings)),
                                      "  (from %s)" % sm.ENV_ROOT if sm.effective_root(settings) != settings.project_root else ""),
              "Active preset: %s" % settings.active_preset,
-             "Common data file: %s" % (display_path(settings.common_data) or "(none)")]
+             "Common data file: %s" % (display_path(settings.common_data) or "(none)"),
+             "Arma 3 Samples folder: %s" % (display_path(sm.effective_samples(settings)) or "(none found)")]
     return "\n".join(lines)
 
 
@@ -134,5 +135,12 @@ def _act(settings, action: str) -> bool:
         if path is None:
             return False
         settings.common_data = hou.text.expandString(path) if path else ""  # stored as picked; only the display changes
+        return True
+    if action == "Arma 3 Samples folder":
+        ok, text = hou.ui.readInput("Arma 3 Samples folder (the one that holds Addons). Leave empty to use the Steam folder.",
+                                    initial_contents=settings.samples_dir, buttons=("OK", "Cancel"))
+        if ok != 0:
+            return False
+        settings.samples_dir = text.strip()
         return True
     return False

@@ -11,9 +11,9 @@
 # <https://www.gnu.org/licenses/>.
 """Pure-Python core of the houdiniArma3 port: file formats and algorithms.
 
-This package must never import ``hou``, ``bpy`` or any third-party module, with one exception: ``paa`` tries to import
-numpy and falls back to plain Python without it. It runs on plain CPython 3.12+ and on hython 3.13, so it can be tested
-outside Houdini.
+This package must never import ``hou``, ``bpy`` or any third-party module, with two exceptions: ``paa`` tries to import
+numpy and falls back to plain Python without it, and ``rig`` may need numpy (D37 Q14; it only runs inside Houdini). It
+runs on plain CPython 3.12+ and on hython 3.13, so it can be tested outside Houdini.
 
 Subpackages and modules:
 
@@ -21,6 +21,7 @@ Subpackages and modules:
 
 - ``a3ob_core.binary``: little-endian readers and writers for the BI generic data types.
 - ``a3ob_core.p3d``: lossless reader/writer and semantic API for P3D MLOD files.
+- ``a3ob_core.rig``: character rigging without Houdini: ``model.cfg`` skeletons, pivots, the joint list.
 """
 
-__all__ = ["binary", "p3d"]
+__all__ = ["binary", "p3d", "rig"]
