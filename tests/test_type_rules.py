@@ -74,6 +74,11 @@ def group(name, members):
     return GroupData(name, name, list(members))
 
 
+def weighted(name, members, weights):
+    """A selection with ``a3ob_w_<name>`` (one weight per point)."""
+    return GroupData(name, name, list(members), weights=list(weights))
+
+
 def failing_examples():
     """``{rule id: LodData that fails exactly that rule}``."""
     shadow = lod(LodType.SHADOW, resolution=1000.0)
@@ -114,6 +119,15 @@ def failing_examples():
     examples["T2-GL-UVVALUES"] = values
     examples["T2-PATH-ENTRY"] = lod(LodType.PATHS)
     examples["T2-PATH-POS"] = lod(LodType.PATHS)
+    five = lod(LodType.VISUAL, resolution=1.0)
+    five.mesh.groups = [weighted(name, range(8), [0.2] * 8) for name in ("Pelvis", "Spine", "Spine1", "Spine2", "head")]
+    examples["T2-WGT4"] = five
+    half = lod(LodType.VISUAL, resolution=1.0)
+    half.mesh.groups = [weighted("Pelvis", range(8), [0.5] * 8)]
+    examples["T2-WGTSUM"] = half
+    gap = lod(LodType.VISUAL, resolution=1.0)
+    gap.mesh.groups = [group("Pelvis", range(7))]
+    examples["T2-WGTNONE"] = gap
     return examples
 
 
@@ -129,7 +143,7 @@ class TestRules(unittest.TestCase):
     def test_every_rule_has_a_failing_example_and_a_switch(self):
         examples = failing_examples()
         self.assertEqual(sorted(examples), sorted(type_rules.RULE_IDS))
-        self.assertEqual(len(set(type_rules.RULE_IDS)), 19)
+        self.assertEqual(len(set(type_rules.RULE_IDS)), 22)
         for rule_id, data in examples.items():
             with self.subTest(rule=rule_id):
                 texts = run_all(data)
@@ -149,6 +163,46 @@ class TestRules(unittest.TestCase):
             self.assertEqual(with_rule(texts, "T2-MASSALL"), [])
         self.assertEqual(run(lod(LodType.FIRE_GEOMETRY)), [])  # not ported (spec 17.1.1 notes)
         self.assertEqual(run(lod(LodType.VIEW_GEOMETRY)), [])
+
+    def test_weight_rules_need_bone_selections_and_a_character_lod_type(self):
+        gap = failing_examples()["T2-WGTNONE"]
+        self.assertEqual(len(with_rule(run(gap), "T2-WGTNONE")), 1)
+        gap.mesh.groups[0].name = gap.mesh.groups[0].encoded = "pelvis"  # case is ignored
+        self.assertEqual(len(with_rule(run(gap), "T2-WGTNONE")), 1)
+        gap.mesh.groups[0].name = gap.mesh.groups[0].encoded = "Component01"  # not a bone: no bone selections
+        self.assertEqual(run(gap), [])
+        for lod_type in (LodType.MEMORY, LodType.GEOMETRY, LodType.FIRE_GEOMETRY):  # rigid or not weighted
+            other = lod(lod_type, resolution=0.0)
+            other.mesh.groups = [group("Pelvis", range(7))]
+            self.assertEqual([t for t in run(other) if "rule T2-WGT" in t], [], lod_type)
+        for lod_type in (LodType.VIEW_PILOT, LodType.SHADOW):
+            shadow = lod(lod_type, resolution=1000.0)
+            shadow.mesh.groups = [group("Pelvis", range(7))]
+            self.assertEqual(len(with_rule(run(shadow), "T2-WGTNONE")), 1, lod_type)
+
+    def test_weight_rules_use_the_grid_tolerance_and_ignore_zero_weights(self):
+        data = lod(LodType.VISUAL, resolution=1.0)
+        one = 1.0 / 254
+        # exactly 1 on the grid and 1 +- one step pass; two steps off fails
+        data.mesh.groups = [weighted("Pelvis", range(8), [0.5 + one] * 8), weighted("Spine", range(8), [0.5] * 8)]
+        self.assertEqual(with_rule(run(data), "T2-WGTSUM"), [])
+        data.mesh.groups[0].weights = [0.5 + 2.5 * one] * 8
+        self.assertEqual(len(with_rule(run(data), "T2-WGTSUM")), 1)
+        # a member with weight 0 (byte 255) is no weight: the point has none
+        data.mesh.groups = [weighted("Pelvis", range(8), [1.0] * 7 + [0.0])]
+        texts = run(data)
+        self.assertEqual(len(with_rule(texts, "T2-WGTNONE")), 1)
+        self.assertIn("point 7", texts[0])
+        # a selection without a3ob_w counts as weight 1
+        data.mesh.groups = [group("Pelvis", range(8))]
+        self.assertEqual(run(data), [])
+
+    def test_weight_messages_say_to_use_weight_cleanup(self):
+        for rule_id in ("T2-WGT4", "T2-WGTSUM", "T2-WGTNONE"):
+            texts = with_rule(run(failing_examples()[rule_id]), rule_id)
+            self.assertEqual(len(texts), 1)
+            self.assertIn("Weight Cleanup", texts[0])
+            self.assertTrue(type_rules.rule_by_id(rule_id).default_on)
 
     def test_a_clean_geometry_lod_with_convex_quads_has_no_message(self):
         # D24: the cube's six faces are convex quads, which Geometry LODs may hold.
@@ -280,7 +334,7 @@ class TestRules(unittest.TestCase):
         defaults = {parm.name: parm.default for parm in common.rule_parms()}
         self.assertEqual([name for name, value in defaults.items() if value is False], ["t2shadowres", "t2shadowoff"])
         names = [common.rule_parm_name(rule_id) for rule_id in type_rules.RULE_IDS]
-        self.assertEqual(len(set(names)), 19)
+        self.assertEqual(len(set(names)), 22)
 
     def test_rules_run_in_the_build_and_the_switches_silence_them(self):
         data = failing_examples()["T2-SHADOWRES"]

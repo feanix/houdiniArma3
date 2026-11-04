@@ -60,7 +60,7 @@ class TestExportAssets(unittest.TestCase):
         # The tabs are folder templates (Houdini names the later tabs of a row itself): leave them out.
         validate["parms"] = [name for name in validate["parms"] if not name.startswith("tab_")]
         self.assertEqual(validate["parms"][:4], ["errorlevel", "strict", "dupes", "maxmessages"])
-        self.assertEqual(len(validate["parms"]), 4 + 1 + 1 + 19)  # master switch, Triangulate Where Needed (task #49), the rules
+        self.assertEqual(len(validate["parms"]), 4 + 1 + 1 + 22)  # master switch, Triangulate Where Needed (task #49), the rules
         self.assertEqual(validate["pythoncook"], "import a3ob_houdini.entry as e; e.cook('validate', hou.pwd())")
         self.assertEqual(validate["submenu"], [["A3OB"]])
         export = types["a3ob_p3d_export"]
@@ -88,8 +88,9 @@ class TestExportAssets(unittest.TestCase):
                 prims, source = self.result[key + "_prims"]
                 self.assertEqual(prims, source)  # the output is the input
         self.assertIn("9 LODs", " ".join(self.result["character_save"]["messages"]))
-        self.assertEqual(self.result["character_save"]["warnings"], [])  # no false alarm on a real file
-        self.assertEqual(self.result["character_cook"]["warnings"], [])
+        # no false alarm on a real file; the fixture has raw bone weights, so only the weight rules of task #63 speak
+        for part in ("character_save", "character_cook"):
+            self.assertEqual([t for t in self.result[part]["warnings"] if "(rule T2-WGT" not in t], [], part)
 
     def test_backup_keeps_the_old_file(self):
         self.assertEqual(self.result["backup_files"], ["out.p3d", "out.p3d.bak"])

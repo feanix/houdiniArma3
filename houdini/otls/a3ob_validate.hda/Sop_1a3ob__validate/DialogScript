@@ -230,6 +230,30 @@
     	default	{ "1" }
     	help	"Paths LODs: the same test as the entry rule (as in Object Builder, which tests entry points twice)."
         }
+
+        parm {
+    	name	"t2wgt4"
+    	label	"At most 4 bones per point"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Visual, view and shadow LODs with selections named like the bones of the Arma 3 man skeleton (OFP2_ManSkeleton, case ignored): no point is weighted to more than 4 bones."
+        }
+
+        parm {
+    	name	"t2wgtsum"
+    	label	"Bone weights add up to 1"
+    	type	toggle
+    	default	{ "1" }
+    	help	"The same LODs: the bone weights of a point add up to 1, within one 1/254 step."
+        }
+
+        parm {
+    	name	"t2wgtnone"
+    	label	"Every point has a bone weight"
+    	type	toggle
+    	default	{ "1" }
+    	help	"The same LODs: every point has a weight in at least one bone selection."
+        }
     }
 
 }

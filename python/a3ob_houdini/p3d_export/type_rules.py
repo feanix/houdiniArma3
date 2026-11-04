@@ -24,6 +24,7 @@ from .. import messages
 from .data import LodData, Poly
 from .normals import face_normal
 from .options import DEFAULT_RULES_OFF, ExportOptions
+from . import rig_bones
 
 __all__ = ["Rule", "RULES", "RULE_IDS", "rule_by_id", "check_lod_rules", "GEOMETRY_TYPES", "SHADOW_TYPES"]
 
@@ -43,6 +44,9 @@ ROADWAY_POINT_LIMIT = 255
 #: A3OB ``is_convex_edge_internal``: two faces whose normals have a dot product in this range are flat against each other.
 FLAT_RANGE = (0.9999, 1.0001)
 UV_TOLERANCE = 1e-4
+MAX_BONES = 4
+#: P3D selection weights are k/254 (data model 7.1).
+WEIGHT_GRID = 254
 
 _COMPONENT = re.compile(r"component\d+", re.IGNORECASE)
 _OCCLUDER = re.compile(r"occluder\d+", re.IGNORECASE)
@@ -83,6 +87,7 @@ class _Context:
         self.polys: List[Poly] = [poly for poly in self.mesh.polys if 3 <= len(poly.points) <= 4]
         self._edges: Optional[Dict[Tuple[int, int], List[Tuple[int, Tuple[int, int]]]]] = None
         self._sign: Optional[float] = None
+        self._bones = None
 
     @property
     def lod_type(self) -> int:
@@ -107,6 +112,29 @@ class _Context:
         if not self.mesh.points:
             return False
         return any(pattern.match(group.name) for group in self.mesh.groups)
+
+    @property
+    def bone_weights(self) -> Optional[Tuple[List[int], List[float]]]:
+        """``(bones per point, weight sum per point)`` over the bone selections, or None when the LOD has none. A
+        selection is a bone selection when its name is a bone of the man skeleton, ignoring case (``rig_bones``). A
+        member counts with ``a3ob_w_<name>`` (1 without the attribute); a weight of 0 or less is no weight. Points that
+        only a packed prim uses are left out (they are not written)."""
+        if self._bones is None:
+            names = rig_bones.bone_name_set()
+            groups = [group for group in self.mesh.groups if group.name.lower() in names]
+            if not groups:
+                self._bones = ()
+            else:
+                count = len(self.mesh.points)
+                used, total = [0] * count, [0.0] * count
+                for group in groups:
+                    for point in group.members:
+                        weight = 1.0 if group.weights is None else group.weights[point]
+                        if weight > 0.0 and 0 <= point < count:
+                            used[point] += 1
+                            total[point] += weight
+                self._bones = (used, total)
+        return self._bones or None
 
     def positions(self, poly: Poly):
         return [self.mesh.points[p] for p in poly.points]
@@ -345,7 +373,47 @@ def _path_pos(c: _Context):
     return None
 
 
+_FIX_WEIGHTS = "Use the Weight Cleanup node before the export"
+
+
+def _wgt4(c: _Context):
+    bones = c.bone_weights
+    if bones is None:
+        return None
+    over = [number for number, used in enumerate(bones[0]) if used > MAX_BONES and number not in c.mesh.pack_points]
+    if over:
+        return ("%d point%s weighted to more than %d bones (point %d has %d); the game uses only %d" % (
+            len(over), " is" if len(over) == 1 else "s are", MAX_BONES, over[0], bones[0][over[0]], MAX_BONES), _FIX_WEIGHTS)
+    return None
+
+
+def _wgtsum(c: _Context):
+    bones = c.bone_weights
+    if bones is None:
+        return None
+    limit = 1.0 / WEIGHT_GRID + 1e-5  # one grid step; float32 weights add up to within a few 1e-7
+    off = [number for number, (used, total) in enumerate(zip(*bones))
+           if used and abs(total - 1.0) > limit and number not in c.mesh.pack_points]
+    if off:
+        return ("the bone weights of %d point%s do not add up to 1 (point %d adds up to %.3f)" % (
+            len(off), "" if len(off) == 1 else "s", off[0], bones[1][off[0]]), _FIX_WEIGHTS)
+    return None
+
+
+def _wgtnone(c: _Context):
+    bones = c.bone_weights
+    if bones is None:
+        return None
+    none = [number for number, used in enumerate(bones[0]) if not used and number not in c.mesh.pack_points]
+    if none:
+        return ("%d point%s no bone weight (point %d)" % (len(none), " has" if len(none) == 1 else "s have", none[0]),
+                _FIX_WEIGHTS + " (it reports these points), or weight them to a bone")
+    return None
+
+
 _TYPES_CONTIG = GEOMETRY_TYPES | SHADOW_TYPES | {LodType.UNDERGROUND}
+#: The LODs a character is weighted in (character-rigging.md 3.3): the visual and view LODs and the Shadow Volumes.
+WEIGHT_TYPES = frozenset((LodType.VISUAL, LodType.VIEW_GUNNER, LodType.VIEW_PILOT, LodType.VIEW_CARGO)) | SHADOW_TYPES
 
 RULES: Tuple[Rule, ...] = (
     Rule("T2-UV2", "At most 2 UV sets", ANY, _uv2, "The LOD has no more than 2 UV sets."),
@@ -382,6 +450,15 @@ RULES: Tuple[Rule, ...] = (
          "Paths LODs: a group called in01, in02, ... exists."),
     Rule("T2-PATH-POS", "Path position points", frozenset((LodType.PATHS,)), _path_pos,
          "Paths LODs: the same test as the entry rule (as in Object Builder, which tests entry points twice)."),
+    # Task #63 (D37): character weights. Not an A3OB rule. A selection counts as a bone selection when its name is a bone
+    # of the Arma 3 man skeleton (OFP2_ManSkeleton), ignoring case; a LOD with none is not checked.
+    Rule("T2-WGT4", "At most 4 bones per point", WEIGHT_TYPES, _wgt4,
+         "Visual, view and shadow LODs with selections named like the bones of the Arma 3 man skeleton (OFP2_ManSkeleton, "
+         "case ignored): no point is weighted to more than 4 bones."),
+    Rule("T2-WGTSUM", "Bone weights add up to 1", WEIGHT_TYPES, _wgtsum,
+         "The same LODs: the bone weights of a point add up to 1, within one 1/254 step."),
+    Rule("T2-WGTNONE", "Every point has a bone weight", WEIGHT_TYPES, _wgtnone,
+         "The same LODs: every point has a weight in at least one bone selection."),
 )
 
 RULE_IDS: Tuple[str, ...] = tuple(rule.id for rule in RULES)

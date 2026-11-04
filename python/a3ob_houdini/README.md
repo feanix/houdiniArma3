@@ -209,7 +209,7 @@ temporary file and is renamed. Every problem is a message in the `Report`; nothi
 `p3d_export.run(geometries, options, report)` is `collect` + `build` + `to_bytes` in one call and returns a `BuildResult`
 (`data`, `lod_count`). It is the one place the **Validate** and **P3D Export** nodes get their messages, so both say the
 same for the same input. `build_lod` also runs `flag_check` (flag values Object Builder does not know) and `type_rules`
-(the 19 tier-2 per-LOD-type rules of spec 17.1.1; `ExportOptions.rules_off` holds the ids that are switched off). First
+(the 22 tier-2 per-LOD-type rules of spec 17.1.1; `ExportOptions.rules_off` holds the ids that are switched off). First
 of all, `build_lod` calls `harden.harden_lod` (task #48): Shadow and Underground LODs always get every edge in
 `#SharpEdges#` and face normals, in the written file only. Packed
 proxies with a collapsed or isosceles triangle are warned about in `proxy_rebuild`.

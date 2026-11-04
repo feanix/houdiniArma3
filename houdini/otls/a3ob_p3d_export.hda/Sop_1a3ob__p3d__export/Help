@@ -350,4 +350,25 @@ Path position points:
 
     Type: On or off. Default: On.
 
+At most 4 bones per point:
+    #id: t2wgt4
+
+    Visual, view and shadow LODs with selections named like the bones of the Arma 3 man skeleton (OFP2_ManSkeleton, case ignored): no point is weighted to more than 4 bones.
+
+    Type: On or off. Default: On.
+
+Bone weights add up to 1:
+    #id: t2wgtsum
+
+    The same LODs: the bone weights of a point add up to 1, within one 1/254 step.
+
+    Type: On or off. Default: On.
+
+Every point has a bone weight:
+    #id: t2wgtnone
+
+    The same LODs: every point has a weight in at least one bone selection.
+
+    Type: On or off. Default: On.
+
 The full page for this node is docs/user/reference/a3ob_p3d_export.html in the A3OB folder. Open it in a web browser.
