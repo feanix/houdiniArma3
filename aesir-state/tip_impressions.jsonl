@@ -240,3 +240,9 @@
 {"agent_id": "impl-59-a", "id": 240, "task_id": 59, "tip_id": 2, "ts": "2026-11-04T08:45:45Z"}
 {"agent_id": "rev-59-a", "id": 241, "task_id": 59, "tip_id": 1, "ts": "2026-11-04T08:58:30Z"}
 {"agent_id": "rev-59-a", "id": 242, "task_id": 59, "tip_id": 2, "ts": "2026-11-04T08:58:30Z"}
+{"agent_id": "impl-60-spike", "id": 243, "task_id": 60, "tip_id": 1, "ts": "2026-11-04T09:28:49Z"}
+{"agent_id": "impl-60-spike", "id": 244, "task_id": 60, "tip_id": 2, "ts": "2026-11-04T09:28:49Z"}
+{"agent_id": "impl-60-doc", "id": 245, "task_id": 60, "tip_id": 1, "ts": "2026-11-04T09:51:00Z"}
+{"agent_id": "impl-60-doc", "id": 246, "task_id": 60, "tip_id": 2, "ts": "2026-11-04T09:51:00Z"}
+{"agent_id": "rev-60-a", "id": 247, "task_id": 60, "tip_id": 1, "ts": "2026-11-04T10:06:23Z"}
+{"agent_id": "rev-60-a", "id": 248, "task_id": 60, "tip_id": 2, "ts": "2026-11-04T10:06:23Z"}
