@@ -4,6 +4,15 @@ A port of [Arma 3 Object Builder](https://github.com/MrClock8163/Arma3ObjectBuil
 (A3OB, a Blender add-on by MrClock) to SideFX Houdini: import and export of
 Arma 3 P3D models and related formats.
 
+## AI disclosure
+
+The code, the tools and the documentation were written with AI assistance (Claude, by Anthropic). The
+project owner directed the work, tested it and checked it. If you would rather not use AI-assisted tools,
+that is completely fine. Two alternatives are
+[Arma 3 Object Builder for Blender](https://github.com/MrClock8163/Arma3ObjectBuilder) (A3OB, by MrClock) and
+[Arma 3 Tools](https://store.steampowered.com/app/233800/Arma_3_Tools/) (including Object Builder), the
+official tools from Bohemia Interactive.
+
 **Status: pre-alpha.** Import, editing nodes, checks and export work in Houdini; see the
 [install guide](docs/user/install.html) and the quick starts. Target: Houdini 22.0
 (Indie 22.0.466, Python 3.13).
