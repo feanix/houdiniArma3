@@ -2,10 +2,10 @@
 
 Generated from the Aesir database, do not edit. A plan, not a promise: it changes, and decisions record why.
 
-## 0.2.0
+## 0.2.0 (ready to tag)
 
-- #053 [merged] PAA reader: decode .paa to cached images for the viewport (D29)
-- #054 [open] Material Assign shows textures in the viewport; export writes .paa (D29)
+- #053 [verified] PAA reader: decode .paa to cached images for the viewport (D29)
+- #054 [merged] Material Assign shows textures in the viewport; export writes .paa (D29)
 
 ## Unplaced
 
