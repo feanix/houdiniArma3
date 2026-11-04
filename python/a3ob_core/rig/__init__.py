@@ -9,13 +9,18 @@ Houdini, and hython has numpy. The skeleton code below does not need it yet.
 - ``model_cfg``: a small ``model.cfg`` reader (``CfgSkeletons``: bones, ``skeletonInherit``, ``isDiscrete``).
 - ``pivots``: the pivot positions of a pivots P3D (the Memory LOD selections).
 - ``skeleton``: puts the two together into the joint list of the Rig Skeleton node.
+- ``weights``: bone weights as numpy matrices: name matching, the capture lists, and the export clean-up (task #62).
 """
 
 from .model_cfg import CfgClass, CfgError, CfgFile, Skeleton, parse_cfg, read_cfg_file, resolve_skeleton, skeleton_names
 from .pivots import pivot_positions, read_pivots_file
 from .skeleton import SKIP_PATTERNS, Joint, SkeletonPlan, check_bones, plan_skeleton
+from .weights import (CAPT_FLOATS, GRID, CleanStats, capture_lists, clean_weights, grid_units, inverse_rest_floats,
+                      match_bone_names, matrix_from_capture)
 
 __all__ = [
+    "CAPT_FLOATS", "GRID", "CleanStats", "capture_lists", "clean_weights", "grid_units", "inverse_rest_floats",
+    "match_bone_names", "matrix_from_capture",
     "CfgClass", "CfgError", "CfgFile", "Skeleton", "parse_cfg", "read_cfg_file", "resolve_skeleton", "skeleton_names",
     "pivot_positions", "read_pivots_file", "SKIP_PATTERNS", "Joint", "SkeletonPlan", "check_bones", "plan_skeleton",
 ]

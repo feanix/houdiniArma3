@@ -1,0 +1,38 @@
+= Weight Cleanup =
+
+#type: node
+#context: sop
+#internal: a3ob_weight_cleanup
+#tags: arma, p3d
+
+"""Makes the bone weights follow Arma's rules: at most 4 bones per point, weights in steps of 1/254, sum 1."""
+
+Arma allows at most 4 bones per point and reads weights in steps of 1/254. This node makes the bone selections follow that: it drops tiny weights, keeps the heaviest bones, scales each point to a sum of 1 and snaps the weights to the 1/254 grid so the sum is exactly 1.
+
+It writes a3ob_rig_changed on the points: how much the weights of that point changed. The node message gives the counts and lists the points with no weight. If the model.cfg class of the skeleton has isDiscrete = 1, every point keeps only its heaviest bone.
+
+@inputs
+
+Geometry:
+    The LOD geometry with bone selections (point groups with a3ob_w weights).
+
+Skeleton:
+    The skeleton, for example from Rig Skeleton. Its joint names decide which selections are bones. If its model.cfg class has isDiscrete = 1, every point keeps only its heaviest bone.
+
+@parameters
+
+Max Bones per Point:
+    #id: maxbones
+
+    The most bones one point may have. Arma allows 4. The lightest weights beyond this are dropped.
+
+    Type: Whole number. Default: 4. Allowed: From 1 to 16.
+
+Prune Below:
+    #id: threshold
+
+    Weights below this are dropped. A point never loses its heaviest weight, even when it is below this.
+
+    Type: Number. Default: 0.01. Allowed: From 0 to 1.
+
+The full page for this node is docs/user/reference/a3ob_weight_cleanup.html in the A3OB folder. Open it in a web browser.

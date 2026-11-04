@@ -24,6 +24,22 @@ NODE_INTRO = {
         "A new node starts from the Samples files when the Arma 3 Samples folder is set in the Project root and "
         "presets tool.",
     ),
+    "weights_convert": (
+        "A bone weight lives in two forms. In a P3D file it is a selection named like the bone, with a weight for each "
+        "point. KineFX nodes such as Joint Deform use capture weights instead. This node converts one form into the "
+        "other for the skeleton on input 2.",
+        "Selections are matched to the joints ignoring upper and lower case. A selection that is not a bone (a "
+        "component, a hidden selection) is left alone. A member with weight 0 (byte 255 in the file) counts as no "
+        "weight.",
+    ),
+    "weight_cleanup": (
+        "Arma allows at most 4 bones per point and reads weights in steps of 1/254. This node makes the bone "
+        "selections follow that: it drops tiny weights, keeps the heaviest bones, scales each point to a sum of 1 and "
+        "snaps the weights to the 1/254 grid so the sum is exactly 1.",
+        "It writes a3ob_rig_changed on the points: how much the weights of that point changed. The node message "
+        "gives the counts and lists the points with no weight. If the model.cfg class of the skeleton has isDiscrete "
+        "= 1, every point keeps only its heaviest bone.",
+    ),
     "assemble_lods": (
         "A P3D file keeps several LODs (versions of the model for different viewing distances) together. After you "
         "edit LODs one at a time, this node puts them back together.",

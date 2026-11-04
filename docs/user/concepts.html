@@ -278,6 +278,32 @@ named as in the <code>model.cfg</code> and sits at its pivot. The face bones (<c
 bone with no pivot (the Samples have none for <code>Camera</code>, <code>weapon</code> and <code>launcher</code>) is left out and
 listed on the node, and a pivot that is not a bone (the Samples' <code>Hips</code>) is ignored and listed too.</p>
 
+<h3 id="rigging-weights">Bone weights: selections and capture weights</h3>
+<p>The same bone weights can live in two forms.</p>
+<ul>
+<li><strong>Selections.</strong> This is what a P3D file holds and what P3D Import makes. Each bone has a selection (a point
+group named like the bone) and the weight of each point is in a point attribute <code>a3ob_w_&lt;bone&gt;</code>. P3D Export
+writes this form.</li>
+<li><strong>Capture weights.</strong> This is what the KineFX nodes (Joint Deform, Rig Pose) use: the point attribute
+<code>boneCapture</code>.</li>
+</ul>
+<p>The <kbd class="ui-node">Weights Convert</kbd> node changes one form into the other for the skeleton on its second input.
+Only selections whose name matches a joint (upper and lower case don't matter) are bone weights. A component, a hidden
+selection or a proxy selection is left alone. Capture to Selections names a selection like the joint in the
+<code>model.cfg</code> (<code>head</code>, not <code>Head</code>) and renames an existing one; the option "Keep existing
+spelling" leaves the names as they are. A member with weight 0 (byte 255 in the file) counts as no weight.</p>
+<p>The <kbd class="ui-node">Weight Cleanup</kbd> node makes the selections follow Arma's rules, and you run it before P3D
+Export. It changes only the bone selections, in this order:</p>
+<ol>
+<li>Weights below <strong>Prune Below</strong> (0.01) are dropped. A point never loses its heaviest weight.</li>
+<li>Only the <strong>Max Bones per Point</strong> (4) heaviest weights stay.</li>
+<li>The weights of a point are scaled to a sum of 1, and snapped to steps of 1/254, as in the file. The sum is exactly 1.</li>
+</ol>
+<p>If the skeleton's <code>model.cfg</code> class has <code>isDiscrete = 1</code>, every point keeps only its heaviest bone with
+weight 1. The point attribute <code>a3ob_rig_changed</code> says how much the weights of each point changed (0 means not
+at all), and the node message gives the counts, the points with no bone weight (a warning) and the members with weight 0.
+Points whose weights already followed the rules, like most of the Samples character, don't change.</p>
+
 <h2 id="validator">The checks: errors and warnings</h2>
 <p>The <kbd class="ui-node">Validate</kbd> node and the cook of <kbd class="ui-node">P3D Export</kbd> run the same checks, so a
 model that passes one passes the other. Each message starts with the LOD name and ends with how to fix the problem.</p>

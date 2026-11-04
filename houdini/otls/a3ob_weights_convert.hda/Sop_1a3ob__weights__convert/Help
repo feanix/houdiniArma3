@@ -1,0 +1,50 @@
+= Weights Convert =
+
+#type: node
+#context: sop
+#internal: a3ob_weights_convert
+#tags: arma, p3d
+
+"""Converts bone weights between P3D selections (point groups) and KineFX capture weights for the skeleton."""
+
+A bone weight lives in two forms. In a P3D file it is a selection named like the bone, with a weight for each point. KineFX nodes such as Joint Deform use capture weights instead. This node converts one form into the other for the skeleton on input 2.
+
+Selections are matched to the joints ignoring upper and lower case. A selection that is not a bone (a component, a hidden selection) is left alone. A member with weight 0 (byte 255 in the file) counts as no weight.
+
+@inputs
+
+Geometry:
+    The LOD geometry whose bone weights are converted (for example from Extract LOD).
+
+Skeleton:
+    The skeleton, for example from Rig Skeleton. Its joint names decide which selections are bones.
+
+@parameters
+
+Mode:
+    #id: mode
+
+    Which way to convert.
+
+    Type: Menu. Default: Selections to Capture.
+
+    Selections to Capture:
+        Reads the bone selections (point groups, with their a3ob_w weights) and writes capture weights (boneCapture) for the skeleton. Joint Deform can use them.
+
+    Capture to Selections:
+        Reads the capture weights and writes bone selections. A selection that is not a bone is left alone.
+
+Selection Names:
+    #id: case
+
+    How a bone selection is named when it is written. Only used by Capture to Selections.
+
+    Type: Menu. Default: model.cfg spelling. Shown when: Mode is Capture to Selections.
+
+    model.cfg spelling:
+        Names the selection like the bone in the skeleton (for example head). A selection that already exists under another spelling (Head) is renamed.
+
+    Keep existing spelling:
+        A selection that already exists keeps its name. A new one is named like the bone.
+
+The full page for this node is docs/user/reference/a3ob_weights_convert.html in the A3OB folder. Open it in a web browser.

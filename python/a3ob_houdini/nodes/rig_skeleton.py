@@ -27,6 +27,8 @@ except ImportError:  # the parameter table is also read under plain Python
 __all__ = ["SPEC", "cook", "created", "MENUS", "BUTTONS"]
 
 NAME = "Rig Skeleton"
+#: Detail int, 1 or 0: the ``isDiscrete`` of the chosen skeleton class. Not written when the model.cfg does not say.
+DISCRETE_ATTRIB = "a3ob_rig_discrete"
 
 SPEC = NodeSpec(
     kind="rig_skeleton",
@@ -115,6 +117,10 @@ def cook(node, report: Report) -> None:
         raise UserError(format_problem(NAME, "no bone of %s has a pivot in %s" % (skeleton.name, os.path.basename(pivots_path)),
                                        "The pivots file needs one selection per bone in its Memory LOD, named like the bones"))
     _write_skeleton(node.geometry(), plan)
+    if skeleton.is_discrete is not None:  # Weight Cleanup reads it (character-rigging.md 4.1, task #62)
+        geo = node.geometry()
+        geo.addAttrib(hou.attribType.Global, DISCRETE_ATTRIB, 0)
+        geo.setGlobalAttribValue(DISCRETE_ATTRIB, 1 if skeleton.is_discrete else 0)
     for text in _messages(skeleton, plan):
         report.info(text)
     if plan.reparented:

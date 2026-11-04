@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weights Convert - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
+<h1>Weights Convert</h1>
+<p class="lead">Converts bone weights between P3D selections (point groups) and KineFX capture weights for the skeleton.</p>
+<p>A bone weight lives in two forms. In a P3D file it is a selection named like the bone, with a weight for each point. KineFX nodes such as Joint Deform use capture weights instead. This node converts one form into the other for the skeleton on input 2.</p>
+<p>Selections are matched to the joints ignoring upper and lower case. A selection that is not a bone (a component, a hidden selection) is left alone. A member with weight 0 (byte 255 in the file) counts as no weight.</p>
+<table class="facts">
+<tr><th>Houdini name</th><td><code>a3ob_weights_convert</code></td></tr>
+<tr><th>Where to find it</th><td>Tab menu, A3OB, Weights Convert</td></tr>
+<tr><th>Inputs</th><td>2</td></tr>
+</table>
+<h2>Inputs</h2>
+<ol>
+<li value="1">Input 1: Geometry. The LOD geometry whose bone weights are converted (for example from Extract LOD).</li>
+<li value="2">Input 2: Skeleton. The skeleton, for example from Rig Skeleton. Its joint names decide which selections are bones.</li>
+</ol>
+<h2>Parameters</h2>
+<p>Parameters are in the order they appear on the node.</p>
+<section class="parm" id="mode">
+<h3>Mode <code>mode</code></h3>
+<p>Which way to convert.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>Selections to Capture</dd>
+</dl>
+<p>Choices:</p>
+<ul>
+<li>Selections to Capture <code>tocapture</code>: Reads the bone selections (point groups, with their a3ob_w weights) and writes capture weights (boneCapture) for the skeleton. Joint Deform can use them.</li>
+<li>Capture to Selections <code>toselections</code>: Reads the capture weights and writes bone selections. A selection that is not a bone is left alone.</li>
+</ul>
+</section>
+<section class="parm" id="case">
+<h3>Selection Names <code>case</code></h3>
+<p>How a bone selection is named when it is written. Only used by Capture to Selections.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>model.cfg spelling</dd>
+<dt>Shown when</dt><dd>Mode is Capture to Selections</dd>
+</dl>
+<p>Choices:</p>
+<ul>
+<li>model.cfg spelling <code>cfg</code>: Names the selection like the bone in the skeleton (for example head). A selection that already exists under another spelling (Head) is renamed.</li>
+<li>Keep existing spelling <code>keep</code>: A selection that already exists keeps its name. A new one is named like the bone.</li>
+</ul>
+</section>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

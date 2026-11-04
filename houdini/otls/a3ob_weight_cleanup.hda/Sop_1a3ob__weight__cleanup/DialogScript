@@ -1,0 +1,33 @@
+# Dialog script for a3ob_weight_cleanup, version 1
+
+{
+    name	a3ob_weight_cleanup
+    script	a3ob_weight_cleanup
+    label	"Weight Cleanup"
+
+    help {
+	"Makes the bone weights follow Arma's rules: at most 4 bones per point, weights in steps of 1/254, sum 1."
+    }
+
+    inputlabel	1	"Geometry"
+    inputlabel	2	"Skeleton"
+
+    parm {
+	name	"maxbones"
+	label	"Max Bones per Point"
+	type	integer
+	size	1
+	default	{ "4" }
+	range	{ 1! 16! }
+	help	"The most bones one point may have. Arma allows 4. The lightest weights beyond this are dropped."
+    }
+    parm {
+	name	"threshold"
+	label	"Prune Below"
+	type	float
+	size	1
+	default	{ "0.01" }
+	range	{ 0! 1! }
+	help	"Weights below this are dropped. A point never loses its heaviest weight, even when it is below this."
+    }
+}
