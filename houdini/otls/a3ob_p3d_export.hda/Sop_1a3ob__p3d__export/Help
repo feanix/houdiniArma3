@@ -360,7 +360,7 @@ At most 4 bones per point:
 Bone weights add up to 1:
     #id: t2wgtsum
 
-    The same LODs: the bone weights of a point add up to 1, within one 1/254 step.
+    The same LODs: the bone weights of a point add up to 1, within 0.02 (Bohemia's own sample character adds up to 0.992 and works in the game).
 
     Type: On or off. Default: On.
 

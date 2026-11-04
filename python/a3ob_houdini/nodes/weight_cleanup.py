@@ -12,6 +12,8 @@ which selections are bones and whether its ``model.cfg`` class has ``isDiscrete 
 ``a3ob_rig_discrete`` that Rig Skeleton writes). When it has, every point keeps one bone, its heaviest.
 """
 
+import numpy as np
+
 from a3ob_core.rig import clean_weights
 
 from .. import rig_weights
@@ -54,7 +56,13 @@ def cook(node, report: Report) -> None:
     geo = node.geometry()  # a Python-type SOP starts with a copy of its first input
     found = rig_weights.read_selections(NAME, geo, skeleton.names)
     discrete = skeleton.discrete == 1
-    cleaned, change, stats = clean_weights(found.weights, values["maxbones"], values["threshold"], discrete)
+    # Proxy points (used only by packed prims) are left out, as the export rules do: their weights stay as they are.
+    proxy = _proxy_points(geo)
+    cleaned = found.weights.copy()
+    change = np.zeros(len(cleaned))
+    rest = np.ones(len(cleaned), dtype=bool)
+    rest[sorted(proxy)] = False
+    cleaned[rest], change[rest], stats = clean_weights(found.weights[rest], values["maxbones"], values["threshold"], discrete)
     rig_weights.write_selections(geo, skeleton.names, cleaned, found.groups,
                                  [bone for bone in range(len(skeleton.names)) if bone in found.groups], True)
     if geo.findPointAttrib(CHANGED_ATTRIB) is None:
@@ -64,6 +72,16 @@ def cook(node, report: Report) -> None:
     if not found.groups:
         report.warning(format_problem(NAME, "no selection of the geometry is named like a joint of the skeleton",
                                       "Check that input 2 is the skeleton of this character"))
+
+
+def _proxy_points(geo) -> set:
+    """The points only packed prims use: the same set as ``mesh.pack_points`` of the export (read_geo)."""
+    from ..p3d_export.read_geo import packed_point_prims
+    packed = packed_point_prims(geo)
+    if not packed:
+        return set()
+    used = {v.point().number() for prim in geo.prims() if not isinstance(prim, hou.PackedPrim) for v in prim.vertices()}
+    return {p for p in packed if p not in used}
 
 
 def _report(report: Report, stats, found, skeleton, max_bones: int, threshold: float, discrete: bool) -> None:

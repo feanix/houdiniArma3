@@ -244,7 +244,7 @@
     	label	"Bone weights add up to 1"
     	type	toggle
     	default	{ "1" }
-    	help	"The same LODs: the bone weights of a point add up to 1, within one 1/254 step."
+    	help	"The same LODs: the bone weights of a point add up to 1, within 0.02 (Bohemia's own sample character adds up to 0.992 and works in the game)."
         }
 
         parm {

@@ -304,6 +304,30 @@ class TestWeightCleanup(WeightsTestCase):
         np.testing.assert_array_equal(new.argmax(axis=1), w.argmax(axis=1))
         self.assertIn("isDiscrete = 1", "\n".join(result.messages))
 
+    def test_proxy_points_are_left_out_of_the_count_and_keep_their_weights(self):
+        # Task #64 (D39 Q4): points only a packed prim uses are not counted as "no bone weight" and are not changed,
+        # as in the export rules (mesh.pack_points). One proxy has no weight, the other has 0.6 in Pelvis.
+        w = np.array([[0.5, 0.5, 0, 0], [0.3, 0.3, 0.3, 0], [1.0, 0, 0, 0], [0, 0.25, 0.25, 0.5], [0.4, 0, 0, 0]])
+        geo = make_mesh(w, BONES)
+        bare = geo.createPacked("PackedDisk").vertex(0).point()
+        weighted = geo.createPacked("PackedDisk").vertex(0).point()
+        pelvis = geo.findPointGroup(group_name("Pelvis"))
+        pelvis.add(weighted)
+        weighted.setAttribValue("a3ob_w_" + group_name("Pelvis"), 0.6)
+        source = make_source(self.network, geo)
+        node = self.cleanup(source, self.skeleton())
+        result = cook(node)
+        self.assertEqual(result.errors, ())
+        self.assertEqual(result.warnings, ())
+        out = node.geometry()
+        new = selection_weights(out, BONES)
+        changed = out.pointFloatAttribValues("a3ob_rig_changed")
+        np.testing.assert_allclose(new[weighted.number()], [0.6, 0, 0, 0], atol=1e-6)  # still 0.6, not snapped to the grid
+        self.assertEqual(new[bare.number()].tolist(), [0, 0, 0, 0])
+        self.assertEqual(changed[weighted.number()], 0.0)
+        np.testing.assert_allclose(np.rint(new[:5] * 254).sum(axis=1), 254)  # the mesh points are cleaned as before
+        self.assertIn("5 points, 4 bone selections.", "\n".join(result.messages))
+
     def test_other_selections_and_names_stay(self):
         w = random_weights(30, 4, seed=6)
         source = make_source(self.network, make_mesh(w, ["pelvis", "SPINE", "head", "Arm"]))
@@ -425,6 +449,20 @@ class TestOnSamples(NodeTestCase):
         text = "\n".join(result.messages)
         self.assertIn("points had a weight sum other than 1", text)
         self.assertIn("members with weight 0", text)
+
+    def test_cleanup_gives_no_no_weight_warning_on_the_sample(self):
+        # Task #64 (D39 Q4): the sample's proxies have no weight; they are not counted and not changed.
+        mesh = self.lod("Resolution 1")
+        skeleton = self.skeleton()
+        proxies = [p for p in mesh.geometry().prims() if isinstance(p, hou.PackedPrim)]
+        self.assertTrue(proxies)
+        node = self.wire("a3ob_weight_cleanup", mesh, skeleton)
+        result = cook(node)
+        self.assertEqual(result.errors, ())
+        self.assertEqual([w for w in result.warnings if "no bone weight" in w], [])
+        changed = node.geometry().pointFloatAttribValues("a3ob_rig_changed")
+        for prim in proxies:
+            self.assertEqual(changed[prim.vertex(0).point().number()], 0.0)
 
     def test_cleanup_on_the_lod_with_sum_two(self):
         mesh = self.lod("Resolution 4")

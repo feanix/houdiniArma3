@@ -45,8 +45,9 @@ ROADWAY_POINT_LIMIT = 255
 FLAT_RANGE = (0.9999, 1.0001)
 UV_TOLERANCE = 1e-4
 MAX_BONES = 4
-#: P3D selection weights are k/254 (data model 7.1).
-WEIGHT_GRID = 254
+#: T2-WGTSUM warns when a point's bone weights add up to more than this away from 1 (D39: Bohemia's own sample
+#: character adds up to 0.992 and works in the game).
+WEIGHT_SUM_LIMIT = 0.02
 
 _COMPONENT = re.compile(r"component\d+", re.IGNORECASE)
 _OCCLUDER = re.compile(r"occluder\d+", re.IGNORECASE)
@@ -391,9 +392,8 @@ def _wgtsum(c: _Context):
     bones = c.bone_weights
     if bones is None:
         return None
-    limit = 1.0 / WEIGHT_GRID + 1e-5  # one grid step; float32 weights add up to within a few 1e-7
     off = [number for number, (used, total) in enumerate(zip(*bones))
-           if used and abs(total - 1.0) > limit and number not in c.mesh.pack_points]
+           if used and abs(total - 1.0) > WEIGHT_SUM_LIMIT and number not in c.mesh.pack_points]
     if off:
         return ("the bone weights of %d point%s do not add up to 1 (point %d adds up to %.3f)" % (
             len(off), "" if len(off) == 1 else "s", off[0], bones[1][off[0]]), _FIX_WEIGHTS)
@@ -456,7 +456,8 @@ RULES: Tuple[Rule, ...] = (
          "Visual, view and shadow LODs with selections named like the bones of the Arma 3 man skeleton (OFP2_ManSkeleton, "
          "case ignored): no point is weighted to more than 4 bones."),
     Rule("T2-WGTSUM", "Bone weights add up to 1", WEIGHT_TYPES, _wgtsum,
-         "The same LODs: the bone weights of a point add up to 1, within one 1/254 step."),
+         "The same LODs: the bone weights of a point add up to 1, within 0.02 (Bohemia's own sample character adds up "
+         "to 0.992 and works in the game)."),
     Rule("T2-WGTNONE", "Every point has a bone weight", WEIGHT_TYPES, _wgtnone,
          "The same LODs: every point has a weight in at least one bone selection."),
 )
