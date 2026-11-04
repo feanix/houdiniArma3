@@ -210,6 +210,11 @@ of all, `build_lod` calls `harden.harden_lod` (task #48): Shadow and Underground
 `#SharpEdges#` and face normals, in the written file only. Packed
 proxies with a collapsed or isosceles triangle are warned about in `proxy_rebuild`.
 
+Before that, `collect` (`collect_lods._add_lod`) calls `triangulate.triangulate_lod` (task #49, D28; `ExportOptions.triangulate`,
+the `triangulate` parameter in the LOD Rules tab, on in both presets): the polygons that the checks reject (more than 4
+points; quads that T2-TRI rejects) are divided with the Divide verb on a copy of the LOD geometry, with one warning per
+LOD. This is the one place for it, so Validate, P3D Export, Quick Export and Batch convert all do it.
+
 ### The Validate and P3D Export nodes
 
 Both nodes build their parameters from `nodes/_export_common.py`: `level_parms` (Errors Show As, Warnings Count As

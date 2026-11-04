@@ -148,7 +148,7 @@ def preset_values(settings, name: str) -> Dict[str, object]:
         "sortsections": options.sort_sections, "sortlods": options.sort_lods,
         "autocomponents": options.auto_components, "renumber": options.renumber_components,
         "czech": options.czech_names, "dropuvs": options.drop_uvs, "dupes": options.duplicate_lods,
-        "typerules": True,
+        "typerules": True, "triangulate": options.triangulate,
     }
     for rule in RULES:
         values[common.rule_parm_name(rule.id)] = rule.id not in options.rules_off

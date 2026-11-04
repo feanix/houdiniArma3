@@ -203,9 +203,12 @@ class TestEdits(unittest.TestCase):
         big = edited.createPolygon()
         for point in points[:5]:
             big.addVertex(point)
-        out, report, data = export([edited])
+        out, report, data = export([edited], ExportOptions(triangulate=False))  # task #49: on, it is divided
         self.assertIsNone(data)
         self.assertTrue(any("more than 4" in text for text in texts(report, messages.ERROR)))
+        out, report, data = export([edited])
+        self.assertIsNotNone(data)
+        self.assertTrue(any("1 polygons triangulated" in text for text in texts(report, messages.WARNING)))
 
     def test_collection_errors(self):
         model, geo, _, _ = hs.imported_fixture("sample_2_crate.p3d")

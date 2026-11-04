@@ -34,10 +34,11 @@ __all__ = [
 ]
 
 
-def collect(geometries: Sequence, report: messages.Report) -> Collection:
-    """Spec 16 step 1 (needs ``hou``): the LODs of the geometries, in order."""
+def collect(geometries: Sequence, report: messages.Report, options: Optional[ExportOptions] = None) -> Collection:
+    """Spec 16 step 1 (needs ``hou``): the LODs of the geometries, in order. With ``options`` (task #49, D28) polygons
+    that break the rules are triangulated on a copy first."""
     from .collect_lods import collect as _collect
-    return _collect(geometries, report)
+    return _collect(geometries, report, options)
 
 
 @dataclass
@@ -53,7 +54,7 @@ class BuildResult:
 def run(geometries: Sequence, options: Optional[ExportOptions], report: messages.Report) -> BuildResult:
     """Collect, validate and build. The one place the Validate and P3D Export nodes get their messages from."""
     options = options or ExportOptions()
-    collection = collect(geometries, report)
+    collection = collect(geometries, report, options)
     result = BuildResult(None, len(collection.lods))
     if report.has_errors:
         return result
