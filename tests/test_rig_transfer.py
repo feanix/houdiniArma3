@@ -10,8 +10,8 @@ import unittest
 
 import numpy as np
 
-from a3ob_core.rig import (ORIGIN_COPIED, ORIGIN_FILLED, ORIGIN_NONRIGID, ORIGIN_RIGID, Settings, is_twist,
-                           transfer_layers, twist_targets)
+from a3ob_core.rig import (ORIGIN_COPIED, ORIGIN_FILLED, ORIGIN_NONRIGID, ORIGIN_RIGID, Settings, accessory_layer,
+                           is_twist, transfer_body, twist_targets)
 from a3ob_core.rig import transfer
 from tests import samples_support
 
@@ -48,10 +48,10 @@ def with_cuff(P, tris, rings=4, around=12, y0=0.9, height=0.3, offset=0.03):
     return np.concatenate([P, cuff_P]), np.concatenate([tris, cuff_tris]), mask
 
 
-def run(src, dst_P, dst_tris, first, rigid, nonrigid, twist=None, override=None, **settings):
+def run(src, dst_P, dst_tris, body, **settings):
+    """The body pass (Weight Transfer)."""
     src_P, src_tris, src_W = src
-    return transfer_layers(src_P, src_tris, src_W, dst_P, dst_tris, first, rigid, nonrigid, twist, override,
-                           Settings(**settings))
+    return transfer_body(src_P, src_tris, src_W, dst_P, dst_tris, body, Settings(**settings))
 
 
 class TestFirstPass(unittest.TestCase):
@@ -62,7 +62,7 @@ class TestFirstPass(unittest.TestCase):
 
     def test_same_mesh_copies_every_point(self):
         n = len(self.P)
-        result = run(self.src, self.P, self.tris, np.ones(n, bool), np.zeros(n, bool), np.zeros(n, bool))
+        result = run(self.src, self.P, self.tris, np.ones(n, bool))
         np.testing.assert_allclose(result.weights, self.W, atol=1e-9)
         self.assertTrue((result.origin == ORIGIN_COPIED).all())
         self.assertEqual(result.info["matched"], n)
@@ -70,7 +70,7 @@ class TestFirstPass(unittest.TestCase):
     def test_a_denser_target_gets_smooth_weights(self):
         P, tris = tube(41, 32)
         n = len(P)
-        result = run(self.src, P, tris, np.ones(n, bool), np.zeros(n, bool), np.zeros(n, bool))
+        result = run(self.src, P, tris, np.ones(n, bool))
         self.assertLess(float(np.abs(result.weights - two_bone_weights(P)).sum(1).mean()), 0.02)
         np.testing.assert_allclose(result.weights.sum(1), 1.0, atol=1e-9)
 
@@ -82,7 +82,7 @@ class TestFirstPass(unittest.TestCase):
         P[band, 0] *= 3.0
         P[band, 2] *= 3.0
         n = len(P)
-        result = run(self.src, P, tris, np.ones(n, bool), np.zeros(n, bool), np.zeros(n, bool), distance=0.02)
+        result = run(self.src, P, tris, np.ones(n, bool), distance=0.02)
         self.assertTrue((result.origin[band] == ORIGIN_FILLED).all())
         far = (P[:, 1] < 0.7) | (P[:, 1] > 1.3)
         self.assertTrue((result.origin[far] == ORIGIN_COPIED).all())
@@ -98,48 +98,61 @@ class TestFirstPass(unittest.TestCase):
         extra = extra + np.array([5.0, 0.0, 0.0])  # far from the source: no match at all
         both = np.concatenate([P, extra])
         n = len(both)
-        result = run(self.src, both, np.concatenate([tris, extra_tris]), np.ones(n, bool), np.zeros(n, bool),
-                     np.zeros(n, bool))
+        result = run(self.src, both, np.concatenate([tris, extra_tris]), np.ones(n, bool))
         self.assertEqual(result.info["fallback"], len(extra))
         self.assertTrue((result.weights[len(P):].sum(1) > 0.99).all())
 
     def test_points_outside_the_groups_are_untouched(self):
         n = len(self.P)
         first = self.P[:, 1] < 1.0
-        result = run(self.src, self.P, self.tris, first, np.zeros(n, bool), np.zeros(n, bool))
+        result = run(self.src, self.P, self.tris, first)
         self.assertTrue((result.weights[~first] == 0).all())
         self.assertTrue((result.origin[~first] == 0).all())
 
     def test_needs_polygons_in_the_source(self):
         n = len(self.P)
         with self.assertRaises(ValueError):
-            run((self.P, np.zeros((0, 3), dtype=np.int64), self.W), self.P, self.tris, np.ones(n, bool),
-                np.zeros(n, bool), np.zeros(n, bool))
+            run((self.P, np.zeros((0, 3), dtype=np.int64), self.W), self.P, self.tris, np.ones(n, bool))
 
     def test_loose_source_triangles_are_not_skin(self):
         tri = np.array([[len(self.P), len(self.P) + 1, len(self.P) + 2]])
         P = np.concatenate([self.P, self.P[:3] * 0.0])  # a 3-point piece (a proxy triangle) at the origin
         W = np.concatenate([self.W, np.tile([0.0, 0.0, 1.0], (3, 1))])
         n = len(self.P)
-        result = run((P, np.concatenate([self.tris, tri]), W), self.P, self.tris, np.ones(n, bool), np.zeros(n, bool),
-                     np.zeros(n, bool))
+        result = run((P, np.concatenate([self.tris, tri]), W), self.P, self.tris, np.ones(n, bool))
         np.testing.assert_allclose(result.weights, self.W, atol=1e-9)
 
 
-class TestLayers(unittest.TestCase):
-    """Design test 2.2."""
+def accessory(P, tris, W, source, target, mode, twist=None, bone=-1, **settings):
+    """The accessory pass (Accessory Weights)."""
+    return accessory_layer(P, tris, W, source, target, mode, twist, bone, Settings(**settings))
+
+
+class TestAccessoryLayers(unittest.TestCase):
+    """Design test 2.2 for the new nodes (D41): the body gets weights from the source body, then an accessory takes its
+    weights from the body, and another accessory from the first accessory."""
 
     def setUp(self):
         self.P, self.tris = tube(24, 16)
-        self.W = two_bone_weights(self.P)
-        self.src = (self.P, self.tris, self.W)
         self.all_P, self.all_tris, self.cuff = with_cuff(self.P, self.tris)
         self.n = len(self.all_P)
         self.body = ~self.cuff
+        self.W = np.zeros((self.n, 3))
+        self.W[self.body] = two_bone_weights(self.P)  # bone 0 below, bone 1 above, bone 2 never
         self.none = np.zeros(self.n, bool)
 
-    def test_rigid_dominant_gives_one_bone_to_every_point_of_the_piece(self):
-        result = run(self.src, self.all_P, self.all_tris, self.body, self.cuff, self.none, rigid_mode="dominant")
+    def layer(self, mode, **kw):
+        return accessory(self.all_P, self.all_tris, self.W, self.body, self.cuff, mode, **kw)
+
+    def test_body_pass_leaves_points_outside_the_group_alone(self):
+        src = (self.P, self.tris, two_bone_weights(self.P))
+        result = run(src, self.all_P, self.all_tris, self.body)
+        self.assertTrue((result.weights[self.cuff] == 0).all())
+        self.assertTrue((result.origin[self.cuff] == 0).all())
+        self.assertTrue((result.origin[self.body] > 0).all())
+
+    def test_rigid_auto_gives_one_bone_to_every_point_of_the_piece(self):
+        result = self.layer("rigid", rigid_mode="dominant")
         rows = result.weights[self.cuff]
         self.assertTrue((rows == rows[0]).all())
         self.assertEqual(sorted(rows[0].tolist()), [0.0, 0.0, 1.0])
@@ -149,47 +162,35 @@ class TestLayers(unittest.TestCase):
         self.assertEqual(result.pieces[0].points, int(self.cuff.sum()))
         self.assertTrue((result.piece[self.cuff] == 0).all())
         self.assertTrue((result.piece[self.body] == -1).all())
+        self.assertTrue((result.weights[self.body] == 0).all())  # only the target is written
 
     def test_rigid_blend_gives_the_same_row_that_is_the_area_average(self):
-        result = run(self.src, self.all_P, self.all_tris, self.body, self.cuff, self.none, rigid_mode="blend")
-        rows = result.weights[self.cuff]
+        rows = self.layer("rigid", rigid_mode="blend").weights[self.cuff]
         self.assertTrue((np.abs(rows - rows[0]) < 1e-12).all())
         self.assertAlmostEqual(float(rows[0].sum()), 1.0)
         self.assertTrue(0.3 < rows[0][1] < 0.7)  # the cuff sits in the middle of the blend
         self.assertEqual(rows[0][2], 0.0)
 
-    def test_first_pass_does_not_depend_on_the_other_groups(self):
-        plain = run(self.src, self.all_P, self.all_tris, self.body, self.none, self.none)
-        layered = run(self.src, self.all_P, self.all_tris, self.body, self.cuff, self.none)
-        np.testing.assert_array_equal(plain.weights[self.body], layered.weights[self.body])
-
-    def test_override_wins_and_is_counted(self):
-        override = -np.ones(self.n, dtype=int)
-        override[np.nonzero(self.cuff)[0][0]] = 2  # one point names bone 2
-        result = run(self.src, self.all_P, self.all_tris, self.body, self.cuff, self.none, override=override,
-                     rigid_mode="blend")
+    def test_a_picked_bone_wins_and_needs_no_source(self):
+        result = accessory(self.all_P, self.all_tris, self.W, self.none, self.cuff, "rigid", bone=2, rigid_mode="bone")
         self.assertTrue((result.weights[self.cuff] == [0.0, 0.0, 1.0]).all())
-        self.assertEqual(result.pieces[0].how, "override")
-        self.assertEqual(result.info["overrides"], 1)
+        self.assertEqual(result.pieces[0].how, "chosen")
+        self.assertEqual(result.pieces[0].bone, 2)
 
     def test_twist_weight_goes_to_the_next_bone_down(self):
-        # bones: 0 Arm, 1 ArmRoll, 2 ForeArm. The first pass is nearly all ArmRoll under the cuff.
-        P, tris = self.P, self.tris
-        W = np.zeros((len(P), 3))
-        W[:, 1] = 0.7
-        W[:, 0] = 0.1
-        W[:, 2] = 0.2
+        # bones: 0 Arm, 1 ArmRoll, 2 ForeArm. The body is nearly all ArmRoll under the cuff.
+        W = np.zeros((self.n, 3))
+        W[self.body, 1], W[self.body, 0], W[self.body, 2] = 0.7, 0.1, 0.2
         twist = twist_targets(["Arm", "ArmRoll", "ForeArm"], [-1, 0, 1])
         self.assertEqual(twist, [0, 2, 2])
-        merged = run((P, tris, W), self.all_P, self.all_tris, self.body, self.cuff, self.none, twist=twist)
+        merged = accessory(self.all_P, self.all_tris, W, self.body, self.cuff, "rigid", twist=twist)
         self.assertEqual(merged.pieces[0].bone, 2)
-        plain = run((P, tris, W), self.all_P, self.all_tris, self.body, self.cuff, self.none, twist=twist,
-                    merge_twist=False)
+        plain = accessory(self.all_P, self.all_tris, W, self.body, self.cuff, "rigid", twist=twist, merge_twist=False)
         self.assertEqual(plain.pieces[0].bone, 1)
 
     def test_non_rigid_varies_along_the_piece_and_smoothing_reduces_the_jumps(self):
-        rough = run(self.src, self.all_P, self.all_tris, self.body, self.none, self.cuff, smooth=0)
-        smooth = run(self.src, self.all_P, self.all_tris, self.body, self.none, self.cuff, smooth=8)
+        rough = self.layer("nonrigid", smooth=0)
+        smooth = self.layer("nonrigid", smooth=8)
         self.assertTrue((rough.origin[self.cuff] == ORIGIN_NONRIGID).all())
 
         def jumps(result):
@@ -201,17 +202,55 @@ class TestLayers(unittest.TestCase):
         self.assertGreater(float(w[:, 1].max() - w[:, 1].min()), 0.3)  # it varies along the piece
         self.assertLess(jumps(smooth), jumps(rough))
         np.testing.assert_allclose(smooth.weights[self.cuff].sum(1), 1.0, atol=1e-9)
-        np.testing.assert_array_equal(rough.weights[self.body], smooth.weights[self.body])  # first pass unchanged
+        self.assertTrue((smooth.weights[self.body] == 0).all())
+
+    def test_a_target_point_far_from_the_source_takes_the_nearest_source_point(self):
+        far = self.all_P.copy()
+        far[self.cuff] += np.array([3.0, 0.0, 0.0])  # the whole cuff is out of reach
+        for mode in ("rigid", "nonrigid"):
+            result = accessory(far, self.all_tris, self.W, self.body, self.cuff, mode)
+            self.assertEqual(result.info["fallback"], int(self.cuff.sum()), mode)
+            self.assertTrue((result.weights[self.cuff].sum(1) > 0.99).all(), mode)
+
+    def test_a_loose_point_far_away_takes_the_nearest_while_its_neighbours_match(self):
+        P = self.all_P.copy()
+        index = np.nonzero(self.cuff)[0][5]
+        P[index, 0] += 1.0  # one point of the cuff is out of reach, the rest sits on the body
+        result = accessory(P, self.all_tris, self.W, self.body, self.cuff, "nonrigid", smooth=0)
+        self.assertEqual(result.info["fallback"], 1)
+        self.assertEqual(result.info["rejected_distance"], 1)
 
     def test_small_pieces_are_ignored(self):
-        result = run(self.src, self.all_P, self.all_tris, self.body, self.cuff, self.none, minpiece=100)
+        result = self.layer("rigid", minpiece=100)
         self.assertEqual(result.info["ignored_pieces"], 1)
         self.assertTrue((result.weights[self.cuff] == 0).all())
         self.assertEqual(len(result.pieces), 0)
 
-    def test_layers_without_a_first_pass_are_an_error(self):
+    def test_chain_an_accessory_takes_its_weights_from_another_accessory(self):
+        # body -> cuff (non-rigid, from the body) -> pouch (rigid, from the cuff).
+        first = self.layer("nonrigid", smooth=0)
+        W = self.W.copy()
+        W[self.cuff] = first.weights[self.cuff]
+        pouch_P, pouch_tris = tube(3, 8, 0.1 + 0.03 + 0.005, 0.1, 1.0, first_point=self.n)  # sits on the cuff, off the body
+        P = np.concatenate([self.all_P, pouch_P])
+        tris = np.concatenate([self.all_tris, pouch_tris])
+        W = np.concatenate([W, np.zeros((len(pouch_P), 3))])
+        pouch = np.zeros(len(P), bool)
+        pouch[self.n:] = True
+        cuff = np.zeros(len(P), bool)
+        cuff[:self.n] = self.cuff
+        result = accessory(P, tris, W, cuff, pouch, "rigid")
+        self.assertEqual(result.info["fallback"], 0)
+        rows = result.weights[pouch]
+        self.assertTrue((rows == rows[0]).all())
+        self.assertEqual(float(rows[0].sum()), 1.0)
+        self.assertEqual(rows[0][2], 0.0)
+
+    def test_the_source_needs_polygons(self):
         with self.assertRaises(ValueError):
-            run(self.src, self.all_P, self.all_tris, self.none, self.cuff, self.none)
+            accessory(self.all_P, self.all_tris, self.W, self.none, self.cuff, "rigid")
+        with self.assertRaises(ValueError):
+            accessory(self.all_P, self.all_tris, self.W, self.body, self.none, "rigid")
 
 
 class TestInpaint(unittest.TestCase):
@@ -284,7 +323,7 @@ class TestOnSamples(unittest.TestCase):
         target = P + rng.normal(0.0, 0.002, P.shape)
         n = len(P)
         start = time.perf_counter()
-        result = run((P, tris, W), target, tris, np.ones(n, bool), np.zeros(n, bool), np.zeros(n, bool))
+        result = run((P, tris, W), target, tris, np.ones(n, bool))
         elapsed = time.perf_counter() - start
         ok = W.sum(1) > 0.5
         l1 = np.abs(result.weights - W).sum(1)[ok]
@@ -306,7 +345,7 @@ class TestOnSamples(unittest.TestCase):
         n = len(big_P)
         self.assertGreater(n, 11000)
         start = time.perf_counter()
-        result = run((P, tris, W), big_P, big_tris, np.ones(n, bool), np.zeros(n, bool), np.zeros(n, bool))
+        result = run((P, tris, W), big_P, big_tris, np.ones(n, bool))
         elapsed = time.perf_counter() - start
         self.assertLess(elapsed, 10.0)
         self.assertEqual(result.info["matched"] + result.info["filled"] + result.info["fallback"], n)

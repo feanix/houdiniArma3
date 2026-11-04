@@ -24,7 +24,7 @@ SAMPLE_PIVOTS = "Addons/TemplateRTM/ManSkeleton_Pivots.p3d"
 if HAS_HOU:
     from a3ob_core.rig import CHIN_FROM_HEAD, drop_small_pieces, make_template
     from a3ob_houdini import rig_weights
-    from a3ob_houdini.nodes.weight_transfer import _mesh
+    from a3ob_houdini.rig_weights import read_mesh as _mesh
 
 
 def rotation_z(degrees):

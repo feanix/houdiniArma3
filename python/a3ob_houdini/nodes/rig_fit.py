@@ -24,7 +24,6 @@ from .. import rig_weights
 from ..errors import UserError
 from ..messages import Report, format_problem, list_elements
 from ..params import NodeSpec, Parm, read_parms
-from .weight_transfer import _mesh
 
 try:
     import hou
@@ -114,11 +113,11 @@ def cook(node, report: Report) -> None:
         raise UserError(format_problem(NAME, "the skeleton has no joint %s" % ", ".join(missing + ([] if "head" in index else ["head"])),
                                        "Use the Arma man skeleton (OFP2_ManSkeleton)"))
 
-    positions_in, tris_in = _mesh(mesh_in)
+    positions_in, tris_in = rig_weights.read_mesh(mesh_in)
     if not len(tris_in):
         raise UserError(format_problem(NAME, "your mesh has no polygons", "Use a mesh with polygons on input 1"))
     skin_in = positions_in[np.unique(tris_in)]
-    positions_s, tris_s = _mesh(sample_in)
+    positions_s, tris_s = rig_weights.read_mesh(sample_in)
     tris_s = drop_small_pieces(len(positions_s), tris_s, MIN_SKIN_PIECE)
     if not len(tris_s):
         raise UserError(format_problem(NAME, "the sample body has no polygons", "Use a body with polygons on input 3"))

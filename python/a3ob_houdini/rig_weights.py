@@ -33,7 +33,7 @@ except ImportError:  # the pure parts are also read under plain Python
 
 __all__ = ["Skeleton", "BoneSelections", "read_skeleton", "read_selections", "write_selections", "write_capture",
            "read_capture", "TAGG_ORDER", "DISCRETE_ATTRIB", "PART_ATTRIB", "PART_SKELETON", "PART_BODY",
-           "PART_LANDMARKS", "write_parts", "read_part"]
+           "PART_LANDMARKS", "write_parts", "read_part", "read_mesh", "group_mask", "write_point_int"]
 
 TAGG_ORDER = "a3ob_tagg_order"
 DISCRETE_ATTRIB = "a3ob_rig_discrete"
@@ -267,3 +267,40 @@ def read_part(node_name: str, geo, part: str, label: str = "input 2"):
         if isinstance(prim, hou.PackedPrim) and prim.attribValue(PART_ATTRIB) == part:
             return prim.getEmbeddedGeometry()
     raise UserError(format_problem(node_name, "%s has no part %s" % (label, part), "Connect the output of Rig Fit"))
+
+
+def read_mesh(geo):
+    """``(positions (n, 3), triangles (m, 3))`` of the polygons of a geometry (quads and larger are fans)."""
+    positions = np.array(geo.pointFloatAttribValues("P"), dtype=np.float64).reshape(-1, 3)
+    tris = []
+    for prim in geo.prims():
+        if isinstance(prim, hou.PackedPrim) or not isinstance(prim, hou.Polygon) or not prim.isClosed():
+            continue
+        ring = [v.point().number() for v in prim.vertices()]
+        for k in range(1, len(ring) - 1):
+            tris.append((ring[0], ring[k], ring[k + 1]))
+    return positions, np.array(tris, dtype=np.int64).reshape(-1, 3)
+
+
+def group_mask(node_name: str, geo, text: str, label: str) -> np.ndarray:
+    """The points of a group parameter as a boolean mask (an empty text, or a group with no point, is no point)."""
+    mask = np.zeros(len(geo.points()), dtype=bool)
+    if not text.strip():
+        return mask
+    try:
+        mask[[p.number() for p in geo.globPoints(text)]] = True
+    except hou.OperationFailed:
+        raise UserError(format_problem(node_name, "the group %r of %s cannot be read" % (text, label),
+                                       "Use a point group name or point numbers")) from None
+    return mask
+
+
+def write_point_int(geo, name: str, values, default: int, touched) -> None:
+    """Write the point int attribute ``name`` for the ``touched`` points only; the other points keep the value they had
+    (``default`` on a new attribute)."""
+    values = np.asarray(values, dtype=np.int64)
+    if geo.findPointAttrib(name) is None:
+        geo.addAttrib(hou.attribType.Point, name, default)
+    else:
+        values = np.where(touched, values, np.array(geo.pointIntAttribValues(name), dtype=np.int64))
+    geo.setPointIntAttribValues(name, [int(v) for v in values])

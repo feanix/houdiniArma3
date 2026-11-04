@@ -860,37 +860,52 @@ the point below). `a3ob_core/rig/landmarks.py` (guess, symmetry, snap) and `fit.
 
 | Parameter | Type, default | Meaning |
 |---|---|---|
-| `firstpass` | point group | Base clothing. Empty = every point not in the two groups below. |
-| `rigid` | point group | Rigid accessories. |
-| `nonrigid` | point group | Non-rigid accessories. |
+| `body` | point group | The tight body-conforming polygons (skin, undergarments, shoes). Empty = every point. Points outside it keep the weights they have (D41, #73). |
 | `distance` | float, 0.05 | `D` as a share of the bounding-box diagonal (paper default). |
 | `angle` | float, 35 | `Theta` in degrees (paper default). |
-| `rigid_mode` | menu: Dominant bone, Fixed blend | Per piece. |
-| `merge_twist` | toggle, on | Decided (D37 Q12): for a rigid piece, a `...Roll` (twist) weight goes to the next non-twist bone down the chain when choosing the dominant bone (in the spike's cuff, `LeftArmRoll` counts for `LeftForeArm`). The per-piece override `a3ob_rig_bone` below still wins. |
-| `smooth` | int, 8 | Smoothing passes along a non-rigid piece. |
-| `minpiece` | int, 10 | Pieces under this many points are ignored (as the spike). |
+| `minpiece` | int, 10 | Pieces of the source body under this many points are ignored (the sample's proxy triangles). |
 
-An optional point string attribute `a3ob_rig_bone` on a rigid piece names its bone and wins over the choice.
-Output: weights as point groups and `a3ob_w_*`, plus `a3ob_rig_origin` and `a3ob_rig_piece`. The numpy transfer of section
-2.3, with the native VEX closest-point step available as a later speed-up.
+Output: weights as point groups and `a3ob_w_*`, plus `a3ob_rig_origin` (1 copied, 2 filled in). The numpy transfer of
+section 2.3, with the native VEX closest-point step available as a later speed-up.
+
+**Accessory Weights** (D41, task #73; inputs: 1 mesh; 2 skeleton, or the Rig Fit output whose `fitted_skeleton` part is used)
+
+| Parameter | Type, default | Meaning |
+|---|---|---|
+| `target` | point group | Accessory points to weight. Required (an empty or missing group is an error naming the field). |
+| `source` | point group | Points that give the weights: the body or another accessory. Required, except for Rigid with a picked bone. Source points with no bone weight are ignored with a warning that counts them; points in both groups count as target. |
+| `mode` | menu: Rigid, Non-rigid | |
+| `use` | menu: Auto, Fixed blend, Bone | Rigid only. Auto: dominant bone, weight 1. Fixed blend: the area-weighted average for every point. Bone: the bone of the `bone` menu wins for every piece of the node. |
+| `bone` | menu of the bones of input 2 | Used with Bone. |
+| `merge_twist` | toggle, on | Decided (D37 Q12): with Auto, a `...Roll` (twist) weight goes to the next non-twist bone down the chain (in the spike's cuff, `LeftArmRoll` counts for `LeftForeArm`). |
+| `distance`, `angle` | as Weight Transfer | `distance` is a share of the diagonal of the target and source groups together. `angle` is Non-rigid only. |
+| `smooth` | int, 8 | Non-rigid: smoothing passes along the piece. |
+| `minpiece` | int, 10 | Target pieces under this many points are ignored. |
+
+Rigid: per connected piece of the target, the area-weighted average of the source weights within the distance limit. Non-rigid:
+the first pass machinery with the source group as the surface (distance and angle limits; a point beyond the distance takes
+the nearest weighted source point), then `smooth` passes along the piece. A target point with no source in reach takes the
+nearest weighted source point; the node warns with the count. Output: weights, `a3ob_rig_origin` (3 rigid, 4 non-rigid) and
+`a3ob_rig_piece` (the piece number, counted on after the largest number already on the mesh, so a chain keeps them unique;
+Unpose #67 reads it). Points outside the target keep their weights, origin and piece.
 
 **As built (task #65).** The node has three inputs: 1 the user mesh, 2 the source body, 3 the skeleton (Rig Skeleton
 output). The skeleton gives the bone names, the `model.cfg` spelling of the written selections and the bone chain for the
-twist merge (the first child that is not a `...Roll`, going down). `rigid_mode` is `dominant` or `blend`; `distance` is a
-share of the bounding-box diagonal of the points in the three groups. The maths is `a3ob_core/rig/transfer.py`. Details
-the table does not say:
+twist merge (the first child that is not a `...Roll`, going down). `distance` is a share of the bounding-box diagonal of
+the body points. The maths is `a3ob_core/rig/transfer.py`. Details the table does not say:
 
-- A point in `rigid` and `nonrigid` is rigid; `firstpass` never takes a point of the other two groups. With `firstpass`
-  given, a point in no group keeps the weights it had (`a3ob_rig_origin` 0). Points that only a packed prim uses (proxies)
-  are skipped as in Weight Cleanup.
-- The first pass and its inpainting see only the first-pass points and the polygons between them, so the other groups
-  cannot change it. A first-pass piece with no match at all takes the weights of its closest source point without the
-  thresholds (counted as "no match anywhere near" in the message).
+- Since D41 (#73) the node has the one group `body`; the first pass, rigid and non-rigid layers, `rigid_mode`,
+  `merge_twist`, `smooth` and `a3ob_rig_bone` moved into Accessory Weights (`transfer.accessory_layer`; the old
+  `a3ob_rig_bone` attribute became the Bone menu). Points that only a packed prim uses (proxies) are skipped as in Weight
+  Cleanup.
+- The first pass and its inpainting see only the body points and the polygons between them. A body piece with no match at
+  all takes the weights of its closest source point without the thresholds (counted as "no match anywhere near" in the
+  message).
 - The source body ignores pieces under `minpiece` points (the sample's proxy triangles).
-- A rigid piece takes the area-weighted average of the first-pass weights at the closest points of its surface, using
-  only points within the distance limit. `a3ob_rig_bone` names win per piece (the most common name). A loose piece takes
-  the interpolated first-pass weights per point, then `smooth` passes of half-way averaging along its edges.
-- Weights are not cleaned: run Weight Cleanup next. Selections already on the mesh stay for points no layer touched.
+- A rigid piece takes the area-weighted average of the source weights at the closest points of its surface, using only
+  points within the distance limit. A non-rigid piece takes the interpolated source weights per point, then `smooth` passes of
+  half-way averaging along its edges.
+- Weights are not cleaned: run Weight Cleanup next. Selections already on the mesh stay for points no node touched.
 - Measured (tests 2.1 and 2.2): same topology without scale, 3125 points, L1 mean 0.064 and heaviest bone changed on
   5.0 % of the points (the spike: 0.064 and 5.1 %); a 12476-point target takes about 1.4 s in hython.
 
