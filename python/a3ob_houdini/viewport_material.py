@@ -43,6 +43,8 @@ class Shown:
     path: str = ""
     color: Tuple[float, float, float] = (1.0, 1.0, 1.0)
     text: str = ""
+    #: The texture line as written; the material is named after its file stem.
+    label: str = ""
 
 
 def _is_ingame(path: str) -> bool:
@@ -81,12 +83,13 @@ def resolve(text: str, project_root: str, cache_folder: Optional[str] = None) ->
         stem = ntpath.splitext(ntpath.join(project_root, line) if _is_ingame(line) else line)[0]
         for ending in SIBLINGS:
             if os.path.isfile(stem + ending):
-                return Shown("image", path=stem + ending, text=text)
+                return Shown("image", path=stem + ending, text=text, label=line)
     if found_path is None:
         return Shown(INGAME if _is_ingame(line) else MISSING, path=line, text=text)
     if extension == ".paa":
         try:
-            return Shown("image", path=paa_cache.cached_image(found_path, cache_folder), text=text)
+            return Shown("image", path=paa_cache.cached_image(found_path, cache_folder), text=text,
+                         label=line)
         except PaaError as ex:
             return Shown(FAILED, path=found_path, text=str(ex))
     return Shown("image", path=found_path, text=text)
@@ -96,7 +99,7 @@ def _material_name(shown: Shown) -> str:
     """Stable node name from the texture file name (or the colour)."""
     if shown.kind == "color":
         return "color_%02x%02x%02x" % tuple(round(channel * 255) for channel in shown.color)
-    stem = ntpath.splitext(ntpath.basename(shown.path.replace("/", "\\")))[0]
+    stem = ntpath.splitext(ntpath.basename((shown.label or shown.path).replace("/", "\\")))[0]
     return re.sub(r"[^A-Za-z0-9_]", "_", stem) or "texture"
 
 
@@ -132,6 +135,8 @@ def _material_for(net, shown: Shown):
     base = _material_name(shown)
     for child in net.children():
         if child.userData("a3ob_key") == key:
+            if shown.kind != "color":  # heal materials made with the old 0.2 tint
+                child.parmTuple("basecolor").set((1.0, 1.0, 1.0))
             return child
     name = base
     taken = {child.name() for child in net.children()}
@@ -143,6 +148,7 @@ def _material_for(net, shown: Shown):
     if shown.kind == "color":
         material.parmTuple("basecolor").set(shown.color)
     else:
+        material.parmTuple("basecolor").set((1.0, 1.0, 1.0))  # the default 0.2 would tint the texture dark
         material.parm("basecolor_useTexture").set(1)
         material.parm("basecolor_texture").set(shown.path.replace("\\", "/"))
     return material
