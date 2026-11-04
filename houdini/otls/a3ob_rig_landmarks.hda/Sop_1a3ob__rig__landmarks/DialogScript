@@ -1,0 +1,210 @@
+# Dialog script for a3ob_rig_landmarks, version 1
+
+{
+    name	a3ob_rig_landmarks
+    script	a3ob_rig_landmarks
+    label	"Rig Landmarks"
+
+    help {
+	"Marks the landmarks of your character (chin, groin, shoulders, elbows, wrists, hips, knees, ankles) for Rig Fit, one field each."
+    }
+
+    inputlabel	1	"Your mesh"
+
+    parm {
+	name	"lm_chin"
+	label	"Chin"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('rig_landmarks', 'lm_chin', kwargs)" ]
+	    language python
+	}
+	help	"The tip of the chin. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"lm_groin"
+	label	"Groin"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('rig_landmarks', 'lm_groin', kwargs)" ]
+	    language python
+	}
+	help	"The crotch, the highest point between the legs. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"lm_shoulder_l"
+	label	"Left Shoulder"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('rig_landmarks', 'lm_shoulder_l', kwargs)" ]
+	    language python
+	}
+	help	"The left shoulder joint, inside the upper arm where it meets the body. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"lm_shoulder_r"
+	label	"Right Shoulder"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('rig_landmarks', 'lm_shoulder_r', kwargs)" ]
+	    language python
+	}
+	help	"The right shoulder joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"lm_elbow_l"
+	label	"Left Elbow"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('rig_landmarks', 'lm_elbow_l', kwargs)" ]
+	    language python
+	}
+	help	"The left elbow joint, in the middle of the arm. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"lm_elbow_r"
+	label	"Right Elbow"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('rig_landmarks', 'lm_elbow_r', kwargs)" ]
+	    language python
+	}
+	help	"The right elbow joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"lm_wrist_l"
+	label	"Left Wrist"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('rig_landmarks', 'lm_wrist_l', kwargs)" ]
+	    language python
+	}
+	help	"The left wrist joint, in the middle of the arm. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"lm_wrist_r"
+	label	"Right Wrist"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('rig_landmarks', 'lm_wrist_r', kwargs)" ]
+	    language python
+	}
+	help	"The right wrist joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"lm_hip_l"
+	label	"Left Hip"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('rig_landmarks', 'lm_hip_l', kwargs)" ]
+	    language python
+	}
+	help	"The left hip joint, inside the top of the thigh. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"lm_hip_r"
+	label	"Right Hip"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('rig_landmarks', 'lm_hip_r', kwargs)" ]
+	    language python
+	}
+	help	"The right hip joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"lm_knee_l"
+	label	"Left Knee"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('rig_landmarks', 'lm_knee_l', kwargs)" ]
+	    language python
+	}
+	help	"The left knee joint, in the middle of the leg. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"lm_knee_r"
+	label	"Right Knee"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('rig_landmarks', 'lm_knee_r', kwargs)" ]
+	    language python
+	}
+	help	"The right knee joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"lm_ankle_l"
+	label	"Left Ankle"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('rig_landmarks', 'lm_ankle_l', kwargs)" ]
+	    language python
+	}
+	help	"The left ankle joint, in the middle of the leg. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"lm_ankle_r"
+	label	"Right Ankle"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('rig_landmarks', 'lm_ankle_r', kwargs)" ]
+	    language python
+	}
+	help	"The right ankle joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+}

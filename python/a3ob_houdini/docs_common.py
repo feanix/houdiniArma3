@@ -50,6 +50,16 @@ NODE_INTRO = {
         "is bone selections in the model.cfg spelling, with a3ob_rig_origin (where each weight came from) and "
         "a3ob_rig_piece. Run Weight Cleanup after it.",
     ),
+    "rig_landmarks": (
+        "Rig Fit fits the skeleton to 14 landmarks of your character. This node is the easy way to set them: it has one "
+        "field for each landmark (chin, groin, and left and right shoulder, elbow, wrist, hip, knee and ankle). Click "
+        "the arrow button next to a field, select the points in the viewport and press Enter. Put the node between "
+        "your mesh and Rig Fit.",
+        "The node writes a point group lm_<landmark> for each field that is set. A field that is empty writes no group, "
+        "and Rig Fit guesses that landmark. A group that is already on your mesh is kept when its field is empty and "
+        "replaced when the field is set. The message lists which landmarks are set and which are left to the guess; a "
+        "field that matches no points is a warning.",
+    ),
     "rig_fit": (
         "Your own character has its own size and proportions, and the Arma skeleton and the sample body do not match "
         "it. This node fits them to your mesh, so that Weight Transfer can copy the weights of the sample body onto "

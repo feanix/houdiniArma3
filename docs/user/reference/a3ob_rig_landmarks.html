@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rig Landmarks - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
+<h1>Rig Landmarks</h1>
+<p class="lead">Marks the landmarks of your character (chin, groin, shoulders, elbows, wrists, hips, knees, ankles) for Rig Fit, one field each.</p>
+<p>Rig Fit fits the skeleton to 14 landmarks of your character. This node is the easy way to set them: it has one field for each landmark (chin, groin, and left and right shoulder, elbow, wrist, hip, knee and ankle). Click the arrow button next to a field, select the points in the viewport and press Enter. Put the node between your mesh and Rig Fit.</p>
+<p>The node writes a point group lm_&lt;landmark&gt; for each field that is set. A field that is empty writes no group, and Rig Fit guesses that landmark. A group that is already on your mesh is kept when its field is empty and replaced when the field is set. The message lists which landmarks are set and which are left to the guess; a field that matches no points is a warning.</p>
+<table class="facts">
+<tr><th>Houdini name</th><td><code>a3ob_rig_landmarks</code></td></tr>
+<tr><th>Where to find it</th><td>Tab menu, A3OB, Rig Landmarks</td></tr>
+<tr><th>Inputs</th><td>1</td></tr>
+</table>
+<h2>Inputs</h2>
+<ol>
+<li value="1">Input 1: Your mesh. Your character mesh, the one that goes into Rig Fit.</li>
+</ol>
+<h2>Parameters</h2>
+<p>Parameters are in the order they appear on the node.</p>
+<section class="parm" id="lm_chin">
+<h3>Chin <code>lm_chin</code></h3>
+<p>The tip of the chin. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<dl>
+<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="lm_groin">
+<h3>Groin <code>lm_groin</code></h3>
+<p>The crotch, the highest point between the legs. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<dl>
+<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="lm_shoulder_l">
+<h3>Left Shoulder <code>lm_shoulder_l</code></h3>
+<p>The left shoulder joint, inside the upper arm where it meets the body. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<dl>
+<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="lm_shoulder_r">
+<h3>Right Shoulder <code>lm_shoulder_r</code></h3>
+<p>The right shoulder joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<dl>
+<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="lm_elbow_l">
+<h3>Left Elbow <code>lm_elbow_l</code></h3>
+<p>The left elbow joint, in the middle of the arm. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<dl>
+<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="lm_elbow_r">
+<h3>Right Elbow <code>lm_elbow_r</code></h3>
+<p>The right elbow joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<dl>
+<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="lm_wrist_l">
+<h3>Left Wrist <code>lm_wrist_l</code></h3>
+<p>The left wrist joint, in the middle of the arm. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<dl>
+<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="lm_wrist_r">
+<h3>Right Wrist <code>lm_wrist_r</code></h3>
+<p>The right wrist joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<dl>
+<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="lm_hip_l">
+<h3>Left Hip <code>lm_hip_l</code></h3>
+<p>The left hip joint, inside the top of the thigh. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<dl>
+<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="lm_hip_r">
+<h3>Right Hip <code>lm_hip_r</code></h3>
+<p>The right hip joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<dl>
+<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="lm_knee_l">
+<h3>Left Knee <code>lm_knee_l</code></h3>
+<p>The left knee joint, in the middle of the leg. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<dl>
+<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="lm_knee_r">
+<h3>Right Knee <code>lm_knee_r</code></h3>
+<p>The right knee joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<dl>
+<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="lm_ankle_l">
+<h3>Left Ankle <code>lm_ankle_l</code></h3>
+<p>The left ankle joint, in the middle of the leg. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<dl>
+<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="lm_ankle_r">
+<h3>Right Ankle <code>lm_ankle_r</code></h3>
+<p>The right ankle joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<dl>
+<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

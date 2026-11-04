@@ -339,6 +339,10 @@ group the points around it, or add a point at the joint. Left is the +X side.</p
 <code>lm_wrist_r</code>, <code>lm_hip_l</code>, <code>lm_hip_r</code>, <code>lm_knee_l</code>, <code>lm_knee_r</code>,
 <code>lm_ankle_l</code> and <code>lm_ankle_r</code> are joints.</li>
 </ul>
+<p>The easy way to make these groups is the <kbd class="ui-node">Rig Landmarks</kbd> node. Put it between your mesh and Rig Fit. It has
+one field for each landmark with the usual select button: click the arrow next to a field, select the points in the viewport and
+press Enter. An empty field makes no group, so Rig Fit guesses that landmark. Its message lists which landmarks are set and which
+are left to the guess.</p>
 <p>With <strong>Landmarks</strong> set to Both (the default) a landmark that has a group uses it, and the others are guessed from the
 shape of your mesh. A group always wins over the guess. Auto-guess ignores the groups; From groups needs all 14. The guess
 is a first try: set Show to Landmarks to see the points on your mesh, and correct a wrong one by making its group. A
