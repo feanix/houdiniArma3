@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "a3ob-houdini"
-version = "0.0.0"
+version = "0.1.0"
 description = "Houdini port of Arma 3 Object Builder: P3D and related Arma 3 formats in Houdini"
 readme = "README.md"
 license = "GPL-3.0-or-later"
