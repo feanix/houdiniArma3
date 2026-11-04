@@ -813,12 +813,48 @@ Reports: section 4.4. Output: the mesh with cleaned groups and `a3ob_w_*`, plus 
 | `refine` | toggle, off | Light non-rigid refinement of the sample body with Topo Transfer (one connected component needed). |
 | `scale` | menu: Per bone length, Whole body | How bone lengths are fitted. Default Per bone length. |
 
-Outputs: 1 fitted skeleton A' (joints in the user mesh, `transform` carrying the fitted rotation); 2 fitted sample body S'
-(posed and scaled, weights kept, `a3ob_rig_origin` not set yet); 3 the landmarks as points. The artist corrects a
+Results (one output with three named parts, D40, see As built): fitted skeleton A' (joints in the user mesh, `transform`
+carrying the fitted rotation); fitted sample body S' (posed and scaled, weights kept, `a3ob_rig_origin` not set yet); the
+landmarks as points. The artist corrects a
 landmark by changing the points of its group on the user mesh (D37 Q11: landmarks are selections, like every other
 group in this add-on). The fit is a rigid fit down the hierarchy: from
 the pelvis, rotate each bone to the fitted child direction and set its length to the fitted distance. This is the step the
 spike measured only indirectly; its accuracy is the main risk of the whole design (section 2.6, point 3).
+
+**As built (task #66).** Inputs: 1 your mesh, 2 the Arma skeleton, 3 the sample body (the spec said "outputs 1, 2, 3"; see
+the point below). `a3ob_core/rig/landmarks.py` (guess, symmetry, snap) and `fit.py` (the fit and the skinning of S').
+
+- **One output, three named parts (D40).** A text-authored Python-type SOP asset has exactly one output: with `Outputs: 3`
+  in the asset, `geometry(1)` inside the cook is the same geometry as output 0 (checked in hython 22.0.466), and a subnet
+  asset with a network inside cannot be authored as text from Indie (`docs/design/packaging-spike.md`, Q1/Q2). The owner
+  decided (D40) on one output that holds A', S' and the landmarks as three packed geometry prims, each with the prim string
+  `a3ob_rig_part` = `fitted_skeleton`, `fitted_body` or `landmarks` (data model, rigging attributes). Weight Transfer
+  input 2 takes `fitted_body` by itself; Unpose (#67) will take `fitted_skeleton`; both through
+  `rig_weights.read_part`, which returns a geometry without the attribute as it is. The `show` menu (All, Fitted
+  skeleton, Fitted sample body, Landmarks) only sets the packed prim intrinsic `viewportlod` to hidden on the other parts,
+  so the data is the same for every value.
+- **Landmarks (14).** Point groups `lm_chin`, `lm_groin` (points on the skin, snapped) and `lm_shoulder|elbow|wrist|hip|knee|ankle_l|r`
+  (joints, never snapped). `landmarks`: Auto-guess, From groups (all 14 needed) or Both (default; a group wins). `symmetry`:
+  a pair of groups is averaged, one group is mirrored to the other side, two guesses are averaged, about the plane through
+  the middle of the pairs. `refine` is accepted and does nothing yet (a warning says so).
+- **The guess** runs the same measurements on the sample body, where the joints are known, and on your mesh, and moves each
+  joint by the difference (so a measurement bias cancels). Legs: the centre line of slices; hip: pelvis width at hip height;
+  arms: the principal axis of the points near the arm (not above the axis, not the hand), shoulder where the axis passes the
+  sample's shoulder height, elbow and wrist at the sample's scaled distances. Size: the geometric mean of the crotch height
+  and the shoulder height against the sample. Chin: `HEAD_SHARE` (0.128) of the height below the top. Two numbers are not
+  measured: the sample has no head, so its chin is the `head` joint plus `CHIN_FROM_HEAD` (0, -0.05, +0.075) m, an estimate.
+- **The fit.** Targets: the landmark joints, plus Pelvis, Spine..Spine3, neck from a torso frame (hips and shoulders, hip
+  width and shoulder height give the sizes; the groin is averaged into the pelvis), and neck1 and head from the chin. Then
+  down the hierarchy: a joint with one target below it is swung the shortest way (twist inherited), with several the
+  Kabsch rotation is used; its scale is the least squares scale; in Per bone length mode a target joint is placed on its
+  landmark. **Quality** is, per target joint, how far the rigid bone left it from its landmark before that move (in Whole
+  body mode the real distance); the message gives the mean and the worst, and warns above 1 cm. With exact landmarks it
+  is below 1 cm (test 2.3: all joints within 0.92 cm, S' within 1.7 cm of the true posed body).
+- **A' and S'.** A' is the input skeleton with fitted `P` and `transform` = rotation times scale (row-vector form, as Joint
+  Deform reads it). S' is the sample body moved by linear blend skinning of its own weights (points with no weight follow the
+  closest weighted point); it keeps every group and attribute.
+- **Measured on the real mesh** (testChar, no landmark groups): see the task report; the guess is weakest at the shoulders,
+  elbows and wrists of an armoured character (up to about 9 cm from the owner's own rig), good at the legs (2 to 3 cm).
 
 **Weight Transfer** (inputs: 1 user mesh; 2 fitted sample body S'; 3 skeleton)
 

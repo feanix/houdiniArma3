@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rig Fit - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
+<h1>Rig Fit</h1>
+<p class="lead">Fits the Arma skeleton and the sample body to your mesh, from landmarks that you set or that are guessed.</p>
+<p>Your own character has its own size and proportions, and the Arma skeleton and the sample body do not match it. This node fits them to your mesh, so that Weight Transfer can copy the weights of the sample body onto your mesh, and Unpose can later bring your mesh back to the Arma rest pose. The Arma skeleton itself is never changed: the fitted skeleton is only a working copy.</p>
+<p>The fit starts from landmarks, 14 named points of the body. Your mesh should stand upright (Y up), face +Z like the sample, and be in an A-pose with the arms away from the body. You can set a landmark with a point group on your mesh, named lm_chin, lm_groin, lm_shoulder_l, lm_shoulder_r, lm_elbow_l, lm_elbow_r, lm_wrist_l, lm_wrist_r, lm_hip_l, lm_hip_r, lm_knee_l, lm_knee_r, lm_ankle_l and lm_ankle_r. The average of the points of a group is the landmark. Left is the +X side. The chin and the groin are points on the skin (the chin is the tip, the groin the highest point between the legs); the others are joints, inside the body: group the points around the joint, or add a point at the joint. Landmarks that have no group are guessed from the shape of the mesh, and a group always wins over the guess. The guess is a first try: show the landmarks and correct the landmarks that are wrong.</p>
+<p>The fit goes down the skeleton from the pelvis. Each joint is turned towards the landmarks below it and given the length that puts them on the landmarks. The message of the node says how far the joints were from their landmarks after the fit, and warns when that is more than 1 cm. The node has one output that holds three results as packed primitives, named by the prim string a3ob_rig_part: fitted_skeleton, fitted_body (the sample body posed to match your mesh, with its weights) and landmarks (points with a name). Connect it to input 2 of Weight Transfer as it is: Weight Transfer takes the fitted body from it. The Show menu only decides which results are drawn in the viewport; the output is the same for every choice.</p>
+<table class="facts">
+<tr><th>Houdini name</th><td><code>a3ob_rig_fit</code></td></tr>
+<tr><th>Where to find it</th><td>Tab menu, A3OB, Rig Fit</td></tr>
+<tr><th>Inputs</th><td>3</td></tr>
+</table>
+<h2>Inputs</h2>
+<ol>
+<li value="1">Input 1: Your mesh. Your character in an A-pose, standing upright (Y up) and facing +Z like the sample. It may have point groups named lm_chin, lm_groin, lm_shoulder_l and so on (see Landmarks).</li>
+<li value="2">Input 2: Skeleton. The Arma skeleton, for example from Rig Skeleton. It is not changed.</li>
+<li value="3">Input 3: Sample body. The sample body with its bone weights, for example Resolution 1 of the sample character from Extract LOD. Its bones must be the ones of the skeleton.</li>
+</ol>
+<h2>Parameters</h2>
+<p>Parameters are in the order they appear on the node.</p>
+<section class="parm" id="show">
+<h3>Show <code>show</code></h3>
+<p>Which results are drawn in the viewport. The node always gives all three results as one geometry, three packed primitives named by the prim string a3ob_rig_part. This menu only hides the others from view; the output is the same for every choice. Weight Transfer takes the fitted sample body from it by itself.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>All</dd>
+</dl>
+<p>Choices:</p>
+<ul>
+<li>All <code>all</code>: Draw the fitted skeleton, the fitted sample body and the landmarks.</li>
+<li>Fitted skeleton <code>skeleton</code>: Draw the skeleton moved into your mesh (fitted_skeleton, a working copy, A&#x27;). Its joints are at your landmarks and its transform holds the fitted rotation and size of each joint.</li>
+<li>Fitted sample body <code>body</code>: Draw the sample body, posed and sized to match your mesh (fitted_body, S&#x27;). It keeps its bone weights.</li>
+<li>Landmarks <code>landmarks</code>: Draw the landmarks that were used, as points with a name (landmarks).</li>
+</ul>
+</section>
+<section class="parm" id="landmarks">
+<h3>Landmarks <code>landmarks</code></h3>
+<p>Where the landmarks come from. A landmark group is a point group on your mesh named lm_chin, lm_groin, lm_shoulder_l, lm_shoulder_r, lm_elbow_l, lm_elbow_r, lm_wrist_l, lm_wrist_r, lm_hip_l, lm_hip_r, lm_knee_l, lm_knee_r, lm_ankle_l or lm_ankle_r. The average of the points of a group is the landmark; for a joint, group the points around it, or add a point inside the body. Left is the +X side.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>Both</dd>
+</dl>
+<p>Choices:</p>
+<ul>
+<li>Auto-guess <code>guess</code>: Guess all landmarks from the shape of your mesh. Groups are ignored.</li>
+<li>From groups <code>groups</code>: Use only the groups. All of them must exist.</li>
+<li>Both <code>both</code>: Use the groups that exist; guess the others. A group always wins over the guess.</li>
+</ul>
+</section>
+<section class="parm" id="snap">
+<h3>Snap to Surface <code>snap</code></h3>
+<p>Move the chin and the groin onto the closest point of your mesh. The joints lie inside the body and are never moved.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>On</dd>
+</dl>
+</section>
+<section class="parm" id="symmetry">
+<h3>Symmetry <code>symmetry</code></h3>
+<p>Make the left and right landmarks mirror each other. When both sides of a pair come from groups they are averaged; when only one side does, the other side is its mirror image.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>On</dd>
+</dl>
+</section>
+<section class="parm" id="refine">
+<h3>Refine <code>refine</code></h3>
+<p>Not available yet: the sample body is only posed and sized, not bent to your mesh. Switching it on adds a warning and changes nothing.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>Off</dd>
+</dl>
+</section>
+<section class="parm" id="scale">
+<h3>Scale <code>scale</code></h3>
+<p>How the length of each bone is fitted.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>Per bone length</dd>
+</dl>
+<p>Choices:</p>
+<ul>
+<li>Per bone length <code>bone</code>: Each bone gets the length that puts its end joint on the landmark.</li>
+<li>Whole body <code>body</code>: One size for the whole skeleton. The joints are turned towards the landmarks but not moved onto them, so the quality shows how far off they are.</li>
+</ul>
+</section>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

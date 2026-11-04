@@ -17,7 +17,7 @@ Your mesh:
     The mesh that gets the weights. It should lie on top of the source body (fit it first).
 
 Source body:
-    The body with bone weights: bone selections (point groups with a3ob_w weights), for example the sample character from Extract LOD.
+    The body with bone weights: bone selections (point groups with a3ob_w weights), for example the sample character from Extract LOD. The output of Rig Fit goes here as it is: its fitted sample body is used.
 
 Skeleton:
     The skeleton, for example from Rig Skeleton. Its joint names decide which selections are bones and how they are spelled; its hierarchy says where a twist bone's weight goes.

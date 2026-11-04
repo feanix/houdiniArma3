@@ -50,7 +50,7 @@ SPEC = NodeSpec(
     input_labels=("Your mesh", "Source body", "Skeleton"),
     input_help=("The mesh that gets the weights. It should lie on top of the source body (fit it first).",
                 "The body with bone weights: bone selections (point groups with a3ob_w weights), for example the sample "
-                "character from Extract LOD.",
+                "character from Extract LOD. The output of Rig Fit goes here as it is: its fitted sample body is used.",
                 "The skeleton, for example from Rig Skeleton. Its joint names decide which selections are bones and how "
                 "they are spelled; its hierarchy says where a twist bone's weight goes."),
     parms=(
@@ -97,6 +97,7 @@ def cook(node, report: Report) -> None:
     source = node.inputGeometry(1)
     if source is None:
         raise UserError(format_problem(NAME, "the source body is not connected", "Connect the source body to input 2"))
+    source = rig_weights.read_part(NAME, source, rig_weights.PART_BODY)  # a Rig Fit output gives its fitted sample body
     geo = node.geometry()  # a Python-type SOP starts with a copy of its first input
     bones = skeleton.names
     src_found = rig_weights.read_selections(NAME, source, bones)

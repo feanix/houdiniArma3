@@ -32,10 +32,16 @@ except ImportError:  # the pure parts are also read under plain Python
     hou = None
 
 __all__ = ["Skeleton", "BoneSelections", "read_skeleton", "read_selections", "write_selections", "write_capture",
-           "read_capture", "TAGG_ORDER", "DISCRETE_ATTRIB"]
+           "read_capture", "TAGG_ORDER", "DISCRETE_ATTRIB", "PART_ATTRIB", "PART_SKELETON", "PART_BODY",
+           "PART_LANDMARKS", "write_parts", "read_part"]
 
 TAGG_ORDER = "a3ob_tagg_order"
 DISCRETE_ATTRIB = "a3ob_rig_discrete"
+#: The prim string of the packed primitives of a Rig Fit output (D40): which result each one holds.
+PART_ATTRIB = "a3ob_rig_part"
+PART_SKELETON = "fitted_skeleton"
+PART_BODY = "fitted_body"
+PART_LANDMARKS = "landmarks"
 CAPTURE = "boneCapture"
 CAPTURE_PATH = "boneCapture_pCaptPath"
 CAPTURE_DATA = "boneCapture_pCaptData"
@@ -237,3 +243,27 @@ def read_capture(node_name: str, geo, bones):
     for region, bone in enumerate(target):
         weights[:, bone] += regional[:, region]
     return weights, sorted(set(target))
+
+
+def write_parts(geo, parts, hidden=()) -> None:
+    """Make ``geo`` hold the geometries of ``parts`` (a dict, name to ``hou.Geometry``) as packed primitives, each with
+    the prim string ``a3ob_rig_part`` set to its name. The parts in ``hidden`` are not drawn in the viewport; they stay in
+    the data."""
+    geo.clear()
+    geo.addAttrib(hou.attribType.Prim, PART_ATTRIB, "")
+    for name, part in parts.items():
+        prim = geo.createPackedGeometry(part)
+        prim.setAttribValue(PART_ATTRIB, name)
+        if name in hidden:
+            prim.setIntrinsicValue("viewportlod", "hidden")
+
+
+def read_part(node_name: str, geo, part: str, label: str = "input 2"):
+    """The geometry of the part ``part`` of a Rig Fit output. A geometry without ``a3ob_rig_part`` is not a Rig Fit output
+    and is returned as it is (a plain source body keeps working)."""
+    if geo is None or geo.findPrimAttrib(PART_ATTRIB) is None:
+        return geo
+    for prim in geo.prims():
+        if isinstance(prim, hou.PackedPrim) and prim.attribValue(PART_ATTRIB) == part:
+            return prim.getEmbeddedGeometry()
+    raise UserError(format_problem(node_name, "%s has no part %s" % (label, part), "Connect the output of Rig Fit"))

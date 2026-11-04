@@ -1,0 +1,14 @@
+Operator:     a3ob_rig_fit
+Label:        Rig Fit
+Path:         oplib:/Sop/a3ob_rig_fit?Sop/a3ob_rig_fit
+Icon:         SOP_python
+Table:        Sop
+License:      
+Extra:        
+User:         
+Inputs:       3 to 3
+Subnet:       false
+Python:       true
+Empty:        false
+Modified:     Mon Nov  3 12:00:00 2026
+

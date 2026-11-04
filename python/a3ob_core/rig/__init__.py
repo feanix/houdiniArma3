@@ -11,17 +11,30 @@ Houdini, and hython has numpy. The skeleton code below does not need it yet.
 - ``skeleton``: puts the two together into the joint list of the Rig Skeleton node.
 - ``weights``: bone weights as numpy matrices: name matching, the capture lists, and the export clean-up (task #62).
 - ``transfer``: weight transfer by closest point and inpainting, with the rigid and non-rigid layers (task #65).
+- ``landmarks`` and ``fit``: the landmarks of a humanoid mesh (guess, symmetry, snap) and the rigid fit of the skeleton
+  and the sample body to them (task #66).
 """
 
+from .fit import TORSO_BONES, FitResult, body_scale, fit_skeleton, joint_targets, skin_points, swing
+from .landmarks import (CHIN_FROM_HEAD, HEAD_SHARE, LANDMARKS, Landmark, Template, facing_sign, find_groin,
+                        guess_landmarks, make_template, snap_to_surface, symmetrize)
+from .landmarks import NAMES as LANDMARK_NAMES
+from .landmarks import PAIRS as LANDMARK_PAIRS
 from .model_cfg import CfgClass, CfgError, CfgFile, Skeleton, parse_cfg, read_cfg_file, resolve_skeleton, skeleton_names
 from .pivots import pivot_positions, read_pivots_file
 from .skeleton import SKIP_PATTERNS, Joint, SkeletonPlan, check_bones, plan_skeleton
 from .transfer import (ORIGIN_COPIED, ORIGIN_FILLED, ORIGIN_NONE, ORIGIN_NONRIGID, ORIGIN_RIGID, Piece, Settings,
-                       TransferResult, is_twist, transfer_layers, twist_targets)
+                       TransferResult, drop_small_pieces, is_twist, transfer_layers, twist_targets)
 from .weights import (CAPT_FLOATS, GRID, CleanStats, capture_lists, clean_weights, grid_units, inverse_rest_floats,
                       match_bone_names, matrix_from_capture)
 
+#: Landmark name -> the Arma joint it stands for ("" for a point on the skin).
+BONE_OF = {item.name: item.bone for item in LANDMARKS}
+
 __all__ = [
+    "BONE_OF", "LANDMARK_NAMES", "LANDMARK_PAIRS", "LANDMARKS", "Landmark", "Template", "TORSO_BONES", "FitResult",
+    "CHIN_FROM_HEAD", "HEAD_SHARE", "body_scale", "fit_skeleton", "joint_targets", "skin_points", "swing",
+    "facing_sign", "find_groin", "guess_landmarks", "make_template", "snap_to_surface", "symmetrize", "drop_small_pieces",
     "ORIGIN_COPIED", "ORIGIN_FILLED", "ORIGIN_NONE", "ORIGIN_NONRIGID", "ORIGIN_RIGID", "Piece", "Settings",
     "TransferResult", "is_twist", "transfer_layers", "twist_targets",
     "CAPT_FLOATS", "GRID", "CleanStats", "capture_lists", "clean_weights", "grid_units", "inverse_rest_floats",

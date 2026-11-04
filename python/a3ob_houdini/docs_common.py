@@ -50,6 +50,28 @@ NODE_INTRO = {
         "is bone selections in the model.cfg spelling, with a3ob_rig_origin (where each weight came from) and "
         "a3ob_rig_piece. Run Weight Cleanup after it.",
     ),
+    "rig_fit": (
+        "Your own character has its own size and proportions, and the Arma skeleton and the sample body do not match "
+        "it. This node fits them to your mesh, so that Weight Transfer can copy the weights of the sample body onto "
+        "your mesh, and Unpose can later bring your mesh back to the Arma rest pose. The Arma skeleton itself is never "
+        "changed: the fitted skeleton is only a working copy.",
+        "The fit starts from landmarks, 14 named points of the body. Your mesh should stand upright (Y up), face +Z like "
+        "the sample, and be in an A-pose with the arms away from the body. You can set a landmark with a point group on "
+        "your mesh, named lm_chin, lm_groin, lm_shoulder_l, lm_shoulder_r, lm_elbow_l, lm_elbow_r, lm_wrist_l, "
+        "lm_wrist_r, lm_hip_l, lm_hip_r, lm_knee_l, lm_knee_r, lm_ankle_l and lm_ankle_r. The average of the points of a "
+        "group is the landmark. Left is the +X side. The chin and the groin are points on the skin (the chin is the tip, "
+        "the groin the highest point between the legs); the others are joints, inside the body: group the points "
+        "around the joint, or add a point at the joint. Landmarks that have no group are guessed from the shape of "
+        "the mesh, and a group always wins over the guess. The guess is a first try: show the landmarks and correct "
+        "the landmarks that are wrong.",
+        "The fit goes down the skeleton from the pelvis. Each joint is turned towards the landmarks below it and given "
+        "the length that puts them on the landmarks. The message of the node says how far the joints were from their "
+        "landmarks after the fit, and warns when that is more than 1 cm. The node has one output that holds three "
+        "results as packed primitives, named by the prim string a3ob_rig_part: fitted_skeleton, fitted_body (the "
+        "sample body posed to match your mesh, with its weights) and landmarks (points with a name). Connect it to "
+        "input 2 of Weight Transfer as it is: Weight Transfer takes the fitted body from it. The Show menu only "
+        "decides which results are drawn in the viewport; the output is the same for every choice.",
+    ),
     "assemble_lods": (
         "A P3D file keeps several LODs (versions of the model for different viewing distances) together. After you "
         "edit LODs one at a time, this node puts them back together.",

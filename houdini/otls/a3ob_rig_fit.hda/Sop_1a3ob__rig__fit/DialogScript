@@ -1,0 +1,73 @@
+# Dialog script for a3ob_rig_fit, version 1
+
+{
+    name	a3ob_rig_fit
+    script	a3ob_rig_fit
+    label	"Rig Fit"
+
+    help {
+	"Fits the Arma skeleton and the sample body to your mesh, from landmarks that you set or that are guessed."
+    }
+
+    inputlabel	1	"Your mesh"
+    inputlabel	2	"Skeleton"
+    inputlabel	3	"Sample body"
+
+    parm {
+	name	"show"
+	label	"Show"
+	type	string
+	default	{ "all" }
+	menu {
+	    "all"	"All"
+	    "skeleton"	"Fitted skeleton"
+	    "body"	"Fitted sample body"
+	    "landmarks"	"Landmarks"
+	}
+	help	"Which results are drawn in the viewport. The node always gives all three results as one geometry, three packed primitives named by the prim string a3ob_rig_part. This menu only hides the others from view; the output is the same for every choice. Weight Transfer takes the fitted sample body from it by itself."
+    }
+    parm {
+	name	"landmarks"
+	label	"Landmarks"
+	type	string
+	default	{ "both" }
+	menu {
+	    "guess"	"Auto-guess"
+	    "groups"	"From groups"
+	    "both"	"Both"
+	}
+	help	"Where the landmarks come from. A landmark group is a point group on your mesh named lm_chin, lm_groin, lm_shoulder_l, lm_shoulder_r, lm_elbow_l, lm_elbow_r, lm_wrist_l, lm_wrist_r, lm_hip_l, lm_hip_r, lm_knee_l, lm_knee_r, lm_ankle_l or lm_ankle_r. The average of the points of a group is the landmark; for a joint, group the points around it, or add a point inside the body. Left is the +X side."
+    }
+    parm {
+	name	"snap"
+	label	"Snap to Surface"
+	type	toggle
+	default	{ "1" }
+	help	"Move the chin and the groin onto the closest point of your mesh. The joints lie inside the body and are never moved."
+    }
+    parm {
+	name	"symmetry"
+	label	"Symmetry"
+	type	toggle
+	default	{ "1" }
+	help	"Make the left and right landmarks mirror each other. When both sides of a pair come from groups they are averaged; when only one side does, the other side is its mirror image."
+    }
+    parm {
+	name	"refine"
+	label	"Refine"
+	type	toggle
+	default	{ "0" }
+	help	"Not available yet: the sample body is only posed and sized, not bent to your mesh. Switching it on adds a warning and changes nothing."
+    }
+    parm {
+	name	"scale"
+	label	"Scale"
+	type	string
+	default	{ "bone" }
+	menu {
+	    "bone"	"Per bone length"
+	    "body"	"Whole body"
+	}
+	help	"How the length of each bone is fitted."
+    }
+}
