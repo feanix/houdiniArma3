@@ -61,7 +61,7 @@
 	label	"Texture File"
 	type	file
 	default	{ "" }
-	help	"The texture file (.paa, .tga or .png). Slashes are written as backslashes. When you export with Relative Paths on, the path is mapped to the in-game path (see the Relative Paths tooltip of P3D Export)."
+	help	"The texture file (.paa, .tga or .png). Slashes are written as backslashes. The export writes every ending but .paa as .paa (camo1_co.png becomes camo1_co.paa); making that .paa is up to you. When you export with Relative Paths on, the path is mapped to the in-game path (see the Relative Paths tooltip of P3D Export)."
 	disablewhen	"{ settex != 1 }"
 	hidewhen	"{ texsource != file }"
 	parmtag	{ "filechooser_mode" "read" }
@@ -175,5 +175,12 @@
 	disablewhen	"{ setmat != 1 }"
 	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('material_assign', 'fillmat', kwargs)" }
 	parmtag	{ "script_callback_language" "python" }
+    }
+    parm {
+	name	"showviewport"
+	label	"Show in Viewport"
+	type	toggle
+	default	{ "1" }
+	help	"On: the polygons get a Houdini material that shows their texture in the viewport (one material per texture, in the network a3ob_viewport_materials inside the Geometry object). It only changes what Houdini shows; the P3D export ignores it. A .paa is shown from a .png, .tga or .tif of the same name next to it, else from a picture decoded from the .paa. A plain colour texture is shown as that colour. The material (rvmat) is not shown. In-game paths are only shown when the file is found under the project root. Materials that are no longer used stay in the network; they are harmless. Off: the polygons keep the Houdini material they came with."
     }
 }

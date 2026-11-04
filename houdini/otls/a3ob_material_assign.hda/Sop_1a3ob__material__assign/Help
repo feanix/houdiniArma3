@@ -60,7 +60,7 @@ Texture Source:
 Texture File:
     #id: texture
 
-    The texture file (.paa, .tga or .png). Slashes are written as backslashes. When you export with Relative Paths on, the path is mapped to the in-game path (see the Relative Paths tooltip of P3D Export).
+    The texture file (.paa, .tga or .png). Slashes are written as backslashes. The export writes every ending but .paa as .paa (camo1_co.png becomes camo1_co.paa); making that .paa is up to you. When you export with Relative Paths on, the path is mapped to the in-game path (see the Relative Paths tooltip of P3D Export).
 
     Type: File path. Default: (empty). Files: `*.paa *.tga *.png`. Shown when: Texture Source is File. Editable when: Set Texture is on.
 
@@ -125,5 +125,12 @@ Pick a Common Material:
     Type: Menu. Default: none. Editable when: Set Material is on.
 
     The choices are made when you open the menu, from the geometry or the settings.
+
+Show in Viewport:
+    #id: showviewport
+
+    On: the polygons get a Houdini material that shows their texture in the viewport (one material per texture, in the network a3ob_viewport_materials inside the Geometry object). It only changes what Houdini shows; the P3D export ignores it. A .paa is shown from a .png, .tga or .tif of the same name next to it, else from a picture decoded from the .paa. A plain colour texture is shown as that colour. The material (rvmat) is not shown. In-game paths are only shown when the file is found under the project root. Materials that are no longer used stay in the network; they are harmless. Off: the polygons keep the Houdini material they came with.
+
+    Type: On or off. Default: On.
 
 The full page for this node is docs/user/reference/a3ob_material_assign.html in the A3OB folder. Open it in a web browser.

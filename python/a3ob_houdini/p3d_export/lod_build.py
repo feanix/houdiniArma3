@@ -121,9 +121,9 @@ def _rebuild_proxies(data: LodData, label: str, report: messages.Report) -> List
 
 
 def _apply_path_options(file_mesh: FileMesh, options: ExportOptions, mapper: PathMapper, label: str) -> None:
-    """Texture and material paths: relative paths, then lowercase (spec 5 "Paths")."""
+    """Texture and material paths: .paa ending, relative paths, then lowercase (spec 5 "Paths")."""
+    file_mesh.textures = [output_text(text, options, mapper, "texture", label) for text in file_mesh.textures]
     if options.relative_paths or options.lowercase:
-        file_mesh.textures = [output_text(text, options, mapper, "texture", label) for text in file_mesh.textures]
         file_mesh.materials = [output_text(text, options, mapper, "material", label) for text in file_mesh.materials]
 
 

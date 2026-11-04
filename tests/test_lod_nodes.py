@@ -112,6 +112,7 @@ class StubNode:
             if parm.kind == "button":
                 continue
             defaults[parm.name] = [] if parm.kind == "multiparm" else parm.default
+        defaults["showviewport"] = False  # the stub has no network to put materials in (tests/test_viewport_material.py)
         defaults.update(values)
         self.values = defaults
         self.source = source

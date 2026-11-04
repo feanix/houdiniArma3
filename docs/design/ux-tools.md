@@ -342,7 +342,7 @@ differ (§3.4). The node does that step itself for a stored signature and says s
 | Input | Geometry. |
 | Output | The same geometry with `a3ob_texture` and `a3ob_material` set. |
 | Reads | `a3ob_texture`, `a3ob_material` (to keep the other one when only one is set). |
-| Writes | prim strings `a3ob_texture` and `a3ob_material` (default `""` when created). No other attribute. Houdini's `shop_materialpath` and `material` are **not** touched (spec §12). |
+| Writes | prim strings `a3ob_texture` and `a3ob_material` (default `""` when created). With `showviewport` on (default) also the prim string `shop_materialpath` (spec §12, D29) on the polygons it changes; Houdini's `material` is **not** touched. The P3D export ignores `shop_materialpath`. |
 
 | Parameter | Parm name | Default | Notes |
 |---|---|---|---|
@@ -356,6 +356,7 @@ differ (§3.4). The node does that step itself for a stored signature and says s
 | Raw text | `raw` | empty | For `Custom`: copied as typed. Menu "Common procedural" fills it. |
 | Set material | `setmat` | on | Off: leave `a3ob_material` as it is. |
 | Material file | `material` | empty | The rvmat path. Empty with `setmat` on **clears** it. |
+| Show in Viewport | `showviewport` | on | Gives the polygons a Houdini material that shows their texture (one `principledshader::2.0` per distinct texture in `a3ob_viewport_materials`, reused on later cooks). Only changes what Houdini shows; the export ignores it. The rvmat is not shown. Off: `shop_materialpath` stays as it came in. Unused materials stay in the network (harmless). |
 
 **Messages.**
 
@@ -365,6 +366,11 @@ differ (§3.4). The node does that step itself for a stored signature and says s
 | Group matches nothing | Warning. |
 | Characters cp1252 cannot write | Error naming the field (D-STR; Validate and Export would stop on it later). |
 | Path ends in something other than `.paa`, `.tga`, `.png` or `.rvmat` | Warning only. Procedural text is never judged. |
+| Viewport: texture file missing, or a `.paa` that does not decode | Warning naming the file; no material for those polygons. |
+| Viewport: in-game path (no drive letter) not found under the project root | One info line per node, no warning per texture (waits for path mapping, #52). |
+| Viewport: texture line that is neither a file nor a plain colour | One info line; no material. |
+
+Export (D29): a texture path that does not end in `.paa` is written with `.paa`; making that file is the user's job.
 
 **Notes.** Sections are the runs of equal texture and material in prim order (§12). Assigning a material to scattered
 faces fragments them. Turn on **Sort sections** on the export (5.9) to group them. A3OB turns that on by default
