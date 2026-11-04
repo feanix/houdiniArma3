@@ -13,6 +13,26 @@ and [NOTICE.md](NOTICE.md).
 
 **User documentation:** open [docs/user/index.html](docs/user/index.html) in a browser (works offline).
 
+## Known limitations
+
+Not ported yet (the full list is in [What's not here yet](docs/user/about.html#not-here-yet)): RTM animations,
+model.cfg skeletons and rigging, PAA textures, and terrain files (ASC heightmaps, Terrain Builder object lists).
+
+Not well supported or tested yet:
+
+- Tested only on Windows 11 with Houdini Indie 22.0.466. Other Houdini versions, Linux and macOS are untested.
+- Houdini FX and Apprentice are untested.
+- Installed only by copying the package file into the Houdini preferences folder (Way A in the
+  [install guide](docs/user/install.html)). Installing through `HOUDINI_PACKAGE_DIR` is untested.
+- Real use so far: one model taken from Houdini through P3D Export and HEMTT into Arma 3, plus round trips of Bohemia's
+  34 sample models. Large or complex models (vehicles, characters, buildings with many proxies) have not been tried in
+  game.
+- The HEMTT workflow is tested end to end. A P drive workflow is tested only by the automatic tests.
+- Binarized (ODOL) .p3d files cannot be opened, only editable MLOD files.
+- Textures are not shown in the Houdini viewport yet.
+
+Found a problem? Please report it on the [issues page](https://github.com/feanix/houdiniArma3/issues).
+
 ## Layout
 
 | Path                        | Contents                                                    |

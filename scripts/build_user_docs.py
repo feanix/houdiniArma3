@@ -364,6 +364,14 @@ def about_page():
         "Blender add-on.</li>",
         "</ul>",
         "<p>Thank you to both of them for the work and for sharing it under a free licence.</p>",
+        '<h2 id="not-here-yet">What&rsquo;s not here yet</h2>',
+        "<p>These parts of A3OB are not in this add-on yet:</p>",
+        "<ul>",
+        "<li>RTM animations.</li>",
+        "<li>model.cfg, skeletons and rigging.</li>",
+        "<li>PAA textures. Showing textures in the viewport is planned.</li>",
+        "<li>Terrain files: ASC heightmaps and Terrain Builder object lists.</li>",
+        "</ul>",
         "<h2>Licence</h2>",
         "<p>This add-on is free software under the GNU General Public License, version 3 or (at your option) any "
         "later version (GPL-3.0-or-later). You may use it, change it and share it, as long as you pass on the "
