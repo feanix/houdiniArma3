@@ -806,3 +806,8 @@
 {"actor": "lead", "id": 806, "task_id": 72, "text": "queue: running full gate: tree 31d270a064e1 not among the newest 60 passing runs (older ones not scanned)", "ts": "2026-11-04T22:52:06Z"}
 {"actor": "lead", "id": 807, "task_id": 72, "text": "gate full PASS 5ffe9070 129.4s (lock wait 0s; steps: python scripts/run_tests.py -q 12.9s, Houdini Indie/bin/hython.exe\" scripts... 116.5s; run 129.4s) | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-04T22:54:15Z"}
 {"actor": "lead", "id": 808, "task_id": 72, "text": "status approved -> merged (merge queue)", "ts": "2026-11-04T22:54:16Z"}
+{"actor": "lead", "id": 809, "task_id": 72, "text": "merged by lead (queued by lead)", "ts": "2026-11-04T22:54:17Z"}
+{"actor": "lead", "id": 810, "task_id": 72, "text": "queue: merged at 8d29c29; lock wait 0s; steps: python scripts/run_tests.py -q 12.9s, Houdini Indie/bin/hython.exe\" scripts... 116.5s; run 129.4s", "ts": "2026-11-04T22:54:17Z"}
+{"actor": "lead", "id": 811, "task_id": 71, "text": "queue: running full gate: tree ad4cef73f26b not among the newest 60 passing runs (older ones not scanned)", "ts": "2026-11-04T22:54:21Z"}
+{"actor": "lead", "id": 812, "task_id": 71, "text": "gate full PASS bea09b99 132.0s (lock wait 0s; steps: python scripts/run_tests.py -q 12.0s, Houdini Indie/bin/hython.exe\" scripts... 120.0s; run 132.0s) | steps: pass: python scripts/run_tests.py -q; pass: \"E:/SteamLibrary/steamapps/common/Houdini Indie/bin/hython.exe\" scr...", "ts": "2026-11-04T22:56:33Z"}
+{"actor": "lead", "id": 813, "task_id": 71, "text": "status approved -> merged (merge queue)", "ts": "2026-11-04T22:56:33Z"}
