@@ -4,13 +4,13 @@ Generated from the Aesir database, do not edit. A plan, not a promise: it change
 
 ## 0.1.0
 
-- #046 [merged] Node messages never pop up the console: route the a3ob logger to Houdini's Log Viewer
+- #046 [verified] Node messages never pop up the console: route the a3ob logger to Houdini's Log Viewer
 - #047 [verified] New node: A3OB Components (find components, convex hull per piece) (Release prep)
 - #048 [verified] Shadow (and underground) LODs always exported with hard edges (Release prep)
-- #049 [merged] Export triangulates where the rules need it (D28) (Release prep)
+- #049 [verified] Export triangulates where the rules need it (D28) (Release prep)
 - #050 [verified] Group fields become Houdini group pickers (Material Assign, Mass) (Release prep)
 - #055 [verified] Path mapping: $PBOPREFIX$ files with several keys; \server network paths (audit, Release prep)
-- #056 [in_progress] Docs: Concepts path mapping section ($PBOPREFIX$/HEMTT) and 'What's not here yet' (audit, Release prep)
+- #056 [merged] Docs: Concepts path mapping section ($PBOPREFIX$/HEMTT) and 'What's not here yet' (audit, Release prep)
 - #057 [open] AI disclosure in README and About page (Release prep)
 
 ## Unplaced
