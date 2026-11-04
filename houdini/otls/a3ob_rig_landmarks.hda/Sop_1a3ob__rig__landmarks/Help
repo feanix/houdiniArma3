@@ -1,0 +1,119 @@
+= Rig Landmarks =
+
+#type: node
+#context: sop
+#internal: a3ob_rig_landmarks
+#tags: arma, p3d
+
+"""Marks the landmarks of your character (chin, groin, shoulders, elbows, wrists, hips, knees, ankles) for Rig Fit, one field each."""
+
+Rig Fit fits the skeleton to 14 landmarks of your character. This node is the easy way to set them: it has one field for each landmark (chin, groin, and left and right shoulder, elbow, wrist, hip, knee and ankle). Click the arrow button next to a field, select the points in the viewport and press Enter. Put the node between your mesh and Rig Fit.
+
+The node writes a point group lm_<landmark> for each field that is set. A field that is empty writes no group, and Rig Fit guesses that landmark. A group that is already on your mesh is kept when its field is empty and replaced when the field is set. The message lists which landmarks are set and which are left to the guess; a field that matches no points is a warning.
+
+@inputs
+
+Your mesh:
+    Your character mesh, the one that goes into Rig Fit.
+
+@parameters
+
+Chin:
+    #id: lm_chin
+
+    The tip of the chin. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
+
+Groin:
+    #id: lm_groin
+
+    The crotch, the highest point between the legs. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
+
+Left Shoulder:
+    #id: lm_shoulder_l
+
+    The left shoulder joint, inside the upper arm where it meets the body. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
+
+Right Shoulder:
+    #id: lm_shoulder_r
+
+    The right shoulder joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
+
+Left Elbow:
+    #id: lm_elbow_l
+
+    The left elbow joint, in the middle of the arm. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
+
+Right Elbow:
+    #id: lm_elbow_r
+
+    The right elbow joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
+
+Left Wrist:
+    #id: lm_wrist_l
+
+    The left wrist joint, in the middle of the arm. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
+
+Right Wrist:
+    #id: lm_wrist_r
+
+    The right wrist joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
+
+Left Hip:
+    #id: lm_hip_l
+
+    The left hip joint, inside the top of the thigh. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
+
+Right Hip:
+    #id: lm_hip_r
+
+    The right hip joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
+
+Left Knee:
+    #id: lm_knee_l
+
+    The left knee joint, in the middle of the leg. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
+
+Right Knee:
+    #id: lm_knee_r
+
+    The right knee joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
+
+Left Ankle:
+    #id: lm_ankle_l
+
+    The left ankle joint, in the middle of the leg. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
+
+Right Ankle:
+    #id: lm_ankle_r
+
+    The right ankle joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: (empty).
+
+The full page for this node is docs/user/reference/a3ob_rig_landmarks.html in the A3OB folder. Open it in a web browser.

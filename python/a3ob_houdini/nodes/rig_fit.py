@@ -46,7 +46,8 @@ SPEC = NodeSpec(
     inputs=(3, 3),
     input_labels=("Your mesh", "Skeleton", "Sample body"),
     input_help=("Your character in an A-pose, standing upright (Y up) and facing +Z like the sample. It may have "
-                "point groups named lm_chin, lm_groin, lm_shoulder_l and so on (see Landmarks).",
+                "point groups named lm_chin, lm_groin, lm_shoulder_l and so on (see Landmarks). Make them with the Rig "
+                "Landmarks node in front of this one.",
                 "The Arma skeleton, for example from Rig Skeleton. It is not changed.",
                 "The sample body with its bone weights, for example Resolution 1 of the sample character from Extract "
                 "LOD. Its bones must be the ones of the skeleton."),
@@ -68,7 +69,8 @@ SPEC = NodeSpec(
              "Where the landmarks come from. A landmark group is a point group on your mesh named lm_chin, lm_groin, "
              "lm_shoulder_l, lm_shoulder_r, lm_elbow_l, lm_elbow_r, lm_wrist_l, lm_wrist_r, lm_hip_l, lm_hip_r, "
              "lm_knee_l, lm_knee_r, lm_ankle_l or lm_ankle_r. The average of the points of a group is the landmark; for a "
-             "joint, group the points around it, or add a point inside the body. Left is the +X side.",
+             "joint, group the points around it, or add a point inside the body. Left is the +X side. The Rig Landmarks "
+             "node makes these groups for you, with a select button for each.",
              items=(("guess", "Auto-guess"), ("groups", "From groups"), ("both", "Both")),
              item_help=(("guess", "Guess all landmarks from the shape of your mesh. Groups are ignored."),
                         ("groups", "Use only the groups. All of them must exist."),
@@ -175,7 +177,7 @@ def _landmarks(mesh, mode: str, skin: np.ndarray, template, report: Report):
     if problems:
         report.warning(format_problem(NAME, "the group%s %s %s empty" % (
             "" if len(problems) == 1 else "s", ", ".join(problems), "is" if len(problems) == 1 else "are"),
-            "Add points to it, or delete it"))
+            "Add points to it, or delete it (the Rig Landmarks node makes these groups and writes none for an empty field)"))
     if mode == "guess":
         if groups:
             report.info("%d landmark group%s ignored (Landmarks is set to Auto-guess)." % (

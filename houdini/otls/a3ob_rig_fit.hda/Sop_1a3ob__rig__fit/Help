@@ -16,7 +16,7 @@ The fit goes down the skeleton from the pelvis. Each joint is turned towards the
 @inputs
 
 Your mesh:
-    Your character in an A-pose, standing upright (Y up) and facing +Z like the sample. It may have point groups named lm_chin, lm_groin, lm_shoulder_l and so on (see Landmarks).
+    Your character in an A-pose, standing upright (Y up) and facing +Z like the sample. It may have point groups named lm_chin, lm_groin, lm_shoulder_l and so on (see Landmarks). Make them with the Rig Landmarks node in front of this one.
 
 Skeleton:
     The Arma skeleton, for example from Rig Skeleton. It is not changed.
@@ -48,7 +48,7 @@ Show:
 Landmarks:
     #id: landmarks
 
-    Where the landmarks come from. A landmark group is a point group on your mesh named lm_chin, lm_groin, lm_shoulder_l, lm_shoulder_r, lm_elbow_l, lm_elbow_r, lm_wrist_l, lm_wrist_r, lm_hip_l, lm_hip_r, lm_knee_l, lm_knee_r, lm_ankle_l or lm_ankle_r. The average of the points of a group is the landmark; for a joint, group the points around it, or add a point inside the body. Left is the +X side.
+    Where the landmarks come from. A landmark group is a point group on your mesh named lm_chin, lm_groin, lm_shoulder_l, lm_shoulder_r, lm_elbow_l, lm_elbow_r, lm_wrist_l, lm_wrist_r, lm_hip_l, lm_hip_r, lm_knee_l, lm_knee_r, lm_ankle_l or lm_ankle_r. The average of the points of a group is the landmark; for a joint, group the points around it, or add a point inside the body. Left is the +X side. The Rig Landmarks node makes these groups for you, with a select button for each.
 
     Type: Menu. Default: Both.
 
