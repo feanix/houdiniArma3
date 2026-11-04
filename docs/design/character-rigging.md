@@ -657,7 +657,8 @@ only rewrites the bones that have a region in the capture.
 
 Export itself does not change weights (data model section 7). So the Validate node gets three rows (**built in task #63**,
 with the bone list of `OFP2_ManSkeleton` built in because the nodes have no skeleton input) next to the `T2-*` rules of `houdini-data-model.md` section 17.1: `T2-WGT4` (a point with more than 4 bone weights), `T2-WGTSUM`
-(a bone-weighted point whose sum is not 1 on the grid), `T2-WGTNONE` (a point in a LOD that should be weighted, with no
+(a bone-weighted point whose sum is more than 0.02 away from 1; D39: Bohemia's own sample character adds up to 0.992
+and works in game, so the limit is looser than one grid step), `T2-WGTNONE` (a point in a LOD that should be weighted, with no
 bone weight). All three are warnings by default, switchable like the other tier-2 rules.
 
 ## 5. Visualiser design (criterion 5)

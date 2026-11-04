@@ -16,7 +16,7 @@ from .. import messages, names
 from .data import Details, GroupData, MeshData, Poly, ProxyData
 from .mesh_build import FACE_UV, uv_set_id
 
-__all__ = ["read_details", "read_mesh", "read_proxies", "SHARP_GROUP"]
+__all__ = ["read_details", "read_mesh", "read_proxies", "packed_point_prims", "SHARP_GROUP"]
 
 SHARP_GROUP = "a3ob_sharp"
 
@@ -185,14 +185,20 @@ def _read_polys(geo, mesh: MeshData, label: str, report: messages.Report) -> Dic
     return prim_to_poly
 
 
-def _read_pack_points(geo, mesh: MeshData, label: str, report: messages.Report) -> None:
-    """Spec 5: pack points are used only by packed prims. A point shared with a polygon is exported (and warned)."""
-    used = {p for poly in mesh.polys for p in poly.points}
+def packed_point_prims(geo) -> Dict[int, int]:
+    """``{point number: first packed prim number}`` for every point of a packed prim (Weight Cleanup uses this too)."""
     packed: Dict[int, int] = {}
     for prim in geo.prims():
         if isinstance(prim, hou.PackedPrim):
             for vertex in prim.vertices():
                 packed.setdefault(vertex.point().number(), prim.number())
+    return packed
+
+
+def _read_pack_points(geo, mesh: MeshData, label: str, report: messages.Report) -> None:
+    """Spec 5: pack points are used only by packed prims. A point shared with a polygon is exported (and warned)."""
+    used = {p for poly in mesh.polys for p in poly.points}
+    packed = packed_point_prims(geo)
     mesh.pack_points = {p for p in packed if p not in used}
     shared = [(p, prim) for p, prim in packed.items() if p in used]
     for point, prim in shared[:5]:

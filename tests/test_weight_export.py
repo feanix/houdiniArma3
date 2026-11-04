@@ -150,6 +150,16 @@ class TestExportOnSamples(NodeTestCase):
             self.assertTrue([t for t in warnings if "rule " + rule in t], rule)
         self.assertTrue(all("Weight Cleanup" in t for t in warnings if "rule T2-WGT" in t))
 
+    def test_sum_rule_warns_only_on_the_lod_with_sums_of_two(self):
+        """Task #64 (D39): the sample's sums of 0.992 pass the 0.02 limit; Resolution 4 (sums of 2.0) still warns."""
+        _, report = self.export(self.build(False), "raw_sum.p3d")
+        warned = [t for t in report.texts(messages.WARNING) if "rule T2-WGTSUM" in t]
+        for name in LODS:
+            with self.subTest(lod=name):
+                found = [t for t in warned if t.startswith(name + ": ")]
+                self.assertEqual(len(found), 1 if name == "Resolution 4" else 0, warned)
+        self.assertEqual(len(warned), 1, warned)
+
 
 if __name__ == "__main__":
     unittest.main()

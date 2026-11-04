@@ -180,13 +180,17 @@ class TestRules(unittest.TestCase):
             shadow.mesh.groups = [group("Pelvis", range(7))]
             self.assertEqual(len(with_rule(run(shadow), "T2-WGTNONE")), 1, lod_type)
 
-    def test_weight_rules_use_the_grid_tolerance_and_ignore_zero_weights(self):
+    def test_weight_rules_use_the_sum_limit_and_ignore_zero_weights(self):
         data = lod(LodType.VISUAL, resolution=1.0)
-        one = 1.0 / 254
-        # exactly 1 on the grid and 1 +- one step pass; two steps off fails
-        data.mesh.groups = [weighted("Pelvis", range(8), [0.5 + one] * 8), weighted("Spine", range(8), [0.5] * 8)]
+        self.assertEqual(type_rules.WEIGHT_SUM_LIMIT, 0.02)
+        # a sum within 0.02 of 1 passes (D39: the sample character adds up to 0.992); more than that fails; 2.0 fails
+        data.mesh.groups = [weighted("Pelvis", range(8), [0.5 + 0.015] * 8), weighted("Spine", range(8), [0.5] * 8)]
         self.assertEqual(with_rule(run(data), "T2-WGTSUM"), [])
-        data.mesh.groups[0].weights = [0.5 + 2.5 * one] * 8
+        data.mesh.groups[0].weights = [0.5 - 0.008] * 8  # 0.992
+        self.assertEqual(with_rule(run(data), "T2-WGTSUM"), [])
+        data.mesh.groups[0].weights = [0.5 + 0.025] * 8
+        self.assertEqual(len(with_rule(run(data), "T2-WGTSUM")), 1)
+        data.mesh.groups[0].weights = [1.5] * 8  # sums of 2.0
         self.assertEqual(len(with_rule(run(data), "T2-WGTSUM")), 1)
         # a member with weight 0 (byte 255) is no weight: the point has none
         data.mesh.groups = [weighted("Pelvis", range(8), [1.0] * 7 + [0.0])]

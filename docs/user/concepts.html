@@ -302,7 +302,9 @@ Export. It changes only the bone selections, in this order:</p>
 <p>If the skeleton's <code>model.cfg</code> class has <code>isDiscrete = 1</code>, every point keeps only its heaviest bone with
 weight 1. The point attribute <code>a3ob_rig_changed</code> says how much the weights of each point changed (0 means not
 at all), and the node message gives the counts, the points with no bone weight (a warning) and the members with weight 0.
-Points whose weights already followed the rules, like most of the Samples character, don't change.</p>
+Proxy points are left out: they are not counted as having no bone weight, and their weights don't change. On the Samples
+character, Cleanup adjusts about 1,850 points by rounding them onto the 1/254 grid with an exact sum of 1. The largest
+change is about 0.04, shown in <code>a3ob_rig_changed</code>. Points already on the grid with a sum of 1 don't change.</p>
 <p>P3D Export writes the weights as they are: it never changes them. Three switches on the LOD Rules tab of P3D Export and
 Validate warn when a point breaks the rules: <kbd class="ui-parm" data-node="a3ob_validate">At most 4 bones per point</kbd>,
 <kbd class="ui-parm" data-node="a3ob_validate">Bone weights add up to 1</kbd> (within one step of 1/254) and
