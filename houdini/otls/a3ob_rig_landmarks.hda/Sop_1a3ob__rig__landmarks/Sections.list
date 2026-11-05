@@ -4,3 +4,6 @@ PythonCook	PythonCook
 TypePropertiesOptions	TypePropertiesOptions
 Tools.shelf	Tools.shelf
 Help	Help
+ViewerStateModule	ViewerStateModule
+DefaultState	DefaultState
+ExtraFileOptions	ExtraFileOptions

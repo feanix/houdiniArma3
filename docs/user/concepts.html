@@ -344,22 +344,24 @@ three inputs: your mesh, the skeleton from Rig Skeleton, and the sample body wit
 upright (Y up), face +Z like the sample, and be in an A-pose, with the arms away from the body. The Arma skeleton is never
 changed, whatever the body shape: the fitted skeleton is only a working copy, kept for Weight Transfer and for the unpose
 that comes later.</p>
-<p>The fit starts from 14 <strong>landmarks</strong>, named points of the body. You can set a landmark with a point group on your
-mesh, named like the landmark. The average of the points of the group is the landmark. A joint lies inside the body, so
-group the points around it, or add a point at the joint. Left is the +X side.</p>
+<p>The fit starts from 14 <strong>landmarks</strong>, named points of the body. A landmark is a <em>position</em> that you place:
+the <kbd class="ui-node">Rig Landmarks</kbd> node holds one X, Y, Z field for each. Left is the +X side.</p>
 <ul>
-<li><code>lm_chin</code> (the tip of the chin) and <code>lm_groin</code> (the highest point between the legs) are points on the skin.</li>
-<li><code>lm_shoulder_l</code>, <code>lm_shoulder_r</code>, <code>lm_elbow_l</code>, <code>lm_elbow_r</code>, <code>lm_wrist_l</code>,
-<code>lm_wrist_r</code>, <code>lm_hip_l</code>, <code>lm_hip_r</code>, <code>lm_knee_l</code>, <code>lm_knee_r</code>,
-<code>lm_ankle_l</code> and <code>lm_ankle_r</code> are joints.</li>
+<li>The chin (the tip of the chin) and the groin (the highest point between the legs) are points on the skin.</li>
+<li>The left and right shoulder, elbow, wrist, hip, knee and ankle are joints. A joint lies inside the body, so place its marker
+inside the limb, not on the surface.</li>
 </ul>
-<p>The easy way to make these groups is the <kbd class="ui-node">Rig Landmarks</kbd> node. Put it between your mesh and Rig Fit. It has
-one field for each landmark with the usual select button: click the arrow next to a field, select the points in the viewport and
-press Enter. An empty field makes no group, so Rig Fit guesses that landmark. Its message lists which landmarks are set and which
-are left to the guess.</p>
-<p>With <strong>Landmarks</strong> set to Both (the default) a landmark that has a group uses it, and the others are guessed from the
-shape of your mesh. A group always wins over the guess. Auto-guess ignores the groups; From groups needs all 14. The guess
-is a first try: set Show to Landmarks to see the points on your mesh, and correct a wrong one by making its group. A
+<p>Put <kbd class="ui-node">Rig Landmarks</kbd> between your mesh and Rig Fit, and connect the skeleton and the sample body to its inputs 2 and 3
+(the same ones as Rig Fit). Press <strong>Guess Landmarks</strong>: it fills all 14 fields with the same guess that Rig Fit makes. Then select the
+node, move the mouse over the viewport and press Enter. Every landmark is a labelled marker, drawn on top of your mesh. Drag a marker to
+move it; the field follows. <strong>Mirror</strong> is on by default: the right markers follow the left ones, mirrored about the X = 0 plane, so
+dragging a left marker moves its right partner. Switch Mirror off to place both sides freely. To put one landmark back to the guess,
+choose it in the Landmark menu and press <strong>Guess This Landmark</strong>. To set a landmark from your mesh (handy for the chin and the groin),
+select points in the viewport, choose the landmark and press <strong>Set From Selected Points</strong>: the landmark goes to their average, and
+only the position is kept. A fresh Rig Landmarks node has no position set and warns that it needs the guess.</p>
+<p>With <strong>Landmarks</strong> set to Both (the default) Rig Fit uses the positions that are set in Rig Landmarks, and guesses the others from the
+shape of your mesh. A position you set always wins over the guess. Auto-guess ignores Rig Landmarks; From Rig Landmarks needs all 14. The guess
+is a first try: set Show to Landmarks to see the points on your mesh, and correct a wrong one by dragging its marker. A
 mesh with armour or a helmet confuses the guess most at the shoulders, elbows and wrists. <strong>Snap to Surface</strong> moves
 the chin and the groin onto your mesh. <strong>Symmetry</strong> makes left and right mirror each other.</p>
 <p>Then the skeleton is fitted from the pelvis down. Each joint is turned towards the landmarks below it, and given the length

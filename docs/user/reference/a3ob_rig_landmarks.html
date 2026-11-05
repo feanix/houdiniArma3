@@ -28,130 +28,193 @@
 <main>
 <p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
 <h1>Rig Landmarks</h1>
-<p class="lead">Marks the landmarks of your character (chin, groin, shoulders, elbows, wrists, hips, knees, ankles) for Rig Fit, one field each.</p>
-<p>Rig Fit fits the skeleton to 14 landmarks of your character. This node is the easy way to set them: it has one field for each landmark (chin, groin, and left and right shoulder, elbow, wrist, hip, knee and ankle). Click the arrow button next to a field, select the points in the viewport and press Enter. Put the node between your mesh and Rig Fit.</p>
-<p>The node writes a point group lm_&lt;landmark&gt; for each field that is set. A field that is empty writes no group, and Rig Fit guesses that landmark. A group that is already on your mesh is kept when its field is empty and replaced when the field is set. The message lists which landmarks are set and which are left to the guess; a field that matches no points is a warning.</p>
+<p class="lead">Places the landmarks of your character (chin, groin, shoulders, elbows, wrists, hips, knees, ankles) for Rig Fit, as positions that you drag in the viewport.</p>
+<p>Rig Fit fits the skeleton to 14 landmarks of your character: the chin, the groin, and the left and right shoulder, elbow, wrist, hip, knee and ankle. This node holds them as positions (X, Y, Z) that you place by hand. Put the node between your mesh and Rig Fit. Connect the skeleton and the sample body to its inputs 2 and 3 (the ones that go into Rig Fit) and press Guess Landmarks: it fills all 14 fields with the guess of Rig Fit. Then select the node, move the mouse over the viewport and press Enter: every landmark is a labelled marker that you drag. The markers are drawn on top of the mesh. A joint belongs inside the body; the chin and the groin are on the skin.</p>
+<p>Mirror is on by default. Left is the +X side. The right markers follow the left ones, mirrored about the X = 0 plane, so dragging a left marker moves its right partner (the right fields cannot be edited then). Switch Mirror off to place both sides freely. To put a landmark back to the guess, choose it in the Landmark menu and press Guess This Landmark. To set a landmark from the mesh, select points in the viewport, choose the landmark in the Landmark menu and press Set From Selected Points: it takes the average of the points. Only the position is kept, not the selection. This is handy for the chin and the groin.</p>
+<p>The node gives your mesh unchanged, with one detail vector per landmark that is set (a3ob_lm_chin and so on), which Rig Fit reads. A fresh node has no position set (all three numbers zero means not set); it warns and needs the guess. Rig Fit then guesses the landmarks that are not set.</p>
 <table class="facts">
 <tr><th>Houdini name</th><td><code>a3ob_rig_landmarks</code></td></tr>
 <tr><th>Where to find it</th><td>Tab menu, A3OB, Rig Landmarks</td></tr>
-<tr><th>Inputs</th><td>1</td></tr>
+<tr><th>Inputs</th><td>1 to 3</td></tr>
 </table>
 <h2>Inputs</h2>
 <ol>
-<li value="1">Input 1: Your mesh. Your character mesh, the one that goes into Rig Fit.</li>
+<li value="1">Input 1: Your mesh. Your character mesh, the one that goes into Rig Fit. It comes out unchanged.</li>
+<li value="2">Input 2: Skeleton. Optional. The Arma skeleton, for Guess Landmarks (the same one that goes into Rig Fit).</li>
+<li value="3">Input 3: Sample body. Optional. The sample body with its bone weights, for Guess Landmarks (the same one that goes into Rig Fit).</li>
 </ol>
 <h2>Parameters</h2>
 <p>Parameters are in the order they appear on the node.</p>
-<section class="parm" id="lm_chin">
-<h3>Chin <code>lm_chin</code></h3>
-<p>The tip of the chin. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<section class="parm" id="guess">
+<h3>Guess Landmarks <code>guess</code></h3>
+<p>Fills all 14 positions with the auto-guess of Rig Fit for your mesh. Connect the skeleton to input 2 and the sample body to input 3 first. It replaces the positions that are set.</p>
 <dl>
-<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
-<dt>Default</dt><dd>(empty)</dd>
+<dt>Type</dt><dd>Button</dd>
 </dl>
 </section>
-<section class="parm" id="lm_groin">
-<h3>Groin <code>lm_groin</code></h3>
-<p>The crotch, the highest point between the legs. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<section class="parm" id="mirror">
+<h3>Mirror <code>mirror</code></h3>
+<p>Left is the +X side. On: the right landmarks follow the left ones, mirrored about the X = 0 plane, so dragging a left marker moves its right partner, and the right fields cannot be edited. Off: both sides are free.</p>
 <dl>
-<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
-<dt>Default</dt><dd>(empty)</dd>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>On</dd>
 </dl>
 </section>
-<section class="parm" id="lm_shoulder_l">
-<h3>Left Shoulder <code>lm_shoulder_l</code></h3>
-<p>The left shoulder joint, inside the upper arm where it meets the body. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<section class="parm" id="chin">
+<h3>Chin <code>chin</code></h3>
+<p>The tip of the chin. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark.</p>
 <dl>
-<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
-<dt>Default</dt><dd>(empty)</dd>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
 </dl>
 </section>
-<section class="parm" id="lm_shoulder_r">
-<h3>Right Shoulder <code>lm_shoulder_r</code></h3>
-<p>The right shoulder joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<section class="parm" id="groin">
+<h3>Groin <code>groin</code></h3>
+<p>The crotch, the highest point between the legs. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark.</p>
 <dl>
-<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
-<dt>Default</dt><dd>(empty)</dd>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
 </dl>
 </section>
-<section class="parm" id="lm_elbow_l">
-<h3>Left Elbow <code>lm_elbow_l</code></h3>
-<p>The left elbow joint, in the middle of the arm. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<section class="parm" id="shoulder_l">
+<h3>Left Shoulder <code>shoulder_l</code></h3>
+<p>The left shoulder joint, inside the upper arm where it meets the body. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark.</p>
 <dl>
-<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
-<dt>Default</dt><dd>(empty)</dd>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
 </dl>
 </section>
-<section class="parm" id="lm_elbow_r">
-<h3>Right Elbow <code>lm_elbow_r</code></h3>
-<p>The right elbow joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<section class="parm" id="shoulder_r">
+<h3>Right Shoulder <code>shoulder_r</code></h3>
+<p>The right shoulder joint. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. While Mirror is on this one follows the left side and cannot be edited.</p>
 <dl>
-<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
-<dt>Default</dt><dd>(empty)</dd>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
+<dt>Editable when</dt><dd>Mirror is off</dd>
 </dl>
 </section>
-<section class="parm" id="lm_wrist_l">
-<h3>Left Wrist <code>lm_wrist_l</code></h3>
-<p>The left wrist joint, in the middle of the arm. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<section class="parm" id="elbow_l">
+<h3>Left Elbow <code>elbow_l</code></h3>
+<p>The left elbow joint, in the middle of the arm. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark.</p>
 <dl>
-<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
-<dt>Default</dt><dd>(empty)</dd>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
 </dl>
 </section>
-<section class="parm" id="lm_wrist_r">
-<h3>Right Wrist <code>lm_wrist_r</code></h3>
-<p>The right wrist joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<section class="parm" id="elbow_r">
+<h3>Right Elbow <code>elbow_r</code></h3>
+<p>The right elbow joint. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. While Mirror is on this one follows the left side and cannot be edited.</p>
 <dl>
-<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
-<dt>Default</dt><dd>(empty)</dd>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
+<dt>Editable when</dt><dd>Mirror is off</dd>
 </dl>
 </section>
-<section class="parm" id="lm_hip_l">
-<h3>Left Hip <code>lm_hip_l</code></h3>
-<p>The left hip joint, inside the top of the thigh. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<section class="parm" id="wrist_l">
+<h3>Left Wrist <code>wrist_l</code></h3>
+<p>The left wrist joint, in the middle of the arm. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark.</p>
 <dl>
-<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
-<dt>Default</dt><dd>(empty)</dd>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
 </dl>
 </section>
-<section class="parm" id="lm_hip_r">
-<h3>Right Hip <code>lm_hip_r</code></h3>
-<p>The right hip joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<section class="parm" id="wrist_r">
+<h3>Right Wrist <code>wrist_r</code></h3>
+<p>The right wrist joint. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. While Mirror is on this one follows the left side and cannot be edited.</p>
 <dl>
-<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
-<dt>Default</dt><dd>(empty)</dd>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
+<dt>Editable when</dt><dd>Mirror is off</dd>
 </dl>
 </section>
-<section class="parm" id="lm_knee_l">
-<h3>Left Knee <code>lm_knee_l</code></h3>
-<p>The left knee joint, in the middle of the leg. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<section class="parm" id="hip_l">
+<h3>Left Hip <code>hip_l</code></h3>
+<p>The left hip joint, inside the top of the thigh. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark.</p>
 <dl>
-<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
-<dt>Default</dt><dd>(empty)</dd>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
 </dl>
 </section>
-<section class="parm" id="lm_knee_r">
-<h3>Right Knee <code>lm_knee_r</code></h3>
-<p>The right knee joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<section class="parm" id="hip_r">
+<h3>Right Hip <code>hip_r</code></h3>
+<p>The right hip joint. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. While Mirror is on this one follows the left side and cannot be edited.</p>
 <dl>
-<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
-<dt>Default</dt><dd>(empty)</dd>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
+<dt>Editable when</dt><dd>Mirror is off</dd>
 </dl>
 </section>
-<section class="parm" id="lm_ankle_l">
-<h3>Left Ankle <code>lm_ankle_l</code></h3>
-<p>The left ankle joint, in the middle of the leg. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<section class="parm" id="knee_l">
+<h3>Left Knee <code>knee_l</code></h3>
+<p>The left knee joint, in the middle of the leg. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark.</p>
 <dl>
-<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
-<dt>Default</dt><dd>(empty)</dd>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
 </dl>
 </section>
-<section class="parm" id="lm_ankle_r">
-<h3>Right Ankle <code>lm_ankle_r</code></h3>
-<p>The right ankle joint. Select the points in the viewport with the arrow button. The average of the points is the landmark. Leave it empty to let Rig Fit guess this landmark.</p>
+<section class="parm" id="knee_r">
+<h3>Right Knee <code>knee_r</code></h3>
+<p>The right knee joint. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. While Mirror is on this one follows the left side and cannot be edited.</p>
 <dl>
-<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
-<dt>Default</dt><dd>(empty)</dd>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
+<dt>Editable when</dt><dd>Mirror is off</dd>
+</dl>
+</section>
+<section class="parm" id="ankle_l">
+<h3>Left Ankle <code>ankle_l</code></h3>
+<p>The left ankle joint, in the middle of the leg. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark.</p>
+<dl>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
+</dl>
+</section>
+<section class="parm" id="ankle_r">
+<h3>Right Ankle <code>ankle_r</code></h3>
+<p>The right ankle joint. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. While Mirror is on this one follows the left side and cannot be edited.</p>
+<dl>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
+<dt>Editable when</dt><dd>Mirror is off</dd>
+</dl>
+</section>
+<section class="parm" id="which">
+<h3>Landmark <code>which</code></h3>
+<p>The landmark that the two buttons below work on.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>Chin</dd>
+</dl>
+<p>Choices:</p>
+<ul>
+<li>Chin <code>chin</code></li>
+<li>Groin <code>groin</code></li>
+<li>Left Shoulder <code>shoulder_l</code></li>
+<li>Right Shoulder <code>shoulder_r</code></li>
+<li>Left Elbow <code>elbow_l</code></li>
+<li>Right Elbow <code>elbow_r</code></li>
+<li>Left Wrist <code>wrist_l</code></li>
+<li>Right Wrist <code>wrist_r</code></li>
+<li>Left Hip <code>hip_l</code></li>
+<li>Right Hip <code>hip_r</code></li>
+<li>Left Knee <code>knee_l</code></li>
+<li>Right Knee <code>knee_r</code></li>
+<li>Left Ankle <code>ankle_l</code></li>
+<li>Right Ankle <code>ankle_r</code></li>
+</ul>
+</section>
+<section class="parm" id="guessone">
+<h3>Guess This Landmark <code>guessone</code></h3>
+<p>Puts the landmark chosen above back to its auto-guess (needs inputs 2 and 3 like Guess Landmarks). With Mirror on, its partner follows.</p>
+<dl>
+<dt>Type</dt><dd>Button</dd>
+</dl>
+</section>
+<section class="parm" id="fromsel">
+<h3>Set From Selected Points <code>fromsel</code></h3>
+<p>Puts the landmark chosen above at the average of the points that are selected in the viewport. Only the position is kept, not the selection. Useful for the chin and the groin. With Mirror on, its partner follows.</p>
+<dl>
+<dt>Type</dt><dd>Button</dd>
 </dl>
 </section>
 </main>

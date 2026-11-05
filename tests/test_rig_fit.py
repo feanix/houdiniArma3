@@ -153,11 +153,13 @@ class TestLandmarkHelpers(unittest.TestCase):
         self.assertAlmostEqual(float(np.linalg.norm(out["lm_chin"][[0, 2]])), 0.5, delta=0.02)
         np.testing.assert_allclose(out["lm_knee_l"], [0.0, 0.5, 0.2])
 
-    def test_the_help_names_every_landmark_group(self):
+    def test_the_help_points_to_rig_landmarks_and_not_to_point_groups(self):
+        """Task #74, D42: the lm_* point-group way is gone; the help says so by not naming it."""
         from a3ob_houdini.docs_common import NODE_INTRO
         text = " ".join(NODE_INTRO["rig_fit"])
-        for name in LANDMARK_NAMES:
-            self.assertIn(name, text)
+        self.assertIn("Rig Landmarks", text)
+        self.assertNotIn("lm_", text)
+        self.assertNotIn("point group", text)
 
     def test_every_landmark_has_a_name_and_a_side(self):
         self.assertEqual(len(LANDMARK_NAMES), 14)

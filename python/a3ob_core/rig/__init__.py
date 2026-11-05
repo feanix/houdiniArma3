@@ -17,7 +17,7 @@ Houdini, and hython has numpy. The skeleton code below does not need it yet.
 
 from .fit import TORSO_BONES, FitResult, body_scale, fit_skeleton, joint_targets, skin_points, swing
 from .landmarks import (CHIN_FROM_HEAD, HEAD_SHARE, LANDMARKS, Landmark, Template, facing_sign, find_groin,
-                        guess_landmarks, make_template, snap_to_surface, symmetrize)
+                        follow_mirror, guess_landmarks, is_set, make_template, mirror_x, snap_to_surface, symmetrize)
 from .landmarks import NAMES as LANDMARK_NAMES
 from .landmarks import PAIRS as LANDMARK_PAIRS
 from .model_cfg import CfgClass, CfgError, CfgFile, Skeleton, parse_cfg, read_cfg_file, resolve_skeleton, skeleton_names
@@ -34,7 +34,7 @@ BONE_OF = {item.name: item.bone for item in LANDMARKS}
 __all__ = [
     "BONE_OF", "LANDMARK_NAMES", "LANDMARK_PAIRS", "LANDMARKS", "Landmark", "Template", "TORSO_BONES", "FitResult",
     "CHIN_FROM_HEAD", "HEAD_SHARE", "body_scale", "fit_skeleton", "joint_targets", "skin_points", "swing",
-    "facing_sign", "find_groin", "guess_landmarks", "make_template", "snap_to_surface", "symmetrize", "drop_small_pieces",
+    "facing_sign", "find_groin", "follow_mirror", "guess_landmarks", "is_set", "mirror_x", "make_template", "snap_to_surface", "symmetrize", "drop_small_pieces",
     "ORIGIN_COPIED", "ORIGIN_FILLED", "ORIGIN_NONE", "ORIGIN_NONRIGID", "ORIGIN_RIGID", "Piece", "Settings",
     "TransferResult", "accessory_layer", "is_twist", "transfer_body", "twist_targets",
     "CAPT_FLOATS", "GRID", "CleanStats", "capture_lists", "clean_weights", "grid_units", "inverse_rest_floats",

@@ -26,7 +26,8 @@ import numpy as np
 from .transfer import closest_points
 
 __all__ = ["Landmark", "LANDMARKS", "NAMES", "PAIRS", "CHIN_FROM_HEAD", "HEAD_SHARE", "Template", "make_template",
-           "guess_landmarks", "find_groin", "symmetrize", "snap_to_surface", "facing_sign"]
+           "guess_landmarks", "find_groin", "symmetrize", "snap_to_surface", "facing_sign", "is_set", "mirror_x",
+           "follow_mirror"]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -334,6 +335,28 @@ def symmetrize(points: Dict[str, np.ndarray], given: Sequence[str]) -> Dict[str,
         if name in out:
             out[name][0] = mid
     return out
+
+
+def is_set(value) -> bool:
+    """A hand-placed landmark is "not set" while all three numbers are exactly zero (the default of the Rig Landmarks
+    fields). A landmark never really sits exactly on the world origin, so the zero vector can stand for "none"."""
+    return any(float(v) != 0.0 for v in value)
+
+
+def mirror_x(value) -> Tuple[float, float, float]:
+    """The mirror image about the X = 0 plane (Left is +X)."""
+    return (-float(value[0]), float(value[1]), float(value[2]))
+
+
+def follow_mirror(left, right) -> Tuple[tuple, tuple]:
+    """``(left, right)`` with the pair made mirror images. The left one rules; when only the right one is set, the left
+    one follows it. A pair of two unset landmarks stays unset."""
+    left, right = tuple(float(v) for v in left), tuple(float(v) for v in right)
+    if is_set(left):
+        return left, mirror_x(left)
+    if is_set(right):
+        return mirror_x(right), right
+    return left, right
 
 
 def snap_to_surface(points: Dict[str, np.ndarray], P: np.ndarray, tris: np.ndarray) -> Dict[str, np.ndarray]:

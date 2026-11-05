@@ -3,7 +3,7 @@ with HOUDINI_PACKAGE_SKIP=1) and the Arma 3 Samples (it skips without them).
 
 The user's mesh is the sample character itself, posed and sized as in design test 2.3 (the spike's scenario C: arms 20
 degrees down, legs 8 degrees apart, arms 10 % and legs 8 % longer, the whole body 5 % bigger), so the true joints are known.
-The landmarks are point groups on that mesh (one extra point each), as the node asks for them.
+The landmarks are detail attributes on that mesh (the form the Rig Landmarks node writes, task #74, D42).
 
 SPDX-License-Identifier: GPL-3.0-or-later
 """
@@ -23,7 +23,7 @@ SAMPLE_PIVOTS = "Addons/TemplateRTM/ManSkeleton_Pivots.p3d"
 
 if HAS_HOU:
     from a3ob_core.rig import CHIN_FROM_HEAD, drop_small_pieces, make_template
-    from a3ob_houdini import rig_weights
+    from a3ob_houdini import landmark_io, rig_weights
     from a3ob_houdini.rig_weights import read_mesh as _mesh
 
 
@@ -106,17 +106,14 @@ class TestRigFitOnSamples(NodeTestCase):
         return out
 
     def user_mesh(self, points, landmarks=None):
-        """Polygons at ``points`` and, for each landmark, one extra point in the point group of its name."""
+        """Polygons at ``points`` and, for each landmark, a detail vector ``a3ob_lm_*`` (what Rig Landmarks writes)."""
         geo = hou.Geometry()
         created = geo.createPoints([tuple(float(v) for v in p) for p in points])
         for tri in self.tris:
             prim = geo.createPolygon()
             for index in tri:
                 prim.addVertex(created[int(index)])
-        for name, position in (landmarks or {}).items():
-            point = geo.createPoint()
-            point.setPosition(tuple(float(v) for v in position))
-            geo.createPointGroup(name).add(point)
+        landmark_io.write_landmarks(geo, landmarks or {})
         return make_source(self.network, geo)
 
     def part(self, node, name):
@@ -221,23 +218,34 @@ class TestRigFitOnSamples(NodeTestCase):
         mats, world_pos, truth, posed, mesh = self.scenario()
         some = {name: truth[name] for name in ("lm_knee_l", "lm_knee_r")}
         partial = self.user_mesh(posed, some)
-        # From groups needs all of them
-        node = self.fit(partial, "landmarks", landmarks="groups")
+        # From Rig Landmarks needs all of them
+        node = self.fit(partial, "landmarks", landmarks="landmarks")
         self.assertIn("lm_chin", " ".join(cook(node).errors))
-        # Both: groups win, the others are guessed
+        # Both: the positions that are set win, the others are guessed
         node = self.fit(partial, "landmarks", landmarks="both", snap=0)
         result = cook(node)
         self.assertEqual(result.errors, ())
-        self.assertIn("2 from groups, 12 guessed", "\n".join(result.messages))
+        self.assertIn("2 from Rig Landmarks, 12 guessed", "\n".join(result.messages))
         point = {n: np.array(p.position()) for n, p in zip(self.part(node, "landmarks").pointStringAttribValues("name"), self.part(node, "landmarks").points())}
         self.assertLess(float(np.linalg.norm(point["lm_knee_l"] - truth["lm_knee_l"])), 0.002)
-        # Auto-guess ignores the groups
+        # Auto-guess ignores the positions
         node = self.fit(partial, "landmarks", landmarks="guess", snap=0)
         result = cook(node)
         self.assertEqual(result.errors, ())
         self.assertIn("ignored", "\n".join(result.messages))
         point = {n: np.array(p.position()) for n, p in zip(self.part(node, "landmarks").pointStringAttribValues("name"), self.part(node, "landmarks").points())}
         self.assertGreater(float(np.linalg.norm(point["lm_knee_l"] - truth["lm_knee_l"])), 0.01)
+
+    def test_the_positions_reach_the_fit_unchanged(self):
+        """Criterion 8 (task #74): a position that Rig Landmarks writes is the landmark that Rig Fit uses."""
+        mats, world_pos, truth, posed, mesh = self.scenario()
+        node = self.fit(mesh, "landmarks", snap=0, symmetry=0, landmarks="landmarks")
+        result = cook(node)
+        self.assertEqual(result.errors, ())
+        geo = self.part(node, "landmarks")
+        used = {n: np.array(p.position()) for n, p in zip(geo.pointStringAttribValues("name"), geo.points())}
+        for name in LANDMARK_NAMES:
+            np.testing.assert_allclose(used[name], truth[name], atol=1e-6, err_msg=name)  # float32 detail vectors
 
     def test_the_auto_guess_finds_the_joints_of_the_sample_itself_and_of_a_bigger_copy(self):
         for size, limit in ((1.0, 0.02), (1.10, 0.05)):
