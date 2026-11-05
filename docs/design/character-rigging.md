@@ -947,6 +947,32 @@ Each point moves by the inverse of its blended bone matrix, from the fitted skel
 reports the mean and the largest displacement, and the worst bones. Output: the mesh in the Arma rest pose. The weights
 do not change.
 
+**As built (task #67).** Inputs: 1 the mesh, 2 the Rig Fit output (`fitted_skeleton` through `read_part`), 3 the Arma
+skeleton. The maths is `a3ob_core/rig/unpose.py`.
+
+- **The move of a bone** is built from the joint positions only. Since #76 the fitted skeleton's `transform` is a pure rotation
+  aimed down the bone while the Arma skeleton keeps its own frames, so a product of the stored frames would show the
+  difference of the two conventions as a false rotation. Both skeletons get `fit.bone_frames` on their joint positions;
+  the rotation is `R = F' F^T`. The size has two parts. Along the bone it is the length ratio `r`: the distance from the
+  joint to the joint the bone is aimed at (`fit.aim_targets`), in A' over A. Across the bone it is the body size `g`, the
+  median ratio of the trunk bones (from the root down the main chain to the head). A longer arm is not a thicker arm, and a
+  short neck bone must not shrink the head. A joint with nothing to aim at (a chain end) takes `g` both ways. A bone
+  matrix is `x' = q + R (g I + (r - g) a a^T) (x - p)`, `a` the bone direction in A. A' = A gives R = I, r = g = 1: nothing
+  moves.
+- **Twist** about a bone is not in A' (the frame resets the twist from world +Z), so a twist of a limb that is not a swing
+  is not undone. The poses of design test 2.3 are swings about Z.
+- **Rigid pieces** (`a3ob_rig_origin` = 3 and `a3ob_rig_piece` >= 0): one matrix per piece, the blend of the average weights
+  of its points. A blend of bones is not a rotation, so its linear part is replaced by the closest rotation (polar
+  decomposition) times the body size `g`, turning about the centre of the piece; every edge of a piece then changes by
+  the same factor, 1 when the posed piece has the size `g` against its rest.
+- **Measured** (hython, Samples character): true weights and a perfect skeleton, error 0.00001 cm (test 2.5), rigid cuff
+  on the bent forearm: edge length ratio 1.00000 (0.45 to 1.43 without the switch). Scenario C through Rig Fit, Weight
+  Transfer, Weight Cleanup and Unpose: mean 0.10 cm, largest 0.77 cm. That scenario has limbs that are longer all the way
+  down (twist and finger bones too) and a mesh that is longer along the bone only. The spike's literal scenario C lengthens
+  only some bones' offsets and leaves the mesh and the twist and finger bones alone; no method that reads only A and A'
+  can undo that to better than the joint errors of the fit (0.5 cm mean, 0.9 cm at most there): measured about 0.7 cm mean
+  and 1.5 cm at most with a per-bone uniform size.
+
 **Rig Check** (inputs: 1 mesh with weights; 2 skeleton). Outputs: 1 mesh with the problem attributes; 2 the skeleton with
 `a3ob_rig_joint_depth` and `Cd`; 3 the posed mesh of the chosen test pose.
 

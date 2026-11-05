@@ -1,0 +1,250 @@
+"""The Unpose node in hython (design tests 2.3, unpose part, and 2.5, task #67). It needs ``hou`` with KineFX (do not run it
+with HOUDINI_PACKAGE_SKIP=1) and the Arma 3 Samples (it skips without them).
+
+The user's mesh is the sample character posed as in design test 2.3 (the spike's scenario C: arms 20 degrees down, legs 8
+degrees apart, arms 10 % and legs 8 % longer, the whole body 5 % bigger). The longer arms and legs are longer all the way:
+every bone below the shoulder or the hip (twist bones and fingers too) is longer, and the mesh around a bone is longer
+along the bone only, as for a person with long arms. The true rest is the sample.
+
+SPDX-License-Identifier: GPL-3.0-or-later
+"""
+
+import unittest
+
+import numpy as np
+
+from tests import samples_support
+from tests import test_node_rig_fit as rig_fit_tests
+from tests.hou_support import HAS_HOU, hou
+from tests.mass_proxy_support import NodeTestCase, cook, make_source
+
+if HAS_HOU:
+    from a3ob_core.rig import CHIN_FROM_HEAD, aim_targets, bone_frames, ORIGIN_RIGID, drop_small_pieces, make_template
+    from a3ob_houdini import rig_weights
+    from a3ob_houdini.rig_weights import read_mesh as _mesh
+
+
+@unittest.skipUnless(HAS_HOU, "needs hou (run under hython)")
+@unittest.skipUnless(samples_support.AVAILABLE, samples_support.SKIP_REASON)
+class TestUnposeOnSamples(NodeTestCase):
+    def setUp(self):
+        super().setUp()
+        path = samples_support.path
+        importer = self.network.createNode("a3ob_p3d_import")
+        importer.parm("file").set(path(rig_fit_tests.SAMPLE).replace("\\", "/"))
+        self.body = self.network.createNode("a3ob_extract_lod")
+        self.body.setInput(0, importer)
+        self.body.parm("lod").set("Resolution 1")
+        self.skeleton = self.network.createNode("a3ob_rig_skeleton")
+        self.skeleton.parm("cfg").set(path(rig_fit_tests.SAMPLE_CFG).replace("\\", "/"))
+        self.skeleton.parm("pivots").set(path(rig_fit_tests.SAMPLE_PIVOTS).replace("\\", "/"))
+        for node in (self.body, self.skeleton):
+            self.assertEqual(cook(node).errors, ())
+        info = rig_weights.read_skeleton("test", self.skeleton.geometry())
+        self.names, self.parents = info.names, info.parents
+        self.rest = np.array(info.positions)
+        self.index = {n.lower(): i for i, n in enumerate(self.names)}
+        positions, tris = _mesh(self.body.geometry())
+        tris = drop_small_pieces(len(positions), tris, 10)
+        self.used = np.unique(tris)
+        remap = -np.ones(len(positions), dtype=np.int64)
+        remap[self.used] = np.arange(len(self.used))
+        self.P = positions[self.used]
+        self.tris = remap[tris]
+        self.W = rig_weights.read_selections("test", self.body.geometry(), self.names).weights[self.used]
+        # the sample's landmarks that are not joints, as in the Rig Fit tests
+        self.chin_rest = self.rest[self.index["head"]] + np.array(CHIN_FROM_HEAD)
+        joints = {n.lower(): self.rest[i] for i, n in enumerate(self.names)}
+        self.groin_rest = make_template(joints, self.P).truth["lm_groin"]
+        geo = self.body.geometry()
+        self.full_P, self.full_tris = _mesh(geo)
+        self.full_W = rig_weights.read_selections("test", geo, self.names).weights
+        self.weighted = self.full_W.sum(axis=1) > 0
+
+    # helpers of the Rig Fit tests (plain functions, they use only the attributes that setUp makes)
+    posed_points = rig_fit_tests.TestRigFitOnSamples.posed_points
+    true_landmarks = rig_fit_tests.TestRigFitOnSamples.true_landmarks
+    user_mesh = rig_fit_tests.TestRigFitOnSamples.user_mesh
+    fit = rig_fit_tests.TestRigFitOnSamples.fit
+    part = rig_fit_tests.TestRigFitOnSamples.part
+
+    def stretched_pose(self, arms=-20.0, legs=8.0, arm_scale=1.10, leg_scale=1.08, size=1.05, bend=0.0):
+        """``(4x4 matrices, world joint positions)``: design test 2.3 with limbs that are longer all the way down. A bone
+        that is longer makes the mesh around it longer along the bone only (a longer arm is not a thicker one); the whole
+        body is ``size`` bigger. A chain end (a hand, a foot) has no bone and takes the body size."""
+        rotation_z = rig_fit_tests.rotation_z
+        local = {"LeftArm": rotation_z(arms), "RightArm": rotation_z(-arms), "LeftUpLeg": rotation_z(legs),
+                 "RightUpLeg": rotation_z(-legs), "LeftForeArm": rotation_z(bend)}
+        count = len(self.names)
+        grow = np.ones(count)
+        for i in range(count):
+            joint = i
+            while joint >= 0:
+                name = self.names[joint].lower()
+                if name in ("leftarm", "rightarm"):
+                    grow[i] = arm_scale
+                    break
+                if name in ("leftupleg", "rightupleg"):
+                    grow[i] = leg_scale
+                    break
+                joint = self.parents[joint]
+        axes = bone_frames(self.parents, self.rest)[:, :, 0]
+        aimed = np.array(aim_targets(self.parents, self.rest)) >= 0
+        world_rot, stretch = [None] * count, [None] * count
+        world_pos, mats = np.zeros((count, 3)), np.zeros((count, 4, 4))
+        for i in range(count):
+            parent = self.parents[i]
+            along = size * (grow[i] if aimed[i] else 1.0)
+            stretch[i] = size * np.eye(3) + (along - size) * np.outer(axes[i], axes[i])
+            rot_local = local.get(self.names[i], np.eye(3))
+            if parent < 0:
+                world_rot[i], world_pos[i] = rot_local, self.rest[i] * size
+            else:
+                world_rot[i] = world_rot[parent] @ rot_local
+                world_pos[i] = world_pos[parent] + world_rot[parent] @ stretch[parent] @ (self.rest[i] - self.rest[parent])
+            linear = world_rot[i] @ stretch[i]
+            mats[i, :3, :3] = linear
+            mats[i, :3, 3] = world_pos[i] - linear @ self.rest[i]
+            mats[i, 3, 3] = 1.0
+        self.rotations = world_rot
+        return mats, world_pos
+
+    def skin_all(self, mats):
+        """Every point of the sample body (also those outside ``self.used``) posed with its own weights."""
+        w = self.full_W / np.maximum(self.full_W.sum(axis=1, keepdims=True), 1e-9)
+        blend = np.einsum("nb,bij->nij", w, mats)
+        return np.einsum("nij,nj->ni", blend[:, :3, :3], self.full_P) + blend[:, :3, 3]
+
+    def sample_with_points(self, points, attribs=None):
+        """The sample body (weights, groups) with its points moved to ``points``; optional point int attributes."""
+        geo = hou.Geometry()
+        geo.copy(self.body.geometry())
+        geo.setPointFloatAttribValues("P", [float(v) for v in np.asarray(points).reshape(-1)])
+        for name, values in (attribs or {}).items():
+            geo.addAttrib(hou.attribType.Point, name, 0)
+            geo.setPointIntAttribValues(name, [int(v) for v in values])
+        return make_source(self.network, geo)
+
+    def skeleton_source(self, positions):
+        """A Rig Fit-shaped geometry (the fitted skeleton as a named part) with the joints at ``positions``."""
+        skeleton = hou.Geometry()
+        skeleton.copy(self.skeleton.geometry())
+        skeleton.setPointFloatAttribValues("P", [float(v) for v in np.asarray(positions).reshape(-1)])
+        out = hou.Geometry()
+        rig_weights.write_parts(out, {rig_weights.PART_SKELETON: skeleton})
+        return make_source(self.network, out)
+
+    def unpose(self, mesh, fitted, **parms):
+        node = self.network.createNode("a3ob_unpose")
+        node.setInput(0, mesh)
+        node.setInput(1, fitted)
+        node.setInput(2, self.skeleton)
+        for name, value in parms.items():
+            node.parm(name).set(value)
+        return node
+
+    def points_of(self, node):
+        return np.array(node.geometry().pointFloatAttribValues("P")).reshape(-1, 3)
+
+    # ---- tests ----------------------------------------------------------------------------------------------------
+
+    def test_design_2_5_true_weights_and_a_perfect_skeleton_are_taken_back_below_0_01_cm(self):
+        mats, world_pos = self.stretched_pose()
+        mesh = self.sample_with_points(self.skin_all(mats))
+        node = self.unpose(mesh, self.skeleton_source(world_pos))
+        result = cook(node)
+        self.assertEqual(result.errors, ())
+        error = np.linalg.norm(self.points_of(node) - self.full_P, axis=1)[self.weighted]
+        print("   design test 2.5: error %.5f cm mean, %.5f cm at most; %s" % (100 * error.mean(), 100 * error.max(),
+                                                                         result.messages[0]))
+        self.assertLess(float(error.max()), 1e-4)  # 0.01 cm
+
+    def test_design_2_5_rigid_pieces_keep_their_edge_lengths_to_0_1_percent(self):
+        mats, world_pos = self.stretched_pose(bend=45.0)
+        near = np.linalg.norm(self.full_P - self.rest[self.index["leftforearm"]], axis=1) < 0.15
+        cuff = np.nonzero(near & self.weighted)[0]
+        self.assertGreater(len(cuff), 50)
+        posed = self.skin_all(mats)
+        forearm = self.index["leftforearm"]  # the cuff is rigid on the forearm in the truth: turned and moved, not stretched
+        turn = self.rotations[forearm] * 1.05  # (the size of the whole body)
+        posed[cuff] = (self.full_P[cuff] - self.rest[forearm]) @ turn.T + world_pos[forearm]
+        flag = np.zeros(len(posed), dtype=np.int64)
+        flag[cuff] = 1
+        mesh = self.sample_with_points(posed, {"a3ob_rig_piece": np.where(flag == 1, 7, -1),
+                                               "a3ob_rig_origin": np.where(flag == 1, ORIGIN_RIGID, 1)})
+        ends = np.concatenate([self.full_tris[:, [0, 1]], self.full_tris[:, [1, 2]], self.full_tris[:, [2, 0]]])
+        ends = ends[flag[ends[:, 0]].astype(bool) & flag[ends[:, 1]].astype(bool)]
+        self.assertGreater(len(ends), 100)
+
+        def ratios(node):
+            self.assertEqual(cook(node).errors, ())
+            out = self.points_of(node)
+            return np.linalg.norm(out[ends[:, 0]] - out[ends[:, 1]], axis=1) / np.linalg.norm(
+                self.full_P[ends[:, 0]] - self.full_P[ends[:, 1]], axis=1)
+
+        fitted = self.skeleton_source(world_pos)
+        kept = ratios(self.unpose(mesh, fitted, rigid_pieces=1))
+        loose = ratios(self.unpose(mesh, fitted, rigid_pieces=0))
+        print("   rigid cuff: edge length ratio %.5f to %.5f with rigid pieces, %.3f to %.3f without" % (
+            kept.min(), kept.max(), loose.min(), loose.max()))
+        self.assertLess(float(np.abs(kept - 1).max()), 1e-3)
+        self.assertGreater(float(np.abs(loose - 1).max()), 1e-2)
+
+    def test_design_2_3_scenario_c_through_rig_fit_and_unpose_ends_within_1_cm(self):
+        mats, world_pos = self.stretched_pose()
+        truth = self.true_landmarks(mats, world_pos)
+        posed = self.posed_points(mats)
+        mesh = self.user_mesh(posed, truth)
+        fit = self.fit(mesh, "all", snap=0)
+        transfer = self.network.createNode("a3ob_weight_transfer")
+        transfer.setInput(0, mesh)
+        transfer.setInput(1, fit)
+        transfer.setInput(2, self.skeleton)
+        cleanup = self.network.createNode("a3ob_weight_cleanup")
+        cleanup.setInput(0, transfer)
+        cleanup.setInput(1, self.skeleton)
+        node = self.unpose(cleanup, fit)
+        result = cook(node)
+        self.assertEqual(result.errors, ())
+        error = np.linalg.norm(self.points_of(node)[:len(self.P)] - self.P, axis=1)
+        print("   design test 2.3 unpose: %.2f cm mean, %.2f cm at most (the pose moved the points %.1f cm on average)" % (
+            100 * error.mean(), 100 * error.max(), 100 * np.linalg.norm(posed - self.P, axis=1).mean()))
+        self.assertLess(float(error.max()), 0.01)
+        self.assertLess(float(error.mean()), 0.003)
+
+    def test_a_perfect_fit_moves_nothing_and_the_weights_stay(self):
+        node = self.unpose(self.body, self.skeleton)  # A' = A: the Arma skeleton itself
+        result = cook(node)
+        self.assertEqual(result.errors, ())
+        np.testing.assert_allclose(self.points_of(node), self.full_P, atol=1e-6)
+        self.assertIn("0.00 cm", result.messages[0])
+        before = rig_weights.read_selections("test", self.body.geometry(), self.names).weights
+        after = rig_weights.read_selections("test", node.geometry(), self.names).weights
+        np.testing.assert_array_equal(before, after)
+
+    def test_the_message_gives_the_mean_the_largest_move_and_the_worst_bones(self):
+        mats, world_pos = self.stretched_pose()
+        node = self.unpose(self.sample_with_points(self.skin_all(mats)), self.skeleton_source(world_pos))
+        result = cook(node)
+        text = "\n".join(result.messages)
+        self.assertRegex(text, r"moved back to the Arma rest pose: \d+\.\d\d cm on average, \d+\.\d\d cm at most")
+        self.assertIn("Bones whose points moved most", text)
+
+    def test_the_group_limits_the_points_and_a_mismatching_skeleton_is_an_error(self):
+        mats, world_pos = self.stretched_pose()
+        posed = self.skin_all(mats)
+        mesh = self.sample_with_points(posed)
+        node = self.unpose(mesh, self.skeleton_source(world_pos), group="0-99")
+        self.assertEqual(cook(node).errors, ())
+        out = self.points_of(node)
+        np.testing.assert_allclose(out[100:], posed[100:], atol=1e-5)
+        self.assertLess(float(np.abs(out[:100] - self.full_P[:100])[self.weighted[:100]].max()), 1e-4)
+        other = hou.Geometry()
+        other.copy(self.skeleton.geometry())
+        other.deletePoints([other.points()[-1]])
+        bad = self.unpose(mesh, make_source(self.network, other))
+        self.assertIn("same bones", " ".join(cook(bad).errors))
+
+
+if __name__ == "__main__":
+    unittest.main()

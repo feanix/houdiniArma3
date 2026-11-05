@@ -102,6 +102,21 @@ NODE_INTRO = {
         "input 2 of Weight Transfer as it is: Weight Transfer takes the fitted body from it. The Show menu only "
         "decides which results are drawn in the viewport; the output is the same for every choice.",
     ),
+    "unpose": (
+        "Weight Transfer and Weight Cleanup weight your mesh in the pose of the fitted skeleton, the one Rig Fit made "
+        "inside your mesh. Arma needs the mesh in its own rest pose. This node moves every point back: it applies the "
+        "inverse of the bone matrices that carry the Arma skeleton to the fitted one, blended with the weights of the "
+        "point. The weights are not changed.",
+        "Connect your weighted mesh to input 1, the output of Rig Fit as it is to input 2 (its fitted skeleton is used) "
+        "and the Arma skeleton to input 3. The move of each bone is worked out from the joint positions only: how the "
+        "bone turned, and how much longer or shorter it is along the bone (a longer arm is not a thicker arm). A perfect fit "
+        "moves nothing. The message gives the mean and the largest move of the points, and the bones whose points "
+        "moved most. The Arma rest pose has the pelvis at the origin, so these moves include the walk from where your "
+        "character stands to there, about a metre.",
+        "A rigid piece (a helmet or a pouch made by Accessory Weights in Rigid mode) is moved by one matrix for all its "
+        "points, so it keeps its shape. The unpose can only remove what the fitted skeleton describes: a landmark that is "
+        "a few centimetres off in Rig Fit leaves the mesh a few centimetres off here.",
+    ),
     "assemble_lods": (
         "A P3D file keeps several LODs (versions of the model for different viewing distances) together. After you "
         "edit LODs one at a time, this node puts them back together.",
