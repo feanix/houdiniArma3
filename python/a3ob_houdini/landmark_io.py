@@ -107,7 +107,8 @@ def sample_side(name: str, skeleton_geo, sample_geo) -> SampleSide:
     return SampleSide(skeleton, index, rest, positions, tris, skin, found, template)
 
 
-def guess_for_mesh(skin_in: np.ndarray, side: SampleSide):
-    """``(positions, notes)``: the auto-guess of all 14 landmarks on the skin points of the user's mesh. This is the one
-    call of the guess that Rig Fit and Rig Landmarks both make."""
-    return guess_landmarks(skin_in, side.template)
+def guess_for_mesh(skin_in: np.ndarray, side: SampleSide, known=None):
+    """``(positions, notes)``: the auto-guess of all landmarks on the skin points of the user's mesh. This is the one
+    call of the guess that Rig Fit and Rig Landmarks both make. ``known`` are the landmarks placed already: the hand
+    landmarks are guessed from a known wrist and elbow."""
+    return guess_landmarks(skin_in, side.template, known)

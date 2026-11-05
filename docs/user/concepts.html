@@ -343,15 +343,18 @@ proportions, so the <kbd class="ui-node">Rig Fit</kbd> node fits the Arma skelet
 three inputs: your mesh, the skeleton from Rig Skeleton, and the sample body with its weights. Your mesh should stand
 upright (Y up), face +Z like the sample, and be in an A-pose, with the arms away from the body. The Arma skeleton is never
 changed, whatever the body shape: the fitted skeleton is only a working copy, kept for Weight Transfer and for Unpose.</p>
-<p>The fit starts from 14 <strong>landmarks</strong>, named points of the body. A landmark is a <em>position</em> that you place:
+<p>The fit starts from 18 <strong>landmarks</strong>, named points of the body. A landmark is a <em>position</em> that you place:
 the <kbd class="ui-node">Rig Landmarks</kbd> node holds one X, Y, Z field for each. Left is the +X side.</p>
 <ul>
 <li>The chin (the tip of the chin) and the groin (the highest point between the legs) are points on the skin.</li>
 <li>The left and right shoulder, elbow, wrist, hip, knee and ankle are joints. A joint lies inside the body, so place its marker
 inside the limb, not on the surface.</li>
+<li>Each hand has two more joints: the last joint of the middle finger (inside the fingertip, in the middle of the finger) and the
+last joint of the thumb (inside the tip of the thumb). The middle finger gives the length and the direction of the hand, and the thumb
+says which way the palm faces. The other fingers follow the hand as a whole, so the finger joints end inside your hand mesh.</li>
 </ul>
 <p>Put <kbd class="ui-node">Rig Landmarks</kbd> between your mesh and Rig Fit, and connect the skeleton and the sample body to its inputs 2 and 3
-(the same ones as Rig Fit). Press <strong>Guess Landmarks</strong>: it fills all 14 fields with the same guess that Rig Fit makes. Then select the
+(the same ones as Rig Fit). Press <strong>Guess Landmarks</strong>: it fills all 18 fields with the same guess that Rig Fit makes (<strong>Guess This Landmark</strong> guesses the hand from the wrist and elbow that are set). Then select the
 node, move the mouse over the viewport and press Enter. Every landmark is a labelled marker, drawn on top of your mesh. Drag a marker to
 move it; the field follows. <strong>Mirror</strong> is on by default: the right markers follow the left ones, mirrored about the X = 0 plane, so
 dragging a left marker moves its right partner. Switch Mirror off to place both sides freely. To put one landmark back to the guess,
@@ -359,7 +362,7 @@ choose it in the Landmark menu and press <strong>Guess This Landmark</strong>. T
 select points in the viewport, choose the landmark and press <strong>Set From Selected Points</strong>: the landmark goes to their average, and
 only the position is kept. A fresh Rig Landmarks node has no position set and warns that it needs the guess.</p>
 <p>With <strong>Landmarks</strong> set to Both (the default) Rig Fit uses the positions that are set in Rig Landmarks, and guesses the others from the
-shape of your mesh. A position you set always wins over the guess. Auto-guess ignores Rig Landmarks; From Rig Landmarks needs all 14. The guess
+shape of your mesh. A position you set always wins over the guess. Auto-guess ignores Rig Landmarks; From Rig Landmarks needs all 18. The guess
 is a first try: set Show to Landmarks to see the points on your mesh, and correct a wrong one by dragging its marker. A
 mesh with armour or a helmet confuses the guess most at the shoulders, elbows and wrists. <strong>Snap to Surface</strong> moves
 the chin and the groin onto your mesh. <strong>Symmetry</strong> makes left and right mirror each other.</p>

@@ -823,10 +823,10 @@ spike measured only indirectly; its accuracy is the main risk of the whole desig
 
 **Rig Landmarks (task #74, D42; replaces the point-group version of task #71).** Inputs: 1 your mesh, 2 the Arma skeleton
 and 3 the sample body (2 and 3 are optional and only feed the guess; they are the same inputs as Rig Fit's). Fourteen
-float3 fields (`chin`, `groin`, `shoulder_l` ... `ankle_r`). All zero is "not set": the node warns that it needs the guess and
+float3 fields (`chin`, `groin`, `shoulder_l` ... `ankle_r`, and since task #70 `finger_l|r`, `thumb_l|r`: 18). All zero is "not set": the node warns that it needs the guess and
 writes no attribute for that landmark. Output: the input mesh unchanged plus one detail vector `a3ob_lm_*` per landmark that
 is set (`landmark_io.write_landmarks`; Rig Fit reads them with `read_landmarks`; float32 as every Houdini float attribute).
-- **Guess.** The button *Guess Landmarks* fills the 14 fields with `guess_landmarks` on the mesh, through the same
+- **Guess.** The button *Guess Landmarks* fills the 18 fields with `guess_landmarks` on the mesh, through the same
   `landmark_io.sample_side` and `guess_for_mesh` that Rig Fit uses, so there is one copy of the guess. *Guess This Landmark*
   (with the Landmark menu) puts one back.
 - **Mirror (toggle, on).** Left is +X. The right fields follow the left ones mirrored about X = 0 (`follow_mirror`): the
@@ -854,9 +854,9 @@ the point below). `a3ob_core/rig/landmarks.py` (guess, symmetry, snap) and `fit.
   `rig_weights.read_part`, which returns a geometry without the attribute as it is. The `show` menu (All, Fitted
   skeleton, Fitted sample body, Landmarks) only sets the packed prim intrinsic `viewportlod` to hidden on the other parts,
   so the data is the same for every value.
-- **Landmarks (14).** Detail vectors `a3ob_lm_chin`, `a3ob_lm_groin` (points on the skin, snapped) and
+- **Landmarks (18; 14 at #66, hands added in #70, see Hands below).** Detail vectors `a3ob_lm_chin`, `a3ob_lm_groin` (points on the skin, snapped) and
   `a3ob_lm_shoulder|elbow|wrist|hip|knee|ankle_l|r` (joints, never snapped), written by Rig Landmarks (task #74, D42).
-  `landmarks`: Auto-guess, From Rig Landmarks (all 14 needed) or Both (default; a set landmark wins). `symmetry`:
+  `landmarks`: Auto-guess, From Rig Landmarks (all 18 needed) or Both (default; a set landmark wins). `symmetry`:
   a pair of set landmarks is averaged, one set landmark is mirrored to the other side, two guesses are averaged, about the
   plane through the middle of the pairs. `refine` is accepted and does nothing yet (a warning says so).
 - **The guess** runs the same measurements on the sample body, where the joints are known, and on your mesh, and moves each
@@ -880,6 +880,24 @@ the point below). `a3ob_core/rig/landmarks.py` (guess, symmetry, snap) and `fit.
   direction the bone came in by (the root: world +Y), looking through a zero-length bone (Pelvis to Spine, so the Pelvis
   aims up the spine). A chain end (head, hand, foot) takes its parent's frame. The Arma rest skeleton is unchanged. S' is the sample body moved by linear blend skinning of its own weights (points with no weight follow the
   closest weighted point); it keeps every group and attribute.
+- **Hands (task #70).** Four more joint landmarks, two per hand: `finger_l|r` (the last joint of the middle finger,
+  `...HandMiddle3`) and `thumb_l|r` (the last joint of the thumb, `...HandThumb3`). Why these two: the wrist, the middle
+  fingertip and the thumb tip are three points that fix a hand (length and direction from the finger, the turn of the palm
+  about that direction from the thumb), they are easy to see, and they are chain ends that cannot be reached from any
+  other landmark. They are joints (inside the finger), not skin points, so they use the same fields, markers, spheres, Mirror
+  and Match buttons as the other twelve, with no second code path. In the fit the hand joint has two targets below it
+  (Middle3 and Thumb3), so it takes the Kabsch rotation for both and the least squares scale; the fingers that have no
+  landmark follow the hand rigidly and the joints in the finger chains are swung onto their end. The frames are the same
+  pure rotations aimed down the bones (#76). Unpose reads only joint positions, so it needs no change. The guess measures
+  the tip of the hand on the mesh (the end of the mesh along the arm direction from the wrist, in a tube) on the sample
+  and on your mesh and moves the finger joint by the difference, as for the other joints; the thumb is the sample's thumb,
+  turned with the hand (its twist is the sample's, so it is the weakest guess). `guess_landmarks(known=...)`: Guess This
+  Landmark and Rig Fit start the hand from the wrist (and elbow) that are already set, not from the guessed ones.
+  Measured: scenario C with the hands swung 30 degrees in the plane of the arm, turned 30 degrees about the forearm, or
+  both, and every finger bone 10 % longer: the finger joints are within 0.01 cm of the true ones (test in
+  `test_node_rig_fit`), and Unpose brings the finger points of hands turned 30 degrees back within 0.5 cm. On the owner's
+  mesh the finger chain ends moved from 3 cm short of the mesh's fingertip to 2 cm short, and all of them are inside the
+  hand mesh.
 - **Measured on the real mesh** (testChar, no landmark groups): see the task report; the guess is weakest at the shoulders,
   elbows and wrists of an armoured character (up to about 9 cm from the owner's own rig), good at the legs (2 to 3 cm).
 

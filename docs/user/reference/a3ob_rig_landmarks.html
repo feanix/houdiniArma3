@@ -28,8 +28,8 @@
 <main>
 <p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
 <h1>Rig Landmarks</h1>
-<p class="lead">Places the landmarks of your character (chin, groin, shoulders, elbows, wrists, hips, knees, ankles) for Rig Fit, as positions that you drag in the viewport.</p>
-<p>Rig Fit fits the skeleton to 14 landmarks of your character: the chin, the groin, and the left and right shoulder, elbow, wrist, hip, knee and ankle. This node holds them as positions (X, Y, Z) that you place by hand. Put the node between your mesh and Rig Fit. Connect the skeleton and the sample body to its inputs 2 and 3 (the ones that go into Rig Fit) and press Guess Landmarks: it fills all 14 fields with the guess of Rig Fit. Then select the node, move the mouse over the viewport and press Enter: every landmark is a labelled marker that you drag. The markers are drawn on top of the mesh. A joint belongs inside the body; the chin and the groin are on the skin.</p>
+<p class="lead">Places the landmarks of your character (chin, groin, shoulders, elbows, wrists, hips, knees, ankles, middle fingers, thumbs) for Rig Fit, as positions that you drag in the viewport.</p>
+<p>Rig Fit fits the skeleton to 18 landmarks of your character: the chin, the groin, and the left and right shoulder, elbow, wrist, hip, knee, ankle, middle finger and thumb. This node holds them as positions (X, Y, Z) that you place by hand. Put the node between your mesh and Rig Fit. Connect the skeleton and the sample body to its inputs 2 and 3 (the ones that go into Rig Fit) and press Guess Landmarks: it fills all 18 fields with the guess of Rig Fit. Then select the node, move the mouse over the viewport and press Enter: every landmark is a labelled marker that you drag. The markers are drawn on top of the mesh. A joint belongs inside the body; the chin and the groin are on the skin.</p>
 <p>Mirror is on by default. Left is the +X side. The right markers follow the left ones, mirrored about the X = 0 plane, so dragging a left marker moves its right partner (the right fields cannot be edited then). Switch Mirror off to place both sides freely. To put a landmark back to the guess, choose it in the Landmark menu and press Guess This Landmark. To set a landmark from the mesh, select points in the viewport, choose the landmark in the Landmark menu and press Set From Selected Points: it takes the average of the points. Only the position is kept, not the selection. This is handy for the chin and the groin.</p>
 <p>The node gives your mesh unchanged, with one detail vector per landmark that is set (a3ob_lm_chin and so on), which Rig Fit reads. A fresh node has no position set (all three numbers zero means not set); it warns and needs the guess. Rig Fit then guesses the landmarks that are not set.</p>
 <table class="facts">
@@ -47,7 +47,7 @@
 <p>Parameters are in the order they appear on the node.</p>
 <section class="parm" id="guess">
 <h3>Guess Landmarks <code>guess</code></h3>
-<p>Fills all 14 positions with the auto-guess of Rig Fit for your mesh. Connect the skeleton to input 2 and the sample body to input 3 first. It replaces the positions that are set.</p>
+<p>Fills all 18 positions with the auto-guess of Rig Fit for your mesh. Connect the skeleton to input 2 and the sample body to input 3 first. It replaces the positions that are set.</p>
 <dl>
 <dt>Type</dt><dd>Button</dd>
 </dl>
@@ -178,6 +178,40 @@
 <dt>Editable when</dt><dd>Mirror is off</dd>
 </dl>
 </section>
+<section class="parm" id="finger_l">
+<h3>Left Finger <code>finger_l</code></h3>
+<p>The left middle finger, its last joint: inside the fingertip, in the middle of the finger. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark.</p>
+<dl>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
+</dl>
+</section>
+<section class="parm" id="finger_r">
+<h3>Right Finger <code>finger_r</code></h3>
+<p>The right middle finger, its last joint. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. While Mirror is on this one follows the left side and cannot be edited.</p>
+<dl>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
+<dt>Editable when</dt><dd>Mirror is off</dd>
+</dl>
+</section>
+<section class="parm" id="thumb_l">
+<h3>Left Thumb <code>thumb_l</code></h3>
+<p>The left thumb, its last joint: inside the tip of the thumb. With the wrist and the middle finger it says which way the palm faces. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark.</p>
+<dl>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
+</dl>
+</section>
+<section class="parm" id="thumb_r">
+<h3>Right Thumb <code>thumb_r</code></h3>
+<p>The right thumb, its last joint. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. While Mirror is on this one follows the left side and cannot be edited.</p>
+<dl>
+<dt>Type</dt><dd>3 numbers</dd>
+<dt>Default</dt><dd>0, 0, 0</dd>
+<dt>Editable when</dt><dd>Mirror is off</dd>
+</dl>
+</section>
 <section class="parm" id="leftToRight">
 <h3>Match Left to Right <code>leftToRight</code></h3>
 <p>Once: puts each right landmark at the mirror image of its left partner (mirrored about X = 0, Left is +X). Chin and groin stay as they are, and a left landmark that is not set is skipped. Disabled while Mirror is on, because the right side already follows the left.</p>
@@ -216,6 +250,10 @@
 <li>Right Knee <code>knee_r</code></li>
 <li>Left Ankle <code>ankle_l</code></li>
 <li>Right Ankle <code>ankle_r</code></li>
+<li>Left Finger <code>finger_l</code></li>
+<li>Right Finger <code>finger_r</code></li>
+<li>Left Thumb <code>thumb_l</code></li>
+<li>Right Thumb <code>thumb_r</code></li>
 </ul>
 </section>
 <section class="parm" id="guessone">
