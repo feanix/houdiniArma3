@@ -814,7 +814,7 @@ Reports: section 4.4. Output: the mesh with cleaned groups and `a3ob_w_*`, plus 
 | `scale` | menu: Per bone length, Whole body | How bone lengths are fitted. Default Per bone length. |
 
 Results (one output with three named parts, D40, see As built): fitted skeleton A' (joints in the user mesh, `transform`
-carrying the fitted rotation); fitted sample body S' (posed and scaled, weights kept, `a3ob_rig_origin` not set yet); the
+a pure rotation aimed down the bone, see As built); fitted sample body S' (posed and scaled, weights kept, `a3ob_rig_origin` not set yet); the
 landmarks as points. The artist corrects a
 landmark by dragging its marker in Rig Landmarks (D42; the first version used point groups, D37 Q11, which only reach the
 surface and depend on point numbers). The fit is a rigid fit down the hierarchy: from
@@ -872,8 +872,13 @@ the point below). `a3ob_core/rig/landmarks.py` (guess, symmetry, snap) and `fit.
   landmark. **Quality** is, per target joint, how far the rigid bone left it from its landmark before that move (in Whole
   body mode the real distance); the message gives the mean and the worst, and warns above 1 cm. With exact landmarks it
   is below 1 cm (test 2.3: all joints within 0.92 cm, S' within 1.7 cm of the true posed body).
-- **A' and S'.** A' is the input skeleton with fitted `P` and `transform` = rotation times scale (row-vector form, as Joint
-  Deform reads it). S' is the sample body moved by linear blend skinning of its own weights (points with no weight follow the
+- **A' and S'.** A' is the input skeleton with fitted `P` and `transform` = a pure rotation (orthonormal, det +1, row-vector form, as Joint
+  Deform reads it; task #76). The per-bone length scale is not in it: lengths come from the joint positions, and S' is
+  skinned with the scaled matrices of the fit. The frame is that of `kinefx::orientjoints` defaults: X (primary) points to
+  the main-chain child, Y (secondary) is world +Z made square to X (world +Y when X is within 18 degrees of Z, as for a
+  foot), so left and right limbs get the same Y and mirror cleanly (Z = X cross Y). The main child is the one closest to the
+  direction the bone came in by (the root: world +Y), looking through a zero-length bone (Pelvis to Spine, so the Pelvis
+  aims up the spine). A chain end (head, hand, foot) takes its parent's frame. The Arma rest skeleton is unchanged. S' is the sample body moved by linear blend skinning of its own weights (points with no weight follow the
   closest weighted point); it keeps every group and attribute.
 - **Measured on the real mesh** (testChar, no landmark groups): see the task report; the guess is weakest at the shoulders,
   elbows and wrists of an armoured character (up to about 9 cm from the owner's own rig), good at the legs (2 to 3 cm).

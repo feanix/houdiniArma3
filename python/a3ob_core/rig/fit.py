@@ -18,6 +18,9 @@ The Arma skeleton is never changed (D37 Q7). The fit makes a working copy, ``A'`
 - **Quality.** For each target joint, how far the rigid fit left it from its landmark (the distance before a joint is
   moved onto the landmark). In ``body`` mode that is the real distance.
 
+The fitted skeleton's own frames are separate (``bone_frames``, task #76): pure rotations aimed down the bones. The scaled
+matrices (``linear``) only skin the sample body.
+
 Rotations are 3x3 column-vector matrices here; the Houdini node writes the transposed (row-vector) form to ``transform``.
 """
 
@@ -26,7 +29,7 @@ from typing import Dict, List, Optional, Sequence
 
 import numpy as np
 
-__all__ = ["TORSO_BONES", "FitResult", "joint_targets", "fit_skeleton", "skin_points", "body_scale", "swing"]
+__all__ = ["TORSO_BONES", "FitResult", "joint_targets", "fit_skeleton", "skin_points", "body_scale", "swing", "bone_frames"]
 
 #: The torso joints that are placed from the torso frame, from the pelvis up to the neck.
 TORSO_BONES = ("Pelvis", "Spine", "Spine1", "Spine2", "Spine3", "neck")
@@ -42,6 +45,57 @@ class FitResult:
     #: Joint number -> distance (metres) the rigid fit left between the joint and its target (before it was moved).
     residual: Dict[int, float]
     targets: Dict[int, np.ndarray]
+    #: (n, 3, 3) pure rotations (column-vector form, columns = the joint's x, y, z axes) aimed down the bones (task #76).
+    #: ``linear`` skins the body; ``frames`` is what the fitted skeleton's ``transform`` holds.
+    frames: Optional[np.ndarray] = None
+
+
+def bone_frames(parents: Sequence[int], positions: np.ndarray) -> np.ndarray:
+    """A pure rotation for every joint, aimed down its bone (task #76). Same defaults as ``kinefx::orientjoints``:
+    primary axis (forward) +X, secondary axis (up) +Y. Returned in column-vector form: the columns are the joint's axes.
+
+    - **Primary (x)** points to the main-chain child: of the children, the one whose direction is closest to the
+      direction the bone came in by (the parent's bone; the root uses world +Y). A child in the same place as the joint
+      (the zero-length Pelvis to Spine bone) is looked through to the first child below it that is not.
+    - **Secondary (y)** is the world +Z axis made square to x (world +Y when x is within 18 degrees of Z, as for a foot),
+      so a left and a right limb get the same y and the frames mirror cleanly. z = x cross y.
+    - A joint with no child to aim at (a chain end, or all its children in its place) takes its parent's frame; a root
+      with none takes the identity.
+    """
+    count = len(parents)
+    children: List[List[int]] = [[] for _ in range(count)]
+    for joint, parent in enumerate(parents):
+        if parent >= 0:
+            children[parent].append(joint)
+
+    def aims(origin: int, joint: int) -> List[np.ndarray]:
+        delta = positions[joint] - positions[origin]
+        if np.linalg.norm(delta) > MIN_BONE:
+            return [delta]
+        return [d for c in children[joint] for d in aims(origin, c)]
+
+    frames = np.tile(np.eye(3), (count, 1, 1))
+    incoming = np.zeros((count, 3))
+    for a in range(count):
+        parent = parents[a]
+        step = positions[a] - positions[parent] if parent >= 0 else np.zeros(3)
+        if np.linalg.norm(step) > MIN_BONE:
+            incoming[a] = step / np.linalg.norm(step)
+        else:
+            incoming[a] = incoming[parent] if parent >= 0 else np.array([0.0, 1.0, 0.0])
+        candidates = [d for c in children[a] for d in aims(a, c)]
+        if not candidates:
+            frames[a] = frames[parent] if parent >= 0 else np.eye(3)
+            continue
+        best = max(candidates, key=lambda d: float(d @ incoming[a]) / np.linalg.norm(d))
+        x = best / np.linalg.norm(best)
+        ref = np.array([0.0, 0.0, 1.0])
+        if abs(x @ ref) > 0.95:
+            ref = np.array([0.0, 1.0, 0.0])
+        y = ref - (ref @ x) * x
+        y /= np.linalg.norm(y)
+        frames[a] = np.stack([x, y, np.cross(x, y)], axis=1)
+    return frames
 
 
 def swing(a: np.ndarray, b: np.ndarray) -> np.ndarray:
@@ -221,7 +275,8 @@ def fit_skeleton(parents: Sequence[int], rest: np.ndarray, targets: Dict[int, np
             turned = v @ delta.T
             scale[a] = max(float((w * turned).sum() / max((v * v).sum(), 1e-20)), 1e-3)
     linear = scale[:, None, None] * rot
-    return FitResult(pos, linear, scale, residual, {k: np.asarray(t) for k, t in targets.items()})
+    return FitResult(pos, linear, scale, residual, {k: np.asarray(t) for k, t in targets.items()},
+                     bone_frames(parents, pos))
 
 
 def skin_points(points: np.ndarray, weights: np.ndarray, rest: np.ndarray, result: FitResult) -> np.ndarray:

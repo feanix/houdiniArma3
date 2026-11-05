@@ -169,8 +169,8 @@ and writes none of the attributes above except `a3ob_rig_part`. A landmark posit
 `a3ob_lm_shoulder_l|r`, `a3ob_lm_elbow_l|r`, `a3ob_lm_wrist_l|r`, `a3ob_lm_hip_l|r`, `a3ob_lm_knee_l|r`,
 `a3ob_lm_ankle_l|r`). A landmark that is not set has no attribute (Rig Fit then guesses it). Left is +X. Its `landmarks`
 part is points with
-a string `name` (the same names). The fitted skeleton keeps the Rig Skeleton layout; its `transform` holds rotation times
-size per joint (row-vector 3x3).
+a string `name` (the same names). The fitted skeleton keeps the Rig Skeleton layout; its `transform` holds a pure rotation
+per joint (row-vector 3x3, no scale), X aimed down the bone to its main child (task #76).
 
 Constants that are not stored: `MLOD`/257 (`data_p3d.py:777-782`) and `P3DM`/28.256 (`data_p3d.py:472-478`).
 
