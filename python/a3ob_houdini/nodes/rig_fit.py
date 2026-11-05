@@ -63,8 +63,8 @@ SPEC = NodeSpec(
                                  "its bone weights."),
                         ("landmarks", "Draw the landmarks that were used, as points with a name (landmarks)."))),
         Parm("landmarks", "Landmarks", "menu", "both",
-             "Where the landmarks come from: the chin, the groin and the shoulder, elbow, wrist, hip, knee and ankle of "
-             "each side. The Rig Landmarks node in front of this one holds the positions you placed (its markers are "
+             "Where the landmarks come from: the chin, the groin and the shoulder, elbow, wrist, hip, knee, ankle, middle "
+             "finger and thumb of each side. The Rig Landmarks node in front of this one holds the positions you placed (its markers are "
              "dragged in the viewport). Left is the +X side.",
              items=(("guess", "Auto-guess"), ("landmarks", "From Rig Landmarks"), ("both", "Both")),
              item_help=(("guess", "Guess all landmarks from the shape of your mesh. Rig Landmarks is ignored."),
@@ -151,7 +151,7 @@ def _landmarks(mesh, mode: str, skin: np.ndarray, side, report: Report):
     positions = dict(placed)
     source = {name: "set" for name in placed}
     if len(placed) < len(LANDMARK_NAMES):
-        guessed, notes = landmark_io.guess_for_mesh(skin, side)
+        guessed, notes = landmark_io.guess_for_mesh(skin, side, placed)
         for name in LANDMARK_NAMES:
             if name not in positions:
                 positions[name] = guessed[name]

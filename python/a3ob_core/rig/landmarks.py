@@ -5,8 +5,8 @@
 # symmetry) follows the usual template-fitting workflow (docs/design/character-rigging.md 1.2 and 1.5); the code is new.
 """Landmarks of a humanoid mesh for the Rig Fit node, with no Houdini (docs/design/character-rigging.md 1.5, 6.2).
 
-A landmark is one named point of the body. Twelve of the fourteen are joints (shoulder, elbow, wrist, hip, knee, ankle on
-each side); two are points on the skin (chin, groin). The mesh stands upright (Y up), faces +Z and has its arms away from
+A landmark is one named point of the body. Sixteen of the eighteen are joints (shoulder, elbow, wrist, hip, knee, ankle, and the
+last joint of the middle finger and of the thumb, on each side); two are points on the skin (chin, groin). The mesh stands upright (Y up), faces +Z and has its arms away from
 the body (A-pose, D37 Q5), like the Arma sample body.
 
 The auto-guess has no tuned numbers. It runs the same measurements on the sample body, where the joints are known (the
@@ -23,6 +23,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
+from .fit import swing
 from .transfer import closest_points
 
 __all__ = ["Landmark", "LANDMARKS", "NAMES", "PAIRS", "CHIN_FROM_HEAD", "HEAD_SHARE", "Template", "make_template",
@@ -56,6 +57,15 @@ LANDMARKS: Tuple[Landmark, ...] = (
     Landmark("lm_knee_r", "RightLeg", False, "The right knee joint."),
     Landmark("lm_ankle_l", "LeftFoot", False, "The left ankle joint, in the middle of the leg."),
     Landmark("lm_ankle_r", "RightFoot", False, "The right ankle joint."),
+    # The hands (task #70). The middle finger gives the length and the direction of the hand, the thumb gives the turn of
+    # the palm about that direction (two points and the wrist fix a hand). The other fingers follow the hand as a whole.
+    Landmark("lm_finger_l", "LeftHandMiddle3", False,
+             "The left middle finger, its last joint: inside the fingertip, in the middle of the finger."),
+    Landmark("lm_finger_r", "RightHandMiddle3", False, "The right middle finger, its last joint."),
+    Landmark("lm_thumb_l", "LeftHandThumb3", False,
+             "The left thumb, its last joint: inside the tip of the thumb. With the wrist and the middle finger it "
+             "says which way the palm faces."),
+    Landmark("lm_thumb_r", "RightHandThumb3", False, "The right thumb, its last joint."),
 )
 NAMES: Tuple[str, ...] = tuple(item.name for item in LANDMARKS)
 BY_NAME: Dict[str, Landmark] = {item.name: item for item in LANDMARKS}
@@ -208,6 +218,26 @@ def _arm_axis(P: np.ndarray, side: float, m: Measure, start: np.ndarray, end: np
     return point, direction
 
 
+def _hand_tip(P: np.ndarray, side: float, m: Measure, wrist: np.ndarray, direction: np.ndarray, length: float) -> np.ndarray:
+    """The tip of the hand: the end of the mesh going from ``wrist`` along ``direction`` (about ``length`` long). Repeated
+    three times with the direction to the tip found. Returns the mean of the points in the last tenth of ``length``, or
+    the point ``length`` along ``direction`` when the mesh has too few points there."""
+    d = _unit(np.asarray(direction, dtype=np.float64))
+    tip = wrist + d * length
+    clear = 0.13 * m.height  # the points of the hand are at least this far from the midline
+    for _ in range(3):
+        along = (P - wrist) @ d
+        across = np.linalg.norm((P - wrist) - np.outer(along, d), axis=1)
+        pick = (along > 0.3 * length) & (along < 1.6 * length) & (across < 0.6 * length) \
+            & (side * (P[:, 0] - m.xc) > clear)
+        if pick.sum() < 6:
+            break
+        end = pick & (along > along[pick].max() - 0.1 * length)
+        tip = P[end].mean(axis=0)
+        d = _unit(tip - wrist)
+    return tip
+
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Template (the sample body) and the guess
 # ---------------------------------------------------------------------------------------------------------------------
@@ -221,10 +251,12 @@ class Template:
     estimate: Dict[str, np.ndarray]
 
 
-def _estimate(P: np.ndarray, m: Measure, scale: float, template: Dict[str, np.ndarray], t_measure: Measure
-              ) -> Dict[str, np.ndarray]:
+def _estimate(P: np.ndarray, m: Measure, scale: float, template: Dict[str, np.ndarray], t_measure: Measure,
+              known: Optional[Dict[str, np.ndarray]] = None) -> Dict[str, np.ndarray]:
     """The measured joints of one body. ``template`` holds the landmark positions of the sample, ``t_measure`` its
-    measurements, ``scale`` this body's size against the sample."""
+    measurements, ``scale`` this body's size against the sample. ``known`` holds landmarks that are placed already (by
+    hand): the hand is measured from a known wrist (and elbow) instead of the guessed ones."""
+    known = known or {}
     est: Dict[str, np.ndarray] = {}
 
     def mapped(t: np.ndarray) -> np.ndarray:
@@ -261,6 +293,16 @@ def _estimate(P: np.ndarray, m: Measure, scale: float, template: Dict[str, np.nd
         est["lm_shoulder_" + tag] = joint
         est["lm_elbow_" + tag] = joint + direction * scale * float(np.linalg.norm(elbow - shoulder))
         est["lm_wrist_" + tag] = joint + direction * scale * float(np.linalg.norm(wrist - shoulder))
+        # hand: the tip of the middle finger is measured on the mesh; the thumb is the sample's, turned with the hand
+        wrist_here = np.asarray(known.get("lm_wrist_" + tag, est["lm_wrist_" + tag]), dtype=np.float64)
+        if "lm_wrist_" + tag in known and "lm_elbow_" + tag in known:
+            direction = _unit(wrist_here - np.asarray(known["lm_elbow_" + tag], dtype=np.float64))
+        finger, thumb = template["lm_finger_" + tag], template["lm_thumb_" + tag]
+        sample_axis = _unit(finger - wrist)
+        arm_turn = swing(_unit(wrist - shoulder), direction)
+        tip = _hand_tip(P, side, m, wrist_here, arm_turn @ sample_axis, scale * float(np.linalg.norm(finger - wrist)))
+        est["lm_finger_" + tag] = tip
+        est["lm_thumb_" + tag] = wrist_here + scale * (swing(sample_axis, _unit(tip - wrist_here)) @ (thumb - wrist))
     return est
 
 
@@ -281,16 +323,18 @@ def make_template(joints: Dict[str, np.ndarray], body: np.ndarray) -> Template:
     return Template(truth, m, _estimate(body, m, 1.0, truth, m))
 
 
-def guess_landmarks(P: np.ndarray, template: Template) -> Tuple[Dict[str, np.ndarray], Dict[str, str]]:
+def guess_landmarks(P: np.ndarray, template: Template, known: Optional[Dict[str, np.ndarray]] = None
+                    ) -> Tuple[Dict[str, np.ndarray], Dict[str, str]]:
     """Guess all landmarks on the user's points ``P``. Returns ``(positions, notes)``; ``notes`` maps a landmark name to
-    a short text when the guess is weaker than usual (for example the crotch was not found)."""
+    a short text when the guess is weaker than usual (for example the crotch was not found). ``known`` are landmarks that
+    are placed already: the hand landmarks are guessed from a known wrist and elbow (no other guess is changed)."""
     m = measure(P)
     t = template.measure
     notes: Dict[str, str] = {}
     # The size against the sample: the crotch height is pushed up when the legs are apart, the shoulder height is not
     # affected by the arms or legs. The two are averaged.
     scale = float(np.sqrt((m.groin_y - m.y0) / (t.groin_y - t.y0) * (m.shoulder_y - m.y0) / (t.shoulder_y - t.y0)))
-    est = _estimate(P, m, scale, template.truth, t)
+    est = _estimate(P, m, scale, template.truth, t, known)
     out: Dict[str, np.ndarray] = {}
     for name, value in est.items():
         out[name] = value + scale * (template.truth[name] - template.estimate[name])

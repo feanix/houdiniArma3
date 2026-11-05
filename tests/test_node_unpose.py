@@ -68,13 +68,14 @@ class TestUnposeOnSamples(NodeTestCase):
     fit = rig_fit_tests.TestRigFitOnSamples.fit
     part = rig_fit_tests.TestRigFitOnSamples.part
 
-    def stretched_pose(self, arms=-20.0, legs=8.0, arm_scale=1.10, leg_scale=1.08, size=1.05, bend=0.0):
+    def stretched_pose(self, arms=-20.0, legs=8.0, arm_scale=1.10, leg_scale=1.08, size=1.05, bend=0.0, hands=0.0):
         """``(4x4 matrices, world joint positions)``: design test 2.3 with limbs that are longer all the way down. A bone
         that is longer makes the mesh around it longer along the bone only (a longer arm is not a thicker one); the whole
         body is ``size`` bigger. A chain end (a hand, a foot) has no bone and takes the body size."""
         rotation_z = rig_fit_tests.rotation_z
         local = {"LeftArm": rotation_z(arms), "RightArm": rotation_z(-arms), "LeftUpLeg": rotation_z(legs),
-                 "RightUpLeg": rotation_z(-legs), "LeftForeArm": rotation_z(bend)}
+                 "RightUpLeg": rotation_z(-legs), "LeftForeArm": rotation_z(bend), "LeftHand": rotation_z(hands),
+                 "RightHand": rotation_z(-hands)}
         count = len(self.names)
         grow = np.ones(count)
         for i in range(count):
@@ -217,6 +218,18 @@ class TestUnposeOnSamples(NodeTestCase):
             100 * error.mean(), 100 * error.max(), 100 * np.linalg.norm(posed - self.P, axis=1).mean()))
         self.assertLess(float(error.max()), 0.01)
         self.assertLess(float(error.mean()), 0.003)
+
+    def test_task_70_the_finger_points_of_hands_turned_30_degrees_come_back_within_1_cm_of_the_arma_rest(self):
+        """Task #70, criterion 3: the hands are fitted (finger landmarks), so Unpose puts the finger points back."""
+        mats, world_pos = self.stretched_pose(hands=30.0)
+        result, error, posed = self.through_rig_fit_and_unpose(mats, world_pos)
+        self.assertEqual(result.errors, ())
+        owner = self.full_W[self.used].argmax(axis=1)
+        fingers = np.array([self.names[b].startswith(("LeftHand", "RightHand")) for b in owner])
+        self.assertGreater(int(fingers.sum()), 100)
+        print("   task 70 unpose, hands turned 30 degrees: finger points %.2f cm mean, %.2f cm at most (all points %.2f cm at most)" % (
+            100 * error[fingers].mean(), 100 * error[fingers].max(), 100 * error.max()))
+        self.assertLess(float(error[fingers].max()), 0.01)
 
     def test_design_2_3_d43_literal_scenario_c_known_limit_regression_guard(self):
         """Known limit (D43): literal scenario C, bones lengthened but the mesh NOT stretched.

@@ -6,7 +6,7 @@
     label	"Rig Landmarks"
 
     help {
-	"Places the landmarks of your character (chin, groin, shoulders, elbows, wrists, hips, knees, ankles) for Rig Fit, as positions that you drag in the viewport."
+	"Places the landmarks of your character (chin, groin, shoulders, elbows, wrists, hips, knees, ankles, middle fingers, thumbs) for Rig Fit, as positions that you drag in the viewport."
     }
 
     inputlabel	1	"Your mesh"
@@ -18,7 +18,7 @@
 	label	"Guess Landmarks"
 	type	button
 	default	{ "0" }
-	help	"Fills all 14 positions with the auto-guess of Rig Fit for your mesh. Connect the skeleton to input 2 and the sample body to input 3 first. It replaces the positions that are set."
+	help	"Fills all 18 positions with the auto-guess of Rig Fit for your mesh. Connect the skeleton to input 2 and the sample body to input 3 first. It replaces the positions that are set."
 	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('rig_landmarks', 'guess', kwargs)" }
 	parmtag	{ "script_callback_language" "python" }
     }
@@ -178,6 +178,48 @@
 	parmtag	{ "script_callback_language" "python" }
     }
     parm {
+	name	"finger_l"
+	label	"Left Finger"
+	type	vector
+	size	3
+	default	{ "0.0" "0.0" "0.0" }
+	help	"The left middle finger, its last joint: inside the fingertip, in the middle of the finger. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark."
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('rig_landmarks', 'moved', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+    parm {
+	name	"finger_r"
+	label	"Right Finger"
+	type	vector
+	size	3
+	default	{ "0.0" "0.0" "0.0" }
+	help	"The right middle finger, its last joint. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. While Mirror is on this one follows the left side and cannot be edited."
+	disablewhen	"{ mirror != 0 }"
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('rig_landmarks', 'moved', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+    parm {
+	name	"thumb_l"
+	label	"Left Thumb"
+	type	vector
+	size	3
+	default	{ "0.0" "0.0" "0.0" }
+	help	"The left thumb, its last joint: inside the tip of the thumb. With the wrist and the middle finger it says which way the palm faces. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark."
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('rig_landmarks', 'moved', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+    parm {
+	name	"thumb_r"
+	label	"Right Thumb"
+	type	vector
+	size	3
+	default	{ "0.0" "0.0" "0.0" }
+	help	"The right thumb, its last joint. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. While Mirror is on this one follows the left side and cannot be edited."
+	disablewhen	"{ mirror != 0 }"
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('rig_landmarks', 'moved', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+    parm {
 	name	"leftToRight"
 	label	"Match Left to Right"
 	type	button
@@ -216,6 +258,10 @@
 	    "knee_r"	"Right Knee"
 	    "ankle_l"	"Left Ankle"
 	    "ankle_r"	"Right Ankle"
+	    "finger_l"	"Left Finger"
+	    "finger_r"	"Right Finger"
+	    "thumb_l"	"Left Thumb"
+	    "thumb_r"	"Right Thumb"
 	}
 	help	"The landmark that the two buttons below work on."
     }

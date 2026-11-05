@@ -2,7 +2,7 @@
 #
 # houdiniArma3: a Houdini port of Arma 3 Object Builder (A3OB).
 # A3OB has no skeleton fitting; the landmark names are the ones of ``a3ob_core.rig.landmarks``.
-"""The Rig Landmarks node (docs/design/character-rigging.md 6.2, tasks #71 and #74, D42): the 14 landmarks that Rig Fit
+"""The Rig Landmarks node (docs/design/character-rigging.md 6.2, tasks #71, #74 and #70, D42): the 18 landmarks that Rig Fit
 reads, each one a position (X, Y, Z) that the artist places by hand.
 
 The positions start from the auto-guess (the Guess Landmarks button runs the same guess code as Rig Fit), then they are
@@ -75,8 +75,8 @@ def _parm(landmark) -> Parm:
 SPEC = NodeSpec(
     kind="rig_landmarks",
     label="Rig Landmarks",
-    summary="Places the landmarks of your character (chin, groin, shoulders, elbows, wrists, hips, knees, ankles) for Rig "
-            "Fit, as positions that you drag in the viewport.",
+    summary="Places the landmarks of your character (chin, groin, shoulders, elbows, wrists, hips, knees, ankles, middle "
+            "fingers, thumbs) for Rig Fit, as positions that you drag in the viewport.",
     inputs=(1, 3),
     input_labels=("Your mesh", "Skeleton", "Sample body"),
     input_help=("Your character mesh, the one that goes into Rig Fit. It comes out unchanged.",
@@ -84,7 +84,7 @@ SPEC = NodeSpec(
                 "Optional. The sample body with its bone weights, for Guess Landmarks (the same one that goes into Rig Fit)."),
     parms=(
         Parm("guess", "Guess Landmarks", "button", "",
-             "Fills all 14 positions with the auto-guess of Rig Fit for your mesh. Connect the skeleton to input 2 and "
+             "Fills all 18 positions with the auto-guess of Rig Fit for your mesh. Connect the skeleton to input 2 and "
              "the sample body to input 3 first. It replaces the positions that are set.", action="guess"),
         Parm("mirror", "Mirror", "toggle", True,
              "Left is the +X side. On: the right landmarks follow the left ones, mirrored about the X = 0 plane, so "
@@ -119,7 +119,7 @@ SPEC = NodeSpec(
 # ---------------------------------------------------------------------------------------------------------------------
 
 def positions_of(node) -> dict:
-    """``{short name: (x, y, z)}`` of all 14 fields as they stand."""
+    """``{short name: (x, y, z)}`` of all fields as they stand."""
     return {short: tuple(float(v) for v in node.parmTuple(short).eval()) for short in BY_SHORT}
 
 
@@ -193,8 +193,9 @@ def match_sides(node, from_left: bool) -> None:
             _write(node, target, mirror_x(current[source]))
 
 
-def _guess(node):
-    """The auto-guess for the mesh on input 1: ``{landmark name: position}``. Raises ``UserError``."""
+def _guess(node, known=None):
+    """The auto-guess for the mesh on input 1: ``{landmark name: position}``. ``known`` are landmarks already placed (the
+    hand landmarks are guessed from a known wrist). Raises ``UserError``."""
     mesh = node.inputGeometry(0)
     if mesh is None:
         raise UserError(format_problem(NAME, "there is no input", "Connect your mesh"))
@@ -207,13 +208,17 @@ def _guess(node):
     positions, tris = rig_weights.read_mesh(mesh)
     if not len(tris):
         raise UserError(format_problem(NAME, "your mesh has no polygons", "Use a mesh with polygons on input 1"))
-    guessed, _notes = landmark_io.guess_for_mesh(positions[np.unique(tris)], side)
+    guessed, _notes = landmark_io.guess_for_mesh(positions[np.unique(tris)], side, known)
     return guessed
 
 
 def guess_landmarks_on(node, only: str = "") -> None:
-    """Guess Landmarks (``only`` empty) or Guess This Landmark (``only`` is a short name)."""
-    guessed = _guess(node)
+    """Guess Landmarks (``only`` empty) or Guess This Landmark (``only`` is a short name). One landmark is guessed from the
+    wrist and elbow that are set; all of them are guessed from the guess."""
+    known = None
+    if only:
+        known = {"lm_" + short: np.array(value) for short, value in positions_of(node).items() if is_set(value)}
+    guessed = _guess(node, known)
     if only:
         set_landmark(node, only, guessed["lm_" + only])
         return

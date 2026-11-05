@@ -109,7 +109,7 @@ class TestRigLandmarksPositions(NodeTestCase):
         result = cook(node)
         self.assertEqual(result.errors, ())
         self.assertIn("Guess Landmarks", " ".join(result.warnings))
-        self.assertIn("14 landmarks are not set", " ".join(result.warnings))
+        self.assertIn("18 landmarks are not set", " ".join(result.warnings))
         self.assertEqual(self.detail(node), {})
 
     def test_positions_are_written_as_detail_vectors_and_the_mesh_is_not_changed(self):
@@ -117,7 +117,7 @@ class TestRigLandmarksPositions(NodeTestCase):
         source = node.inputs()[0]
         result = cook(node)
         self.assertEqual(result.errors, ())
-        self.assertIn("12 landmarks are not set", " ".join(result.warnings))
+        self.assertIn("16 landmarks are not set", " ".join(result.warnings))
         got = self.detail(node)
         self.assertEqual(sorted(got), ["lm_chin", "lm_shoulder_l"])
         np.testing.assert_allclose(got["lm_chin"], (0.0, 1.7, 0.1), atol=1e-6)
@@ -487,7 +487,7 @@ class TestRigLandmarksWithRigFit(NodeTestCase):
         guessed = self.used(fit)
         for name in LANDMARK_NAMES:
             np.testing.assert_allclose(node.parmTuple(short(name)).eval(), guessed[name], atol=1e-9, err_msg=name)
-        self.assertEqual([w for w in cook(node).warnings], [])  # all 14 are set now
+        self.assertEqual([w for w in cook(node).warnings], [])  # all 18 are set now
 
     def test_guess_with_mirror_on_keeps_the_left_guess_and_mirrors_it(self):
         node = self.landmarks(mirror=1)
@@ -529,7 +529,7 @@ class TestRigLandmarksWithRigFit(NodeTestCase):
         both = self.fit(fresh, landmarks="both")
         result = cook(both)
         self.assertEqual(result.errors, ())
-        self.assertIn("0 from Rig Landmarks, 14 guessed", "\n".join(result.messages))
+        self.assertIn("0 from Rig Landmarks, 18 guessed", "\n".join(result.messages))
         only = self.fit(fresh, landmarks="landmarks")
         self.assertIn("not set", " ".join(cook(only).errors))
 
@@ -550,7 +550,7 @@ class TestRigLandmarksWithRigFit(NodeTestCase):
         fit = self.fit(node, landmarks="both", snap=0, symmetry=0)
         result = cook(fit)
         self.assertEqual(result.errors, ())
-        self.assertIn("4 from Rig Landmarks, 10 guessed", "\n".join(result.messages))
+        self.assertIn("4 from Rig Landmarks, 14 guessed", "\n".join(result.messages))
         got = self.used(fit)
         for name, value in expected.items():
             np.testing.assert_allclose(got[name], value, atol=1e-5, err_msg=name)

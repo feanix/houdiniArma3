@@ -32,6 +32,14 @@ def rotation_z(degrees):
     return np.array([[np.cos(a), -np.sin(a), 0.0], [np.sin(a), np.cos(a), 0.0], [0.0, 0.0, 1.0]])
 
 
+def rotation_about(axis, degrees):
+    """The rotation by ``degrees`` about the direction ``axis`` (Rodrigues)."""
+    a = np.radians(degrees)
+    k = np.asarray(axis, dtype=np.float64) / np.linalg.norm(axis)
+    cross = np.array([[0.0, -k[2], k[1]], [k[2], 0.0, -k[0]], [-k[1], k[0], 0.0]])
+    return np.eye(3) + np.sin(a) * cross + (1.0 - np.cos(a)) * (cross @ cross)
+
+
 @unittest.skipUnless(HAS_HOU, "needs hou (run under hython)")
 @unittest.skipUnless(samples_support.AVAILABLE, samples_support.SKIP_REASON)
 class TestRigFitOnSamples(NodeTestCase):
@@ -67,12 +75,20 @@ class TestRigFitOnSamples(NodeTestCase):
 
     # ---- the posed copy -------------------------------------------------------------------------------------------
 
-    def pose(self, arms=-20.0, legs=8.0, arm_scale=1.10, leg_scale=1.08, size=1.05):
-        """``(4x4 matrices, world joint positions)`` of the spike's scenario C (or a part of it)."""
+    def pose(self, arms=-20.0, legs=8.0, arm_scale=1.10, leg_scale=1.08, size=1.05, hand_swing=0.0, hand_twist=0.0,
+             finger_scale=1.0):
+        """``(4x4 matrices, world joint positions)`` of the spike's scenario C (or a part of it). ``hand_swing`` turns each
+        hand about the Z axis (in the plane of the A-pose), ``hand_twist`` about the axis of its forearm (the palm turns),
+        both in degrees; ``finger_scale`` lengthens every bone from a hand down (task #70)."""
         local = {"LeftArm": rotation_z(arms), "RightArm": rotation_z(-arms), "LeftUpLeg": rotation_z(legs),
                  "RightUpLeg": rotation_z(-legs)}
+        for side, sign in (("Left", 1.0), ("Right", -1.0)):
+            axis = self.rest[self.index[side.lower() + "hand"]] - self.rest[self.index[side.lower() + "forearm"]]
+            local[side + "Hand"] = rotation_z(sign * hand_swing) @ rotation_about(axis, sign * hand_twist)  # mirrored, so Symmetry keeps both hands
         length = {n: arm_scale for n in ("LeftArm", "LeftForeArm", "LeftHand", "RightArm", "RightForeArm", "RightHand")}
         length.update({n: leg_scale for n in ("LeftLeg", "LeftFoot", "RightLeg", "RightFoot")})
+        length.update({n: finger_scale for n in self.names if n.startswith(("LeftHand", "RightHand")) and
+                       n not in ("LeftHand", "RightHand")})
         count = len(self.names)
         world_rot, world_pos, mats = [None] * count, np.zeros((count, 3)), np.zeros((count, 4, 4))
         for i, name in enumerate(self.names):
@@ -155,6 +171,47 @@ class TestRigFitOnSamples(NodeTestCase):
         self.assertEqual(len(geo.prims()), len(self.skeleton.geometry().prims()))
         np.testing.assert_allclose(np.array(self.skeleton.geometry().pointFloatAttribValues("P")).reshape(-1, 3), self.rest,
                                    atol=1e-6)
+
+    def test_design_task_70_hands_turned_30_degrees_and_fingers_10_percent_longer_land_within_1_cm(self):
+        """Task #70: scenario C plus hands turned 30 degrees (in the plane of the arm, about the forearm, and both) and every
+        finger bone 10 % longer. The hand and finger joints come out within 1 cm of the true ones."""
+        hands = [i for i, n in enumerate(self.names) if n.startswith(("LeftHand", "RightHand")) and n not in ("LeftHand", "RightHand")]
+        self.assertGreaterEqual(len(hands), 30)
+        for swing, twist in ((30.0, 0.0), (0.0, 30.0), (30.0, 30.0)):
+            mats, world_pos = self.pose(hand_swing=swing, hand_twist=twist, finger_scale=1.10)
+            truth = self.true_landmarks(mats, world_pos)
+            posed = self.posed_points(mats)
+            node = self.fit(self.user_mesh(posed, truth), "skeleton", snap=0)
+            self.assertEqual(cook(node).errors, ())
+            fitted = np.array(self.part(node, "fitted_skeleton").pointFloatAttribValues("P")).reshape(-1, 3)
+            error = np.linalg.norm(fitted - world_pos, axis=1)
+            worst = max(hands, key=lambda i: error[i])
+            print("   task 70, hands swung %d and turned %d degrees, fingers 10 %% longer: finger joints %.2f cm at most (%s), "
+                  "the rest of the body %.2f cm" % (swing, twist, 100 * error[worst], self.names[worst],
+                                                     100 * np.delete(error, hands).max()))
+            self.assertLess(float(error[hands].max()), 0.01, self.names[worst])
+            self.assertLess(float(np.delete(error, hands).max()), 0.015)
+            # the frames stay pure rotations (task #76)
+            matrices = np.array(self.part(node, "fitted_skeleton").pointFloatAttribValues("transform")).reshape(-1, 3, 3)
+            for number in hands:
+                np.testing.assert_allclose(matrices[number] @ matrices[number].T, np.eye(3), atol=1e-4)
+                self.assertAlmostEqual(float(np.linalg.det(matrices[number])), 1.0, places=4)
+
+    def test_task_70_a_hand_with_no_fingers_set_still_works_and_the_fingers_are_guessed_from_the_hand(self):
+        """The finger and thumb landmarks are guessed when they are not set; the wrist that is set starts the guess."""
+        mats, world_pos = self.pose(hand_swing=20.0)
+        truth = self.true_landmarks(mats, world_pos)
+        some = {n: truth[n] for n in LANDMARK_NAMES if not n.startswith(("lm_finger", "lm_thumb"))}
+        node = self.fit(self.user_mesh(self.posed_points(mats), some), "landmarks", snap=0)
+        result = cook(node)
+        self.assertEqual(result.errors, ())
+        self.assertIn("14 from Rig Landmarks, 4 guessed", "\n".join(result.messages))
+        geo = self.part(node, "landmarks")
+        found = {n: np.array(p.position()) for n, p in zip(geo.pointStringAttribValues("name"), geo.points())}
+        for name in ("lm_finger_l", "lm_finger_r"):
+            self.assertLess(float(np.linalg.norm(found[name] - truth[name])), 0.03, name)  # the guess of the fingertip
+        for name in ("lm_thumb_l", "lm_thumb_r"):
+            self.assertLess(float(np.linalg.norm(found[name] - truth[name])), 0.05, name)
 
     def test_zero_length_rest_bones_stay_zero_length_and_the_spine_does_not_zigzag(self):
         # task #75: Pelvis and Spine are in one place in the Arma rest; they must be after the fit too
@@ -243,7 +300,7 @@ class TestRigFitOnSamples(NodeTestCase):
         node = self.fit(partial, "landmarks", landmarks="both", snap=0)
         result = cook(node)
         self.assertEqual(result.errors, ())
-        self.assertIn("2 from Rig Landmarks, 12 guessed", "\n".join(result.messages))
+        self.assertIn("2 from Rig Landmarks, 16 guessed", "\n".join(result.messages))
         point = {n: np.array(p.position()) for n, p in zip(self.part(node, "landmarks").pointStringAttribValues("name"), self.part(node, "landmarks").points())}
         self.assertLess(float(np.linalg.norm(point["lm_knee_l"] - truth["lm_knee_l"])), 0.002)
         # Auto-guess ignores the positions

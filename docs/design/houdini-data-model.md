@@ -165,9 +165,10 @@ exporter ignores all of them (they are not groups and not TAGGs).
 
 Rig Fit (task #66) reads the **landmark positions** that the Rig Landmarks node (task #74, D42) puts on the user's mesh,
 and writes none of the attributes above except `a3ob_rig_part`. A landmark position is a **detail** float vector
-`a3ob_lm_<what>[_l|_r]` (X, Y, Z in the units of the mesh; 14 names: `a3ob_lm_chin`, `a3ob_lm_groin`,
+`a3ob_lm_<what>[_l|_r]` (X, Y, Z in the units of the mesh; 18 names: `a3ob_lm_chin`, `a3ob_lm_groin`,
 `a3ob_lm_shoulder_l|r`, `a3ob_lm_elbow_l|r`, `a3ob_lm_wrist_l|r`, `a3ob_lm_hip_l|r`, `a3ob_lm_knee_l|r`,
-`a3ob_lm_ankle_l|r`). A landmark that is not set has no attribute (Rig Fit then guesses it). Left is +X. Its `landmarks`
+`a3ob_lm_ankle_l|r`, and since task #70 `a3ob_lm_finger_l|r` (last joint of the middle finger) and `a3ob_lm_thumb_l|r`
+(last joint of the thumb)). A landmark that is not set has no attribute (Rig Fit then guesses it). Left is +X. Its `landmarks`
 part is points with
 a string `name` (the same names). The fitted skeleton keeps the Rig Skeleton layout; its `transform` holds a pure rotation
 per joint (row-vector 3x3, no scale), X aimed down the bone to its main child (task #76).

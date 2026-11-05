@@ -181,7 +181,7 @@ class TestLandmarkHelpers(unittest.TestCase):
         self.assertNotIn("point group", text)
 
     def test_every_landmark_has_a_name_and_a_side(self):
-        self.assertEqual(len(LANDMARK_NAMES), 14)
+        self.assertEqual(len(LANDMARK_NAMES), 18)  # 14, and the middle finger and the thumb of each hand (task #70)
         for name in LANDMARK_NAMES:
             self.assertTrue(name.startswith("lm_"))
             if name.endswith("_l"):

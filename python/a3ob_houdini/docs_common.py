@@ -65,10 +65,11 @@ NODE_INTRO = {
         "(the number of the rigid or non-rigid piece, which Unpose uses).",
     ),
     "rig_landmarks": (
-        "Rig Fit fits the skeleton to 14 landmarks of your character: the chin, the groin, and the left and right "
-        "shoulder, elbow, wrist, hip, knee and ankle. This node holds them as positions (X, Y, Z) that you place by "
-        "hand. Put the node between your mesh and Rig Fit. Connect the skeleton and the sample body to its inputs 2 and "
-        "3 (the ones that go into Rig Fit) and press Guess Landmarks: it fills all 14 fields with the guess of Rig Fit. "
+        "Rig Fit fits the skeleton to 18 landmarks of your character: the chin, the groin, and the left and right "
+        "shoulder, elbow, wrist, hip, knee, ankle, middle finger and thumb. This node holds them as positions (X, Y, Z) "
+        "that you place by hand. Put the node between your mesh and Rig Fit. Connect the skeleton and the sample body to "
+        "its inputs 2 and 3 (the ones that go into Rig Fit) and press Guess Landmarks: it fills all 18 fields with the "
+        "guess of Rig Fit. "
         "Then select the node, move the mouse over the viewport and press Enter: every landmark is a labelled marker "
         "that you drag. The markers are drawn on top of the mesh. A joint belongs inside the body; the chin and the "
         "groin are on the skin.",
@@ -87,10 +88,12 @@ NODE_INTRO = {
         "it. This node fits them to your mesh, so that Weight Transfer can copy the weights of the sample body onto "
         "your mesh, and Unpose can later bring your mesh back to the Arma rest pose. The Arma skeleton itself is never "
         "changed: the fitted skeleton is only a working copy.",
-        "The fit starts from landmarks, 14 named points of the body. Your mesh should stand upright (Y up), face +Z like "
+        "The fit starts from landmarks, 18 named points of the body. Your mesh should stand upright (Y up), face +Z like "
         "the sample, and be in an A-pose with the arms away from the body. Set the landmarks with a Rig Landmarks node "
         "in front of this one: you drag a marker for each in the viewport. The chin and the groin are points on the skin "
         "(the chin is the tip, the groin the highest point between the legs); the others are joints, inside the body. "
+        "The hands have two each: the last joint of the middle finger gives the length and the direction of the hand, "
+        "the last joint of the thumb says which way the palm faces; the other fingers follow the hand. "
         "Left is the +X side. Landmarks that Rig Landmarks does not set are guessed from the shape of the mesh, and a "
         "position you set always wins over the guess. The guess is a first try: show the landmarks and correct the ones "
         "that are wrong.",
