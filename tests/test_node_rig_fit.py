@@ -170,19 +170,23 @@ class TestRigFitOnSamples(NodeTestCase):
         self.assertGreaterEqual(chain[2] - chain[1], 0.0)  # no step down then up
         self.assertGreaterEqual(chain[1] - chain[0], -1e-3)
 
-    def test_the_fitted_transform_is_rotation_times_size_in_row_form(self):
+    def test_the_fitted_transform_is_a_pure_rotation_aimed_down_the_bone(self):
+        # task #76: orthonormal, det +1, X toward the main child; the old scale (0.7 to 1.1) is gone
         mats, world_pos, truth, posed, mesh = self.scenario()
         node = self.fit(mesh, "skeleton", snap=0)
         self.assertEqual(cook(node).errors, ())
-        matrices = np.array(self.part(node, "fitted_skeleton").pointFloatAttribValues("transform")).reshape(-1, 3, 3)
-        for number in (0, self.index["leftarm"], self.index["rightforearm"], self.index["leftleg"]):
-            linear = matrices[number].T  # the node writes the row-vector form
-            size = float(np.cbrt(np.linalg.det(linear)))
-            self.assertGreater(size, 0.8)
-            np.testing.assert_allclose(linear @ linear.T, size * size * np.eye(3), atol=1e-4)
-        # the left arm is turned down by about the 20 degrees of the pose (a rotation about Z that takes +X towards -Y)
-        left = matrices[self.index["leftarm"]].T
-        self.assertLess(float((left @ np.array([1.0, 0.0, 0.0]))[1]), -0.2)
+        geo = self.part(node, "fitted_skeleton")
+        matrices = np.array(geo.pointFloatAttribValues("transform")).reshape(-1, 3, 3)
+        fitted = np.array(geo.pointFloatAttribValues("P")).reshape(-1, 3)
+        for number, matrix in enumerate(matrices):
+            np.testing.assert_allclose(matrix @ matrix.T, np.eye(3), atol=1e-4, err_msg=self.names[number])
+            self.assertAlmostEqual(float(np.linalg.det(matrix)), 1.0, places=4, msg=self.names[number])
+        for name in ("leftarm", "leftforearm", "rightupleg", "rightleg", "spine2"):
+            a = self.index[name]
+            kids = [c for c, p in enumerate(self.parents) if p == a and np.linalg.norm(fitted[c] - fitted[a]) > 1e-3]
+            cosines = [float(matrices[a][0] @ (fitted[c] - fitted[a]) / np.linalg.norm(fitted[c] - fitted[a]))
+                       for c in kids]  # row 0 = the X axis: it points down one of the bones to a child
+            self.assertGreater(max(cosines), 1.0 - 1e-4, name)
 
     def test_the_sample_body_is_posed_and_keeps_its_weights(self):
         mats, world_pos, truth, posed, mesh = self.scenario()

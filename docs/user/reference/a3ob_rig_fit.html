@@ -55,7 +55,7 @@
 <p>Choices:</p>
 <ul>
 <li>All <code>all</code>: Draw the fitted skeleton, the fitted sample body and the landmarks.</li>
-<li>Fitted skeleton <code>skeleton</code>: Draw the skeleton moved into your mesh (fitted_skeleton, a working copy, A&#x27;). Its joints are at your landmarks and its transform holds the fitted rotation and size of each joint.</li>
+<li>Fitted skeleton <code>skeleton</code>: Draw the skeleton moved into your mesh (fitted_skeleton, a working copy, A&#x27;). Its joints are at your landmarks and its transform is a pure rotation (no scale) that aims the X axis down the bone to its child, with Y toward the front (+Z).</li>
 <li>Fitted sample body <code>body</code>: Draw the sample body, posed and sized to match your mesh (fitted_body, S&#x27;). It keeps its bone weights.</li>
 <li>Landmarks <code>landmarks</code>: Draw the landmarks that were used, as points with a name (landmarks).</li>
 </ul>

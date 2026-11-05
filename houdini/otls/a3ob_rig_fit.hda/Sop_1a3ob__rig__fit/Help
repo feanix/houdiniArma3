@@ -37,7 +37,7 @@ Show:
         Draw the fitted skeleton, the fitted sample body and the landmarks.
 
     Fitted skeleton:
-        Draw the skeleton moved into your mesh (fitted_skeleton, a working copy, A'). Its joints are at your landmarks and its transform holds the fitted rotation and size of each joint.
+        Draw the skeleton moved into your mesh (fitted_skeleton, a working copy, A'). Its joints are at your landmarks and its transform is a pure rotation (no scale) that aims the X axis down the bone to its child, with Y toward the front (+Z).
 
     Fitted sample body:
         Draw the sample body, posed and sized to match your mesh (fitted_body, S'). It keeps its bone weights.

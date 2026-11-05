@@ -56,8 +56,9 @@ SPEC = NodeSpec(
                     ("landmarks", "Landmarks")),
              item_help=(("all", "Draw the fitted skeleton, the fitted sample body and the landmarks."),
                         ("skeleton", "Draw the skeleton moved into your mesh (fitted_skeleton, a working copy, A'). Its "
-                                     "joints are at your landmarks and its transform holds the fitted rotation and size "
-                                     "of each joint."),
+                                     "joints are at your landmarks and its transform is a pure rotation "
+                                     "(no scale) that aims the X axis down the bone to its child, with Y toward the "
+                                     "front (+Z)."),
                         ("body", "Draw the sample body, posed and sized to match your mesh (fitted_body, S'). It keeps "
                                  "its bone weights."),
                         ("landmarks", "Draw the landmarks that were used, as points with a name (landmarks)."))),
@@ -161,13 +162,13 @@ def _landmarks(mesh, mode: str, skin: np.ndarray, side, report: Report):
 
 
 def _skeleton_geo(skeleton_in, fitted):
-    """A' : the input skeleton with fitted ``P`` and ``transform`` (rotation times size, as a row-vector 3x3)."""
+    """A' : the input skeleton with fitted ``P`` and ``transform`` (a pure rotation aimed down the bone, as a row-vector 3x3)."""
     geo = hou.Geometry()
     geo.copy(skeleton_in)
     geo.setPointFloatAttribValues("P", [float(v) for v in fitted.positions.reshape(-1)])
     if geo.findPointAttrib("transform") is None:
         geo.addAttrib(hou.attribType.Point, "transform", (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0))
-    geo.setPointFloatAttribValues("transform", [float(v) for v in np.transpose(fitted.linear, (0, 2, 1)).reshape(-1)])
+    geo.setPointFloatAttribValues("transform", [float(v) for v in np.transpose(fitted.frames, (0, 2, 1)).reshape(-1)])
     return geo
 
 
