@@ -190,8 +190,8 @@ class TestUnposeOnSamples(NodeTestCase):
         self.assertLess(float(np.abs(kept - 1).max()), 1e-3)
         self.assertGreater(float(np.abs(loose - 1).max()), 1e-2)
 
-    def test_design_2_3_scenario_c_through_rig_fit_and_unpose_ends_within_1_cm(self):
-        mats, world_pos = self.stretched_pose()
+    def through_rig_fit_and_unpose(self, mats, world_pos):
+        """Pose, Rig Fit, Weight Transfer, Weight Cleanup, Unpose; returns (cook result, error per point, posed points)."""
         truth = self.true_landmarks(mats, world_pos)
         posed = self.posed_points(mats)
         mesh = self.user_mesh(posed, truth)
@@ -205,12 +205,32 @@ class TestUnposeOnSamples(NodeTestCase):
         cleanup.setInput(1, self.skeleton)
         node = self.unpose(cleanup, fit)
         result = cook(node)
-        self.assertEqual(result.errors, ())
         error = np.linalg.norm(self.points_of(node)[:len(self.P)] - self.P, axis=1)
-        print("   design test 2.3 unpose: %.2f cm mean, %.2f cm at most (the pose moved the points %.1f cm on average)" % (
+        return result, error, posed
+
+    def test_design_2_3_d43_consistent_scenario_through_rig_fit_and_unpose_ends_within_1_cm(self):
+        """D43 pass/fail test: scenario C's pose, bones below the shoulder and hip lengthened, mesh stretched along them."""
+        mats, world_pos = self.stretched_pose()
+        result, error, posed = self.through_rig_fit_and_unpose(mats, world_pos)
+        self.assertEqual(result.errors, ())
+        print("   design test 2.3 unpose (D43 consistent scenario): %.2f cm mean, %.2f cm at most (the pose moved the points %.1f cm on average)" % (
             100 * error.mean(), 100 * error.max(), 100 * np.linalg.norm(posed - self.P, axis=1).mean()))
         self.assertLess(float(error.max()), 0.01)
         self.assertLess(float(error.mean()), 0.003)
+
+    def test_design_2_3_d43_literal_scenario_c_known_limit_regression_guard(self):
+        """Known limit (D43): literal scenario C, bones lengthened but the mesh NOT stretched.
+
+        The unpose cannot tell a longer bone from a longer body, so the result is worse than the consistent
+        scenario (measured 0.65 cm mean, 1.53 cm max). This only guards against getting clearly worse.
+        """
+        mats, world_pos = rig_fit_tests.TestRigFitOnSamples.pose(self)
+        result, error, posed = self.through_rig_fit_and_unpose(mats, world_pos)
+        self.assertEqual(result.errors, ())
+        print("   design test 2.3 unpose (D43 literal scenario C, known limit): %.2f cm mean, %.2f cm at most (the pose moved the points %.1f cm on average)" % (
+            100 * error.mean(), 100 * error.max(), 100 * np.linalg.norm(posed - self.P, axis=1).mean()))
+        self.assertLess(float(error.max()), 0.02)
+        self.assertLess(float(error.mean()), 0.008)
 
     def test_a_perfect_fit_moves_nothing_and_the_weights_stay(self):
         node = self.unpose(self.body, self.skeleton)  # A' = A: the Arma skeleton itself
