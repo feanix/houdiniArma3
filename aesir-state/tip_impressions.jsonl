@@ -288,3 +288,13 @@
 {"agent_id": "impl-74-a", "id": 288, "task_id": 74, "tip_id": 2, "ts": "2026-11-05T01:28:19Z"}
 {"agent_id": "rev-74-a", "id": 289, "task_id": 74, "tip_id": 1, "ts": "2026-11-05T01:53:23Z"}
 {"agent_id": "rev-74-a", "id": 290, "task_id": 74, "tip_id": 2, "ts": "2026-11-05T01:53:23Z"}
+{"agent_id": "impl-74-b", "id": 291, "task_id": 74, "tip_id": 1, "ts": "2026-11-05T03:33:54Z"}
+{"agent_id": "impl-74-b", "id": 292, "task_id": 74, "tip_id": 2, "ts": "2026-11-05T03:33:54Z"}
+{"agent_id": "impl-75-a", "id": 293, "task_id": 75, "tip_id": 1, "ts": "2026-11-05T03:44:35Z"}
+{"agent_id": "impl-75-a", "id": 294, "task_id": 75, "tip_id": 2, "ts": "2026-11-05T03:44:35Z"}
+{"agent_id": "rev-74-b", "id": 295, "task_id": 74, "tip_id": 1, "ts": "2026-11-05T03:52:07Z"}
+{"agent_id": "rev-74-b", "id": 296, "task_id": 74, "tip_id": 2, "ts": "2026-11-05T03:52:07Z"}
+{"agent_id": "rev-75-a", "id": 297, "task_id": 75, "tip_id": 1, "ts": "2026-11-05T03:56:37Z"}
+{"agent_id": "rev-75-a", "id": 298, "task_id": 75, "tip_id": 2, "ts": "2026-11-05T03:56:37Z"}
+{"agent_id": "reviewer-075-a", "id": 299, "task_id": 75, "tip_id": 1, "ts": "2026-11-05T03:59:50Z"}
+{"agent_id": "reviewer-075-a", "id": 300, "task_id": 75, "tip_id": 2, "ts": "2026-11-05T03:59:50Z"}
