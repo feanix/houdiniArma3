@@ -2,5 +2,37 @@
 	"ViewerStateModule/IsPython":{
 		"type":"bool",
 		"value":true
+	},
+	"ViewerStateModule/IsScript":{
+		"type":"bool",
+		"value":true
+	},
+	"ViewerStateModule/IsViewerState":{
+		"type":"bool",
+		"value":true
+	},
+	"ViewerStateInstall/IsPython":{
+		"type":"bool",
+		"value":true
+	},
+	"ViewerStateInstall/IsScript":{
+		"type":"bool",
+		"value":true
+	},
+	"ViewerStateInstall/IsViewerState":{
+		"type":"bool",
+		"value":true
+	},
+	"ViewerStateUninstall/IsPython":{
+		"type":"bool",
+		"value":true
+	},
+	"ViewerStateUninstall/IsScript":{
+		"type":"bool",
+		"value":true
+	},
+	"ViewerStateUninstall/IsViewerState":{
+		"type":"bool",
+		"value":true
 	}
 }

@@ -178,6 +178,25 @@
 	parmtag	{ "script_callback_language" "python" }
     }
     parm {
+	name	"leftToRight"
+	label	"Match Left to Right"
+	type	button
+	default	{ "0" }
+	help	"Once: puts each right landmark at the mirror image of its left partner (mirrored about X = 0, Left is +X). Chin and groin stay as they are, and a left landmark that is not set is skipped. Disabled while Mirror is on, because the right side already follows the left."
+	disablewhen	"{ mirror != 0 }"
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('rig_landmarks', 'left_to_right', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+    parm {
+	name	"rightToLeft"
+	label	"Match Right to Left"
+	type	button
+	default	{ "0" }
+	help	"Once: puts each left landmark at the mirror image of its right partner (mirrored about X = 0, Left is +X). Chin and groin stay as they are, and a right landmark that is not set is skipped. With Mirror on, the right side then follows the new left side."
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('rig_landmarks', 'right_to_left', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+    parm {
 	name	"which"
 	label	"Landmark"
 	type	string

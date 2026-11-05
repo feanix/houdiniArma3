@@ -138,6 +138,20 @@ Right Ankle:
 
     Type: 3 numbers. Default: 0, 0, 0. Editable when: Mirror is off.
 
+Match Left to Right:
+    #id: leftToRight
+
+    Once: puts each right landmark at the mirror image of its left partner (mirrored about X = 0, Left is +X). Chin and groin stay as they are, and a left landmark that is not set is skipped. Disabled while Mirror is on, because the right side already follows the left.
+
+    Type: Button. Editable when: Mirror is off.
+
+Match Right to Left:
+    #id: rightToLeft
+
+    Once: puts each left landmark at the mirror image of its right partner (mirrored about X = 0, Left is +X). Chin and groin stay as they are, and a right landmark that is not set is skipped. With Mirror on, the right side then follows the new left side.
+
+    Type: Button.
+
 Landmark:
     #id: which
 
