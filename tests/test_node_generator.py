@@ -115,6 +115,36 @@ class TestParmKinds(unittest.TestCase):
         self.assertEqual(params.hide_when_text((("mode", ("a b",)),)), '{ mode != "a b" }')
 
 
+class TestViewerStateAndFloatAction(unittest.TestCase):
+    """Task #74: a node may carry a Python viewer state, and a float may run a callback when it is edited."""
+
+    SPEC = NodeSpec(
+        kind="state_test", label="State Test", summary="Only for the tests.", inputs=(1, 1), input_labels=("Geometry",),
+        parms=(Parm("pos", "Position", "float", (0.0, 0.0, 0.0), "A position.", size=3, action="moved"),),
+        viewer_state="a3ob_houdini.some_state")
+
+    def test_the_state_sections_are_written_and_marked_python(self):
+        files = hda_source.render(self.SPEC)
+        section = hda_source.section_name(self.SPEC)
+        self.assertEqual(files[section + "/DefaultState"], "a3ob_state_test_state")
+        self.assertIn("import a3ob_houdini.some_state as state_module", files[section + "/ViewerStateModule"])
+        self.assertIn("create_template('a3ob_state_test_state')", files[section + "/ViewerStateModule"])
+        self.assertIn('"ViewerStateModule/IsPython"', files[section + "/ExtraFileOptions"])
+        self.assertNotIn("DefaultState/IsPython", files[section + "/ExtraFileOptions"])
+        self.assertIn("ViewerStateModule\tViewerStateModule", files[section + "/Sections.list"])
+        self.assertIn("DefaultState\tDefaultState", files[section + "/Sections.list"])
+
+    def test_a_node_without_a_state_has_none(self):
+        files = hda_source.render(SPEC)
+        self.assertFalse([name for name in files if name.endswith("ViewerStateModule") or name.endswith("DefaultState")])
+
+    def test_a_float_with_an_action_gets_the_callback(self):
+        text = hda_source.render(self.SPEC)[hda_source.section_name(self.SPEC) + "/DialogScript"]
+        self.assertIn("e.button('state_test', 'moved', kwargs)", text)
+        with self.assertRaises(ValueError):
+            Parm("s", "S", "string", action="moved")
+
+
 class TestDialogScript(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

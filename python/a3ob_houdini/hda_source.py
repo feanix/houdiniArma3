@@ -30,7 +30,7 @@ from .docs_common import (FOLDER_TEXT, NODE_INTRO, collapse_inputs, condition_te
 from .params import (CALLBACK, CREATED_SCRIPT, GROUP_ACTION_HELP, GROUP_ACTION_ICON, GROUP_MENU_SCRIPT, LOADED_SCRIPT,
                      MENU_SCRIPT, NodeSpec, Parm, group_action_script, hide_when_text)
 
-__all__ = ["hda_folder_name", "section_name", "render", "write", "differences"]
+__all__ = ["hda_folder_name", "section_name", "state_name", "render", "write", "differences"]
 
 #: Fixed, so that the generated files do not change from day to day.
 MODIFIED = "Mon Nov  3 12:00:00 2026"
@@ -53,8 +53,19 @@ PrefixDroppedParmLabel := 1;
 UnlockOnCreate := 0;
 """
 
+#: The ViewerStateModule section of a node with a viewer state. Houdini calls ``createViewerStateTemplate`` when it
+#: loads the asset and registers the state that it returns.
+STATE_MODULE_SCRIPT = ("import hou\nimport %(module)s as state_module\n\n\ndef createViewerStateTemplate():\n"
+                       "    return state_module.create_template(%(name)r)\n")
+
+
+def state_name(spec: NodeSpec) -> str:
+    """The name of the node's viewer state, also the text of its DefaultState section."""
+    return spec.type_name + "_state"
+
+
 def _extra_file_options(sections) -> str:
-    """Tells Houdini that each named event section (OnCreated, OnLoaded) is Python, not Hscript."""
+    """Tells Houdini that each named section (OnCreated, OnLoaded, ViewerStateModule) is Python, not Hscript."""
     entries = ',\n'.join('\t"%s/IsPython":{\n\t\t"type":"bool",\n\t\t"value":true\n\t}' % name for name in sections)
     return "{\n%s\n}\n" % entries
 
@@ -166,7 +177,7 @@ def _parm_block(spec: NodeSpec, parm: Parm) -> str:
         lines.append('\tparmtag\t{ "filechooser_mode" "%s" }' % parm.file_mode)
         if parm.file_pattern:
             lines.append("\tparmtag\t{ \"filechooser_pattern\" %s }" % _quote(parm.file_pattern))
-    if parm.kind == "button" or (parm.kind in ("menu", "toggle") and parm.action):
+    if parm.kind == "button" or (parm.kind in ("menu", "toggle", "float") and parm.action):
         callback = CALLBACK % (spec.kind, parm.action)
         lines.append("\tparmtag\t{ \"script_callback\" %s }" % _quote(callback))
         lines.append('\tparmtag\t{ "script_callback_language" "python" }')
@@ -331,13 +342,16 @@ def render(spec: NodeSpec) -> Dict[str, str]:
         section + "/Tools.shelf": _TOOLS_SHELF % {"submenu": spec.submenu},
         section + "/Help": help_text(spec),
     }
-    events = [(name, script) for name, script, wanted in (
+    events = [(name, script % spec.kind) for name, script, wanted in (
         ("OnCreated", CREATED_SCRIPT, spec.on_created), ("OnLoaded", LOADED_SCRIPT, spec.on_loaded)) if wanted]
+    if spec.viewer_state:
+        events.append(("ViewerStateModule", STATE_MODULE_SCRIPT % {"module": spec.viewer_state, "name": state_name(spec)}))
+        events.append(("DefaultState", state_name(spec)))
     if events:
-        for name, script in events:
-            files["%s/%s" % (section, name)] = script % spec.kind
+        for name, text in events:
+            files["%s/%s" % (section, name)] = text
             listed.append((name, name))
-        files[section + "/ExtraFileOptions"] = _extra_file_options([name for name, _ in events])
+        files[section + "/ExtraFileOptions"] = _extra_file_options([name for name, _ in events if name != "DefaultState"])
         listed.append(("ExtraFileOptions", "ExtraFileOptions"))
     files[section + "/Sections.list"] = _sections_list(listed)
     return files

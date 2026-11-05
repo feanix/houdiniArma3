@@ -165,8 +165,8 @@ class Parm:
                     raise ValueError("parameter %r: a condition needs a parameter name and values" % self.name)
         if self.kind == "button" and not self.action:
             raise ValueError("button %r needs an action name" % self.name)
-        if self.action and self.kind not in ("button", "menu", "toggle"):
-            raise ValueError("parameter %r: only a button, a menu or a toggle has an action" % self.name)
+        if self.action and self.kind not in ("button", "menu", "toggle", "float"):
+            raise ValueError("parameter %r: only a button, a menu, a toggle or a float has an action" % self.name)
         if self.file_mode not in ("read", "write"):
             raise ValueError("parameter %r: file_mode must be read or write" % self.name)
         if self.menu_action and self.kind != "menu":
@@ -218,6 +218,10 @@ class NodeSpec:
     #: The node module has a ``loaded(node)`` function that runs when a scene with the node is loaded (the HDA's
     #: OnLoaded event), for example to move the value of an old parameter into its new one.
     on_loaded: bool = False
+    #: The dotted name of a module with ``create_template(state_name)`` that makes the node's Python viewer state (a
+    #: ``hou.ViewerStateTemplate``). The generator writes the asset's ViewerStateModule and DefaultState sections from it,
+    #: so pressing Enter in the viewport with the node selected starts the state. Empty: the node has no state.
+    viewer_state: str = ""
     parm_index: Dict[str, Parm] = field(init=False, repr=False, compare=False, default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -422,6 +426,9 @@ def _template_unconditioned(spec: NodeSpec, parm: Parm):
             max=float(parm.maximum) if parm.maximum is not None else 10.0,
             min_is_strict=parm.minimum is not None, max_is_strict=parm.maximum is not None,
             naming_scheme=hou.parmNamingScheme.XYZW if parm.size == 3 else hou.parmNamingScheme.Base1)
+        if parm.action:  # a float that runs code when the artist edits it (Rig Landmarks keeps the mirror side in step)
+            template.setScriptCallback(CALLBACK % (spec.kind, parm.action))
+            template.setScriptCallbackLanguage(hou.scriptLanguage.Python)
     elif parm.kind == "multiparm":
         template = hou.FolderParmTemplate(
             parm.name, parm.label, folder_type=hou.folderType.MultiparmBlock,

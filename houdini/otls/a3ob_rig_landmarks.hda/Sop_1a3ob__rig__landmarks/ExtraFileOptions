@@ -1,0 +1,6 @@
+{
+	"ViewerStateModule/IsPython":{
+		"type":"bool",
+		"value":true
+	}
+}

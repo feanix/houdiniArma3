@@ -30,7 +30,7 @@
 <h1>Rig Fit</h1>
 <p class="lead">Fits the Arma skeleton and the sample body to your mesh, from landmarks that you set or that are guessed.</p>
 <p>Your own character has its own size and proportions, and the Arma skeleton and the sample body do not match it. This node fits them to your mesh, so that Weight Transfer can copy the weights of the sample body onto your mesh, and Unpose can later bring your mesh back to the Arma rest pose. The Arma skeleton itself is never changed: the fitted skeleton is only a working copy.</p>
-<p>The fit starts from landmarks, 14 named points of the body. Your mesh should stand upright (Y up), face +Z like the sample, and be in an A-pose with the arms away from the body. You can set a landmark with a point group on your mesh, named lm_chin, lm_groin, lm_shoulder_l, lm_shoulder_r, lm_elbow_l, lm_elbow_r, lm_wrist_l, lm_wrist_r, lm_hip_l, lm_hip_r, lm_knee_l, lm_knee_r, lm_ankle_l and lm_ankle_r. The average of the points of a group is the landmark. Left is the +X side. The chin and the groin are points on the skin (the chin is the tip, the groin the highest point between the legs); the others are joints, inside the body: group the points around the joint, or add a point at the joint. Landmarks that have no group are guessed from the shape of the mesh, and a group always wins over the guess. The guess is a first try: show the landmarks and correct the landmarks that are wrong.</p>
+<p>The fit starts from landmarks, 14 named points of the body. Your mesh should stand upright (Y up), face +Z like the sample, and be in an A-pose with the arms away from the body. Set the landmarks with a Rig Landmarks node in front of this one: you drag a marker for each in the viewport. The chin and the groin are points on the skin (the chin is the tip, the groin the highest point between the legs); the others are joints, inside the body. Left is the +X side. Landmarks that Rig Landmarks does not set are guessed from the shape of the mesh, and a position you set always wins over the guess. The guess is a first try: show the landmarks and correct the ones that are wrong.</p>
 <p>The fit goes down the skeleton from the pelvis. Each joint is turned towards the landmarks below it and given the length that puts them on the landmarks. The message of the node says how far the joints were from their landmarks after the fit, and warns when that is more than 1 cm. The node has one output that holds three results as packed primitives, named by the prim string a3ob_rig_part: fitted_skeleton, fitted_body (the sample body posed to match your mesh, with its weights) and landmarks (points with a name). Connect it to input 2 of Weight Transfer as it is: Weight Transfer takes the fitted body from it. The Show menu only decides which results are drawn in the viewport; the output is the same for every choice.</p>
 <table class="facts">
 <tr><th>Houdini name</th><td><code>a3ob_rig_fit</code></td></tr>
@@ -39,7 +39,7 @@
 </table>
 <h2>Inputs</h2>
 <ol>
-<li value="1">Input 1: Your mesh. Your character in an A-pose, standing upright (Y up) and facing +Z like the sample. It may have point groups named lm_chin, lm_groin, lm_shoulder_l and so on (see Landmarks). Make them with the Rig Landmarks node in front of this one.</li>
+<li value="1">Input 1: Your mesh. Your character in an A-pose, standing upright (Y up) and facing +Z like the sample. It may have landmark positions from a Rig Landmarks node in front of this one (see Landmarks).</li>
 <li value="2">Input 2: Skeleton. The Arma skeleton, for example from Rig Skeleton. It is not changed.</li>
 <li value="3">Input 3: Sample body. The sample body with its bone weights, for example Resolution 1 of the sample character from Extract LOD. Its bones must be the ones of the skeleton.</li>
 </ol>
@@ -62,16 +62,16 @@
 </section>
 <section class="parm" id="landmarks">
 <h3>Landmarks <code>landmarks</code></h3>
-<p>Where the landmarks come from. A landmark group is a point group on your mesh named lm_chin, lm_groin, lm_shoulder_l, lm_shoulder_r, lm_elbow_l, lm_elbow_r, lm_wrist_l, lm_wrist_r, lm_hip_l, lm_hip_r, lm_knee_l, lm_knee_r, lm_ankle_l or lm_ankle_r. The average of the points of a group is the landmark; for a joint, group the points around it, or add a point inside the body. Left is the +X side. The Rig Landmarks node makes these groups for you, with a select button for each.</p>
+<p>Where the landmarks come from: the chin, the groin and the shoulder, elbow, wrist, hip, knee and ankle of each side. The Rig Landmarks node in front of this one holds the positions you placed (its markers are dragged in the viewport). Left is the +X side.</p>
 <dl>
 <dt>Type</dt><dd>Menu</dd>
 <dt>Default</dt><dd>Both</dd>
 </dl>
 <p>Choices:</p>
 <ul>
-<li>Auto-guess <code>guess</code>: Guess all landmarks from the shape of your mesh. Groups are ignored.</li>
-<li>From groups <code>groups</code>: Use only the groups. All of them must exist.</li>
-<li>Both <code>both</code>: Use the groups that exist; guess the others. A group always wins over the guess.</li>
+<li>Auto-guess <code>guess</code>: Guess all landmarks from the shape of your mesh. Rig Landmarks is ignored.</li>
+<li>From Rig Landmarks <code>landmarks</code>: Use only the positions of Rig Landmarks. All of them must be set.</li>
+<li>Both <code>both</code>: Use the positions that are set in Rig Landmarks; guess the others. A position you set always wins over the guess.</li>
 </ul>
 </section>
 <section class="parm" id="snap">
@@ -84,7 +84,7 @@
 </section>
 <section class="parm" id="symmetry">
 <h3>Symmetry <code>symmetry</code></h3>
-<p>Make the left and right landmarks mirror each other. When both sides of a pair come from groups they are averaged; when only one side does, the other side is its mirror image.</p>
+<p>Make the left and right landmarks mirror each other. When both sides of a pair are set in Rig Landmarks they are averaged; when only one side is, the other side is its mirror image.</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
 <dt>Default</dt><dd>On</dd>

@@ -215,7 +215,7 @@ GPU (about 20 GB VRAM, 64 GB RAM), so an optional external learned-landmark step
 | Not recommended | UniRig, RigNet, TARig (own skeleton, old or heavy stacks). A full Pinocchio port (big job, assumes a watertight mesh). | |
 
 Decided inputs (D37): the user mesh is in an **A-pose** (Q5), it is an **adult humanoid** (Q7), landmarks are **point
-groups** on the mesh (Q11), and the Arma skeleton is **never changed for body shape**, female shapes included (Q7): the
+groups** on the mesh (Q11, superseded by D42: hand-placed positions, see 6.2 Rig Landmarks), and the Arma skeleton is **never changed for body shape**, female shapes included (Q7): the
 fit moves the sample body and the joints inside the user's mesh, and the unpose brings the mesh back onto the fixed
 Arma pivots. The incoming mesh carries no joint data (Q6).
 
@@ -803,11 +803,11 @@ Samples folder is set once in the project settings (D37 Q1). Output: section 4.1
 
 Reports: section 4.4. Output: the mesh with cleaned groups and `a3ob_w_*`, plus `a3ob_rig_changed`, `a3ob_rig_infl_before`.
 
-**Rig Fit** (inputs: 1 user mesh, A-pose, with optional landmark point groups; 2 Arma skeleton; 3 sample body with weights)
+**Rig Fit** (inputs: 1 user mesh, A-pose, with optional landmark positions from Rig Landmarks; 2 Arma skeleton; 3 sample body with weights)
 
 | Parameter | Type, default | Meaning |
 |---|---|---|
-| `landmarks` | menu: Auto-guess, From groups, Both | Auto-guess places the standard 11 to 13 points (chin, groin, wrists, elbows, knees, ankles, shoulders, hips) from the mesh. The input mesh is in an A-pose (D37 Q5). From groups reads the landmarks as **point groups (selections) on the user mesh**, one group per landmark (D37 Q11); the average of a group's points is the landmark. They win over the guess. |
+| `landmarks` | menu: Auto-guess, From Rig Landmarks, Both | Auto-guess places the standard 11 to 13 points (chin, groin, wrists, elbows, knees, ankles, shoulders, hips) from the mesh. The input mesh is in an A-pose (D37 Q5). From Rig Landmarks reads the landmarks as **hand-placed positions** that the Rig Landmarks node puts on the mesh as detail vectors `a3ob_lm_*` (D42, task #74; D37 Q11 point groups are superseded and the `lm_*` group path is gone). A set landmark wins over the guess; Both guesses the ones that are not set. |
 | `snap` | toggle, on | Snap landmarks to the mesh surface. |
 | `symmetry` | toggle, on | Mirror left and right landmarks. |
 | `refine` | toggle, off | Light non-rigid refinement of the sample body with Topo Transfer (one connected component needed). |
@@ -816,10 +816,31 @@ Reports: section 4.4. Output: the mesh with cleaned groups and `a3ob_w_*`, plus 
 Results (one output with three named parts, D40, see As built): fitted skeleton A' (joints in the user mesh, `transform`
 carrying the fitted rotation); fitted sample body S' (posed and scaled, weights kept, `a3ob_rig_origin` not set yet); the
 landmarks as points. The artist corrects a
-landmark by changing the points of its group on the user mesh (D37 Q11: landmarks are selections, like every other
-group in this add-on). The fit is a rigid fit down the hierarchy: from
+landmark by dragging its marker in Rig Landmarks (D42; the first version used point groups, D37 Q11, which only reach the
+surface and depend on point numbers). The fit is a rigid fit down the hierarchy: from
 the pelvis, rotate each bone to the fitted child direction and set its length to the fitted distance. This is the step the
 spike measured only indirectly; its accuracy is the main risk of the whole design (section 2.6, point 3).
+
+**Rig Landmarks (task #74, D42; replaces the point-group version of task #71).** Inputs: 1 your mesh, 2 the Arma skeleton
+and 3 the sample body (2 and 3 are optional and only feed the guess; they are the same inputs as Rig Fit's). Fourteen
+float3 fields (`chin`, `groin`, `shoulder_l` ... `ankle_r`). All zero is "not set": the node warns that it needs the guess and
+writes no attribute for that landmark. Output: the input mesh unchanged plus one detail vector `a3ob_lm_*` per landmark that
+is set (`landmark_io.write_landmarks`; Rig Fit reads them with `read_landmarks`; float32 as every Houdini float attribute).
+- **Guess.** The button *Guess Landmarks* fills the 14 fields with `guess_landmarks` on the mesh, through the same
+  `landmark_io.sample_side` and `guess_for_mesh` that Rig Fit uses, so there is one copy of the guess. *Guess This Landmark*
+  (with the Landmark menu) puts one back.
+- **Mirror (toggle, on).** Left is +X. The right fields follow the left ones mirrored about X = 0 (`follow_mirror`): the
+  right fields are disabled while Mirror is on, the cook writes the mirror image whatever the right field holds, and an edit
+  callback keeps the right fields in step. A right landmark that is set alone makes its left partner follow. Mirror off: free.
+- **Set from selection.** *Set From Selected Points* puts the landmark of the Landmark menu at the average of the points
+  selected in the viewport (`hou.SceneViewer.currentGeometrySelection`); only the position is stored.
+- **Viewport (mechanism: a Python viewer state, not HDA handle bindings).** `rig_landmark_state` registers a state with one
+  dynamic `translate` handle per landmark and one text drawable per label; the asset carries it as the `ViewerStateModule`
+  and `DefaultState` sections that `hda_source` writes from `NodeSpec.viewer_state`. Why a state and not plain bindings: the
+  mirror rule needs code (a left drag writes the right field, right handles hide while mirrored, a landmark that is not set
+  has no handle), and the labels need text drawables. Handles and text drawables are drawn on top of the mesh, so the markers
+  stay visible over a solid mesh. Select the node, move the mouse over the viewport and press Enter. The state cannot run in
+  hython; its decisions are plain functions (`marker_rows`, `handle_position`, `apply_handle_edit`) that the tests call.
 
 **As built (task #66).** Inputs: 1 your mesh, 2 the Arma skeleton, 3 the sample body (the spec said "outputs 1, 2, 3"; see
 the point below). `a3ob_core/rig/landmarks.py` (guess, symmetry, snap) and `fit.py` (the fit and the skinning of S').
@@ -833,10 +854,11 @@ the point below). `a3ob_core/rig/landmarks.py` (guess, symmetry, snap) and `fit.
   `rig_weights.read_part`, which returns a geometry without the attribute as it is. The `show` menu (All, Fitted
   skeleton, Fitted sample body, Landmarks) only sets the packed prim intrinsic `viewportlod` to hidden on the other parts,
   so the data is the same for every value.
-- **Landmarks (14).** Point groups `lm_chin`, `lm_groin` (points on the skin, snapped) and `lm_shoulder|elbow|wrist|hip|knee|ankle_l|r`
-  (joints, never snapped). `landmarks`: Auto-guess, From groups (all 14 needed) or Both (default; a group wins). `symmetry`:
-  a pair of groups is averaged, one group is mirrored to the other side, two guesses are averaged, about the plane through
-  the middle of the pairs. `refine` is accepted and does nothing yet (a warning says so).
+- **Landmarks (14).** Detail vectors `a3ob_lm_chin`, `a3ob_lm_groin` (points on the skin, snapped) and
+  `a3ob_lm_shoulder|elbow|wrist|hip|knee|ankle_l|r` (joints, never snapped), written by Rig Landmarks (task #74, D42).
+  `landmarks`: Auto-guess, From Rig Landmarks (all 14 needed) or Both (default; a set landmark wins). `symmetry`:
+  a pair of set landmarks is averaged, one set landmark is mirrored to the other side, two guesses are averaged, about the
+  plane through the middle of the pairs. `refine` is accepted and does nothing yet (a warning says so).
 - **The guess** runs the same measurements on the sample body, where the joints are known, and on your mesh, and moves each
   joint by the difference (so a measurement bias cancels). Legs: the centre line of slices; hip: pelvis width at hip height;
   arms: the principal axis of the points near the arm (not above the axis, not the hand), shoulder where the axis passes the
@@ -1029,7 +1051,8 @@ Arma P3D", and the checks that every later phase uses.
     **Answer (D37 Q10):** the owner has an NVIDIA RTX 50-series GPU (about 20 GB VRAM, 64 GB RAM). An optional external learned-landmark step is acceptable later.
 11. **Landmark clicks.** Is it acceptable to confirm or correct about 11 to 13 landmarks in phase 2, or must the fit be
     fully automatic?
-    **Answer (D37 Q11):** landmarks are fine, given as point groups (selections).
+    **Answer (D37 Q11):** landmarks are fine, given as point groups (selections). **Superseded by D42 (2026-11-05):** a
+    landmark is a hand-placed position, started from the auto-guess and dragged as a marker in the viewport (see Rig Landmarks).
 12. **Twist (`...Roll`) bones.** In the Arma hierarchy `LeftArmRoll` sits between `LeftArm` and `LeftForeArm`. A rigid piece
     at the elbow can have `LeftArmRoll` as its heaviest bone yet needs to follow `LeftForeArm` (section 2.6). Keep the
     default (heaviest wins, with an override) or always merge twist weights into the forearm?

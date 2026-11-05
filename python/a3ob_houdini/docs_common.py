@@ -65,14 +65,22 @@ NODE_INTRO = {
         "(the number of the rigid or non-rigid piece, which Unpose uses).",
     ),
     "rig_landmarks": (
-        "Rig Fit fits the skeleton to 14 landmarks of your character. This node is the easy way to set them: it has one "
-        "field for each landmark (chin, groin, and left and right shoulder, elbow, wrist, hip, knee and ankle). Click "
-        "the arrow button next to a field, select the points in the viewport and press Enter. Put the node between "
-        "your mesh and Rig Fit.",
-        "The node writes a point group lm_<landmark> for each field that is set. A field that is empty writes no group, "
-        "and Rig Fit guesses that landmark. A group that is already on your mesh is kept when its field is empty and "
-        "replaced when the field is set. The message lists which landmarks are set and which are left to the guess; a "
-        "field that matches no points is a warning.",
+        "Rig Fit fits the skeleton to 14 landmarks of your character: the chin, the groin, and the left and right "
+        "shoulder, elbow, wrist, hip, knee and ankle. This node holds them as positions (X, Y, Z) that you place by "
+        "hand. Put the node between your mesh and Rig Fit. Connect the skeleton and the sample body to its inputs 2 and "
+        "3 (the ones that go into Rig Fit) and press Guess Landmarks: it fills all 14 fields with the guess of Rig Fit. "
+        "Then select the node, move the mouse over the viewport and press Enter: every landmark is a labelled marker "
+        "that you drag. The markers are drawn on top of the mesh. A joint belongs inside the body; the chin and the "
+        "groin are on the skin.",
+        "Mirror is on by default. Left is the +X side. The right markers follow the left ones, mirrored about the X = 0 "
+        "plane, so dragging a left marker moves its right partner (the right fields cannot be edited then). Switch "
+        "Mirror off to place both sides freely. To put a landmark back to the guess, choose it in the Landmark menu and "
+        "press Guess This Landmark. To set a landmark from the mesh, select points in the viewport, choose the "
+        "landmark in the Landmark menu and press Set From Selected Points: it takes the average of the points. Only the "
+        "position is kept, not the selection. This is handy for the chin and the groin.",
+        "The node gives your mesh unchanged, with one detail vector per landmark that is set (a3ob_lm_chin and so on), "
+        "which Rig Fit reads. A fresh node has no position set (all three numbers zero means not set); it warns and "
+        "needs the guess. Rig Fit then guesses the landmarks that are not set.",
     ),
     "rig_fit": (
         "Your own character has its own size and proportions, and the Arma skeleton and the sample body do not match "
@@ -80,14 +88,12 @@ NODE_INTRO = {
         "your mesh, and Unpose can later bring your mesh back to the Arma rest pose. The Arma skeleton itself is never "
         "changed: the fitted skeleton is only a working copy.",
         "The fit starts from landmarks, 14 named points of the body. Your mesh should stand upright (Y up), face +Z like "
-        "the sample, and be in an A-pose with the arms away from the body. You can set a landmark with a point group on "
-        "your mesh, named lm_chin, lm_groin, lm_shoulder_l, lm_shoulder_r, lm_elbow_l, lm_elbow_r, lm_wrist_l, "
-        "lm_wrist_r, lm_hip_l, lm_hip_r, lm_knee_l, lm_knee_r, lm_ankle_l and lm_ankle_r. The average of the points of a "
-        "group is the landmark. Left is the +X side. The chin and the groin are points on the skin (the chin is the tip, "
-        "the groin the highest point between the legs); the others are joints, inside the body: group the points "
-        "around the joint, or add a point at the joint. Landmarks that have no group are guessed from the shape of "
-        "the mesh, and a group always wins over the guess. The guess is a first try: show the landmarks and correct "
-        "the landmarks that are wrong.",
+        "the sample, and be in an A-pose with the arms away from the body. Set the landmarks with a Rig Landmarks node "
+        "in front of this one: you drag a marker for each in the viewport. The chin and the groin are points on the skin "
+        "(the chin is the tip, the groin the highest point between the legs); the others are joints, inside the body. "
+        "Left is the +X side. Landmarks that Rig Landmarks does not set are guessed from the shape of the mesh, and a "
+        "position you set always wins over the guess. The guess is a first try: show the landmarks and correct the ones "
+        "that are wrong.",
         "The fit goes down the skeleton from the pelvis. Each joint is turned towards the landmarks below it and given "
         "the length that puts them on the landmarks. The message of the node says how far the joints were from their "
         "landmarks after the fit, and warns when that is more than 1 cm. The node has one output that holds three "

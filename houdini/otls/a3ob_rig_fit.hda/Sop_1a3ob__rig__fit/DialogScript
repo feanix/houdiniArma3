@@ -33,10 +33,10 @@
 	default	{ "both" }
 	menu {
 	    "guess"	"Auto-guess"
-	    "groups"	"From groups"
+	    "landmarks"	"From Rig Landmarks"
 	    "both"	"Both"
 	}
-	help	"Where the landmarks come from. A landmark group is a point group on your mesh named lm_chin, lm_groin, lm_shoulder_l, lm_shoulder_r, lm_elbow_l, lm_elbow_r, lm_wrist_l, lm_wrist_r, lm_hip_l, lm_hip_r, lm_knee_l, lm_knee_r, lm_ankle_l or lm_ankle_r. The average of the points of a group is the landmark; for a joint, group the points around it, or add a point inside the body. Left is the +X side. The Rig Landmarks node makes these groups for you, with a select button for each."
+	help	"Where the landmarks come from: the chin, the groin and the shoulder, elbow, wrist, hip, knee and ankle of each side. The Rig Landmarks node in front of this one holds the positions you placed (its markers are dragged in the viewport). Left is the +X side."
     }
     parm {
 	name	"snap"
@@ -50,7 +50,7 @@
 	label	"Symmetry"
 	type	toggle
 	default	{ "1" }
-	help	"Make the left and right landmarks mirror each other. When both sides of a pair come from groups they are averaged; when only one side does, the other side is its mirror image."
+	help	"Make the left and right landmarks mirror each other. When both sides of a pair are set in Rig Landmarks they are averaged; when only one side is, the other side is its mirror image."
     }
     parm {
 	name	"refine"

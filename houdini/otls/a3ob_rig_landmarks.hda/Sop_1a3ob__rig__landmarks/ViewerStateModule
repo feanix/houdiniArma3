@@ -1,0 +1,6 @@
+import hou
+import a3ob_houdini.rig_landmark_state as state_module
+
+
+def createViewerStateTemplate():
+    return state_module.create_template('a3ob_rig_landmarks_state')
