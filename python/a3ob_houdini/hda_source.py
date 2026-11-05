@@ -64,9 +64,20 @@ def state_name(spec: NodeSpec) -> str:
     return spec.type_name + "_state"
 
 
+#: The sections that register the embedded viewer state. Stock assets (attribpaint) carry both next to ViewerStateModule.
+STATE_INSTALL_SCRIPT = "__import__('viewerstate.utils', fromlist=[None]).register_pystate_embedded(kwargs['type'])"
+STATE_UNINSTALL_SCRIPT = "__import__('viewerstate.utils', fromlist=[None]).unregister_pystate_embedded(kwargs['type'])"
+STATE_SECTIONS = ("ViewerStateModule", "ViewerStateInstall", "ViewerStateUninstall")
+
+
 def _extra_file_options(sections) -> str:
-    """Tells Houdini that each named section (OnCreated, OnLoaded, ViewerStateModule) is Python, not Hscript."""
-    entries = ',\n'.join('\t"%s/IsPython":{\n\t\t"type":"bool",\n\t\t"value":true\n\t}' % name for name in sections)
+    """Tells Houdini that each named section (OnCreated, OnLoaded, the viewer state ones) is Python, not Hscript.
+
+    The viewer state sections are also marked as scripts and as viewer state code, as in the stock assets."""
+    def flags(name):
+        return ("IsPython", "IsScript", "IsViewerState") if name in STATE_SECTIONS else ("IsPython",)
+    entries = ',\n'.join('\t"%s/%s":{\n\t\t"type":"bool",\n\t\t"value":true\n\t}' % (name, flag)
+                         for name in sections for flag in flags(name))
     return "{\n%s\n}\n" % entries
 
 _TOOLS_SHELF = """<?xml version="1.0" encoding="UTF-8"?>
@@ -346,6 +357,8 @@ def render(spec: NodeSpec) -> Dict[str, str]:
         ("OnCreated", CREATED_SCRIPT, spec.on_created), ("OnLoaded", LOADED_SCRIPT, spec.on_loaded)) if wanted]
     if spec.viewer_state:
         events.append(("ViewerStateModule", STATE_MODULE_SCRIPT % {"module": spec.viewer_state, "name": state_name(spec)}))
+        events.append(("ViewerStateInstall", STATE_INSTALL_SCRIPT))
+        events.append(("ViewerStateUninstall", STATE_UNINSTALL_SCRIPT))
         events.append(("DefaultState", state_name(spec)))
     if events:
         for name, text in events:

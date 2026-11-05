@@ -6,7 +6,9 @@
 Enter, and every landmark that is set is a marker that you drag.
 
 Mechanism: a Python viewer state with one dynamic ``translate`` handle per landmark, and one text drawable per landmark for
-its label. Both are drawn on top of the mesh, so the markers stay visible over a solid mesh. The handles are not bound to
+its label, plus one sphere drawable per landmark (the label colour). All are drawn on top of the mesh, so the markers stay
+visible over a solid mesh. While the state is active the mesh is shown as ghosted wireframe (the shading of the viewport's
+display sets is switched and put back on exit). The handles are not bound to
 the fields one to one, because the mirror rule needs code: dragging a left marker also writes its right partner, and the
 right handles are hidden while Mirror is on (their labels stay, at the mirrored place). The state is registered by the
 asset (``hda_source``: ViewerStateModule and DefaultState sections), which calls ``create_template`` here.
@@ -29,6 +31,42 @@ __all__ = ["HANDLE_PREFIX", "create_template", "marker_rows", "handle_position",
 HANDLE_PREFIX = "lm_"
 #: Label colours (red, green, blue): left side, right side, middle line.
 COLORS = {"left": (1.0, 0.45, 0.35), "right": (0.4, 0.65, 1.0), "middle": (1.0, 0.9, 0.3)}
+
+
+#: Radius of the marker sphere, in scene units (metres): about 1.75 cm, sensible for a character.
+SPHERE_RADIUS = 0.0175
+#: The Display Sets whose shading is switched to a see-through mode while the state is active (names of ``hou.displaySetType``).
+GHOST_DISPLAY_SETS = ("DisplayModel", "CurrentModel")
+#: The shading used for the mesh while the state is active (name in ``hou.glShadingType``): wireframe, hidden wires dimmed.
+GHOST_SHADING = "WireGhost"
+
+
+def marker_color(side: str) -> tuple:
+    """The colour (red, green, blue) of the label and the sphere of a landmark on ``side``."""
+    return COLORS[side]
+
+
+def sphere_markers(positions: dict, mirror: bool) -> list:
+    """The spheres to draw, one ``(short name, centre, radius, colour)`` per landmark that is set (none for the others)."""
+    return [(short, value, SPHERE_RADIUS, marker_color(side))
+            for short, _label, value, is_placed, _draggable, side in marker_rows(positions, mirror) if is_placed]
+
+
+def ghost_display(settings, shading, display_sets) -> list:
+    """Switch the shading of each display set (``hou.GeometryViewportSettings.displaySet`` results) to ``shading``.
+
+    Returns what was there, ``[(display set, old shading)]``, for ``restore_display``."""
+    saved = []
+    for display_set in display_sets:
+        saved.append((display_set, display_set.shadedMode()))
+        display_set.setShadedMode(shading)
+    return saved
+
+
+def restore_display(saved: list) -> None:
+    """Put back the shading that ``ghost_display`` returned."""
+    for display_set, shading in saved:
+        display_set.setShadedMode(shading)
 
 
 def _side(short: str) -> str:
@@ -76,6 +114,31 @@ class State(object):
         self.handles = {}
         self.labels = {item.name[len("lm_"):]: hou.TextDrawable(scene_viewer, "%s_%s" % (state_name, item.name))
                        for item in LANDMARKS}
+        self.spheres = {}
+        self.saved_display = []
+
+    def _make_spheres(self):
+        """One sphere mesh, built once; one drawable per landmark shares it."""
+        if self.spheres:
+            return
+        verb = hou.sopNodeTypeCategory().nodeVerb("sphere")
+        verb.setParms({"type": 1, "rad": (1.0, 1.0, 1.0), "rows": 12, "cols": 16})
+        geometry = hou.Geometry()
+        verb.execute(geometry, [])
+        self.spheres = {short: hou.GeometryDrawable(self.scene_viewer, hou.drawableGeometryType.Face,
+                                                    "%s_sphere_%s" % (self.state_name, short), geometry=geometry)
+                        for short in self.labels}
+
+    def _ghost_mesh(self):
+        if self.saved_display:
+            return
+        settings = self.scene_viewer.curViewport().settings()
+        sets = [settings.displaySet(getattr(hou.displaySetType, name)) for name in GHOST_DISPLAY_SETS]
+        self.saved_display = ghost_display(settings, getattr(hou.glShadingType, GHOST_SHADING), sets)
+
+    def _unghost_mesh(self):
+        restore_display(self.saved_display)
+        self.saved_display = []
 
     def onEnter(self, kwargs):
         self.node = kwargs["node"]
@@ -84,10 +147,17 @@ class State(object):
             handle.update()
         for label in self.labels.values():
             label.show(True)
+        self._make_spheres()
+        for sphere in self.spheres.values():
+            sphere.show(True)
+        self._ghost_mesh()
 
     def onExit(self, kwargs):
         for label in self.labels.values():
             label.show(False)
+        for sphere in self.spheres.values():
+            sphere.show(False)
+        self._unghost_mesh()
 
     def onInterrupt(self, kwargs):
         self.onExit(kwargs)
@@ -128,6 +198,11 @@ class State(object):
         draw_handle = kwargs["draw_handle"]
         world = node.creator().worldTransform() if hasattr(node, "creator") else hou.Matrix4(1)
         viewport = self.scene_viewer.curViewport()
+        for short, centre, radius, color in sphere_markers(lm.positions_of(node), lm.mirrored_on(node)):
+            center = hou.Vector3(centre) * world
+            self.spheres[short].draw(draw_handle, {
+                "translate": center, "scale": hou.Vector3(radius, radius, radius),
+                "color1": hou.Vector4(color[0], color[1], color[2], 1.0), "fade_factor": 1.0, "use_cd": False})
         for short, label, value, is_placed, draggable, side in marker_rows(lm.positions_of(node), lm.mirrored_on(node)):
             if not is_placed:
                 continue

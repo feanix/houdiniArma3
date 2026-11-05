@@ -32,7 +32,7 @@ except ImportError:  # the parameter table is also read under plain Python
     hou = None
 
 __all__ = ["SPEC", "cook", "MENUS", "BUTTONS", "label_of", "short_name", "positions_of", "set_landmark", "sync_mirror",
-           "guess_landmarks_on", "average_selected", "set_from_selection"]
+           "guess_landmarks_on", "average_selected", "set_from_selection", "match_sides"]
 
 NAME = "Rig Landmarks"
 LOGGER = logging.getLogger("a3ob")
@@ -91,6 +91,15 @@ SPEC = NodeSpec(
              "dragging a left marker moves its right partner, and the right fields cannot be edited. Off: both sides "
              "are free.", action="mirror_changed"),
     ) + tuple(_parm(item) for item in LANDMARKS) + (
+        Parm("leftToRight", "Match Left to Right", "button", "",
+             "Once: puts each right landmark at the mirror image of its left partner (mirrored about X = 0, Left is "
+             "+X). Chin and groin stay as they are, and a left landmark that is not set is skipped. Disabled while "
+             "Mirror is on, because the right side already follows the left.", action="left_to_right",
+             enable_when=(("mirror", ("0",)),)),
+        Parm("rightToLeft", "Match Right to Left", "button", "",
+             "Once: puts each left landmark at the mirror image of its right partner (mirrored about X = 0, Left is "
+             "+X). Chin and groin stay as they are, and a right landmark that is not set is skipped. With Mirror on, "
+             "the right side then follows the new left side.", action="right_to_left"),
         Parm("which", "Landmark", "menu", "chin", "The landmark that the two buttons below work on.",
              items=tuple((short_name(item.name), label_of(item)) for item in LANDMARKS)),
         Parm("guessone", "Guess This Landmark", "button", "",
@@ -173,6 +182,17 @@ def cook(node, report: Report) -> None:
 # Buttons
 # ---------------------------------------------------------------------------------------------------------------------
 
+def match_sides(node, from_left: bool) -> None:
+    """Match Left to Right (``from_left``) or Match Right to Left: copy each landmark of one side to its partner, mirrored
+    about X = 0. A source that is not set is skipped. Chin and groin have no partner and are not touched."""
+    current = positions_of(node)
+    for left, right in LANDMARK_PAIRS:
+        a, b = short_name(left), short_name(right)
+        source, target = (a, b) if from_left else (b, a)
+        if is_set(current[source]):
+            _write(node, target, mirror_x(current[source]))
+
+
 def _guess(node):
     """The auto-guess for the mesh on input 1: ``{landmark name: position}``. Raises ``UserError``."""
     mesh = node.inputGeometry(0)
@@ -252,6 +272,8 @@ BUTTONS = {
     "guess": _button(lambda node: guess_landmarks_on(node)),
     "guessone": _button(lambda node: guess_landmarks_on(node, node.evalParm("which"))),
     "fromsel": _button(lambda node: set_from_selection(node)),
+    "left_to_right": _button(lambda node: match_sides(node, True)),
+    "right_to_left": _button(lambda node: match_sides(node, False)),
     "mirror_changed": moved,
     "moved": moved,
 }

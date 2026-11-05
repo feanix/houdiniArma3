@@ -6,6 +6,7 @@ stand-in for ``hou``.
 SPDX-License-Identifier: GPL-3.0-or-later
 """
 
+import os
 import types
 import unittest
 
@@ -80,6 +81,28 @@ class TestRigLandmarksPositions(NodeTestCase):
             self.assertEqual(len(node.parmTuple(name)), 3)
             self.assertEqual(tuple(node.parmTuple(name).eval()), (0.0, 0.0, 0.0))
         self.assertEqual(node.parm("mirror").eval(), 1)  # on by default
+
+    def test_match_buttons_copy_one_side_to_the_other_mirrored(self):
+        node = self.make(chin=(0.0, 1.7, 0.1), shoulder_l=(0.2, 1.5, 0.0), knee_r=(-0.1, 0.5, 0.02), mirror=0)
+        lm.BUTTONS["left_to_right"]({"node": node})
+        self.assertEqual(tuple(node.parmTuple("shoulder_r").eval()), (-0.2, 1.5, 0.0))
+        self.assertEqual(tuple(node.parmTuple("knee_r").eval()), (-0.1, 0.5, 0.02))  # unset left: right kept
+        self.assertEqual(tuple(node.parmTuple("chin").eval()), (0.0, 1.7, 0.1))
+        lm.BUTTONS["right_to_left"]({"node": node})
+        self.assertEqual(tuple(node.parmTuple("knee_l").eval()), (0.1, 0.5, 0.02))
+        self.assertEqual(tuple(node.parmTuple("shoulder_l").eval()), (0.2, 1.5, 0.0))
+        self.assertEqual(tuple(node.parmTuple("chin").eval()), (0.0, 1.7, 0.1))
+        self.assertEqual(tuple(node.parmTuple("groin").eval()), (0.0, 0.0, 0.0))
+
+    def test_with_mirror_on_left_to_right_is_disabled_and_right_to_left_keeps_the_pair_mirrored(self):
+        node = self.make(knee_r=(-0.1, 0.5, 0.02), mirror=0)
+        node.parm("mirror").set(1)
+        rule = lambda name: node.parm(name).parmTemplate().conditionals().get(hou.parmCondType.DisableWhen)
+        self.assertEqual(rule("leftToRight"), "{ mirror != 0 }")  # disabled while Mirror is on
+        self.assertIsNone(rule("rightToLeft"))
+        lm.BUTTONS["right_to_left"]({"node": node})
+        self.assertEqual(tuple(node.parmTuple("knee_l").eval()), (0.1, 0.5, 0.02))
+        self.assertEqual(tuple(node.parmTuple("knee_r").eval()), (-0.1, 0.5, 0.02))
 
     def test_a_fresh_node_says_it_needs_the_guess_and_hands_rig_fit_no_zeros(self):
         node = self.make()
@@ -219,6 +242,54 @@ class TestViewerState(NodeTestCase):
         self.assertTrue(hasattr(node.type().hdaViewerStateModule(), "createViewerStateTemplate"))
         self.assertTrue(node.type().definition().extraFileOptions()["ViewerStateModule/IsPython"])
 
+    def test_the_asset_registers_its_state_like_a_stock_asset(self):
+        """After a plain installFile the definition carries the sections that register the embedded state, with the
+        same contents and file options as a stock asset (attribpaint) with an embedded state. hython has no UI, so the
+        registration itself cannot run here: the owner checks that in the GUI (select the node, press Enter)."""
+        definition = self.make().type().definition()
+        sections, options = definition.sections(), definition.extraFileOptions()
+        stock = [d for d in hou.hda.definitionsInFile(hou.text.expandString("$HFS/houdini/otls/OPlibSop.hda"))
+                 if d.nodeTypeName() == "attribpaint"][0]
+        for name in ("ViewerStateInstall", "ViewerStateUninstall"):
+            self.assertEqual(sections[name].contents(), stock.sections()[name].contents())
+        self.assertIn("register_pystate_embedded(kwargs['type'])", sections["ViewerStateInstall"].contents())
+        self.assertIn("unregister_pystate_embedded(kwargs['type'])", sections["ViewerStateUninstall"].contents())
+        for name in ("ViewerStateModule", "ViewerStateInstall", "ViewerStateUninstall"):
+            for flag in ("IsPython", "IsScript", "IsViewerState"):
+                self.assertTrue(stock.extraFileOptions()["%s/%s" % (name, flag)])
+                self.assertTrue(options["%s/%s" % (name, flag)], name + "/" + flag)
+
+    def test_reload_all_does_not_fail_headless(self):
+        """Headless there is no UI, so the states are not registered again; only the module reload runs."""
+        import subprocess
+        import sys
+        repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        done = subprocess.run(
+            [sys.executable, "-c", "import hou\nfrom a3ob_houdini import reload\nassert reload.reload_all() > 2\n"
+             "print('reloaded', hou.isUIAvailable())"],
+            env=dict(os.environ, PYTHONPATH=os.path.join(repo, "python")), capture_output=True, text=True)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertIn("reloaded False", done.stdout)  # a separate process: reload_all here would split module identity
+        from a3ob_houdini import reload
+        self.assertEqual(reload.reregister_states(types.SimpleNamespace(
+            sopNodeTypeCategory=lambda: (_ for _ in ()).throw(RuntimeError("no"))), types.SimpleNamespace()), [])
+
+    def test_reregister_unregisters_then_registers_the_a3ob_types_with_a_state(self):
+        from a3ob_houdini import reload
+        calls = []
+
+        def node_type(name, sections):
+            definition = types.SimpleNamespace(sections=lambda: sections)
+            return types.SimpleNamespace(name=lambda: name, definition=lambda: definition)
+
+        mine = node_type("a3ob_rig_landmarks", {"DefaultState": 1})
+        fake_hou = types.SimpleNamespace(sopNodeTypeCategory=lambda: types.SimpleNamespace(nodeTypes=lambda: {
+            "a": mine, "b": node_type("a3ob_mass", {}), "c": node_type("attribpaint", {"DefaultState": 1})}))
+        utils = types.SimpleNamespace(unregister_pystate_embedded=lambda t: calls.append(("un", t.name())),
+                                      register_pystate_embedded=lambda t: calls.append(("re", t.name())))
+        self.assertEqual(reload.reregister_states(fake_hou, utils), ["a3ob_rig_landmarks"])
+        self.assertEqual(calls, [("un", "a3ob_rig_landmarks"), ("re", "a3ob_rig_landmarks")])
+
     def test_the_template_binds_one_translate_handle_per_landmark(self):
         calls = []
 
@@ -276,6 +347,35 @@ class TestViewerState(NodeTestCase):
         rig_landmark_state.apply_handle_edit(node, "knee_l", (0.2, 0.5, 0.03))
         self.assertEqual(tuple(node.parmTuple("knee_r").eval()), (-0.12, 0.5, 0.03))
 
+    def test_spheres_follow_the_label_colours_and_only_set_landmarks_have_one(self):
+        node = self.make(shoulder_l=(0.2, 1.5, 0.0), chin=(0.0, 1.7, 0.1))
+        spheres = {row[0]: row for row in rig_landmark_state.sphere_markers(lm.positions_of(node), True)}
+        self.assertEqual(sorted(spheres), ["chin", "shoulder_l", "shoulder_r"])  # mirror shows the right partner
+        self.assertEqual(spheres["shoulder_l"][1:], ((0.2, 1.5, 0.0), rig_landmark_state.SPHERE_RADIUS,
+                                                     rig_landmark_state.COLORS["left"]))
+        self.assertEqual(spheres["shoulder_r"][3], rig_landmark_state.COLORS["right"])
+        self.assertEqual(spheres["chin"][3], rig_landmark_state.COLORS["middle"])
+        self.assertTrue(0.015 <= rig_landmark_state.SPHERE_RADIUS <= 0.02)
+        free = [row[0] for row in rig_landmark_state.sphere_markers(lm.positions_of(node), False)]
+        self.assertEqual(sorted(free), ["chin", "shoulder_l"])
+
+    def test_the_ghost_shading_is_set_and_put_back_exactly(self):
+        class DisplaySet:
+            def __init__(self, mode):
+                self.mode = mode
+
+            def shadedMode(self):
+                return self.mode
+
+            def setShadedMode(self, mode):
+                self.mode = mode
+
+        sets = [DisplaySet("smooth"), DisplaySet("wire")]
+        saved = rig_landmark_state.ghost_display(None, "ghost", sets)
+        self.assertEqual([item.mode for item in sets], ["ghost", "ghost"])
+        rig_landmark_state.restore_display(saved)
+        self.assertEqual([item.mode for item in sets], ["smooth", "wire"])
+
     def test_the_state_callbacks_pass_the_events_to_those_functions(self):
         node = self.make(shoulder_l=(0.2, 1.5, 0.0))
 
@@ -298,13 +398,35 @@ class TestViewerState(NodeTestCase):
             def update(self):
                 pass
 
-        fake = types.SimpleNamespace(TextDrawable=lambda *args: Label(), Handle=Handle)
+        class Display:
+            mode = "smooth"
+
+            def shadedMode(self):
+                return self.mode
+
+            def setShadedMode(self, mode):
+                self.mode = mode
+
+        display = {"DisplayModel": Display(), "CurrentModel": Display()}
+        names = lambda: types.SimpleNamespace(DisplayModel="DisplayModel", CurrentModel="CurrentModel")
+        verb = types.SimpleNamespace(setParms=lambda parms: None, execute=lambda geometry, inputs: None)
+        fake = types.SimpleNamespace(
+            TextDrawable=lambda *args: Label(), Handle=Handle, Geometry=lambda: None,
+            GeometryDrawable=lambda *args, **kwargs: Label(), drawableGeometryType=types.SimpleNamespace(Face="Face"),
+            sopNodeTypeCategory=lambda: types.SimpleNamespace(nodeVerb=lambda name: verb),
+            displaySetType=names(), glShadingType=types.SimpleNamespace(WireGhost="ghost"))
         real = rig_landmark_state.hou
         rig_landmark_state.hou = fake
         try:
-            viewer = types.SimpleNamespace(beginStateUndo=lambda text: None, endStateUndo=lambda: None)
+            settings = types.SimpleNamespace(displaySet=lambda name: display[name])
+            viewer = types.SimpleNamespace(beginStateUndo=lambda text: None, endStateUndo=lambda: None,
+                                           curViewport=lambda: types.SimpleNamespace(settings=lambda: settings))
             state = rig_landmark_state.State("a3ob_rig_landmarks_state", viewer)
             state.onEnter({"node": node})
+            self.assertEqual([item.mode for item in display.values()], ["ghost", "ghost"])
+            state.onExit({})
+            self.assertEqual([item.mode for item in display.values()], ["smooth", "smooth"])
+            state.onResume({"node": node})
             parms = {"tx": 0.0, "ty": 0.0, "tz": 0.0}
             state.onStateToHandle({"handle": "lm_shoulder_l", "parms": parms})
             self.assertEqual((parms["tx"], parms["ty"], parms["tz"]), (0.2, 1.5, 0.0))
