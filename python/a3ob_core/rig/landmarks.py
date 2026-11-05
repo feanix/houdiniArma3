@@ -312,7 +312,7 @@ def guess_landmarks(P: np.ndarray, template: Template) -> Tuple[Dict[str, np.nda
 
 def symmetrize(points: Dict[str, np.ndarray], given: Sequence[str]) -> Dict[str, np.ndarray]:
     """Make left and right match about the mirror plane (the plane ``x = mid`` through the middle of the pairs). A pair
-    of which both were ``given`` (from groups) is averaged; when only one was given, the other is its mirror image; a
+    of which both were ``given`` (from Rig Landmarks) is averaged; when only one was given, the other is its mirror image; a
     pair of two guesses is averaged. Points on the skin in the middle (chin, groin) move onto the plane."""
     out = {name: np.array(value, dtype=np.float64) for name, value in points.items()}
     mids = [(out[a][0] + out[b][0]) / 2.0 for a, b in PAIRS if a in out and b in out]
