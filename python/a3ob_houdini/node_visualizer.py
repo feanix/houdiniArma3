@@ -19,7 +19,7 @@ try:
 except ImportError:
     hou = None
 
-__all__ = ["available", "find", "ensure_color_ramp", "set_range", "remove"]
+__all__ = ["available", "find", "ensure_color_ramp", "set_attrib", "set_range", "remove"]
 
 
 def available() -> bool:
@@ -61,6 +61,14 @@ def ensure_color_ramp(node, name: str, label: str, attrib: str, stops, low: floa
     set_range(viz, low, high)
     viz.setIsActive(True)
     return viz
+
+
+def set_attrib(viz, attrib: str, stops, low: float, high: float) -> None:
+    """Point an existing Color visualizer at another point attribute, with its own ramp and range (Rig Check: the Show menu)."""
+    viz.setParm("attrib", attrib)
+    viz.setParm("colorramp", hou.Ramp((hou.rampBasis.Linear,) * len(stops), tuple(pos for pos, _ in stops),
+                                      tuple(color for _, color in stops)))
+    set_range(viz, low, high)
 
 
 def set_range(viz, low: float, high: float) -> None:

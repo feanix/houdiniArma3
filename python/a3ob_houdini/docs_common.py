@@ -120,6 +120,23 @@ NODE_INTRO = {
         "points, so it keeps its shape. The unpose can only remove what the fitted skeleton describes: a landmark that is "
         "a few centimetres off in Rig Fit leaves the mesh a few centimetres off here.",
     ),
+    "rig_check": (
+        "Rig Check finds the weak places of a rigged mesh before you export. Connect your weighted mesh to input 1 and the "
+        "skeleton to input 2 (the Arma skeleton, or the output of Rig Fit as it is). The mesh keeps its geometry and gains "
+        "point attributes that say what is wrong: where each weight came from, weight jumps between neighbours, more than "
+        "4 bones, a weight sum that is not 1, rigid pieces that straddle a joint, and how far each joint sits inside the "
+        "mesh. The message of the node counts each problem and warns above the limits.",
+        "The pose test bends the mesh into built-in test poses (arms raised, arms forward, elbows, hips, knees, spine, neck, "
+        "wrists) with linear blend skinning, the way Arma does it, and measures two things. Stress is how much the edges of a "
+        "point stretch or shrink (red and blue). Volume is the volume around each point against the rest mesh: purple where "
+        "it is lost (a pinched elbow or knee, which needs smoother weights or more edge loops), teal where it is gained. "
+        "Volume is worked out for each point as the volume of the cone from the point's own blend of joints to the triangles "
+        "around it, which grows and shrinks with the area of the skin and its distance from the bone. The message names the "
+        "joints with the worst loss.",
+        "Switch on Visualize to colour the points by the Show entry in the viewport. It is a viewport colour only: the "
+        "geometry, its Cd and the P3D export are not changed. The Output menu shows the posed mesh or the skeleton instead "
+        "(a node of this kind has one output): use it to look, not to export.",
+    ),
     "assemble_lods": (
         "A P3D file keeps several LODs (versions of the model for different viewing distances) together. After you "
         "edit LODs one at a time, this node puts them back together.",

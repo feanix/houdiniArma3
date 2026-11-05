@@ -1,0 +1,6 @@
+{
+	"OnLoaded/IsPython":{
+		"type":"bool",
+		"value":true
+	}
+}

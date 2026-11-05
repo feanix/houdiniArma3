@@ -717,6 +717,37 @@ pose at a time and outputs that posed mesh on a third output, so the artist can 
 This is the measure that the spike (section 2.6) lacked: it shows shear and stretch where the weight error L1 only
 shows a weight difference.
 
+**As built (task #68).** Code: `python/a3ob_core/rig/check.py` (numpy), node `nodes/rig_check.py`.
+
+- **One output, not three (D40).** A Python-type SOP asset writes only output 0, so the second and third output are the
+  node's `view` menu: Checked mesh (default, your geometry plus attributes; its P3D export equals the export of the input),
+  Posed mesh (the test pose of the `pose` menu, or for Worst of all the pose with the most stress), Skeleton
+  (`a3ob_rig_joint_depth` and `Cd`).
+- **Stress** is stored as a fraction, `exp(mean log(posed / rest)) - 1`, so the 30 % of the range means 30 %.
+- **Poses.** Each bone turns about its own joint towards a world direction (bone direction x target gives the axis), with
+  Y up, +Z forward: arms to up, arms to forward, forearms to forward, thighs to forward, shins to back, hands to up, and
+  Spine, Spine1 and Spine2 10 degrees each to forward; the neck twists 45 degrees about its own axis. A bone the skeleton does
+  not have is skipped, and a pose with no bone at all is skipped with a warning. The skeleton may be the Arma one or a Rig
+  Fit `fitted_skeleton` (D40): only the joint positions are used.
+- **Volume (task #68, owner request).** A pose is skinned with linear blend skinning only (Arma skins that way; no dual
+  quaternion). For each point the node takes the volume of the cone from a reference point to the triangles around the
+  point (a third of the volume of each tetrahedron reference, triangle, so every triangle gives a third to each corner).
+  The reference point is the point's own blend of joints `sum(w * joint)` and, in the pose, it is skinned like a point.
+  `a3ob_rig_volume_change` is posed over rest minus 1 (negative is loss). Why this one: the cone volume follows the area
+  of the skin patch and its distance from the joint, so it sees a pinched elbow (the thickness and the area both shrink)
+  that the edge lengths alone average away, and a rigid move of the bone changes nothing. A point whose own rest volume is
+  small is measured against a quarter of the typical volume, and the value is clipped to -1 .. +3. Loss is purple and gain
+  teal (Stress is blue and red). The message names the three joints with the worst loss (the mean loss of the points,
+  weighted by their weight to the joint). The test: a cylinder skinned to two bones with linear weights across the joint
+  loses 19 %, 46 % and 74 % at the inside of the bend at 30, 60 and 90 degrees, and nothing at 0 degrees
+  (`tests/test_rig_check.py`).
+- **Open question.** The measure is untried against what an artist calls bad: on the Samples character, with its raw
+  weights, 90 degree elbows show points that lose all their volume (the skin folds past the joint), which may be real or
+  may be a limit of the measure near a joint. The owner check of test 2.9 decides.
+- **Joint depth** uses the winding number of the triangles (any orientation) and the distance to the closest triangle. An
+  open mesh, such as the Samples character (neck, neck1 and head are reported outside it by 2 to 12 cm), gives a fractional
+  winding number: read those as "outside or not closed".
+
 ## 6. Nodes, data flow, phases, tests and open questions (criterion 6)
 
 ### 6.1 Data flow
@@ -1001,10 +1032,11 @@ skeleton. The maths is `a3ob_core/rig/unpose.py`.
 
 | Parameter | Type, default | Meaning |
 |---|---|---|
-| `show` | menu: Origin, Jump, Influences, Sum, Straddle, Stress, Heaviest bone | Which attribute the visualizer colours (section 5.2). |
+| `show` | menu: Origin, Jump, Influences, Sum, Straddle, Stress, Volume, Heaviest bone | Which attribute the visualizer colours (section 5.2, 5.3). |
 | `pose` | menu: Worst of all, then each test pose | Section 5.3. |
-| `stress_range` | float, 0.3 | The stretch at full red. |
+| `stress_range` | float, 0.3 | The stretch (Stress) or volume change (Volume) at full colour; changes above it are warned about. |
 | `jump_limit` | float, 0.5 | Jumps above this are warned about. |
+| `view` | menu: Checked mesh, Posed mesh, Skeleton | Stands in for outputs 2 and 3 (D40; see 5.3, as built). |
 | `visualize` | toggle, off | As on Mass. |
 
 Later phases add **LOD Weights** (phase 3: propagate to the other LODs, section 6.3) and **Mirror Weights** (phase 3),
