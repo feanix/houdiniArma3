@@ -14,8 +14,10 @@ Houdini, and hython has numpy. The skeleton code below does not need it yet.
 - ``landmarks`` and ``fit``: the landmarks of a humanoid mesh (guess, symmetry, snap) and the rigid fit of the skeleton
   and the sample body to them (task #66).
 - ``unpose``: moves a weighted mesh from the fitted pose back onto the Arma rest pose (task #67).
+- ``check``: the weight problems and the pose stress and volume test of the Rig Check node (task #68; use ``rig.check``).
 """
 
+from . import check
 from .fit import (TORSO_BONES, FitResult, aim_targets, body_scale, bone_frames, fit_skeleton, joint_targets,
                   normalised_weights, skin_points, swing)
 from .landmarks import (CHIN_FROM_HEAD, HEAD_SHARE, LANDMARKS, Landmark, Template, facing_sign, find_groin,

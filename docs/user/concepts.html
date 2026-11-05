@@ -390,6 +390,20 @@ message gives the mean and the largest move and the bones whose points moved mos
 skeleton describes: a joint that is 1 cm off after the fit leaves your mesh about 1 cm off here. On a test body posed with arms
 20 degrees down, longer limbs and a bigger body, the whole chain (fit, weights, unpose) brings every point back to within 0.3 cm
 of the true rest pose.</p>
+<h3 id="rigging-check">Checking the weights: Rig Check</h3>
+<p>Put a <kbd class="ui-node">Rig Check</kbd> node after the weights (or after Unpose) with the skeleton on its second input. It
+changes no geometry. It adds point attributes that say what is wrong, and its message counts each problem and warns above the
+limits. <strong>Visualize</strong> colours the points in the viewport by the <strong>Show</strong> entry (a viewport colour only:
+your <code>Cd</code> and the export are not touched): <strong>Origin</strong> (where each weight came from),
+<strong>Jump</strong> (weights unlike the neighbours), <strong>Influences</strong> (more than 4 bones), <strong>Sum</strong> (weights
+that do not add up to 1), <strong>Straddle</strong> (a rigid piece on more than one bone), <strong>Heaviest bone</strong>,
+<strong>Stress</strong> and <strong>Volume</strong>. The <strong>Output</strong> menu shows the skeleton instead (green inside the mesh,
+yellow within 1 cm of the surface, red outside) or the mesh bent into the test pose.</p>
+<p>Stress and Volume bend the mesh into a test pose (<strong>Pose</strong>: arms raised, arms forward, elbows, hips, knees, spine,
+neck, wrists, or Worst of all) with linear blend skinning, the way Arma does it. Stress is how much the edges around a point
+stretch (red) or shrink (blue). Volume is where the mesh loses volume (purple) or gains it (teal) against the rest mesh: a pinched
+elbow or knee shows purple and needs smoother weights or more edge loops. The message names the joints with the worst loss. It works
+with the Arma skeleton and with the fitted skeleton of Rig Fit.</p>
 <p>P3D Export writes the weights as they are: it never changes them. Three switches on the LOD Rules tab of P3D Export and
 Validate warn when a point breaks the rules: <kbd class="ui-parm" data-node="a3ob_validate">At most 4 bones per point</kbd>,
 <kbd class="ui-parm" data-node="a3ob_validate">Bone weights add up to 1</kbd> (within 0.02) and
