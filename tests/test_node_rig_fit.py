@@ -156,6 +156,20 @@ class TestRigFitOnSamples(NodeTestCase):
         np.testing.assert_allclose(np.array(self.skeleton.geometry().pointFloatAttribValues("P")).reshape(-1, 3), self.rest,
                                    atol=1e-6)
 
+    def test_zero_length_rest_bones_stay_zero_length_and_the_spine_does_not_zigzag(self):
+        # task #75: Pelvis and Spine are in one place in the Arma rest; they must be after the fit too
+        mats, world_pos, truth, posed, mesh = self.scenario()
+        node = self.fit(mesh, "skeleton", snap=0)
+        self.assertEqual(cook(node).errors, ())
+        fitted = np.array(self.part(node, "fitted_skeleton").pointFloatAttribValues("P")).reshape(-1, 3)
+        zero = [i for i, p in enumerate(self.parents) if p >= 0 and np.linalg.norm(self.rest[i] - self.rest[p]) < 1e-4]
+        self.assertIn(self.index["spine"], zero)
+        for i in zero:
+            self.assertLess(float(np.linalg.norm(fitted[i] - fitted[self.parents[i]])), 1e-3, self.names[i])
+        chain = [fitted[self.index[n]][1] for n in ("pelvis", "spine", "spine1")]
+        self.assertGreaterEqual(chain[2] - chain[1], 0.0)  # no step down then up
+        self.assertGreaterEqual(chain[1] - chain[0], -1e-3)
+
     def test_the_fitted_transform_is_rotation_times_size_in_row_form(self):
         mats, world_pos, truth, posed, mesh = self.scenario()
         node = self.fit(mesh, "skeleton", snap=0)

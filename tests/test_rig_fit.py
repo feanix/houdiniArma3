@@ -84,6 +84,25 @@ class TestFitSkeleton(unittest.TestCase):
         self.assertAlmostEqual(body_scale(bigger, sample), 1.1)
 
 
+    def test_joints_that_share_a_rest_place_share_one_target_with_the_groin_pull(self):
+        # task #75: Pelvis and Spine are in one place in the Arma rest; the groin moves the pelvis, so Spine goes too
+        names = ["Pelvis", "Spine", "Spine1", "Spine2", "LeftArm", "RightArm", "LeftUpLeg", "RightUpLeg"]
+        rest = np.array([[0, 0, 0], [0, 0, 0], [0, 0.15, 0], [0, 0.28, 0], [0.2, 0.47, 0], [-0.2, 0.47, 0],
+                         [0.11, -0.06, 0], [-0.11, -0.06, 0]], dtype=float)
+        index = {n.lower(): i for i, n in enumerate(names)}
+        sample = {"lm_hip_l": rest[6], "lm_hip_r": rest[7], "lm_shoulder_l": rest[4], "lm_shoulder_r": rest[5],
+                  "lm_groin": np.array([0.0, -0.27, 0.0])}
+        user = dict(sample)
+        user["lm_groin"] = sample["lm_groin"] - np.array([0.0, 0.08, 0.0])  # the crotch is 8 cm lower than the torso says
+        bones = {"lm_hip_l": "LeftUpLeg", "lm_hip_r": "RightUpLeg", "lm_shoulder_l": "LeftArm", "lm_shoulder_r": "RightArm",
+                 "lm_groin": ""}
+        targets = joint_targets(index, rest, user, sample, bones)
+        np.testing.assert_allclose(targets[index["pelvis"]], targets[index["spine"]], atol=1e-12)
+        self.assertAlmostEqual(float(targets[index["pelvis"]][1]), -0.04, places=9)  # halfway to the groin: the pull stays
+        fit = fit_skeleton([-1, 0, 1, 2, 3, 3, 0, 0], rest, targets, "bone")
+        self.assertLess(float(np.linalg.norm(fit.positions[1] - fit.positions[0])), 1e-3)
+
+
 class TestSkinPoints(unittest.TestCase):
     def test_each_joint_moves_its_points_and_a_blend_is_halfway(self):
         rest = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])

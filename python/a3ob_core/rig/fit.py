@@ -96,6 +96,21 @@ def _frame(hips: Sequence[np.ndarray], shoulders: Sequence[np.ndarray]):
     return origin, np.stack([ex, ey, ez], axis=1)
 
 
+def _share_places(rest: np.ndarray, targets: Dict[int, np.ndarray]) -> None:
+    """Joints that share a place in the rest (a zero-length bone, as Pelvis and Spine in the Arma skeleton) share one
+    target: the average of their targets. Else the bone between them would get a length and a direction from noise."""
+    done = set()
+    for a in sorted(targets):
+        if a in done:
+            continue
+        group = [b for b in sorted(targets) if np.linalg.norm(rest[b] - rest[a]) <= MIN_BONE]
+        done.update(group)
+        if len(group) > 1:
+            mean = np.mean([targets[b] for b in group], axis=0)
+            for b in group:
+                targets[b] = mean
+
+
 def joint_targets(bone_index: Dict[str, int], rest: np.ndarray, user: Dict[str, np.ndarray],
                   sample: Dict[str, np.ndarray], bones: Dict[str, str]) -> Dict[int, np.ndarray]:
     """The target position of every joint that has one. ``bone_index`` maps lower-case joint names to joint numbers,
@@ -134,7 +149,12 @@ def joint_targets(bone_index: Dict[str, int], rest: np.ndarray, user: Dict[str, 
             targets[bone_index[bone.lower()]] = torso(rest[bone_index[bone.lower()]])
     if has("lm_groin") and "pelvis" in bone_index:  # the pelvis: the average of the torso frame and the crotch
         number = bone_index["pelvis"]
-        targets[number] = 0.5 * (targets[number] + user["lm_groin"] + linear @ (rest[number] - sample["lm_groin"]))
+        shift = 0.5 * (user["lm_groin"] + linear @ (rest[number] - sample["lm_groin"]) - targets[number])
+        for bone in TORSO_BONES:  # the bones in the pelvis' place (Spine) take the same shift, or the chain kinks
+            joint = bone_index.get(bone.lower())
+            if joint is not None and np.linalg.norm(rest[joint] - rest[number]) <= MIN_BONE:
+                targets[joint] = targets[joint] + shift
+    _share_places(rest, targets)
     if has("lm_chin") and "head" in bone_index and "neck" in bone_index:
         head, neck = bone_index["head"], bone_index["neck"]
         targets[head] = user["lm_chin"] + linear @ (rest[head] - sample["lm_chin"])
