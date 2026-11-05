@@ -4,3 +4,4 @@
 {"body": "Put the 'aesir spawn-context <type> --task N' output at the top of each Workflow agent prompt (or use agentType implementer/reviewer/runner/researcher), or watch the workflow's journal.jsonl directly under Monitor.", "id": 4, "retired": "", "tags": "", "topic": "upstream", "ts": "2026-11-03T05:35:43Z"}
 {"body": "Set [machine] legacy_lock = false in aesir.toml (owner decision) and, for branches cut before that commit, export AESIR_LEGACY_LOCK=0 when running gate run.", "id": 5, "retired": "", "tags": "", "topic": "upstream", "ts": "2026-11-03T07:38:50Z"}
 {"body": "Re-tag by hand with git tag -a -f (needs a force push of the tag).", "id": 6, "retired": "", "tags": "", "topic": "upstream", "ts": "2026-11-04T07:36:58Z"}
+{"body": "pass --as lead on every call", "id": 7, "retired": "", "tags": "", "topic": "upstream", "ts": "2026-11-05T04:17:37Z"}

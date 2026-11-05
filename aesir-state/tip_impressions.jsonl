@@ -298,3 +298,7 @@
 {"agent_id": "rev-75-a", "id": 298, "task_id": 75, "tip_id": 2, "ts": "2026-11-05T03:56:37Z"}
 {"agent_id": "reviewer-075-a", "id": 299, "task_id": 75, "tip_id": 1, "ts": "2026-11-05T03:59:50Z"}
 {"agent_id": "reviewer-075-a", "id": 300, "task_id": 75, "tip_id": 2, "ts": "2026-11-05T03:59:50Z"}
+{"agent_id": "impl-76-a", "id": 301, "task_id": 76, "tip_id": 1, "ts": "2026-11-05T04:16:35Z"}
+{"agent_id": "impl-76-a", "id": 302, "task_id": 76, "tip_id": 2, "ts": "2026-11-05T04:16:35Z"}
+{"agent_id": "rev-76-a", "id": 303, "task_id": 76, "tip_id": 1, "ts": "2026-11-05T04:29:07Z"}
+{"agent_id": "rev-76-a", "id": 304, "task_id": 76, "tip_id": 2, "ts": "2026-11-05T04:29:07Z"}
