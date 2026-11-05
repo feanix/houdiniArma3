@@ -8,4 +8,4 @@ Generated from the Aesir database, do not edit. A plan, not a promise: it change
 - #058 [open] ON HOLD: custom node and shelf icons from the owner's SVGs
 - #068 [open] Rigging 2d: Rig Check node (weights visualiser and pose stress test)
 - #069 [open] Rigging 2e: end-to-end run on the owner's test character
-- #070 [open] Rigging 2b+: fit the hands and fingers in Rig Fit
+- #077 [open] Future (held): custom heads from MetaHuman, face-bone weights by one template
