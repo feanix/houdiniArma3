@@ -39,6 +39,7 @@
 {"a_id": "69", "a_type": "task", "b_id": "37", "b_type": "decision"}
 {"a_id": "70", "a_type": "task", "b_id": "40", "b_type": "decision"}
 {"a_id": "73", "a_type": "task", "b_id": "41", "b_type": "decision"}
+{"a_id": "74", "a_type": "task", "b_id": "42", "b_type": "decision"}
 {"a_id": "4", "a_type": "tip", "b_id": "https://github.com/feanix/aesir-reports/issues/177", "b_type": "upstream"}
 {"a_id": "5", "a_type": "tip", "b_id": "https://github.com/feanix/aesir-reports/issues/180", "b_type": "upstream"}
 {"a_id": "6", "a_type": "tip", "b_id": "https://github.com/feanix/aesir-reports/issues/186", "b_type": "upstream"}
