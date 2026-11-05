@@ -29,7 +29,8 @@ from typing import Dict, List, Optional, Sequence
 
 import numpy as np
 
-__all__ = ["TORSO_BONES", "FitResult", "joint_targets", "fit_skeleton", "skin_points", "body_scale", "swing", "bone_frames"]
+__all__ = ["TORSO_BONES", "FitResult", "joint_targets", "fit_skeleton", "skin_points", "body_scale", "swing", "bone_frames",
+           "aim_targets", "normalised_weights"]
 
 #: The torso joints that are placed from the torso frame, from the pelvis up to the neck.
 TORSO_BONES = ("Pelvis", "Spine", "Spine1", "Spine2", "Spine3", "neck")
@@ -62,19 +63,31 @@ def bone_frames(parents: Sequence[int], positions: np.ndarray) -> np.ndarray:
     - A joint with no child to aim at (a chain end, or all its children in its place) takes its parent's frame; a root
       with none takes the identity.
     """
+    return _aim(parents, positions)[0]
+
+
+def aim_targets(parents: Sequence[int], positions: np.ndarray) -> List[int]:
+    """For every joint, the joint its bone is aimed at (the end of the main-chain bone that ``bone_frames`` points the
+    x axis down, looking through zero-length bones), or -1 for a chain end (task #67)."""
+    return _aim(parents, positions)[1]
+
+
+def _aim(parents: Sequence[int], positions: np.ndarray):
+    """``(frames, targets)`` of ``bone_frames`` and ``aim_targets``: one walk, so the two always agree."""
     count = len(parents)
     children: List[List[int]] = [[] for _ in range(count)]
     for joint, parent in enumerate(parents):
         if parent >= 0:
             children[parent].append(joint)
 
-    def aims(origin: int, joint: int) -> List[np.ndarray]:
+    def aims(origin: int, joint: int):
         delta = positions[joint] - positions[origin]
         if np.linalg.norm(delta) > MIN_BONE:
-            return [delta]
+            return [(delta, joint)]
         return [d for c in children[joint] for d in aims(origin, c)]
 
     frames = np.tile(np.eye(3), (count, 1, 1))
+    targets = [-1] * count
     incoming = np.zeros((count, 3))
     for a in range(count):
         parent = parents[a]
@@ -87,7 +100,7 @@ def bone_frames(parents: Sequence[int], positions: np.ndarray) -> np.ndarray:
         if not candidates:
             frames[a] = frames[parent] if parent >= 0 else np.eye(3)
             continue
-        best = max(candidates, key=lambda d: float(d @ incoming[a]) / np.linalg.norm(d))
+        best, targets[a] = max(candidates, key=lambda d: float(d[0] @ incoming[a]) / np.linalg.norm(d[0]))
         x = best / np.linalg.norm(best)
         ref = np.array([0.0, 0.0, 1.0])
         if abs(x @ ref) > 0.95:
@@ -95,7 +108,7 @@ def bone_frames(parents: Sequence[int], positions: np.ndarray) -> np.ndarray:
         y = ref - (ref @ x) * x
         y /= np.linalg.norm(y)
         frames[a] = np.stack([x, y, np.cross(x, y)], axis=1)
-    return frames
+    return frames, targets
 
 
 def swing(a: np.ndarray, b: np.ndarray) -> np.ndarray:
@@ -279,10 +292,9 @@ def fit_skeleton(parents: Sequence[int], rest: np.ndarray, targets: Dict[int, np
                      bone_frames(parents, pos))
 
 
-def skin_points(points: np.ndarray, weights: np.ndarray, rest: np.ndarray, result: FitResult) -> np.ndarray:
-    """Move ``points`` with linear blend skinning: each joint moves a point from the Arma rest to the fitted pose by
-    ``x' = q + L (x - p)``. Weights are scaled to a sum of 1; a point with no weight takes the matrix of the closest
-    point that has some."""
+def normalised_weights(points: np.ndarray, weights: np.ndarray) -> np.ndarray:
+    """``weights`` scaled to a sum of 1 per point; a point with no weight takes the row of the closest point that has some
+    (shared by ``skin_points`` and the unpose)."""
     total = weights.sum(axis=1)
     weighted = total > 1e-9
     w = np.zeros_like(weights)
@@ -293,6 +305,14 @@ def skin_points(points: np.ndarray, weights: np.ndarray, rest: np.ndarray, resul
             lost = np.nonzero(~weighted)[0][start:start + 256]
             d = ((points[lost, None, :] - points[None, index, :]) ** 2).sum(axis=2)
             w[lost] = w[index[d.argmin(axis=1)]]
+    return w
+
+
+def skin_points(points: np.ndarray, weights: np.ndarray, rest: np.ndarray, result: FitResult) -> np.ndarray:
+    """Move ``points`` with linear blend skinning: each joint moves a point from the Arma rest to the fitted pose by
+    ``x' = q + L (x - p)``. Weights are scaled to a sum of 1; a point with no weight takes the matrix of the closest
+    point that has some."""
+    w = normalised_weights(points, weights)
     shift = result.positions - np.einsum("jab,jb->ja", result.linear, rest)  # q - L p
     blended = np.einsum("nj,jab->nab", w, result.linear)
     return np.einsum("nab,nb->na", blended, points) + w @ shift

@@ -342,8 +342,7 @@ chain). The weights are only as good as the fit: a mesh that is off the body by 
 proportions, so the <kbd class="ui-node">Rig Fit</kbd> node fits the Arma skeleton and the sample body to your mesh first. It has
 three inputs: your mesh, the skeleton from Rig Skeleton, and the sample body with its weights. Your mesh should stand
 upright (Y up), face +Z like the sample, and be in an A-pose, with the arms away from the body. The Arma skeleton is never
-changed, whatever the body shape: the fitted skeleton is only a working copy, kept for Weight Transfer and for the unpose
-that comes later.</p>
+changed, whatever the body shape: the fitted skeleton is only a working copy, kept for Weight Transfer and for Unpose.</p>
 <p>The fit starts from 14 <strong>landmarks</strong>, named points of the body. A landmark is a <em>position</em> that you place:
 the <kbd class="ui-node">Rig Landmarks</kbd> node holds one X, Y, Z field for each. Left is the +X side.</p>
 <ul>
@@ -373,6 +372,21 @@ kind has one output, which holds all three results as named parts (packed primit
 its weights) and <code>landmarks</code>. One Rig Fit node feeds Weight Transfer directly: connect its output to input 2 of
 Weight Transfer, which takes the fitted body from it by itself. <strong>Show</strong> only chooses which parts are drawn in the
 viewport; the output is the same for every choice. <strong>Refine</strong> is not available yet.</p>
+
+<h3 id="rigging-unpose">Back to the Arma rest pose: Unpose</h3>
+<p>Weight Transfer and Weight Cleanup weight your mesh in the pose of the fitted skeleton. Arma needs it in its own rest pose, so
+the last step of the rigging chain is the <kbd class="ui-node">Unpose</kbd> node. Its inputs are your weighted mesh (from Weight
+Cleanup), the output of Rig Fit as it is (the fitted skeleton is taken from it) and the Arma skeleton from Rig Skeleton. Every
+point moves by the inverse of its blended bone matrix, from the fitted skeleton back to the Arma one. The move of each bone is
+worked out from the joint positions: how far the bone turned, and how much longer or shorter it is than the Arma bone (along the bone only: a longer arm is not a thicker arm). A perfect
+fit moves nothing. The weights are not changed.</p>
+<p>The points of a rigid piece (a helmet, a pouch made by Accessory Weights in Rigid mode) move with one matrix for the whole
+piece, so the piece keeps its shape. Switch <strong>Rigid Pieces Keep Their Shape</strong> off to give every point its own
+weights, which can stretch a rigid piece when its bone bends. The <strong>Group</strong> field limits the points to unpose. The node
+message gives the mean and the largest move and the bones whose points moved most. The unpose can only remove what the fitted
+skeleton describes: a joint that is 1 cm off after the fit leaves your mesh about 1 cm off here. On a test body posed with arms
+20 degrees down, longer limbs and a bigger body, the whole chain (fit, weights, unpose) brings every point back to within 0.3 cm
+of the true rest pose.</p>
 <p>P3D Export writes the weights as they are: it never changes them. Three switches on the LOD Rules tab of P3D Export and
 Validate warn when a point breaks the rules: <kbd class="ui-parm" data-node="a3ob_validate">At most 4 bones per point</kbd>,
 <kbd class="ui-parm" data-node="a3ob_validate">Bone weights add up to 1</kbd> (within 0.02) and

@@ -13,9 +13,11 @@ Houdini, and hython has numpy. The skeleton code below does not need it yet.
 - ``transfer``: weight transfer by closest point and inpainting, with the rigid and non-rigid layers (task #65).
 - ``landmarks`` and ``fit``: the landmarks of a humanoid mesh (guess, symmetry, snap) and the rigid fit of the skeleton
   and the sample body to them (task #66).
+- ``unpose``: moves a weighted mesh from the fitted pose back onto the Arma rest pose (task #67).
 """
 
-from .fit import TORSO_BONES, FitResult, body_scale, bone_frames, fit_skeleton, joint_targets, skin_points, swing
+from .fit import (TORSO_BONES, FitResult, aim_targets, body_scale, bone_frames, fit_skeleton, joint_targets,
+                  normalised_weights, skin_points, swing)
 from .landmarks import (CHIN_FROM_HEAD, HEAD_SHARE, LANDMARKS, Landmark, Template, facing_sign, find_groin,
                         follow_mirror, guess_landmarks, is_set, make_template, mirror_x, snap_to_surface, symmetrize)
 from .landmarks import NAMES as LANDMARK_NAMES
@@ -25,6 +27,7 @@ from .pivots import pivot_positions, read_pivots_file
 from .skeleton import SKIP_PATTERNS, Joint, SkeletonPlan, check_bones, plan_skeleton
 from .transfer import (ORIGIN_COPIED, ORIGIN_FILLED, ORIGIN_NONE, ORIGIN_NONRIGID, ORIGIN_RIGID, Piece, Settings,
                        TransferResult, accessory_layer, drop_small_pieces, is_twist, transfer_body, twist_targets)
+from .unpose import BoneMoves, bone_displacements, bone_moves, unpose_points
 from .weights import (CAPT_FLOATS, GRID, CleanStats, capture_lists, clean_weights, grid_units, inverse_rest_floats,
                       match_bone_names, matrix_from_capture)
 
@@ -33,6 +36,7 @@ BONE_OF = {item.name: item.bone for item in LANDMARKS}
 
 __all__ = [
     "BONE_OF", "LANDMARK_NAMES", "LANDMARK_PAIRS", "LANDMARKS", "Landmark", "Template", "TORSO_BONES", "FitResult",
+    "BoneMoves", "aim_targets", "bone_displacements", "bone_moves", "normalised_weights", "unpose_points",
     "CHIN_FROM_HEAD", "HEAD_SHARE", "body_scale", "bone_frames", "fit_skeleton", "joint_targets", "skin_points", "swing",
     "facing_sign", "find_groin", "follow_mirror", "guess_landmarks", "is_set", "mirror_x", "make_template", "snap_to_surface", "symmetrize", "drop_small_pieces",
     "ORIGIN_COPIED", "ORIGIN_FILLED", "ORIGIN_NONE", "ORIGIN_NONRIGID", "ORIGIN_RIGID", "Piece", "Settings",
