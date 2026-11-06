@@ -236,6 +236,8 @@ class TestDigestsOnTheSamples(NodeTestCase):
         self.fit.setInput(0, self.body)
         self.fit.setInput(1, self.skeleton)
         self.fit.setInput(2, self.body)
+        # The sample has no body group, and Refine (on by default since #79) needs one.
+        self.fit.parm("refine").set(0)
         for node in (self.body, self.skeleton, self.fit):
             self.assertEqual(cook(node).errors, ())
 
