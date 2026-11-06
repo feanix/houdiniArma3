@@ -11,7 +11,7 @@ Your own character has its own size and proportions, and the Arma skeleton and t
 
 The fit starts from landmarks, 18 named points of the body. Your mesh should stand upright (Y up), face +Z like the sample, and be in an A-pose with the arms away from the body. Set the landmarks with a Rig Landmarks node in front of this one: you drag a marker for each in the viewport. The chin and the groin are points on the skin (the chin is the tip, the groin the highest point between the legs); the others are joints, inside the body. The hands have two each: the last joint of the middle finger gives the length and the direction of the hand, the last joint of the thumb says which way the palm faces; the other fingers follow the hand. Left is the +X side. Landmarks that Rig Landmarks does not set are guessed from the shape of the mesh, and a position you set always wins over the guess. The guess is a first try: show the landmarks and correct the ones that are wrong.
 
-The fit goes down the skeleton from the pelvis. Each joint is turned towards the landmarks below it and given the length that puts them on the landmarks. The message of the node says how far the joints were from their landmarks after the fit, and warns when that is more than 1 cm. The node has one output that holds three results as packed primitives, named by the prim string a3ob_rig_part: fitted_skeleton, fitted_body (the sample body posed to match your mesh, with its weights) and landmarks (points with a name). Connect it to input 2 of Weight Transfer as it is: Weight Transfer takes the fitted body from it. The Show menu only decides which results are drawn in the viewport; the output is the same for every choice.
+The fit goes down the skeleton from the pelvis. Each joint is turned towards the landmarks below it and given the length that puts them on the landmarks. The message of the node says how far the joints were from their landmarks after the fit, and warns when that is more than 1 cm. The node has one output that holds three results as packed primitives, named by the prim string a3ob_rig_part: fitted_skeleton, fitted_body (the sample body posed to match your mesh, with its weights) and landmarks (points with a name). Connect it to input 2 of Weight Transfer as it is: Weight Transfer takes the fitted body from it. The Show menu only decides which results are drawn in the viewport; the output is the same for every choice. Refine (on by default) wraps the fitted body onto the points of the Body Group of your mesh with Topo Transfer, so the fitted body takes your proportions; the pelvis is placed from the torso, not from the groin.
 
 @inputs
 
@@ -78,9 +78,16 @@ Symmetry:
 Refine:
     #id: refine
 
-    Not available yet: the sample body is only posed and sized, not bent to your mesh. Switching it on adds a warning and changes nothing.
+    Wrap the fitted sample body onto your bare body with Topo Transfer, so it takes your proportions. Each landmark is moved to the closest point of the sample body and of your body; the pairs with the same name guide the wrap. The fitted sample body part becomes the wrapped body, with its bone weights. Off: the sample body is only posed and sized.
 
-    Type: On or off. Default: Off.
+    Type: On or off. Default: On.
+
+Body Group:
+    #id: bodygroup
+
+    The point group of your mesh that Refine wraps onto: the bare body, without hair, helmet or other accessories. Empty means the whole mesh.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: body.
 
 Scale:
     #id: scale

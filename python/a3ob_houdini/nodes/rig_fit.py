@@ -77,9 +77,14 @@ SPEC = NodeSpec(
         Parm("symmetry", "Symmetry", "toggle", True,
              "Make the left and right landmarks mirror each other. When both sides of a pair are set in Rig Landmarks they "
              "are averaged; when only one side is, the other side is its mirror image."),
-        Parm("refine", "Refine", "toggle", False,
-             "Not available yet: the sample body is only posed and sized, not bent to your mesh. Switching it on adds a "
-             "warning and changes nothing."),
+        Parm("refine", "Refine", "toggle", True,
+             "Wrap the fitted sample body onto your bare body with Topo Transfer, so it takes your proportions. Each "
+             "landmark is moved to the closest point of the sample body and of your body; the pairs with the same name "
+             "guide the wrap. The fitted sample body part becomes the wrapped body, with its bone weights. Off: the "
+             "sample body is only posed and sized."),
+        Parm("bodygroup", "Body Group", "group", "body",
+             "The point group of your mesh that Refine wraps onto: the bare body, without hair, helmet or other "
+             "accessories. Empty means the whole mesh.", group_type="points"),
         Parm("scale", "Scale", "menu", "bone", "How the length of each bone is fitted.", items=(
             ("bone", "Per bone length"),
             ("body", "Whole body"),
@@ -125,8 +130,11 @@ def cook(node, report: Report) -> None:
     except ValueError as problem:
         raise UserError(format_problem(NAME, str(problem), "Check the landmarks")) from None
 
+    body = _body_geo(sample_in, skin_points(positions_s, found.weights, rest, fitted))
+    if values["refine"]:
+        body = _refine(body, mesh_in, user, values["bodygroup"])
     parts = {rig_weights.PART_SKELETON: _skeleton_geo(node.inputGeometry(1), fitted),
-             rig_weights.PART_BODY: _body_geo(sample_in, skin_points(positions_s, found.weights, rest, fitted)),
+             rig_weights.PART_BODY: body,
              rig_weights.PART_LANDMARKS: _landmarks_geo(user)}
     wanted = {"skeleton": rig_weights.PART_SKELETON, "body": rig_weights.PART_BODY, "landmarks": rig_weights.PART_LANDMARKS}
     hidden = [name for name in parts if values["show"] != "all" and name != wanted[values["show"]]]
@@ -180,6 +188,54 @@ def _body_geo(sample_in, points: np.ndarray):
     return geo
 
 
+def _without_markers(geo):
+    """A copy of ``geo`` without its proxy markers (packed primitives). The same rule runs on every copy, so the points of
+    the wrapped body keep the order of the sample body (the markers' points are at its end and go with them)."""
+    out = hou.Geometry()
+    out.copy(geo)
+    packed = [prim for prim in out.prims() if isinstance(prim, hou.PackedPrim)]
+    if packed:
+        out.deletePrims(packed, keep_points=False)
+    return out
+
+
+def _body_group_only(mesh_in, group: str):
+    """A copy of your mesh with only the points of ``group`` (all of it when ``group`` is empty)."""
+    out = hou.Geometry()
+    out.copy(mesh_in)
+    if group.strip():
+        keep = rig_weights.group_mask(NAME, out, group, "Body Group")
+        if not keep.any():
+            raise UserError(format_problem(NAME, "the Body Group %r has no point" % group,
+                                           "Name a point group of your mesh, or leave Body Group empty for the whole mesh"))
+        drop = [point for point in out.points() if not keep[point.number()]]
+        if drop:
+            out.deletePoints(drop)
+    return out
+
+
+def _refine(body, mesh_in, user, group: str):
+    """The fitted sample body ``body`` wrapped onto the points of ``group`` of ``mesh_in`` with the Topo Transfer verb (a
+    verb, so no node is needed inside this Python SOP). The landmarks are snapped to the closest point of each surface and
+    matched by their ``name``."""
+    template = _without_markers(body)
+    target = _body_group_only(mesh_in, group)
+    template_p, template_tris = rig_weights.read_mesh(template)
+    target_p, target_tris = rig_weights.read_mesh(target)
+    if not len(target_tris):
+        raise UserError(format_problem(NAME, "the body to wrap onto has no polygons", "Check Body Group"))
+    wrapped = hou.Geometry()
+    verb = hou.sopNodeTypeCategory().nodeVerb("topotransfer")
+    verb.setParms({"enablegeometryconstraints": 1, "landmarkattrib": "name"})
+    try:
+        verb.execute(wrapped, [template, target, _landmarks_geo(snap_to_surface(user, template_p, template_tris)),
+                               _landmarks_geo(snap_to_surface(user, target_p, target_tris))])
+    except hou.OperationFailed as problem:
+        raise UserError(format_problem(NAME, "Topo Transfer failed: %s" % problem, "Check Body Group (the body should be "
+                                       "one clean surface) and the landmarks, or switch Refine off")) from None
+    return wrapped
+
+
 def _landmarks_geo(user):
     geo = hou.Geometry()
     geo.addAttrib(hou.attribType.Point, "name", "")
@@ -205,7 +261,9 @@ def _report(report: Report, values, user, source, skeleton, fitted) -> None:
                 list_elements("joints", far), 100 * big), "Check the landmarks of those joints, or the left and right "
                 "pairs; a bad landmark moves the skeleton and the unposed result"))
     if values["refine"]:
-        report.warning(format_problem(NAME, "Refine is not available yet and was not applied"))
+        group = values["bodygroup"].strip()
+        report.info("Refine: the fitted sample body is wrapped onto %s." % (
+            "the point group %s of your mesh" % group if group else "your whole mesh"))
     guessed = [name for name in LANDMARK_NAMES if name in source and source[name] == "guess"]
     if guessed:
         report.info("Guessed: %s. Look at the landmarks part (Show: Landmarks) on your mesh; set it in Rig Landmarks to correct one." % ", ".join(guessed))

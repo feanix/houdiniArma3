@@ -31,7 +31,7 @@
 <p class="lead">Fits the Arma skeleton and the sample body to your mesh, from landmarks that you set or that are guessed.</p>
 <p>Your own character has its own size and proportions, and the Arma skeleton and the sample body do not match it. This node fits them to your mesh, so that Weight Transfer can copy the weights of the sample body onto your mesh, and Unpose can later bring your mesh back to the Arma rest pose. The Arma skeleton itself is never changed: the fitted skeleton is only a working copy.</p>
 <p>The fit starts from landmarks, 18 named points of the body. Your mesh should stand upright (Y up), face +Z like the sample, and be in an A-pose with the arms away from the body. Set the landmarks with a Rig Landmarks node in front of this one: you drag a marker for each in the viewport. The chin and the groin are points on the skin (the chin is the tip, the groin the highest point between the legs); the others are joints, inside the body. The hands have two each: the last joint of the middle finger gives the length and the direction of the hand, the last joint of the thumb says which way the palm faces; the other fingers follow the hand. Left is the +X side. Landmarks that Rig Landmarks does not set are guessed from the shape of the mesh, and a position you set always wins over the guess. The guess is a first try: show the landmarks and correct the ones that are wrong.</p>
-<p>The fit goes down the skeleton from the pelvis. Each joint is turned towards the landmarks below it and given the length that puts them on the landmarks. The message of the node says how far the joints were from their landmarks after the fit, and warns when that is more than 1 cm. The node has one output that holds three results as packed primitives, named by the prim string a3ob_rig_part: fitted_skeleton, fitted_body (the sample body posed to match your mesh, with its weights) and landmarks (points with a name). Connect it to input 2 of Weight Transfer as it is: Weight Transfer takes the fitted body from it. The Show menu only decides which results are drawn in the viewport; the output is the same for every choice.</p>
+<p>The fit goes down the skeleton from the pelvis. Each joint is turned towards the landmarks below it and given the length that puts them on the landmarks. The message of the node says how far the joints were from their landmarks after the fit, and warns when that is more than 1 cm. The node has one output that holds three results as packed primitives, named by the prim string a3ob_rig_part: fitted_skeleton, fitted_body (the sample body posed to match your mesh, with its weights) and landmarks (points with a name). Connect it to input 2 of Weight Transfer as it is: Weight Transfer takes the fitted body from it. The Show menu only decides which results are drawn in the viewport; the output is the same for every choice. Refine (on by default) wraps the fitted body onto the points of the Body Group of your mesh with Topo Transfer, so the fitted body takes your proportions; the pelvis is placed from the torso, not from the groin.</p>
 <table class="facts">
 <tr><th>Houdini name</th><td><code>a3ob_rig_fit</code></td></tr>
 <tr><th>Where to find it</th><td>Tab menu, A3OB, Rig Fit</td></tr>
@@ -92,10 +92,18 @@
 </section>
 <section class="parm" id="refine">
 <h3>Refine <code>refine</code></h3>
-<p>Not available yet: the sample body is only posed and sized, not bent to your mesh. Switching it on adds a warning and changes nothing.</p>
+<p>Wrap the fitted sample body onto your bare body with Topo Transfer, so it takes your proportions. Each landmark is moved to the closest point of the sample body and of your body; the pairs with the same name guide the wrap. The fitted sample body part becomes the wrapped body, with its bone weights. Off: the sample body is only posed and sized.</p>
 <dl>
 <dt>Type</dt><dd>On or off</dd>
-<dt>Default</dt><dd>Off</dd>
+<dt>Default</dt><dd>On</dd>
+</dl>
+</section>
+<section class="parm" id="bodygroup">
+<h3>Body Group <code>bodygroup</code></h3>
+<p>The point group of your mesh that Refine wraps onto: the bare body, without hair, helmet or other accessories. Empty means the whole mesh.</p>
+<dl>
+<dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
+<dt>Default</dt><dd>body</dd>
 </dl>
 </section>
 <section class="parm" id="scale">

@@ -121,10 +121,13 @@ class TestRigFitOnSamples(NodeTestCase):
         out["lm_groin"] = pelvis[:3, :3] @ self.groin_rest + pelvis[:3, 3]
         return out
 
-    def user_mesh(self, points, landmarks=None):
-        """Polygons at ``points`` and, for each landmark, a detail vector ``a3ob_lm_*`` (what Rig Landmarks writes)."""
+    def user_mesh(self, points, landmarks=None, group="body"):
+        """Polygons at ``points`` and, for each landmark, a detail vector ``a3ob_lm_*`` (what Rig Landmarks writes). All the
+        points are in the point group ``group`` (Refine wraps onto it; empty: no group)."""
         geo = hou.Geometry()
         created = geo.createPoints([tuple(float(v) for v in p) for p in points])
+        if group:
+            geo.createPointGroup(group).add(created)
         for tri in self.tris:
             prim = geo.createPolygon()
             for index in tri:
@@ -142,6 +145,7 @@ class TestRigFitOnSamples(NodeTestCase):
         node.setInput(1, self.skeleton)
         node.setInput(2, self.body)
         node.parm("show").set(show)
+        parms.setdefault("refine", 0)  # Refine is on by default; the tests of the plain fit keep it off
         for name, value in parms.items():
             node.parm(name).set(value)
         return node
@@ -344,12 +348,43 @@ class TestRigFitOnSamples(NodeTestCase):
         self.assertEqual(result.errors, ())
         self.assertIn("the other way", " ".join(result.warnings))
 
-    def test_refine_is_not_available_yet_and_says_so(self):
+    def test_task_79_refine_brings_the_sample_body_closer_to_a_known_target(self):
+        """Task #79 (D44): the target is the posed sample with a 10 cm belly in front and a 25 % wider waist (a shape that a bone fit cannot make; the
+        landmarks stay), so the target surface is known. Refine wraps the fitted body onto it: its points lie closer to the
+        target surface (nearest target point, whatever the point numbers) than those of the plain fit."""
         mats, world_pos, truth, posed, mesh = self.scenario()
-        node = self.fit(mesh, "skeleton", snap=0, refine=1)
-        result = cook(node)
-        self.assertEqual(result.errors, ())
-        self.assertIn("Refine is not available", " ".join(result.warnings))
+        belly = posed.copy()
+        belly[:, 2] += 0.10 * np.exp(-(((posed[:, 1] - 0.2) / 0.15) ** 2)) * (posed[:, 2] > -0.02)
+        belly[:, 0] *= 1.0 + 0.25 * np.exp(-(((posed[:, 1] - 0.2) / 0.25) ** 2))
+        mesh = self.user_mesh(belly, truth)
+        distance = {}
+        for refine in (0, 1):
+            node = self.fit(mesh, "body", snap=0, refine=refine)
+            result = cook(node)
+            self.assertEqual(result.errors, (), refine)
+            got = np.array(self.part(node, "fitted_body").pointFloatAttribValues("P")).reshape(-1, 3)[self.used]
+            near = np.array([np.sqrt(((belly - p) ** 2).sum(axis=1).min()) for p in got])
+            distance[refine] = near
+            print("   task 79, refine %d: %.2f cm mean, %.2f cm at most from the target" % (
+                refine, 100 * near.mean(), 100 * near.max()))
+            if refine:
+                self.assertIn("Refine:", "\n".join(result.messages))
+        self.assertLess(float(distance[1].mean()), 0.8 * float(distance[0].mean()))
+        # the wrapped body keeps its groups and weights (Weight Transfer reads them)
+        wrapped, source = self.part(node, "fitted_body"), self.body.geometry()
+        self.assertEqual(sorted(g.name() for g in wrapped.pointGroups()), sorted(g.name() for g in source.pointGroups()))
+        count = len(wrapped.points())
+        np.testing.assert_allclose(rig_weights.read_selections("test", wrapped, self.names).weights,
+                                   rig_weights.read_selections("test", source, self.names).weights[:count], atol=1e-6)
+
+    def test_task_79_refine_wraps_onto_the_body_group_only(self):
+        mats, world_pos, truth, posed, mesh = self.scenario()
+        node = self.fit(self.user_mesh(posed, truth, group="skin"), "body", snap=0, refine=1, bodygroup="skin")
+        self.assertEqual(cook(node).errors, ())
+        node = self.fit(self.user_mesh(posed, truth, group="skin"), "body", snap=0, refine=1, bodygroup="nothing")
+        self.assertIn("nothing", " ".join(cook(node).errors))
+        node = self.fit(self.user_mesh(posed, truth, group=""), "body", snap=0, refine=1, bodygroup="")  # the whole mesh
+        self.assertEqual(cook(node).errors, ())
 
     def test_the_output_holds_the_three_parts_by_name_and_show_only_hides(self):
         mats, world_pos, truth, posed, mesh = self.scenario()
