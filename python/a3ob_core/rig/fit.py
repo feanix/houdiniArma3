@@ -214,13 +214,8 @@ def joint_targets(bone_index: Dict[str, int], rest: np.ndarray, user: Dict[str, 
     for bone in TORSO_BONES:
         if bone.lower() in bone_index:
             targets[bone_index[bone.lower()]] = torso(rest[bone_index[bone.lower()]])
-    if has("lm_groin") and "pelvis" in bone_index:  # the pelvis: the average of the torso frame and the crotch
-        number = bone_index["pelvis"]
-        shift = 0.5 * (user["lm_groin"] + linear @ (rest[number] - sample["lm_groin"]) - targets[number])
-        for bone in TORSO_BONES:  # the bones in the pelvis' place (Spine) take the same shift, or the chain kinks
-            joint = bone_index.get(bone.lower())
-            if joint is not None and np.linalg.norm(rest[joint] - rest[number]) <= MIN_BONE:
-                targets[joint] = targets[joint] + shift
+    # The pelvis (and the joints in its place) take the torso-frame position only (D44, #79): the crotch landmark does
+    # not move it, since the sample body's crotch hangs far below its hips (baggy trousers).
     _share_places(rest, targets)
     if has("lm_chin") and "head" in bone_index and "neck" in bone_index:
         head, neck = bone_index["head"], bone_index["neck"]

@@ -471,6 +471,7 @@ class TestRigLandmarksWithRigFit(NodeTestCase):
         node.setInput(1, self.skeleton)
         node.setInput(2, self.body)
         node.parm("show").set("landmarks")
+        parms.setdefault("refine", 0)  # Refine is on by default (task #79); these tests are about the landmarks
         for name, value in parms.items():
             node.parm(name).set(value)
         return node

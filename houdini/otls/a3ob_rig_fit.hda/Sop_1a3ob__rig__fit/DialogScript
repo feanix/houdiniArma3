@@ -56,8 +56,22 @@
 	name	"refine"
 	label	"Refine"
 	type	toggle
-	default	{ "0" }
-	help	"Not available yet: the sample body is only posed and sized, not bent to your mesh. Switching it on adds a warning and changes nothing."
+	default	{ "1" }
+	help	"Wrap the fitted sample body onto your bare body with Topo Transfer, so it takes your proportions. Each landmark is moved to the closest point of the sample body and of your body; the pairs with the same name guide the wrap. The fitted sample body part becomes the wrapped body, with its bone weights. Off: the sample body is only posed and sized."
+    }
+    parm {
+	name	"bodygroup"
+	label	"Body Group"
+	type	string
+	default	{ "body" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('rig_fit', 'bodygroup', kwargs)" ]
+	    language python
+	}
+	help	"The point group of your mesh that Refine wraps onto: the bare body, without hair, helmet or other accessories. Empty means the whole mesh."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
     }
     parm {
 	name	"scale"
