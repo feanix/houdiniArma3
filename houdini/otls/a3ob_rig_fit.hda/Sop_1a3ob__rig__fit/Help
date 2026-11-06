@@ -29,7 +29,7 @@ Sample body:
 Show:
     #id: show
 
-    Which results are drawn in the viewport. The node always gives all three results as one geometry, three packed primitives named by the prim string a3ob_rig_part. This menu only hides the others from view; the output is the same for every choice. Weight Transfer takes the fitted sample body from it by itself.
+    Which results are drawn in the viewport. The node always gives all results as one geometry, packed primitives named by the prim string a3ob_rig_part (a fourth, rest_body, the sample body as it came in, is never drawn; Unpose uses it). This menu only hides the others from view; the output is the same for every choice. Weight Transfer takes the fitted sample body from it by itself.
 
     Type: Menu. Default: All.
 

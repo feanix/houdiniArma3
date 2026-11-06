@@ -5,15 +5,29 @@
 """The Unpose node (docs/design/character-rigging.md 2.6 and 6.2, task #67): moves the weighted mesh from the pose of the
 fitted skeleton back onto the Arma rest pose.
 
-Input 1 is the mesh with cleaned weights (Weight Cleanup), input 2 the output of Rig Fit (its ``fitted_skeleton`` part is
-used, D40), input 3 the Arma skeleton (Rig Skeleton). Each point moves by the inverse of its blended bone matrix, from the
-fitted skeleton to the Arma one. The points of a rigid piece (``a3ob_rig_piece`` and ``a3ob_rig_origin`` of Accessory
-Weights in Rigid mode, D41) move by one matrix per piece. The weights are not changed (D37 Q13).
+Input 1 is the mesh with cleaned weights (Weight Cleanup), input 2 the output of Rig Fit (its ``fitted_skeleton``,
+``fitted_body`` and ``rest_body`` parts are used, D40), input 3 the Arma skeleton (Rig Skeleton). The weights are not
+changed (D37 Q13).
+
+Method **Cage** (default, D44, task #80): the body and the accessories that bend move by a cage, the maths of the Point
+Deform SOP as in the advisor's prototype /obj/unpose_proto (ported to numpy: Houdini has no verb for that SOP, so it
+cannot run from this Python SOP; the port is checked against the real node) with the rest lattice = Rig Fit's ``fitted_body`` (the sample
+body wrapped onto your body) and the deformed lattice = ``rest_body`` (the sample body in the Arma rest pose). Both have
+their proxy markers removed the same way, so their points match one to one. Rest body: a part of the Rig Fit output rather
+than a fourth input, because the part always comes from the same sample body as the fitted one, so the point order cannot
+be wrong, and the node needs no more wires. Rigid pieces (``a3ob_rig_piece`` and ``a3ob_rig_origin`` of Accessory Weights
+in Rigid mode, D41, and islands outside the Body Group that follow one bone only, such as a helmet) are then moved by one
+rigid transform each (rotation and shift, no size): the one that fits the places the cage gives their points best, so the
+piece stays on the body where the cage puts it (the helmet follows the head) and none of its edges changes.
+
+Method **Bones** (the old one): each point moves by the inverse of its blended bone matrix, from the fitted skeleton to the
+Arma one; a rigid piece by one matrix. Neither method changes the overall size.
 """
 
 import numpy as np
 
-from a3ob_core.rig import ORIGIN_RIGID, bone_displacements, bone_moves, unpose_points
+from a3ob_core.rig import (ORIGIN_RIGID, bone_displacements, bone_moves, place_pieces, point_deform, single_bone_pieces,
+                           unpose_points)
 
 from .. import rig_weights
 from ..errors import UserError
@@ -35,17 +49,32 @@ PIECE_ATTRIB = "a3ob_rig_piece"
 SPEC = NodeSpec(
     kind="unpose",
     label="Unpose",
-    summary="Moves your weighted mesh from the pose of the fitted skeleton back onto the Arma rest pose.",
+    summary="Moves your weighted mesh from the pose of the fitted skeleton back onto the Arma rest pose, by a cage "
+            "from your body to the sample body.",
     inputs=(3, 3),
     input_labels=("Your mesh", "Fitted skeleton", "Arma skeleton"),
     input_help=("Your mesh with its cleaned bone weights, for example from Weight Cleanup.",
-                "The output of Rig Fit as it is (its fitted skeleton is used).",
+                "The output of Rig Fit as it is (its fitted skeleton, fitted body and rest body are used).",
                 "The Arma skeleton, for example from Rig Skeleton. It must have the same bones as the fitted one."),
     parms=(
+        Parm("method", "Method", "menu", "cage",
+             "How the points move back to the Arma rest pose. Neither method changes the overall size.",
+             items=(("cage", "Cage"), ("bones", "Bones")),
+             item_help=(("cage", "Move the points by a cage: the sample body wrapped onto your body (fitted body of Rig Fit) "
+                                 "is taken to the sample body in the Arma rest pose (Point Deform). It follows your body's "
+                                 "proportions. Rigid pieces then move by one rigid transform each."),
+                        ("bones", "Move each point by the inverse of its blended bone matrix, from the fitted skeleton to the "
+                                  "Arma one. Fast, but it cannot express that your body has other proportions than the "
+                                  "sample (thighs can telescope, hands crumple)."))),
+        Parm("bodygroup", "Body Group", "group", "body",
+             "Cage method: the point group of your mesh that is the bare body, the one Rig Fit wrapped onto. Its points "
+             "always follow the cage. A piece outside it whose points follow one bone only (a helmet) is moved as a rigid "
+             "piece; other points outside it (clothes that bend) follow the cage. Empty means the whole mesh is body.",
+             group_type="points"),
         Parm("rigid_pieces", "Rigid Pieces Keep Their Shape", "toggle", True,
-             "Move all the points of a rigid piece (made by Accessory Weights in Rigid mode) with one matrix, "
-             "so the piece keeps its shape. Off: every point uses its own weights, which can stretch a rigid piece "
-             "when its bone bends."),
+             "Move all the points of a rigid piece (made by Accessory Weights in Rigid mode, or an island outside the Body "
+             "Group that follows one bone only) with one rigid transform, so the piece keeps its shape. Off: every point "
+             "follows the cage (or its own weights in the Bones method), which can stretch a rigid piece."),
         Parm("group", "Group", "group", "",
              "The points to unpose. Empty means all points. The menu lists the point groups of the input and shows the "
              "P3D name of a selection; picking adds or removes the group. The arrow button picks points in the "
@@ -83,15 +112,54 @@ def cook(node, report: Report) -> None:
     active &= ~proxy
 
     piece = _rigid_pieces(geo, values["rigid_pieces"], count)
-    moves = bone_moves(arma.parents, np.array(arma.positions), np.array(fitted.positions))
     weights = found.weights
     weighted = weights.sum(axis=1) > 0
     index = np.nonzero(active)[0]
     moved = positions.copy()
-    if len(index):
-        moved[index] = unpose_points(positions[index], weights[index], moves, piece[index])
-        geo.setPointFloatAttribValues("P", [float(v) for v in moved.reshape(-1)])
+    moves = None
+    if values["method"] == "cage":
+        if len(index):
+            if values["rigid_pieces"]:
+                piece = _add_islands(geo, values["bodygroup"], weights, piece, active, count)
+            caged = _cage(geo, node, positions)
+            moved[index] = place_pieces(positions, caged, np.where(active, piece, -1))[index]
+            geo.setPointFloatAttribValues("P", [float(v) for v in moved.reshape(-1)])
+    else:
+        moves = bone_moves(arma.parents, np.array(arma.positions), np.array(fitted.positions))
+        if len(index):
+            moved[index] = unpose_points(positions[index], weights[index], moves, piece[index])
+            geo.setPointFloatAttribValues("P", [float(v) for v in moved.reshape(-1)])
     _report(report, names, positions, moved, weights, index, piece, int((active & ~weighted).sum()), moves)
+
+
+def _cage(geo, node, positions: np.ndarray) -> np.ndarray:
+    """Every point of ``geo`` moved by the cage: rest lattice ``fitted_body``, deformed lattice ``rest_body``, both without
+    proxy markers (so the point order matches). The maths of the prototype's Point Deform node (``point_deform``)."""
+    rest = rig_weights.without_markers(rig_weights.read_part(NAME, node.inputGeometry(1), rig_weights.PART_BODY, "input 2"))
+    deformed = rig_weights.without_markers(
+        rig_weights.read_part(NAME, node.inputGeometry(1), rig_weights.PART_REST_BODY, "input 2"))
+    if len(rest.points()) != len(deformed.points()):
+        raise UserError(format_problem(NAME, "the fitted body (%d points) and the rest body (%d points) of Rig Fit do not "
+                                       "match" % (len(rest.points()), len(deformed.points())),
+                                       "Cook Rig Fit again; use the Rig Fit output as it is"))
+    polys = [[v.point().number() for v in prim.vertices()] for prim in rest.prims() if isinstance(prim, hou.Polygon)]
+    lattice = np.array(rest.pointFloatAttribValues("P"), dtype=np.float64).reshape(-1, 3)
+    target = np.array(deformed.pointFloatAttribValues("P"), dtype=np.float64).reshape(-1, 3)
+    return point_deform(positions, lattice, target, polys)
+
+
+def _add_islands(geo, group: str, weights: np.ndarray, piece: np.ndarray, active: np.ndarray, count: int) -> np.ndarray:
+    """``piece`` plus a new piece for each island outside the body group whose points follow one bone only."""
+    body = rig_weights.group_mask(NAME, geo, group, "Body Group") if group.strip() else np.ones(count, bool)
+    edges = []
+    for prim in geo.prims():
+        if isinstance(prim, hou.PackedPrim):
+            continue
+        ring = [v.point().number() for v in prim.vertices()]
+        edges.extend(zip(ring, ring[1:] + ring[:1]))
+    first = int(piece.max()) + 1 if (piece >= 0).any() else 0
+    found = single_bone_pieces(np.array(edges, dtype=np.int64).reshape(-1, 2), weights, body | (piece >= 0) | ~active, first)
+    return np.where(found >= 0, found, piece)
 
 
 def _rigid_pieces(geo, wanted: bool, count: int) -> np.ndarray:
@@ -106,10 +174,12 @@ def _rigid_pieces(geo, wanted: bool, count: int) -> np.ndarray:
 
 
 def _report(report: Report, names, before, after, weights, index, piece, unweighted: int, moves) -> None:
+    """``moves`` is None for the Cage method."""
     if not len(index):
         report.warning(format_problem(NAME, "no point to unpose", "Check the Group field"))
         return
     shift = np.linalg.norm(after[index] - before[index], axis=1)
+    cage = moves is None
     worst = int(index[int(shift.argmax())])
     report.info("%d points moved back to the Arma rest pose: %.2f cm on average, %.2f cm at most (point %d)." % (
         len(index), 100 * float(shift.mean()), 100 * float(shift.max()), worst))
@@ -119,11 +189,12 @@ def _report(report: Report, names, before, after, weights, index, piece, unweigh
             "%s %.2f cm (%d points)" % (names[bone], 100 * mean, points) for bone, mean, points in top))
     pieces = len(np.unique(piece[index][piece[index] >= 0]))
     if pieces:
-        report.info("%d rigid piece%s moved with one matrix each." % (pieces, "" if pieces == 1 else "s"))
-    if unweighted:
+        report.info("%d rigid piece%s moved with one %s each." % (
+            pieces, "" if pieces == 1 else "s", "rigid transform" if cage else "matrix"))
+    if unweighted and not cage:
         report.warning(format_problem(NAME, "%d points have no bone weight and followed the closest weighted point" % unweighted,
                                       "Weight them first, or take them out of the Group"))
-    odd = [names[j] for j in range(len(names)) if not 0.5 <= moves.along[j] <= 2.0]
+    odd = [] if cage else [names[j] for j in range(len(names)) if not 0.5 <= moves.along[j] <= 2.0]
     if odd:
         report.warning(format_problem(NAME, "%s change length by more than a factor of 2 from the Arma skeleton" % list_elements(
             "bones", odd), "Check the landmarks of Rig Fit"))

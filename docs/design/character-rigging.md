@@ -367,6 +367,18 @@ by about 2.5 degrees and 2 %.
 
 ("Joint zones" = points whose second-largest weight exceeds 0.25.)
 
+**What this spike cannot show (task #80, D44).** The old spike posed the sample body by linear blend skinning with a known
+fitted skeleton, then unposed it with the inverse of the same blended matrices. The inverse was exact by construction, so
+it could not show what a real body does to it: a body with other proportions than the sample (thicker thighs, a belly,
+shorter legs for the same hips) is not any linear blend of the sample's bones. On the owner's character (Rig Fit with
+Refine, task #79) the per-bone inverse crumpled the hands (edge length ratio p1 0.51, p99 2.19), inflated the mesh (the
+trunk size factor) and left the helmet with a changed size. The advisor's prototype (`/obj/unpose_proto`, 2026-11-06) moved
+the body by a cage instead: Point Deform with the sample body wrapped onto the user's body as the rest lattice and the
+sample body in the Arma rest as the deformed lattice. Measured on the owner scene (edge length after over before, 38295
+edges): prototype body p1 0.698 / p99 1.333, hands p1 0.69 / p99 1.52, but the prototype also moved the helmet through the
+cage (helmet p1 0.56, p99 10.9, crushed). Section 6.2 records the built version (cage for the body, one rigid transform for
+each rigid piece, no size change) and its numbers.
+
 What this says:
 
 1. **With a correct fit, unpose works.** Bone-length and size differences (10 %, 8 %, 5 %) are removed to a mean of 0.2 cm
@@ -1002,9 +1014,15 @@ the body points. The maths is `a3ob_core/rig/transfer.py`. Details the table doe
 | `rigid_pieces` | toggle, on | Points of pieces in the rigid group are moved by the inverse of **one** matrix per piece (its bone, or the fixed blend), so they keep their shape (section 2.6). |
 | `group` | point group | Points to unpose. |
 
-Each point moves by the inverse of its blended bone matrix, from the fitted skeleton to the Arma rest skeleton. It
-reports the mean and the largest displacement, and the worst bones. Output: the mesh in the Arma rest pose. The weights
-do not change.
+Since task #80 (D44) the default method is **Cage**; the old per-bone inverse stays as the method **Bones**.
+
+| Parameter | Type, default | Meaning |
+|---|---|---|
+| `method` | menu: Cage, Bones; Cage | Cage: Point Deform with the rest lattice = Rig Fit's `fitted_body` (the sample body wrapped onto the user's body) and the deformed lattice = `rest_body` (the sample body in the Arma rest). Bones: the inverse of each point's blended bone matrix. |
+| `bodygroup` | point group, `body` | Cage: the bare body that Rig Fit wrapped onto. Never made a rigid piece by itself. Empty: the whole mesh is body. |
+
+It reports the mean and the largest displacement, and the worst bones. Output: the mesh in the Arma rest pose. The weights
+do not change. Neither method changes the overall size.
 
 **As built (task #67).** Inputs: 1 the mesh, 2 the Rig Fit output (`fitted_skeleton` through `read_part`), 3 the Arma
 skeleton. The maths is `a3ob_core/rig/unpose.py`.
@@ -1012,12 +1030,11 @@ skeleton. The maths is `a3ob_core/rig/unpose.py`.
 - **The move of a bone** is built from the joint positions only. Since #76 the fitted skeleton's `transform` is a pure rotation
   aimed down the bone while the Arma skeleton keeps its own frames, so a product of the stored frames would show the
   difference of the two conventions as a false rotation. Both skeletons get `fit.bone_frames` on their joint positions;
-  the rotation is `R = F' F^T`. The size has two parts. Along the bone it is the length ratio `r`: the distance from the
-  joint to the joint the bone is aimed at (`fit.aim_targets`), in A' over A. Across the bone it is the body size `g`, the
-  median ratio of the trunk bones (from the root down the main chain to the head). A longer arm is not a thicker arm, and a
-  short neck bone must not shrink the head. A joint with nothing to aim at (a chain end) takes `g` both ways. A bone
-  matrix is `x' = q + R (g I + (r - g) a a^T) (x - p)`, `a` the bone direction in A. A' = A gives R = I, r = g = 1: nothing
-  moves.
+  the rotation is `R = F' F^T`. The size is along the bone only: the length ratio `r`, the distance from the joint to the
+  joint the bone is aimed at (`fit.aim_targets`), in A' over A. A longer arm is not a thicker arm. There is no size across the
+  bone: the trunk size factor `g` (the median ratio of the trunk bones) that this section had before task #80 inflated the
+  owner's mesh by 26 % and is gone. A joint with nothing to aim at (a chain end) has no size. A bone matrix is
+  `x' = q + R (I + (r - 1) a a^T) (x - p)`, `a` the bone direction in A. A' = A gives R = I, r = 1: nothing moves.
 - **Test 2.3, unpose part (D43).** The pass/fail test is the consistent scenario: scenario C's pose with the bones below the
   shoulder and hip lengthened and the mesh stretched along them. It ends 0.10 cm mean, 0.77 cm max from the true rest. The
   literal scenario C (bones lengthened, mesh not stretched) is a known limit: 0.65 cm mean, 1.53 cm max, because a longer
@@ -1027,8 +1044,9 @@ skeleton. The maths is `a3ob_core/rig/unpose.py`.
   is not undone. The poses of design test 2.3 are swings about Z.
 - **Rigid pieces** (`a3ob_rig_origin` = 3 and `a3ob_rig_piece` >= 0): one matrix per piece, the blend of the average weights
   of its points. A blend of bones is not a rotation, so its linear part is replaced by the closest rotation (polar
-  decomposition) times the body size `g`, turning about the centre of the piece; every edge of a piece then changes by
-  the same factor, 1 when the posed piece has the size `g` against its rest.
+  decomposition), turning about the centre of the piece; no edge of a piece changes.
+- **Test 2.3 after #80.** The test body is no longer made 5 % bigger (nothing undoes an overall size any more); the
+  consistent scenario ends 0.08 cm mean, 0.77 cm max, the literal scenario C 0.54 cm mean, 1.54 cm max.
 - **Measured** (hython, Samples character): true weights and a perfect skeleton, error 0.00001 cm (test 2.5), rigid cuff
   on the bent forearm: edge length ratio 1.00000 (0.45 to 1.43 without the switch). Scenario C through Rig Fit, Weight
   Transfer, Weight Cleanup and Unpose: mean 0.10 cm, largest 0.77 cm. That scenario has limbs that are longer all the way
@@ -1036,6 +1054,33 @@ skeleton. The maths is `a3ob_core/rig/unpose.py`.
   only some bones' offsets and leaves the mesh and the twist and finger bones alone; no method that reads only A and A'
   can undo that to better than the joint errors of the fit (0.5 cm mean, 0.9 cm at most there): measured about 0.7 cm mean
   and 1.5 cm at most with a per-bone uniform size.
+
+**As built (task #80, D44): the Cage method.**
+
+- **Rest sample body.** Rig Fit's output gets a fourth part `rest_body`: the sample body as it came in (the Arma rest pose),
+  never drawn. Unpose reads it from the Rig Fit output it already has on input 2. A fourth input was the other choice. A part
+  is better: it always comes from the same sample body as `fitted_body` (so the point order cannot be wrong), the node
+  needs no more wires and an old scene cannot connect a different body by mistake. An output of Rig Fit without it gives
+  a clear error.
+- **The lattices.** Both bodies lose their proxy markers (the packed primitives and their points) with the same function
+  (`rig_weights.without_markers`), so they have the same points in the same order (the markers' points are the last
+  ones). A different count is an error.
+- **The cage is numpy, not the verb.** Houdini has no verb for the Point Deform SOP (`nodeVerb("pointdeform")` is None; the
+  node is a subnet of three wrangles) and a Python SOP cannot create nodes while it cooks. `a3ob_core/rig/cage.py:point_deform`
+  ports the wrangles with the SOP's defaults: radius 0.1, 1 to 100 lattice points per point, weight `(1 - (d / r)^2)^2`,
+  a rigid frame per lattice point from successive neighbour pairs (Rigid Projection on), average of the moved positions.
+  Checked against the prototype's real node on the owner scene: median 0.25 mm apart, mean 1.3 mm, 99 % within 2.7 cm and
+  at most 6.3 cm (a few points where the order of the neighbours of a point is not the one VEX `neighbours()` gives).
+- **Accessories.** The cage moves every point first. A rigid piece then replaces its points' cage positions by one rigid
+  transform (Kabsch rotation, no size) that fits the cage positions, with the shift of their centre: the piece stays on the
+  body where the cage puts it (from the cage around it rather than the bone's move, because the cage knows the body's
+  proportions and the bone's move does not) and no edge changes. Pieces are the `a3ob_rig_piece` of Accessory Weights in
+  Rigid mode and each island of points outside the Body Group whose points all have weight on the same single bone (the
+  helmet). Other points outside the Body Group (clothes that bend) follow the cage.
+- **Measured** on the owner scene (`Character_79_refine.hiplc`, /obj/rig_fit_66, 12888 points, edge length after over before,
+  38295 edges). Bones method before: median 0.980, helmet 0.980 (all the same), body p1 0.700 / p99 1.386, hands p1 0.51 /
+  p99 2.19. Cage after: median 1.000, helmet 1.000 / 1.000, body p1 0.742 / p99 1.259, hands p1 0.699 / p99 1.444; the
+  prototype body: p1 0.698 / p99 1.333.
 
 **Rig Check** (inputs: 1 mesh with weights; 2 skeleton). Outputs: 1 mesh with the problem attributes; 2 the skeleton with
 `a3ob_rig_joint_depth` and `Cd`; 3 the posed mesh of the chosen test pose.

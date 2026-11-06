@@ -2,7 +2,8 @@
 with HOUDINI_PACKAGE_SKIP=1) and the Arma 3 Samples (it skips without them).
 
 The user's mesh is the sample character posed as in design test 2.3 (the spike's scenario C: arms 20 degrees down, legs 8
-degrees apart, arms 10 % and legs 8 % longer, the whole body 5 % bigger). The longer arms and legs are longer all the way:
+degrees apart, arms 10 % and legs 8 % longer; since task #80 the body is not bigger, because Unpose no longer undoes an overall size).
+The longer arms and legs are longer all the way:
 every bone below the shoulder or the hip (twist bones and fingers too) is longer, and the mesh around a bone is longer
 along the bone only, as for a person with long arms. The true rest is the sample.
 
@@ -60,6 +61,8 @@ class TestUnposeOnSamples(NodeTestCase):
         self.full_P, self.full_tris = _mesh(geo)
         self.full_W = rig_weights.read_selections("test", geo, self.names).weights
         self.weighted = self.full_W.sum(axis=1) > 0
+        self.meshed = np.zeros(len(self.full_P), dtype=bool)  # the points of polygons (not those of proxy markers)
+        self.meshed[np.unique(self.full_tris)] = True
 
     # helpers of the Rig Fit tests (plain functions, they use only the attributes that setUp makes)
     posed_points = rig_fit_tests.TestRigFitOnSamples.posed_points
@@ -68,7 +71,7 @@ class TestUnposeOnSamples(NodeTestCase):
     fit = rig_fit_tests.TestRigFitOnSamples.fit
     part = rig_fit_tests.TestRigFitOnSamples.part
 
-    def stretched_pose(self, arms=-20.0, legs=8.0, arm_scale=1.10, leg_scale=1.08, size=1.05, bend=0.0, hands=0.0):
+    def stretched_pose(self, arms=-20.0, legs=8.0, arm_scale=1.10, leg_scale=1.08, size=1.0, bend=0.0, hands=0.0):
         """``(4x4 matrices, world joint positions)``: design test 2.3 with limbs that are longer all the way down. A bone
         that is longer makes the mesh around it longer along the bone only (a longer arm is not a thicker one); the whole
         body is ``size`` bigger. A chain end (a hand, a foot) has no bone and takes the body size."""
@@ -135,8 +138,10 @@ class TestUnposeOnSamples(NodeTestCase):
         rig_weights.write_parts(out, {rig_weights.PART_SKELETON: skeleton})
         return make_source(self.network, out)
 
-    def unpose(self, mesh, fitted, **parms):
+    def unpose(self, mesh, fitted, method="bones", **parms):
+        """The Bones method unless a test asks for the cage (task #80); the older tests are about the bone matrices."""
         node = self.network.createNode("a3ob_unpose")
+        node.parm("method").set(method)
         node.setInput(0, mesh)
         node.setInput(1, fitted)
         node.setInput(2, self.skeleton)
@@ -167,7 +172,7 @@ class TestUnposeOnSamples(NodeTestCase):
         self.assertGreater(len(cuff), 50)
         posed = self.skin_all(mats)
         forearm = self.index["leftforearm"]  # the cuff is rigid on the forearm in the truth: turned and moved, not stretched
-        turn = self.rotations[forearm] * 1.05  # (the size of the whole body)
+        turn = self.rotations[forearm]
         posed[cuff] = (self.full_P[cuff] - self.rest[forearm]) @ turn.T + world_pos[forearm]
         flag = np.zeros(len(posed), dtype=np.int64)
         flag[cuff] = 1
@@ -262,6 +267,80 @@ class TestUnposeOnSamples(NodeTestCase):
         text = "\n".join(result.messages)
         self.assertRegex(text, r"moved back to the Arma rest pose: \d+\.\d\d cm on average, \d+\.\d\d cm at most")
         self.assertIn("Bones whose points moved most", text)
+
+    # ---- the cage method (task #80, D44) ----------------------------------------------------------------------------
+
+    def cage_source(self, fitted_points):
+        """A Rig Fit-shaped geometry: the Arma skeleton, the fitted body with its points at ``fitted_points`` and the rest
+        body (the sample as it is). Both bodies keep the proxy markers, as Rig Fit's do."""
+        skeleton = hou.Geometry()
+        skeleton.copy(self.skeleton.geometry())
+        fitted = hou.Geometry()
+        fitted.copy(self.body.geometry())
+        fitted.setPointFloatAttribValues("P", [float(v) for v in np.asarray(fitted_points).reshape(-1)])
+        rest = hou.Geometry()
+        rest.copy(self.body.geometry())
+        out = hou.Geometry()
+        rig_weights.write_parts(out, {rig_weights.PART_SKELETON: skeleton, rig_weights.PART_BODY: fitted,
+                                      rig_weights.PART_REST_BODY: rest})
+        return make_source(self.network, out)
+
+    def edge_ratios(self, node, mask, before):
+        """Length ratio (after over ``before``, the points that went in) of the edges of the sample whose two points are
+        in ``mask``."""
+        ends = np.concatenate([self.full_tris[:, [0, 1]], self.full_tris[:, [1, 2]], self.full_tris[:, [2, 0]]])
+        ends = ends[mask[ends[:, 0]] & mask[ends[:, 1]]]
+        out = self.points_of(node)
+        d0 = np.linalg.norm(before[ends[:, 0]] - before[ends[:, 1]], axis=1)
+        keep = d0 > 1e-9
+        return (np.linalg.norm(out[ends[:, 0]] - out[ends[:, 1]], axis=1)[keep] / d0[keep]), ends
+
+    def test_task_80_the_cage_takes_a_body_of_other_proportions_onto_the_sample_with_no_size_change(self):
+        """Made-up case with a known rest: the user's body is the sample 10 % bigger (the wrapped body is that too), so the
+        cage must give the sample back, and a body of the same size, turned, must keep every edge length."""
+        n = len(self.full_P)
+        bigger = self.full_P * 1.1
+        node = self.unpose(self.sample_with_points(bigger), self.cage_source(bigger), method="cage", bodygroup="")
+        result = cook(node)
+        self.assertEqual(result.errors, ())
+        error = np.linalg.norm(self.points_of(node) - self.full_P, axis=1)[self.meshed]
+        print("   task 80 cage, a body 10 %% bigger: %.3f cm mean, %.3f cm at most; %s" % (
+            100 * error.mean(), 100 * error.max(), result.messages[0]))
+        self.assertLess(float(np.percentile(error, 99)), 0.01)
+        turn = rig_fit_tests.rotation_z(25.0)
+        turned = self.full_P @ turn.T + np.array([0.4, 0.0, -0.2])
+        same = self.unpose(self.sample_with_points(turned), self.cage_source(turned), method="cage", bodygroup="")
+        self.assertEqual(cook(same).errors, ())
+        np.testing.assert_allclose(self.points_of(same)[self.meshed], self.full_P[self.meshed], atol=1e-5)  # a pure move: back exactly
+        ratios, _ = self.edge_ratios(same, np.ones(n, dtype=bool), turned)
+        self.assertLess(float(np.abs(ratios - 1).max()), 1e-4)  # (points are float32)
+
+    def test_task_80_a_rigid_piece_keeps_its_edges_while_the_rest_follows_the_cage(self):
+        """The cage stretches the body 20 % along Y; the cuff (a rigid piece) moves with it but keeps every edge length."""
+        near = np.linalg.norm(self.full_P - self.rest[self.index["leftforearm"]], axis=1) < 0.15
+        cuff = near & self.weighted
+        self.assertGreater(int(cuff.sum()), 50)
+        stretched = self.full_P * np.array([1.0, 1.2, 1.0])
+        mesh = self.sample_with_points(stretched, {"a3ob_rig_piece": np.where(cuff, 7, -1),
+                                                   "a3ob_rig_origin": np.where(cuff, ORIGIN_RIGID, 1)})
+        node = self.unpose(mesh, self.cage_source(stretched), method="cage", bodygroup="")
+        result = cook(node)
+        self.assertEqual(result.errors, ())
+        ratios, _ = self.edge_ratios(node, cuff, stretched)
+        print("   task 80 rigid cuff under the cage: edge ratio %.8f to %.8f; %s" % (ratios.min(), ratios.max(), result.messages[-1]))
+        self.assertGreater(len(ratios), 100)
+        self.assertLess(float(np.abs(ratios - 1).max()), 1e-4)  # (points are float32)
+        self.assertIn("1 rigid piece moved with one rigid transform", " ".join(result.messages))
+        loose = self.unpose(mesh, self.cage_source(stretched), method="cage", bodygroup="", rigid_pieces=0)
+        self.assertEqual(cook(loose).errors, ())
+        ratios, _ = self.edge_ratios(loose, cuff, stretched)
+        self.assertGreater(float(np.abs(ratios - 1).max()), 1e-4)
+
+    def test_task_80_a_rig_fit_output_without_the_rest_body_is_a_clear_error(self):
+        mesh = self.sample_with_points(self.full_P)
+        node = self.unpose(mesh, self.skeleton_source(self.rest), method="cage", bodygroup="")
+        self.assertIn("has no part fitted_body", " ".join(cook(node).errors))
+
 
     def test_the_group_limits_the_points_and_a_mismatching_skeleton_is_an_error(self):
         mats, world_pos = self.stretched_pose()

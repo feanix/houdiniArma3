@@ -33,7 +33,7 @@ except ImportError:  # the pure parts are also read under plain Python
 
 __all__ = ["Skeleton", "BoneSelections", "read_skeleton", "read_selections", "write_selections", "write_capture",
            "read_capture", "TAGG_ORDER", "DISCRETE_ATTRIB", "PART_ATTRIB", "PART_SKELETON", "PART_BODY",
-           "PART_LANDMARKS", "write_parts", "read_part", "read_mesh", "group_mask", "write_point_int"]
+           "PART_LANDMARKS", "PART_REST_BODY", "without_markers", "write_parts", "read_part", "read_mesh", "group_mask", "write_point_int"]
 
 TAGG_ORDER = "a3ob_tagg_order"
 DISCRETE_ATTRIB = "a3ob_rig_discrete"
@@ -42,6 +42,8 @@ PART_ATTRIB = "a3ob_rig_part"
 PART_SKELETON = "fitted_skeleton"
 PART_BODY = "fitted_body"
 PART_LANDMARKS = "landmarks"
+#: The sample body as it came in, in the Arma rest pose (task #80): the deformed lattice of the cage in Unpose.
+PART_REST_BODY = "rest_body"
 CAPTURE = "boneCapture"
 CAPTURE_PATH = "boneCapture_pCaptPath"
 CAPTURE_DATA = "boneCapture_pCaptData"
@@ -267,6 +269,18 @@ def read_part(node_name: str, geo, part: str, label: str = "input 2"):
         if isinstance(prim, hou.PackedPrim) and prim.attribValue(PART_ATTRIB) == part:
             return prim.getEmbeddedGeometry()
     raise UserError(format_problem(node_name, "%s has no part %s" % (label, part), "Connect the output of Rig Fit"))
+
+
+def without_markers(geo):
+    """A copy of ``geo`` without its proxy markers (packed primitives). The same rule runs on every copy of the sample body,
+    so the points of the wrapped body keep the order of the sample body (the markers' points are at its end and go with
+    them)."""
+    out = hou.Geometry()
+    out.copy(geo)
+    packed = [prim for prim in out.prims() if isinstance(prim, hou.PackedPrim)]
+    if packed:
+        out.deletePrims(packed, keep_points=False)
+    return out
 
 
 def read_mesh(geo):
