@@ -841,7 +841,8 @@ Reports: section 4.4. Output: the mesh with cleaned groups and `a3ob_w_*`, plus 
 | `landmarks` | menu: Auto-guess, From Rig Landmarks, Both | Auto-guess places the standard 11 to 13 points (chin, groin, wrists, elbows, knees, ankles, shoulders, hips) from the mesh. The input mesh is in an A-pose (D37 Q5). From Rig Landmarks reads the landmarks as **hand-placed positions** that the Rig Landmarks node puts on the mesh as detail vectors `a3ob_lm_*` (D42, task #74; D37 Q11 point groups are superseded and the `lm_*` group path is gone). A set landmark wins over the guess; Both guesses the ones that are not set. |
 | `snap` | toggle, on | Snap landmarks to the mesh surface. |
 | `symmetry` | toggle, on | Mirror left and right landmarks. |
-| `refine` | toggle, off | Light non-rigid refinement of the sample body with Topo Transfer (one connected component needed). |
+| `refine` | toggle, on | Wraps the fitted sample body onto the user's bare body with Topo Transfer (D44, task #79). |
+| `bodygroup` | point group of input 1, default `body` | The points Refine wraps onto; empty means the whole mesh. |
 | `scale` | menu: Per bone length, Whole body | How bone lengths are fitted. Default Per bone length. |
 
 Results (one output with three named parts, D40, see As built): fitted skeleton A' (joints in the user mesh, `transform`
@@ -889,7 +890,16 @@ the point below). `a3ob_core/rig/landmarks.py` (guess, symmetry, snap) and `fit.
   `a3ob_lm_shoulder|elbow|wrist|hip|knee|ankle_l|r` (joints, never snapped), written by Rig Landmarks (task #74, D42).
   `landmarks`: Auto-guess, From Rig Landmarks (all 18 needed) or Both (default; a set landmark wins). `symmetry`:
   a pair of set landmarks is averaged, one set landmark is mirrored to the other side, two guesses are averaged, about the
-  plane through the middle of the pairs. `refine` is accepted and does nothing yet (a warning says so).
+  plane through the middle of the pairs. `refine` wraps S' onto the body (below).
+- **Refine (D44, task #79).** The Topo Transfer verb (`hou.sopNodeTypeCategory().nodeVerb("topotransfer")`, run inside the
+  Python cook; a verb needs no node inside the asset, and the asset stays text-authored) wraps the posed sample body onto the points of the
+  group `bodygroup` of input 1 (the bare body, without helmet or hair; a helmet in the target crushed the wrap in the advisor's
+  prototype `/obj/unpose_proto`). Inputs: the template (S' without its proxy markers, which are packed prims; they are removed
+  the same way from every copy, with their points, so the point order is the sample body's; the wrapped body has no markers), the target, and the landmarks
+  twice: each landmark moved to the closest point of the template and of the target (`snap_to_surface`), matched by the point
+  string `name` (Use Landmark Attribute). Enable Geometry Constraints is on: it handles the small extra island of the sample body.
+  The result replaces the `fitted_body` part, keeps the groups and weights of the sample body, and Weight Transfer reads it
+  unchanged. Why: per-bone fitting cannot express proportion differences (thick stomach, short thighs); the wrap does.
 - **The guess** runs the same measurements on the sample body, where the joints are known, and on your mesh, and moves each
   joint by the difference (so a measurement bias cancels). Legs: the centre line of slices; hip: pelvis width at hip height;
   arms: the principal axis of the points near the arm (not above the axis, not the hand), shoulder where the axis passes the
@@ -897,7 +907,7 @@ the point below). `a3ob_core/rig/landmarks.py` (guess, symmetry, snap) and `fit.
   and the shoulder height against the sample. Chin: `HEAD_SHARE` (0.128) of the height below the top. Two numbers are not
   measured: the sample has no head, so its chin is the `head` joint plus `CHIN_FROM_HEAD` (0, -0.05, +0.075) m, an estimate.
 - **The fit.** Targets: the landmark joints, plus Pelvis, Spine..Spine3, neck from a torso frame (hips and shoulders, hip
-  width and shoulder height give the sizes; the groin is averaged into the pelvis), and neck1 and head from the chin. Then
+  width and shoulder height give the sizes; the pelvis and the joints in its place take the torso-frame position only; since D44 / task #79 the groin no longer moves the pelvis, because the sample's crotch hangs 21 cm below its hips (baggy trousers) while a real body's is 3 cm, which put the pelvis 9 cm too high. The groin landmark is still snapped and kept in the landmarks part, but it moves no joint), and neck1 and head from the chin. Then
   down the hierarchy: a joint with one target below it is swung the shortest way (twist inherited), with several the
   Kabsch rotation is used; its scale is the least squares scale; in Per bone length mode a target joint is placed on its
   landmark. **Quality** is, per target joint, how far the rigid bone left it from its landmark before that move (in Whole

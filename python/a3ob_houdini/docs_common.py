@@ -103,7 +103,9 @@ NODE_INTRO = {
         "results as packed primitives, named by the prim string a3ob_rig_part: fitted_skeleton, fitted_body (the "
         "sample body posed to match your mesh, with its weights) and landmarks (points with a name). Connect it to "
         "input 2 of Weight Transfer as it is: Weight Transfer takes the fitted body from it. The Show menu only "
-        "decides which results are drawn in the viewport; the output is the same for every choice.",
+        "decides which results are drawn in the viewport; the output is the same for every choice. Refine (on by "
+        "default) wraps the fitted body onto the points of the Body Group of your mesh with Topo Transfer, so the "
+        "fitted body takes your proportions; the pelvis is placed from the torso, not from the groin.",
     ),
     "unpose": (
         "Weight Transfer and Weight Cleanup weight your mesh in the pose of the fitted skeleton, the one Rig Fit made "

@@ -377,7 +377,9 @@ kind has one output, which holds all three results as named parts (packed primit
 <code>a3ob_rig_part</code>): <code>fitted_skeleton</code>, <code>fitted_body</code> (the sample body posed to match your mesh, with
 its weights) and <code>landmarks</code>. One Rig Fit node feeds Weight Transfer directly: connect its output to input 2 of
 Weight Transfer, which takes the fitted body from it by itself. <strong>Show</strong> only chooses which parts are drawn in the
-viewport; the output is the same for every choice. <strong>Refine</strong> is not available yet.</p>
+viewport; the output is the same for every choice. <strong>Refine</strong> (on by default) then wraps the fitted
+body onto your bare body (the points of <strong>Body Group</strong>, default <code>body</code>; empty means the whole mesh) with Topo Transfer, so
+it takes your proportions. The pelvis is placed from the torso (hips and shoulders), not from the groin.</p>
 
 <h3 id="rigging-unpose">Back to the Arma rest pose: Unpose</h3>
 <p>Weight Transfer and Weight Cleanup weight your mesh in the pose of the fitted skeleton. Arma needs it in its own rest pose, so

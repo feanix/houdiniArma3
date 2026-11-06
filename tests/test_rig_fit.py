@@ -84,8 +84,9 @@ class TestFitSkeleton(unittest.TestCase):
         self.assertAlmostEqual(body_scale(bigger, sample), 1.1)
 
 
-    def test_joints_that_share_a_rest_place_share_one_target_with_the_groin_pull(self):
-        # task #75: Pelvis and Spine are in one place in the Arma rest; the groin moves the pelvis, so Spine goes too
+    def test_joints_that_share_a_rest_place_share_one_target_and_a_low_crotch_does_not_lift_the_pelvis(self):
+        # task #75: Pelvis and Spine are in one place in the Arma rest and share one target
+        # task #79 (D44): the crotch no longer moves the pelvis, a low crotch (baggy trousers on the sample) changes nothing
         names = ["Pelvis", "Spine", "Spine1", "Spine2", "LeftArm", "RightArm", "LeftUpLeg", "RightUpLeg"]
         rest = np.array([[0, 0, 0], [0, 0, 0], [0, 0.15, 0], [0, 0.28, 0], [0.2, 0.47, 0], [-0.2, 0.47, 0],
                          [0.11, -0.06, 0], [-0.11, -0.06, 0]], dtype=float)
@@ -98,7 +99,7 @@ class TestFitSkeleton(unittest.TestCase):
                  "lm_groin": ""}
         targets = joint_targets(index, rest, user, sample, bones)
         np.testing.assert_allclose(targets[index["pelvis"]], targets[index["spine"]], atol=1e-12)
-        self.assertAlmostEqual(float(targets[index["pelvis"]][1]), -0.04, places=9)  # halfway to the groin: the pull stays
+        self.assertAlmostEqual(float(targets[index["pelvis"]][1]), 0.0, places=9)  # the torso frame only
         fit = fit_skeleton([-1, 0, 1, 2, 3, 3, 0, 0], rest, targets, "bone")
         self.assertLess(float(np.linalg.norm(fit.positions[1] - fit.positions[0])), 1e-3)
 
