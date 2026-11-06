@@ -106,6 +106,14 @@ class TestRigCheckOnCylinder(NodeTestCase):
         self.assertGreater(depth[1], 0.05)  # joint B is on the axis in the middle: 0.1 from the wall
         self.assertIsNotNone(geo.findPointAttrib("Cd"))
 
+    def test_visualize_adds_the_button_hint_message_and_off_does_not(self):
+        # #78: the colours need the viewport Visualization button; the message says so only while Visualize is on
+        from a3ob_houdini import node_visualizer
+        self.assertIn(node_visualizer.HINT, cook(self.check(visualize=1)).messages)
+        self.assertNotIn(node_visualizer.HINT, cook(self.check(visualize=0)).messages)
+        template = self.network.createNode("a3ob_rig_check").parm("visualize").parmTemplate()
+        self.assertIn(node_visualizer.HINT, template.help())
+
     def test_an_input_that_is_not_connected_is_an_error(self):
         node = self.network.createNode("a3ob_rig_check")
         node.setInput(0, self.mesh)

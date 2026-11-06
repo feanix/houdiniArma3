@@ -167,6 +167,9 @@ add-on does not use it by accident. The Mass node can copy between the two if yo
 <kbd class="ui-menu">Uniform total</kbd> shares a total weight equally between the points,
 <kbd class="ui-menu">From density</kbd> works from a density and the volume of each closed piece, and
 <kbd class="ui-menu">Clear</kbd> removes the mass. See <a href="reference/a3ob_mass.html#mode">Mode</a> in the reference.</p>
+<p><strong>Visualize</strong> colours the points by their mass (blue least, red most). The colours show only when the
+<strong>Visualization</strong> button on the right toolbar of the viewport is on. Houdini gives scripts no way to switch it, so
+the node cannot do it for you; its message reminds you.</p>
 
 <h2 id="surface">Textures, UVs and sharp edges</h2>
 <ul>
@@ -399,6 +402,8 @@ your <code>Cd</code> and the export are not touched): <strong>Origin</strong> (w
 that do not add up to 1), <strong>Straddle</strong> (a rigid piece on more than one bone), <strong>Heaviest bone</strong>,
 <strong>Stress</strong> and <strong>Volume</strong>. The <strong>Output</strong> menu shows the skeleton instead (green inside the mesh,
 yellow within 1 cm of the surface, red outside) or the mesh bent into the test pose.</p>
+<p>The Visualize colours show only when the <strong>Visualization</strong> button on the right toolbar of the viewport is on.
+Houdini gives scripts no way to switch it, so the node cannot do it for you; its message reminds you.</p>
 <p>Stress and Volume bend the mesh into a test pose (<strong>Pose</strong>: arms raised, arms forward, elbows, hips, knees, spine,
 neck, wrists, or Worst of all) with linear blend skinning, the way Arma does it. Stress is how much the edges around a point
 stretch (red) or shrink (blue). Volume is where the mesh loses volume (purple) or gains it (teal) against the rest mesh: a pinched

@@ -78,7 +78,7 @@ SPEC = NodeSpec(
              group_type="points"),
         Parm("visualize", "Visualize", "toggle", False,
              "Colour the points in the viewport by their mass: blue is the least mass, red the most, black no mass. "
-             "This is a node visualizer, so the geometry (and any Cd it has) is not changed. The export ignores it.",
+             "This is a node visualizer, so the geometry (and any Cd it has) is not changed. The export ignores it. " + node_visualizer.HINT,
              action="visualize"),
     ),
     on_loaded=True,
@@ -117,6 +117,7 @@ def cook(node, report: Report) -> None:
         _write(geo, ATTRIB, masses)
     _report(geo, positions, report)
     if values["visualize"]:
+        report.info(node_visualizer.HINT)
         _update_range(node, geo, count)
 
 

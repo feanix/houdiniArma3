@@ -121,7 +121,7 @@ Output:
 Visualize:
     #id: visualize
 
-    Colour the points in the viewport by the Show entry. This is a node visualizer, so the geometry (and any Cd it has) is not changed. The export ignores it.
+    Colour the points in the viewport by the Show entry. This is a node visualizer, so the geometry (and any Cd it has) is not changed. The export ignores it. The Visualize colours show only when the Visualization button on the right toolbar of the viewport is on.
 
     Type: On or off. Default: Off.
 

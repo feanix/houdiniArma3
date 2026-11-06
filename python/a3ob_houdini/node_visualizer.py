@@ -12,14 +12,23 @@ Task #32 research, Houdini 22.0.466:
   ``vis_color``, then ``setParm`` its settings, ``setName`` and ``setLabel``.
 * ``hou.viewportVisualizers.visualizers(Node, node)`` lists the ones on a node. The docs call them "installed on
   individual nodes"; whether they survive save and reload could not be tried without the window. ``viz.destroy()``
-  removes one."""
+  removes one.
+
+Task #78, Houdini 22.0.466: the colours of a node visualizer draw only when the global Visualization button on the right
+display toolbar of the viewport is on. Houdini 22's Python API has no call to read or set that button:
+``hou.GeometryViewportSettings``, ``hou.GeometryViewport`` and ``hou.viewportVisualizers`` have none, and
+``soputils.toggleVisualizer`` does not touch it (lead check, 2026-11-06). So the nodes cannot switch it on. They say so in a
+node message instead (``HINT``), and the Visualize tooltips repeat it."""
 
 try:
     import hou
 except ImportError:
     hou = None
 
-__all__ = ["available", "find", "ensure_color_ramp", "set_attrib", "set_range", "remove"]
+__all__ = ["available", "find", "ensure_color_ramp", "set_attrib", "set_range", "remove", "HINT"]
+
+#: The one line the nodes with a Visualize toggle show while it is on (also the end of their tooltips).
+HINT = ("The Visualize colours show only when the Visualization button on the right toolbar of the viewport is on.")
 
 
 def available() -> bool:
