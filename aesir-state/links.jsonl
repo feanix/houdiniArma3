@@ -27,6 +27,8 @@
 {"a_id": "41", "a_type": "decision", "b_id": "65", "b_type": "task"}
 {"a_id": "41", "a_type": "decision", "b_id": "72", "b_type": "task"}
 {"a_id": "43", "a_type": "decision", "b_id": "67", "b_type": "task"}
+{"a_id": "44", "a_type": "decision", "b_id": "79", "b_type": "task"}
+{"a_id": "44", "a_type": "decision", "b_id": "80", "b_type": "task"}
 {"a_id": "6", "a_type": "decision", "b_id": "2", "b_type": "task"}
 {"a_id": "6", "a_type": "decision", "b_id": "3", "b_type": "task"}
 {"a_id": "7", "a_type": "decision", "b_id": "3", "b_type": "task"}
