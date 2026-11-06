@@ -10,8 +10,9 @@ the sample body with bone weights. The landmarks come from the Rig Landmarks nod
 positions, task #74, D42), from a guess, or both. Then the skeleton is fitted down the hierarchy and the sample body is
 posed with it. The Arma skeleton itself is never changed (D37 Q7): the fitted skeleton ``A'`` is a working copy, for Weight Transfer and Unpose.
 
-The one output holds all three results as packed primitives (D40; a Python SOP writes only output 0). The prim string
-``a3ob_rig_part`` names each: ``fitted_skeleton``, ``fitted_body``, ``landmarks``. The Show menu only hides parts in the
+The one output holds the results as packed primitives (D40; a Python SOP writes only output 0). The prim string
+``a3ob_rig_part`` names each: ``fitted_skeleton``, ``fitted_body``, ``landmarks`` and ``rest_body`` (the sample body as it
+came in, never drawn; Unpose needs it for the cage, task #80). The Show menu only hides parts in the
 viewport. ``rig_weights.read_part`` takes a part out again.
 """
 
@@ -49,9 +50,10 @@ SPEC = NodeSpec(
                 "LOD. Its bones must be the ones of the skeleton."),
     parms=(
         Parm("show", "Show", "menu", "all",
-             "Which results are drawn in the viewport. The node always gives all three results as one geometry, three "
-             "packed primitives named by the prim string a3ob_rig_part. This menu only hides the others from view; the "
-             "output is the same for every choice. Weight Transfer takes the fitted sample body from it by itself.",
+             "Which results are drawn in the viewport. The node always gives all results as one geometry, packed "
+             "primitives named by the prim string a3ob_rig_part (a fourth, rest_body, the sample body as it came in, "
+             "is never drawn; Unpose uses it). This menu only hides the others from view; the output is the same for "
+             "every choice. Weight Transfer takes the fitted sample body from it by itself.",
              items=(("all", "All"), ("skeleton", "Fitted skeleton"), ("body", "Fitted sample body"),
                     ("landmarks", "Landmarks")),
              item_help=(("all", "Draw the fitted skeleton, the fitted sample body and the landmarks."),
@@ -135,9 +137,11 @@ def cook(node, report: Report) -> None:
         body = _refine(body, mesh_in, user, values["bodygroup"])
     parts = {rig_weights.PART_SKELETON: _skeleton_geo(node.inputGeometry(1), fitted),
              rig_weights.PART_BODY: body,
-             rig_weights.PART_LANDMARKS: _landmarks_geo(user)}
+             rig_weights.PART_LANDMARKS: _landmarks_geo(user),
+             rig_weights.PART_REST_BODY: _body_geo(sample_in, positions_s)}  # for Unpose; never drawn
     wanted = {"skeleton": rig_weights.PART_SKELETON, "body": rig_weights.PART_BODY, "landmarks": rig_weights.PART_LANDMARKS}
-    hidden = [name for name in parts if values["show"] != "all" and name != wanted[values["show"]]]
+    hidden = [name for name in parts if name == rig_weights.PART_REST_BODY
+              or (values["show"] != "all" and name != wanted[values["show"]])]
     rig_weights.write_parts(node.geometry(), parts, hidden)
     _report(report, values, user, source, skeleton, fitted)
 
@@ -188,17 +192,6 @@ def _body_geo(sample_in, points: np.ndarray):
     return geo
 
 
-def _without_markers(geo):
-    """A copy of ``geo`` without its proxy markers (packed primitives). The same rule runs on every copy, so the points of
-    the wrapped body keep the order of the sample body (the markers' points are at its end and go with them)."""
-    out = hou.Geometry()
-    out.copy(geo)
-    packed = [prim for prim in out.prims() if isinstance(prim, hou.PackedPrim)]
-    if packed:
-        out.deletePrims(packed, keep_points=False)
-    return out
-
-
 def _body_group_only(mesh_in, group: str):
     """A copy of your mesh with only the points of ``group`` (all of it when ``group`` is empty)."""
     out = hou.Geometry()
@@ -218,7 +211,7 @@ def _refine(body, mesh_in, user, group: str):
     """The fitted sample body ``body`` wrapped onto the points of ``group`` of ``mesh_in`` with the Topo Transfer verb (a
     verb, so no node is needed inside this Python SOP). The landmarks are snapped to the closest point of each surface and
     matched by their ``name``."""
-    template = _without_markers(body)
+    template = rig_weights.without_markers(body)
     target = _body_group_only(mesh_in, group)
     template_p, template_tris = rig_weights.read_mesh(template)
     target_p, target_tris = rig_weights.read_mesh(target)

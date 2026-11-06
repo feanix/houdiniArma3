@@ -5,7 +5,7 @@
 #internal: a3ob_unpose
 #tags: arma, p3d
 
-"""Moves your weighted mesh from the pose of the fitted skeleton back onto the Arma rest pose."""
+"""Moves your weighted mesh from the pose of the fitted skeleton back onto the Arma rest pose, by a cage from your body to the sample body."""
 
 Weight Transfer and Weight Cleanup weight your mesh in the pose of the fitted skeleton, the one Rig Fit made inside your mesh. Arma needs the mesh in its own rest pose. This node moves every point back: it applies the inverse of the bone matrices that carry the Arma skeleton to the fitted one, blended with the weights of the point. The weights are not changed.
 
@@ -19,17 +19,37 @@ Your mesh:
     Your mesh with its cleaned bone weights, for example from Weight Cleanup.
 
 Fitted skeleton:
-    The output of Rig Fit as it is (its fitted skeleton is used).
+    The output of Rig Fit as it is (its fitted skeleton, fitted body and rest body are used).
 
 Arma skeleton:
     The Arma skeleton, for example from Rig Skeleton. It must have the same bones as the fitted one.
 
 @parameters
 
+Method:
+    #id: method
+
+    How the points move back to the Arma rest pose. Neither method changes the overall size.
+
+    Type: Menu. Default: Cage.
+
+    Cage:
+        Move the points by a cage: the sample body wrapped onto your body (fitted body of Rig Fit) is taken to the sample body in the Arma rest pose (Point Deform). It follows your body's proportions. Rigid pieces then move by one rigid transform each.
+
+    Bones:
+        Move each point by the inverse of its blended bone matrix, from the fitted skeleton to the Arma one. Fast, but it cannot express that your body has other proportions than the sample (thighs can telescope, hands crumple).
+
+Body Group:
+    #id: bodygroup
+
+    Cage method: the point group of your mesh that is the bare body, the one Rig Fit wrapped onto. Its points always follow the cage. A piece outside it whose points follow one bone only (a helmet) is moved as a rigid piece; other points outside it (clothes that bend) follow the cage. Empty means the whole mesh is body.
+
+    Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: body.
+
 Rigid Pieces Keep Their Shape:
     #id: rigid_pieces
 
-    Move all the points of a rigid piece (made by Accessory Weights in Rigid mode) with one matrix, so the piece keeps its shape. Off: every point uses its own weights, which can stretch a rigid piece when its bone bends.
+    Move all the points of a rigid piece (made by Accessory Weights in Rigid mode, or an island outside the Body Group that follows one bone only) with one rigid transform, so the piece keeps its shape. Off: every point follows the cage (or its own weights in the Bones method), which can stretch a rigid piece.
 
     Type: On or off. Default: On.
 

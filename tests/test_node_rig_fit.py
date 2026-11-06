@@ -386,7 +386,8 @@ class TestRigFitOnSamples(NodeTestCase):
         node = self.fit(self.user_mesh(posed, truth, group=""), "body", snap=0, refine=1, bodygroup="")  # the whole mesh
         self.assertEqual(cook(node).errors, ())
 
-    def test_the_output_holds_the_three_parts_by_name_and_show_only_hides(self):
+    def test_the_output_holds_the_parts_by_name_and_show_only_hides(self):
+        # task #80: a fourth part, rest_body (the sample as it came in, for Unpose), is never drawn
         mats, world_pos, truth, posed, mesh = self.scenario()
         outputs = {}
         for show in ("all", "skeleton", "body", "landmarks"):
@@ -394,12 +395,16 @@ class TestRigFitOnSamples(NodeTestCase):
             self.assertEqual(cook(node).errors, ())
             geo = node.geometry()
             prims = geo.prims()
-            self.assertEqual([p.attribValue("a3ob_rig_part") for p in prims], ["fitted_skeleton", "fitted_body", "landmarks"])
+            self.assertEqual([p.attribValue("a3ob_rig_part") for p in prims], ["fitted_skeleton", "fitted_body", "landmarks", "rest_body"])
             self.assertTrue(all(isinstance(p, hou.PackedPrim) for p in prims))
             hidden = [p.attribValue("a3ob_rig_part") for p in prims if p.intrinsicValue("viewportlod") == "hidden"]
             wanted = {"all": [], "skeleton": ["fitted_body", "landmarks"], "body": ["fitted_skeleton", "landmarks"],
-                      "landmarks": ["fitted_skeleton", "fitted_body"]}[show]
+                      "landmarks": ["fitted_skeleton", "fitted_body"]}[show] + ["rest_body"]
+            wanted = sorted(wanted)
+            hidden = sorted(hidden)
             self.assertEqual(hidden, wanted)
+            rest = self.part(node, "rest_body")  # the sample as it came in
+            np.testing.assert_array_equal(rest.pointFloatAttribValues("P"), self.body.geometry().pointFloatAttribValues("P"))
             outputs[show] = {name: (self.part(node, name).pointFloatAttribValues("P"),
                                     len(self.part(node, name).prims()), len(self.part(node, name).pointGroups()))
                              for name in ("fitted_skeleton", "fitted_body", "landmarks")}

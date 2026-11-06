@@ -373,9 +373,9 @@ the chin and the groin onto your mesh. <strong>Symmetry</strong> makes left and 
 that puts them on the landmarks (<strong>Per bone length</strong>), or one size is used for the whole body
 (<strong>Whole body</strong>). The node says how far the joints were from their landmarks after the fit, and warns when that is
 more than 1 cm. The error of the fit is the error of everything after it, so look at that message. A Houdini node of this
-kind has one output, which holds all three results as named parts (packed primitives with the prim string
+kind has one output, which holds the results as named parts (packed primitives with the prim string
 <code>a3ob_rig_part</code>): <code>fitted_skeleton</code>, <code>fitted_body</code> (the sample body posed to match your mesh, with
-its weights) and <code>landmarks</code>. One Rig Fit node feeds Weight Transfer directly: connect its output to input 2 of
+its weights) and <code>landmarks</code> (a fourth, <code>rest_body</code>, the sample body as it came in, is never drawn; Unpose uses it). One Rig Fit node feeds Weight Transfer directly: connect its output to input 2 of
 Weight Transfer, which takes the fitted body from it by itself. <strong>Show</strong> only chooses which parts are drawn in the
 viewport; the output is the same for every choice. <strong>Refine</strong> (on by default) then wraps the fitted
 body onto your bare body (the points of <strong>Body Group</strong>, default <code>body</code>; empty means the whole mesh) with Topo Transfer, so
@@ -384,17 +384,19 @@ it takes your proportions. The pelvis is placed from the torso (hips and shoulde
 <h3 id="rigging-unpose">Back to the Arma rest pose: Unpose</h3>
 <p>Weight Transfer and Weight Cleanup weight your mesh in the pose of the fitted skeleton. Arma needs it in its own rest pose, so
 the last step of the rigging chain is the <kbd class="ui-node">Unpose</kbd> node. Its inputs are your weighted mesh (from Weight
-Cleanup), the output of Rig Fit as it is (the fitted skeleton is taken from it) and the Arma skeleton from Rig Skeleton. Every
-point moves by the inverse of its blended bone matrix, from the fitted skeleton back to the Arma one. The move of each bone is
-worked out from the joint positions: how far the bone turned, and how much longer or shorter it is than the Arma bone (along the bone only: a longer arm is not a thicker arm). A perfect
-fit moves nothing. The weights are not changed.</p>
-<p>The points of a rigid piece (a helmet, a pouch made by Accessory Weights in Rigid mode) move with one matrix for the whole
-piece, so the piece keeps its shape. Switch <strong>Rigid Pieces Keep Their Shape</strong> off to give every point its own
-weights, which can stretch a rigid piece when its bone bends. The <strong>Group</strong> field limits the points to unpose. The node
+Cleanup), the output of Rig Fit as it is (its fitted skeleton, fitted body and rest body are taken from it) and the Arma
+skeleton from Rig Skeleton. With <strong>Method: Cage</strong> (the default) your body moves by a cage: the sample body that
+Rig Fit wrapped onto your body (<strong>Body Group</strong>, the bare body without hair or helmet) is taken back to the sample
+body in the Arma rest pose, and every point of your mesh follows the cage around it. So your body keeps its own proportions
+(thighs, belly, hands) and the mesh does not get bigger or smaller. A perfect fit moves nothing. The weights are not changed.</p>
+<p>The points of a rigid piece (a helmet, a pouch made by Accessory Weights in Rigid mode, or any island outside the Body
+Group that follows one bone only) move with one rigid transform for the whole piece, placed where the cage puts it, so the
+piece keeps its exact shape and size and stays on the body. Switch <strong>Rigid Pieces Keep Their Shape</strong> off to let
+every point follow the cage. Clothes that bend follow the cage like the body. <strong>Method: Bones</strong> is the older way:
+every point moves by the inverse of its blended bone matrix (it cannot show that your body has other proportions than the
+sample, so thighs can telescope and hands crumple). The <strong>Group</strong> field limits the points to unpose. The node
 message gives the mean and the largest move and the bones whose points moved most. The unpose can only remove what the fitted
-skeleton describes: a joint that is 1 cm off after the fit leaves your mesh about 1 cm off here. On a test body posed with arms
-20 degrees down, longer limbs and a bigger body, the whole chain (fit, weights, unpose) brings every point back to within 0.3 cm
-of the true rest pose.</p>
+skeleton and the wrap describe: a joint that is 1 cm off after the fit leaves your mesh about 1 cm off here.</p>
 <h3 id="rigging-check">Checking the weights: Rig Check</h3>
 <p>Put a <kbd class="ui-node">Rig Check</kbd> node after the weights (or after Unpose) with the skeleton on its second input. It
 changes no geometry. It adds point attributes that say what is wrong, and its message counts each problem and warns above the
