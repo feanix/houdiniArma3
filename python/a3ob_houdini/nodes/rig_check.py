@@ -96,7 +96,7 @@ SPEC = NodeSpec(
                                      "1 cm of the surface, red outside."))),
         Parm("visualize", "Visualize", "toggle", False,
              "Colour the points in the viewport by the Show entry. This is a node visualizer, so the geometry (and any Cd "
-             "it has) is not changed. The export ignores it.", action="visualize"),
+             "it has) is not changed. The export ignores it. " + node_visualizer.HINT, action="visualize"),
     ),
     on_loaded=True,
 )
@@ -147,6 +147,8 @@ def cook(node, report: Report) -> None:
     _report_all(report, names, values, geo, count, proxy, jump, infl, sumerr, dominant, piece, shares, depth, stress, volume,
                 w, shown, results)
     _write_view(node, geo, values["view"], source, depth, shown)
+    if values["visualize"]:
+        report.info(node_visualizer.HINT)
     _update_ramp(node, values["show"], values["stress_range"], len(names))
 
 

@@ -231,6 +231,15 @@ class TestMassNode(NodeTestCase):
         bare, _ = self.run_mass(cube_geometry(), mode="total", value=8, visualize=1)
         self.assertIsNone(bare.geometry().findPointAttrib("Cd"))
 
+    def test_visualize_adds_the_button_hint_message_and_off_does_not(self):
+        # #78: the colours need the viewport Visualization button; the message says so only while Visualize is on
+        on = self.run_mass(cube_geometry(), mode="total", value=8, visualize=1)[1]
+        off = self.run_mass(cube_geometry(), mode="total", value=8, visualize=0)[1]
+        self.assertIn(node_visualizer.HINT, on.messages)
+        self.assertNotIn(node_visualizer.HINT, off.messages)
+        template = self.network.createNode("a3ob_mass").parm("visualize").parmTemplate()
+        self.assertIn(node_visualizer.HINT, template.help())
+
     def test_visualize_toggle_runs_the_visualizer_callback(self):
         template = self.network.createNode("a3ob_mass").parm("visualize").parmTemplate()
         self.assertIn("e.button('mass', 'visualize', kwargs)", template.scriptCallback())
