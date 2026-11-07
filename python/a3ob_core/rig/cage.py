@@ -13,6 +13,9 @@ body in the Arma rest) is the Houdini verb; it runs in ``a3ob_houdini.nodes.unpo
   cooks, so the wrangles' maths is ported and checked against the real node (mean 1 mm apart on the owner scene).
 - **Which points are a rigid piece.** A piece is the ``a3ob_rig_piece`` of Accessory Weights in Rigid mode, or a connected
   island of points outside the body that follow one bone only (the helmet).
+- **Loose accessories** (task #82): points outside the body that bend (``surface_follow``) keep their offset from the
+  closest point of the wrapped body, turned with the surface there, so they are carried by the body at their own distance
+  and not bent by the cage.
 - **Where a piece goes.** The cage moves the points of the piece to new places. The piece is then put at the rigid
   transform (rotation and shift, no size) that fits those places best (Kabsch). So the piece stays on the body where the
   cage puts it, and none of its edges changes.
@@ -22,7 +25,12 @@ from typing import Optional
 
 import numpy as np
 
-__all__ = ["point_deform", "lattice_transforms", "single_bone_pieces", "rigid_fit", "place_pieces"]
+from .transfer import closest_points
+
+__all__ = ["point_deform", "lattice_transforms", "single_bone_pieces", "rigid_fit", "place_pieces", "surface_follow", "SMOOTH_RADIUS"]
+
+#: The reach (metres) of the average of the moves of loose accessory points.
+SMOOTH_RADIUS = 0.5
 
 #: A weight below this is no weight when a point is checked for following one bone only.
 WEIGHT_EPS = 1e-4
@@ -186,4 +194,46 @@ def place_pieces(points: np.ndarray, caged: np.ndarray, piece: np.ndarray, out: 
         members = piece == number
         rotation, c, t = rigid_fit(points[members], caged[members])
         out[members] = t + (points[members] - c) @ rotation.T
+    return out
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Loose accessories (task #82, D41, D44)
+# ---------------------------------------------------------------------------------------------------------------------
+
+def surface_follow(points: np.ndarray, rest: np.ndarray, deformed: np.ndarray, polys, radius: float = SMOOTH_RADIUS,
+                   chunk: int = 64) -> np.ndarray:
+    """Loose accessory points that follow a surface at their own distance (task #82). ``rest`` is the surface the points sit
+    on (the sample body wrapped onto the user's body) and ``deformed`` the same surface moved (the sample body in the Arma
+    rest pose); same points, same ``polys``. Each point finds its closest point ``c`` on ``rest`` (a place in a triangle) and
+    keeps its offset ``x - c`` there, turned with the frame of that place: the rotation of the three corners that the cage
+    uses (``lattice_transforms``), blended by the place's barycentric weights and made a rotation again. On ``deformed`` the
+    point goes to the same place ``c'`` of the same triangle: ``x' = c' + (x - c) R``. The offset along the normal is kept
+    (a rotation does not change a length), and the frame is smooth, so neighbouring points of a piece turn alike and keep
+    their distances as far as the surface under them does not stretch: the piece is carried by the body, not bent by it.
+
+    The surface itself is stretched and squashed where the sample's proportions differ from the user's (hands, collar). A
+    piece that sat tight on such a surface would be stretched with it, so every point takes the average of the moves of the
+    loose points within ``radius`` of it, each applied to this point (weight ``(1 - (d / radius)^2)^2``, as the cage): the
+    piece follows the body at the scale of the body and not at the scale of a few vertices, its edges keep their lengths, and
+    where the surface only turns and moves, all the moves are the same and the average is exact."""
+    points, rest, deformed = (np.asarray(a, dtype=np.float64) for a in (points, rest, deformed))
+    tris = np.array([(ring[0], ring[k], ring[k + 1]) for ring in polys for k in range(1, len(ring) - 1)],
+                    dtype=np.int64).reshape(-1, 3)
+    xform = lattice_transforms(rest, deformed, polys)
+    tri, bary, _ = closest_points(points, rest, tris)
+    corner = tris[tri]
+    c = (bary[:, :, None] * rest[corner]).sum(1)
+    c2 = (bary[:, :, None] * deformed[corner]).sum(1)
+    turn = _rotation_of((bary[:, :, None, None] * xform[corner]).sum(1))
+    if radius <= 0.0 or len(points) < 2:
+        return c2 + np.einsum("na,nab->nb", points - c, turn)
+    out = np.empty_like(points)
+    for start in range(0, len(points), chunk):
+        p = points[start:start + chunk]
+        d2 = ((p[:, None, :] - points[None, :, :]) ** 2).sum(axis=2)
+        weight = np.where(d2 < radius * radius, (1.0 - d2 / (radius * radius)) ** 2, 0.0)  # a point counts for itself
+        # where each neighbour's own move (its place on the surface and its turn) would put this point
+        there = c2[None, :, :] + np.einsum("mna,nab->mnb", p[:, None, :] - c[None, :, :], turn)
+        out[start:start + chunk] = np.einsum("mn,mnb->mb", weight, there) / weight.sum(axis=1, keepdims=True)
     return out

@@ -54,13 +54,13 @@
 </dl>
 <p>Choices:</p>
 <ul>
-<li>Cage <code>cage</code>: Move the points by a cage: the sample body wrapped onto your body (fitted body of Rig Fit) is taken to the sample body in the Arma rest pose (Point Deform). It follows your body&#x27;s proportions. Rigid pieces then move by one rigid transform each.</li>
+<li>Cage <code>cage</code>: Move the points by a cage: the sample body wrapped onto your body (fitted body of Rig Fit) is taken to the sample body in the Arma rest pose (Point Deform). It follows your body&#x27;s proportions. Rigid pieces then move by one rigid transform each, and loose clothes and gear (points outside the Body Group) are carried by the wrapped body&#x27;s surface at their own distance.</li>
 <li>Bones <code>bones</code>: Move each point by the inverse of its blended bone matrix, from the fitted skeleton to the Arma one. Fast, but it cannot express that your body has other proportions than the sample (thighs can telescope, hands crumple).</li>
 </ul>
 </section>
 <section class="parm" id="bodygroup">
 <h3>Body Group <code>bodygroup</code></h3>
-<p>Cage method: the point group of your mesh that is the bare body, the one Rig Fit wrapped onto. Its points always follow the cage. A piece outside it whose points follow one bone only (a helmet) is moved as a rigid piece; other points outside it (clothes that bend) follow the cage. Empty means the whole mesh is body.</p>
+<p>Cage method: the point group of your mesh that is the bare body, the one Rig Fit wrapped onto. Its points always follow the cage. A piece outside it whose points follow one bone only (a helmet) is moved as a rigid piece; other points outside it (clothes that bend) keep their distance from the closest point of the wrapped body and move with that place of its surface. Empty means the whole mesh is body.</p>
 <dl>
 <dt>Type</dt><dd>Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport)</dd>
 <dt>Default</dt><dd>body</dd>

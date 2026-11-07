@@ -34,7 +34,7 @@ Method:
     Type: Menu. Default: Cage.
 
     Cage:
-        Move the points by a cage: the sample body wrapped onto your body (fitted body of Rig Fit) is taken to the sample body in the Arma rest pose (Point Deform). It follows your body's proportions. Rigid pieces then move by one rigid transform each.
+        Move the points by a cage: the sample body wrapped onto your body (fitted body of Rig Fit) is taken to the sample body in the Arma rest pose (Point Deform). It follows your body's proportions. Rigid pieces then move by one rigid transform each, and loose clothes and gear (points outside the Body Group) are carried by the wrapped body's surface at their own distance.
 
     Bones:
         Move each point by the inverse of its blended bone matrix, from the fitted skeleton to the Arma one. Fast, but it cannot express that your body has other proportions than the sample (thighs can telescope, hands crumple).
@@ -42,7 +42,7 @@ Method:
 Body Group:
     #id: bodygroup
 
-    Cage method: the point group of your mesh that is the bare body, the one Rig Fit wrapped onto. Its points always follow the cage. A piece outside it whose points follow one bone only (a helmet) is moved as a rigid piece; other points outside it (clothes that bend) follow the cage. Empty means the whole mesh is body.
+    Cage method: the point group of your mesh that is the bare body, the one Rig Fit wrapped onto. Its points always follow the cage. A piece outside it whose points follow one bone only (a helmet) is moved as a rigid piece; other points outside it (clothes that bend) keep their distance from the closest point of the wrapped body and move with that place of its surface. Empty means the whole mesh is body.
 
     Type: Group picker (text; the menu lists the point groups of the input, the arrow button picks in the viewport). Default: body.
 
