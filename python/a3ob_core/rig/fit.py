@@ -243,9 +243,17 @@ def _nearest_targets(joint: int, children: List[List[int]], rest: np.ndarray, ta
 
 
 def fit_skeleton(parents: Sequence[int], rest: np.ndarray, targets: Dict[int, np.ndarray], mode: str = "bone",
-                 size: float = 1.0) -> FitResult:
+                 size: float = 1.0, bent: Optional[Dict[int, np.ndarray]] = None,
+                 hands: Optional[Dict[int, tuple]] = None) -> FitResult:
     """Fit the skeleton (``rest`` positions, ``parents`` with parents before children) to ``targets`` (joint number ->
-    position). ``mode`` is ``"bone"`` or ``"body"``; ``size`` is the one scale of ``body`` mode."""
+    position). ``mode`` is ``"bone"`` or ``"body"``; ``size`` is the one scale of ``body`` mode.
+
+    ``bent`` and ``hands`` come from ``hand.bend_fingers`` (task #83; ``bone`` mode only). ``hands`` maps a joint (a hand) to
+    ``(rotation, ratio)``: a rotation about it that its own rotation gets after the fit and a factor for its scale (what the
+    targets say about a hand is pulled aside when a finger is curled: the fingertip is short and points off the hand).
+    ``bent`` maps finger joints to positions: they replace the targets of those joints, and the joints between the
+    hand and them are swung onto them (so the finger bends) while the hand itself still takes its rotation from ``targets``.
+    A joint with a target and a bent position is placed at the bent one; its residual is still the distance from the target."""
     count = len(parents)
     children: List[List[int]] = [[] for _ in range(count)]
     for joint, parent in enumerate(parents):
@@ -256,6 +264,16 @@ def fit_skeleton(parents: Sequence[int], rest: np.ndarray, targets: Dict[int, np
     scale = np.ones(count)
     residual: Dict[int, float] = {}
     body = mode == "body"
+    bent = {} if (body or not bent) else dict(bent)
+    hands = {} if (body or not hands) else hands
+    chain_targets = dict(targets)
+    chain_targets.update(bent)
+    bending = set()  # the joints from a hand down to a bent joint (the hand excluded): their rotation comes from the bent joints
+    for joint in bent:
+        up = parents[joint]
+        while up >= 0 and up not in hands:
+            bending.add(up)
+            up = parents[up]
     for a in range(count):
         parent = parents[a]
         if parent < 0:
@@ -263,25 +281,32 @@ def fit_skeleton(parents: Sequence[int], rest: np.ndarray, targets: Dict[int, np
             r_in, s_in = np.eye(3), size if body else 1.0
         else:
             predicted = pos[parent] + scale[parent] * rot[parent] @ (rest[a] - rest[parent])
-            if a in targets:
+            if a in targets and a not in bent:  # a bent joint follows the mesh; the landmark is held by a pull, not a rule
                 residual[a] = float(np.linalg.norm(predicted - targets[a]))
-            pos[a] = targets[a] if (a in targets and not body) else predicted
+            if a in bent:
+                pos[a] = bent[a]
+            else:
+                pos[a] = targets[a] if (a in targets and not body) else predicted
             r_in, s_in = rot[parent], scale[parent]
-        keys = _nearest_targets(a, children, rest, targets)
+        source = chain_targets if a in bending else targets
+        keys = _nearest_targets(a, children, rest, source)
         if not keys:
             rot[a], scale[a] = r_in, s_in
             continue
         v = np.array([r_in @ (rest[k] - rest[a]) for k in keys])
-        w = np.array([targets[k] - pos[a] for k in keys])
+        w = np.array([source[k] - pos[a] for k in keys])
         delta = _kabsch(v, w) if len(keys) > 1 else None
         if delta is None:
             delta = swing(v.sum(axis=0), w.sum(axis=0))
-        rot[a] = delta @ r_in
         if body:
             scale[a] = size
-        else:
+        else:  # the scale is measured before the hand's turn (the targets say how far the fingertips are)
             turned = v @ delta.T
             scale[a] = max(float((w * turned).sum() / max((v * v).sum(), 1e-20)), 1e-3)
+        if a in hands:  # the hand: the turn and the size the fingers asked for, about the wrist
+            delta = hands[a][0] @ delta
+            scale[a] *= hands[a][1]
+        rot[a] = delta @ r_in
     linear = scale[:, None, None] * rot
     return FitResult(pos, linear, scale, residual, {k: np.asarray(t) for k, t in targets.items()},
                      bone_frames(parents, pos))

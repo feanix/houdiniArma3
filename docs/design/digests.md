@@ -1,6 +1,6 @@
 # Digests
 
-Status: v1 built (task #81): `skeleton`, `skeleton-compare`, `deform-compare`, `weights`, `landmarks`; `feet` and `wrap-distance` added in task #82. The model is the digest
+Status: v1 built (task #81): `skeleton`, `skeleton-compare`, `deform-compare`, `weights`, `landmarks`; `feet` and `wrap-distance` added in task #82, `fingers` and `head-turn` in task #83. The model is the digest
 tools of the VoxelTerrarium project (its `docs/design/digest-tools.md`, sections 1 to 3, and its decision D232).
 
 ## 1. Why
@@ -33,7 +33,7 @@ measuring test.
 ## 3. Form
 
 - `python/a3ob_core/digest/`: pure code (numpy, no Houdini). `page.py` (the page, units, `n/r`, exit codes), `skeleton.py`,
-  `deform.py`, `weights.py`, `landmarks.py`, `feet.py` (sole pitch, wrap distance), `regions.py` (the body region of a bone).
+  `deform.py`, `weights.py`, `landmarks.py`, `feet.py` (sole pitch, wrap distance), `pose.py` (finger bend, the turn of a bone), `regions.py` (the body region of a bone).
 - `python/a3ob_houdini/digest.py`: reads a node and calls the pure code. In a live session:
   `from a3ob_houdini import digest; print(digest.skeleton("/obj/rig_fit_66/rig_fit"))`.
 - `scripts/a3ob_digest.py`: `hython scripts/a3ob_digest.py <digest> <scene.hip*> <node path> [options]`. It loads the scene and
@@ -50,6 +50,8 @@ measuring test.
 | Where are the landmarks, and what do the mesh and the Arma sample say at the same places? | `landmarks <scene> <node>` (`--mesh <node>`, `--group G`) |
 | What is the sole pitch of each foot, and where do the heel and the toe end, for your body, the wrapped body, the Arma sample and an unposed mesh? | `feet <scene> <node> [<node> ...]` (`--group G` for your body, default `body`; a Rig Fit node gives your body, the wrapped body and the sample, any other node its own points) |
 | How far is the wrapped sample body from your body, per region, and how far are its heel and toe from yours? | `wrap-distance <scene> <rig fit node>` (`--group G`) |
+| How much is each finger bent at its base and middle knuckle (0 = straight), for the wrapped body, the Arma sample and your posed or unposed mesh? | `fingers <scene> <node> [<node> ...]` (a Rig Fit node gives the wrapped body and the sample; any other node its own mesh with its bone weights; the bend is the angle between the centroids of the three segments of a finger by dominant bone; the Arma sample's rows are the reference) |
+| How much did the points of a bone (the head) turn between two meshes (posed and unposed)? How far do neck and head lean from vertical in the fitted skeleton and in the Arma? | `head-turn <scene> <A> <B>` (`--bone head`, repeatable; `--fit <rig fit node>` for the lean lines; pitch nose down +, yaw to the left +, roll left ear up +, from the rigid (Kabsch) fit of the bone's points; the reference is 0) |
 
 `--part` and `--part-b` name the part of a Rig Fit output to read (`fitted_skeleton`, `fitted_body`, `landmarks`); the default
 is the part the digest needs.

@@ -90,6 +90,14 @@
 <dt>Default</dt><dd>On</dd>
 </dl>
 </section>
+<section class="parm" id="bendfingers">
+<h3>Bend Fingers <code>bendfingers</code></h3>
+<p>Bend the finger joints of the fitted skeleton to follow the fingers of your mesh (needs Per bone length). The sample&#x27;s fingers are straight and a relaxed hand is curled, so without this the wrapped sample body cannot follow the curl and Unpose keeps it. The joints after the knuckle of each of the four fingers and the thumb are placed from your finger mesh (the points of Body Group), the sample&#x27;s own fingers as the model; the finger and thumb landmarks hold the end of the middle finger and the thumb. The bones keep their frames (pure rotations aimed down the bone). Off: the finger chains stay straight, only turned and sized.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>On</dd>
+</dl>
+</section>
 <section class="parm" id="refine">
 <h3>Refine <code>refine</code></h3>
 <p>Wrap the fitted sample body onto your bare body with Topo Transfer, so it takes your proportions. Each landmark is moved to the closest point of the sample body and of your body; the pairs with the same name guide the wrap. The heel and the toe tip of each foot are found on both bodies by themselves and guide it too, and the lower part of each wrapped foot is then laid on your sole, so the feet end where yours end and stand flat. The fitted sample body part becomes the wrapped body, with its bone weights. Off: the sample body is only posed and sized.</p>

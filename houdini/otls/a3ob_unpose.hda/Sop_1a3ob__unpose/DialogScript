@@ -46,6 +46,13 @@
 	help	"Move all the points of a rigid piece (made by Accessory Weights in Rigid mode, or an island outside the Body Group that follows one bone only) with one rigid transform, so the piece keeps its shape. Off: every point follows the cage (or its own weights in the Bones method), which can stretch a rigid piece."
     }
     parm {
+	name	"keephead"
+	label	"Head Keeps Its Tilt"
+	type	toggle
+	default	{ "1" }
+	help	"Cage method: move the head (the points that follow the head bone, with the rigid pieces that follow it, such as a helmet) by a shift only, so it keeps the tilt it has in your mesh. The cage would turn it with the neck of the sample body, which is not your head's tilt (the sample body has no head to say what that is). The shift is the one the cage gives the base of the head, so the head stays seated on the neck. Off: the head follows the cage."
+    }
+    parm {
 	name	"group"
 	label	"Group"
 	type	string
