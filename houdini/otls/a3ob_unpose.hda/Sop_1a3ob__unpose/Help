@@ -53,6 +53,13 @@ Rigid Pieces Keep Their Shape:
 
     Type: On or off. Default: On.
 
+Head Keeps Its Tilt:
+    #id: keephead
+
+    Cage method: move the head (the points that follow the head bone, with the rigid pieces that follow it, such as a helmet) by a shift only, so it keeps the tilt it has in your mesh. The cage would turn it with the neck of the sample body, which is not your head's tilt (the sample body has no head to say what that is). The shift is the one the cage gives the base of the head, so the head stays seated on the neck. Off: the head follows the cage.
+
+    Type: On or off. Default: On.
+
 Group:
     #id: group
 

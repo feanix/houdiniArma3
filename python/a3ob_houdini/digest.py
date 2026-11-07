@@ -39,7 +39,8 @@ try:
 except ImportError:  # the pure parts are also read under plain Python
     hou = None
 
-__all__ = ["skeleton", "skeleton_compare", "deform_compare", "weights", "landmarks", "feet", "wrap_distance", "DIGESTS", "main"]
+__all__ = ["skeleton", "skeleton_compare", "deform_compare", "weights", "landmarks", "feet", "wrap_distance", "fingers",
+           "head_turn", "DIGESTS", "main"]
 
 LABEL = "digest"
 #: The Rig Check limits the weights page puts beside its figures.
@@ -322,9 +323,71 @@ def wrap_distance(path: str, group: str = "body"):
                                    Source(_scene(), node.path() + " input 1", "group " + group if group else ""))
 
 
+def _points_and_dominant(geo, label: str):
+    """``(points, dominant bone name per point)`` of a mesh with bone weights, as P3D Export reads them."""
+    matrix, _, _ = _read_weights(geo, label)
+    positions = np.array(geo.pointFloatAttribValues("P"), dtype=np.float64).reshape(-1, 3)
+    if matrix is None:
+        return positions, None
+    return positions, core.pose.dominant_bone_names(matrix, _bones())
+
+
+def fingers(paths: List[str], part: Optional[str] = None):
+    """The ``fingers`` digest: the bend at the base and the middle knuckle of each finger of the bodies at ``paths``. A Rig Fit
+    node gives two rows (the wrapped body: its ``fitted_body`` part; the Arma sample: input 3); any other node gives one row
+    (its mesh with its bone weights; ``part`` picks a Rig Fit part)."""
+    entries, sources = [], []
+    for path in paths:
+        node = _node(path)
+        if "rig_fit" in _kind(node) and not part:
+            wrapped, _ = _part(_geometry(node), rig_weights.PART_BODY, node, None)
+            for label, geo in (("wrapped body", wrapped), ("Arma sample", _input(node, 2))):
+                if geo is not None:
+                    entries.append((label,) + _points_and_dominant(geo, node.path()))
+            sources.append(Source(_scene(), node.path(), "rows: wrapped, sample"))
+        else:
+            geo, used = _part(_geometry(node), rig_weights.PART_BODY, node, part)
+            entries.append((node.name() + (":" + used if used else ""),) + _points_and_dominant(geo, node.path()))
+            sources.append(Source(_scene(), node.path(), used))
+    return core.fingers_page(entries, sources)
+
+
+def head_turn(path_a: str, path_b: str, bones: Optional[List[str]] = None, fit: Optional[str] = None,
+              part_a: Optional[str] = None, part_b: Optional[str] = None):
+    """The ``head-turn`` digest: how the points of each of ``bones`` (default ``head``; the points whose heaviest bone in A it
+    is) turned between mesh A and mesh B (same topology): pitch, yaw and roll of the best rigid fit. ``fit`` is a Rig Fit node
+    path: its fitted skeleton and its Arma skeleton (input 2) give the lean of neck and head from vertical."""
+    geo_a, pos_a, tris_a, source_a, node_a = _mesh_of(path_a, part_a)
+    _, pos_b, tris_b, source_b, _ = _mesh_of(path_b, part_b)
+    if pos_a.shape != pos_b.shape:
+        raise CouldNotAnswer("the meshes do not have the same points (A: %d, B: %d)" % (len(pos_a), len(pos_b)))
+    matrix, _, _ = _read_weights(geo_a, node_a.path())
+    if matrix is None:
+        raise CouldNotAnswer("%s has no bone weights" % node_a.path())
+    dominant = core.pose.dominant_bone_names(matrix, _bones())
+    rows = []
+    for bone in bones or ["head"]:
+        mine = dominant == bone.lower()
+        if not mine.any():
+            raise WrongQuestion("no point of %s follows the bone %s" % (node_a.path(), bone))
+        rows.append((bone.lower(), pos_a[mine], pos_b[mine]))
+    fitted = arma = None
+    if fit:
+        fit_node = _node(fit)
+        fitted_skel = _read_skel(_part(_geometry(fit_node), rig_weights.PART_SKELETON, fit_node, None)[0], fit_node)
+        arma_geo = _input(fit_node, 1)
+        if arma_geo is None:
+            raise CouldNotAnswer("%s has no skeleton on input 2" % fit_node.path())
+        arma_skel = _read_skel(arma_geo, fit_node)
+        fitted = {k: fitted_skel.positions[v] for k, v in fitted_skel.index().items()}
+        arma = {k: arma_skel.positions[v] for k, v in arma_skel.index().items()}
+    return core.head_page(rows, [r[0] for r in rows], source_a, source_b, fitted, arma)
+
+
 # ---- the command line ---------------------------------------------------------------------------------------------------
 
-DIGESTS = ("skeleton", "skeleton-compare", "deform-compare", "weights", "landmarks", "feet", "wrap-distance")
+DIGESTS = ("skeleton", "skeleton-compare", "deform-compare", "weights", "landmarks", "feet", "wrap-distance", "fingers",
+           "head-turn")
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -343,6 +406,8 @@ def _parser() -> argparse.ArgumentParser:
                    "(default body)")
     p.add_argument("--body", default="body", help="deform-compare: the body group (default body)")
     p.add_argument("--mesh", help="landmarks: the node whose mesh the mesh measures read (default: the node's input 1)")
+    p.add_argument("--bone", action="append", help="head-turn: a bone whose points are measured (repeat for more; default head)")
+    p.add_argument("--fit", help="head-turn: a Rig Fit node, for the lean of the neck and head against the Arma skeleton")
     p.add_argument("--all", action="store_true", help="skeleton, skeleton-compare, weights: list every joint or bone")
     return p
 
@@ -352,8 +417,8 @@ def run(argv: List[str]):
     args = _parser().parse_args(argv)
     if not os.path.isfile(args.scene):
         raise WrongQuestion("there is no scene file %s" % args.scene)
-    wanted = 2 if args.digest.endswith("compare") else 1
-    if args.digest != "feet" and len(args.nodes) != wanted:
+    wanted = 2 if args.digest.endswith("compare") or args.digest == "head-turn" else 1
+    if args.digest not in ("feet", "fingers") and len(args.nodes) != wanted:
         raise WrongQuestion("%s takes %d node path%s, not %d" % (args.digest, wanted, "" if wanted == 1 else "s", len(args.nodes)))
     try:
         hou.hipFile.load(args.scene, suppress_save_prompt=True, ignore_load_warnings=True)
@@ -372,6 +437,10 @@ def run(argv: List[str]):
         return feet(args.nodes, args.part, args.group or "body")
     if args.digest == "wrap-distance":
         return wrap_distance(first, args.group or "body")
+    if args.digest == "fingers":
+        return fingers(args.nodes, args.part)
+    if args.digest == "head-turn":
+        return head_turn(first, args.nodes[1], args.bone or None, args.fit, args.part, args.part_b)
     return landmarks(first, args.mesh, args.group)
 
 

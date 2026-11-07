@@ -19,7 +19,7 @@ viewport. ``rig_weights.read_part`` takes a part out again.
 import numpy as np
 
 from a3ob_core.rig import (BONE_OF, FOOT_LANDMARKS, foot_landmarks, lay_on_sole, LANDMARK_NAMES, body_scale, facing_sign, fit_skeleton, joint_targets, skin_points,
-                           snap_to_surface, symmetrize)
+                           snap_to_surface, symmetrize, bend_fingers)
 
 from .. import landmark_io, rig_weights
 from ..errors import UserError
@@ -79,6 +79,13 @@ SPEC = NodeSpec(
         Parm("symmetry", "Symmetry", "toggle", True,
              "Make the left and right landmarks mirror each other. When both sides of a pair are set in Rig Landmarks they "
              "are averaged; when only one side is, the other side is its mirror image."),
+        Parm("bendfingers", "Bend Fingers", "toggle", True,
+             "Bend the finger joints of the fitted skeleton to follow the fingers of your mesh (needs Per bone length). The "
+             "sample's fingers are straight and a relaxed hand is curled, so without this the wrapped sample body cannot follow "
+             "the curl and Unpose keeps it. The joints after the knuckle of each of the four fingers and the thumb are placed "
+             "from your finger mesh (the points of Body Group), the sample's own fingers as the model; the finger and thumb "
+             "landmarks hold the end of the middle finger and the thumb. The bones keep their frames (pure rotations aimed "
+             "down the bone). Off: the finger chains stay straight, only turned and sized."),
         Parm("refine", "Refine", "toggle", True,
              "Wrap the fitted sample body onto your bare body with Topo Transfer, so it takes your proportions. Each "
              "landmark is moved to the closest point of the sample body and of your body; the pairs with the same name "
@@ -133,6 +140,14 @@ def cook(node, report: Report) -> None:
         fitted = fit_skeleton(skeleton.parents, rest, targets, values["scale"], body_scale(user, truth))
     except ValueError as problem:
         raise UserError(format_problem(NAME, str(problem), "Check the landmarks")) from None
+    bends = {}
+    if values["bendfingers"] and values["scale"] == "bone":
+        turns, bent, bends = bend_fingers(skeleton.parents, rest, fitted, index, positions_s, found.weights,
+                                          _body_skin(mesh_in, values["bodygroup"], skin_in))
+        if bent:
+            fitted = fit_skeleton(skeleton.parents, rest, targets, values["scale"], body_scale(user, truth), bent, turns)
+            gaps = [float(np.linalg.norm(fitted.positions[j] - targets[j])) for j in bent if j in targets]
+            bends["landmark gap"] = (max(gaps) if gaps else 0.0, 0.0, 0.0)  # the end joints of the middle finger and the thumb
 
     body = _body_geo(sample_in, skin_points(positions_s, found.weights, rest, fitted))
     if values["refine"]:
@@ -145,7 +160,7 @@ def cook(node, report: Report) -> None:
     hidden = [name for name in parts if name == rig_weights.PART_REST_BODY
               or (values["show"] != "all" and name != wanted[values["show"]])]
     rig_weights.write_parts(node.geometry(), parts, hidden)
-    _report(report, values, user, source, skeleton, fitted)
+    _report(report, values, user, source, skeleton, fitted, bends)
 
 
 def _landmarks(mesh, mode: str, skin: np.ndarray, side, report: Report):
@@ -209,6 +224,15 @@ def _body_group_only(mesh_in, group: str):
     return out
 
 
+def _body_skin(mesh_in, group: str, skin_in: np.ndarray) -> np.ndarray:
+    """The skin points the fingers are fitted to: the points of ``group`` that belong to polygons (so a glove, a cuff or a
+    held weapon in no group does not count), or all the skin points when ``group`` is empty or names nothing."""
+    if not group.strip() or mesh_in.findPointGroup(group.strip()) is None:
+        return skin_in
+    positions, tris = rig_weights.read_mesh(_body_group_only(mesh_in, group))
+    return positions[np.unique(tris)] if len(tris) else skin_in
+
+
 def _refine(body, mesh_in, user, group: str, front: float = 1.0):
     """The fitted sample body ``body`` wrapped onto the points of ``group`` of ``mesh_in`` with the Topo Transfer verb (a
     verb, so no node is needed inside this Python SOP). The landmarks are snapped to the closest point of each surface and
@@ -256,10 +280,17 @@ def _landmarks_geo(user, feet=None):
     return geo
 
 
-def _report(report: Report, values, user, source, skeleton, fitted) -> None:
+def _report(report: Report, values, user, source, skeleton, fitted, bends=None) -> None:
     placed = sum(1 for how in source.values() if how == "set")
     report.info("%d landmarks: %d from Rig Landmarks, %d guessed. Scale: %s." % (
         len(user), placed, len(user) - placed, "per bone length" if values["scale"] == "bone" else "whole body"))
+    if bends:
+        gap = bends.pop("landmark gap", (0.0,))[0]
+        middle = [pose[1] for name, pose in bends.items() if not name.endswith("thumb")]
+        report.info("Fingers: %d fingers bent to your mesh; the bend at the middle joint is %.0f degrees on average (%.0f to %.0f); "
+                    "the end of the middle finger and of the thumb are %.1f cm from their landmarks at most." % (
+                        len(bends), float(np.mean(np.abs(middle))) if middle else 0.0, min(abs(v) for v in middle) if middle else 0.0,
+                        max(abs(v) for v in middle) if middle else 0.0, 100 * gap))
     if fitted.residual:
         worst = sorted(fitted.residual.items(), key=lambda item: -item[1])
         mean = float(np.mean(list(fitted.residual.values())))

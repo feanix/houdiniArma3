@@ -854,7 +854,8 @@ Reports: section 4.4. Output: the mesh with cleaned groups and `a3ob_w_*`, plus 
 | `snap` | toggle, on | Snap landmarks to the mesh surface. |
 | `symmetry` | toggle, on | Mirror left and right landmarks. |
 | `refine` | toggle, on | Wraps the fitted sample body onto the user's bare body with Topo Transfer (D44, task #79). |
-| `bodygroup` | point group of input 1, default `body` | The points Refine wraps onto; empty means the whole mesh. |
+| `bodygroup` | point group of input 1, default `body` | The points Refine wraps onto and the finger fit reads; empty means the whole mesh. |
+| `bendfingers` | toggle, on | Bend the finger joints to the user's finger mesh (task #83, see Hands). Per bone length only. |
 | `scale` | menu: Per bone length, Whole body | How bone lengths are fitted. Default Per bone length. |
 
 Results (one output with three named parts, D40, see As built): fitted skeleton A' (joints in the user mesh, `transform`
@@ -978,6 +979,34 @@ the point below). `a3ob_core/rig/landmarks.py` (guess, symmetry, snap) and `fit.
   `test_node_rig_fit`), and Unpose brings the finger points of hands turned 30 degrees back within 0.5 cm. On the owner's
   mesh the finger chain ends moved from 3 cm short of the mesh's fingertip to 2 cm short, and all of them are inside the
   hand mesh.
+- **Finger bend (task #83, `a3ob_core/rig/hand.py`).** The first pass above keeps every finger chain straight (the Arma rest
+  has bend 0 at every knuckle), so on the owner scene the fitted sample's fingers were straight (middle knuckle bend 0 to 11
+  degrees, the sample's own 3 to 6) while the owner's were curled 13 to 43 degrees; the wrap could not follow the curl and the
+  cage kept it (Unpose left 38 to 45, right 17 to 48). The finger fit finds the two joints after the knuckle of each finger and
+  of the thumb on the mesh and feeds them to `fit_skeleton` as `bent` (the frames are still `bone_frames` of the joint
+  positions: pure rotations aimed down the bones, #76). *How the centre line is found:* not from the mesh points directly (a
+  finger has a few dozen points, fingers touch, the mesh has no finger parts). The sample's own finger is the model: the sample
+  points that follow the bones of that finger, moved rigidly with their bones. Four numbers pose it (bend at the knuckle, bend
+  at the middle joint, swing to the side at the knuckle, length scale; the thumb swings at both joints) and the pose is the one
+  with the lowest two-way closest-point cost to the finger's points (each distance cut at 3 cm, a mean, so a thick finger, a
+  sparse finger or a stray point does not decide it). The centre line is the model's bones, in the middle of its points by
+  construction. *Which points:* a finger curls in the plane of its line and the palm normal, so it keeps its place across the
+  hand; round 1 gives each point to the finger whose knuckle is nearest across the hand (across axis = long axis of the points
+  just beyond the knuckles; touching fingers are cut half way), the thumb takes the points along its base-to-tip-landmark line;
+  round 2 gives each point to the closest finger of the pose just found, in 3D, the palm being a competitor. *The hand's frame*
+  is also a little wrong after pass 1 (a curled fingertip is short and points off the hand: hand scale 1.18 against 1.0 for the
+  middle chain on the owner scene), so a turn and a size about the wrist are searched first from the palm points and then
+  against the whole fitted hand, and the fingers are fitted again; a hand that explains its points 25 % worse than the other
+  is fitted once more with the other hand's frame mirrored (kept only if better). The finger and thumb landmarks hold the end
+  joint of the middle finger and the thumb (a weighted pull), and a finger with fewer than 8 points stays straight. The fit
+  costs about 8 s for two hands on the owner mesh; Bend Fingers off restores the straight chains.
+- **Head (task #83).** The cause of the head turning 15.2 degrees in Cage Unpose is not the fitted Neck1 to Head segment (the
+  advisor's measure: it leans 16.7 degrees against the Arma's 2.5): with the head and neck1 targets taken from the torso frame
+  instead of the chin the segment leaned 11.6 and the head still turned 14.8 degrees. The cage carries the head points (they are
+  far from the sample's neck stub, so each takes the transform of the closest lattice points, the rim of the neck) with the
+  frame of the neck rim of the wrapped body against the sample's, and that frame is the owner's neck (the Kabsch pitch of the
+  sample's Spine3 points, which hold the neck stub, from the sample to the wrapped body is -12.3 degrees). The sample body has
+  no head, so no part of the fit knows the head's tilt. The Rig Fit head targets are unchanged. The fix is in Unpose (below).
 - **Measured on the real mesh** (testChar, no landmark groups): see the task report; the guess is weakest at the shoulders,
   elbows and wrists of an armoured character (up to about 9 cm from the owner's own rig), good at the legs (2 to 3 cm).
 
@@ -1047,6 +1076,7 @@ Since task #80 (D44) the default method is **Cage**; the old per-bone inverse st
 |---|---|---|
 | `method` | menu: Cage, Bones; Cage | Cage: Point Deform with the rest lattice = Rig Fit's `fitted_body` (the sample body wrapped onto the user's body) and the deformed lattice = `rest_body` (the sample body in the Arma rest). Bones: the inverse of each point's blended bone matrix. |
 | `bodygroup` | point group, `body` | Cage: the bare body that Rig Fit wrapped onto. Never made a rigid piece by itself. Empty: the whole mesh is body. |
+| `keephead` | toggle, on | Cage (task #83): the points whose weight is mostly on the head bone, with the rigid pieces that are (a helmet), move by a shift only: the one the cage gives the base of the head (the head points that share an edge with other points; with none, all of them). The head keeps its tilt: Kabsch pitch, yaw and roll 0.0 before and after, every edge the same. |
 
 It reports the mean and the largest displacement, and the worst bones. Output: the mesh in the Arma rest pose. The weights
 do not change. Neither method changes the overall size.
@@ -1137,6 +1167,24 @@ after; body edges under 0.80 at the collar (y above 130 cm) 20 before, 19 after 
 wrap of the shoulders and neck is the remaining cause). Rig Check on rig_check_arma: 7 joints outside before and after;
 points stretched over 30 %: 287 before, 318 after; points losing over 30 % of their volume: 690 before, 685 after (the weights
 did not change; the loose piece is placed differently).
+
+**Measured with the finger bend and the head (task #83)** on `Character_82_feet.hiplc` (digest `fingers`: bend in degrees at the
+middle knuckle, the angle between the centroids of the points of the three segments of a finger by dominant bone, 0 =
+straight; index, middle, ring, pinky). Wrapped sample body, left: 11, 10, 10, 0 before, 38, 31, 33, 27 after; owner (weights
+transferred from the wrapped body) 34, 32, 28, 43 before and 37, 32, 26, 29 after; Arma sample 5, 6, 3, 3. Unpose, left: 38, 38,
+38, 45 before, 8, 13, 12, 9 after; right: 48, 36, 27, 17 before, 10, 12, 12, 7 after (the Arma's 5, 6, 3, 3). The wrapped
+fingers are within 7 degrees of the owner's and the unposed ones within 9 degrees of the Arma's. Wrap distance (digest
+`wrap-distance`): median 0.2 to 0.1 cm, p95 1.6 to 1.0 cm, hands p95 1.9 to 0.5 cm. Feet: unchanged (sole pitch -0.9 / -0.5
+degrees against the sample's -0.4 / 0.0). Head (digest `head-turn`, Kabsch of the 1924 head-bone points posed against
+unposed): pitch 15.2, yaw -1.1, roll -0.9 degrees before, 0.0, 0.0, 0.0 after; the helmet group is those points (edge ratio
+1.000 / 1.000, size unchanged); `between regions` edges p1 0.839 to 0.897. Hand edges after over before: median 0.953 to 0.939, p1
+0.716 to 0.667, p99 1.446 to 1.369 (the curled fingers are straightened, so their edges change). Body p1 0.744 to 0.731 /
+p99 1.261 to 1.244; nonrigid_example p1 0.946 to 0.951 / p99 1.097 to 1.093. Rig Check on rig_check_arma: joints outside the mesh
+7 to 0; points stretched over 30 %: 318 to 307; points losing over 30 % of their volume: 685 to 676; weight jumps 444 to 442.
+Made-up cases (tests): a hand curled 40 and 60 degrees at two joints gets finger joints 1.0 cm off the truth (straight chains: 2.2
+cm); the sample's own fingers curled 30, 40 and 20 degrees through Rig Fit and the cage Unpose come back 0.61 cm off the Arma
+rest with Bend Fingers (1.24 cm without) and the fitted finger joints are 0.18 cm off the true ones (1.75 cm without); a head
+tilted 12 degrees against the neck: the cage turns it 12.0 degrees, Head Keeps Its Tilt 0.0.
 
 **Rig Check** (inputs: 1 mesh with weights; 2 skeleton). Outputs: 1 mesh with the problem attributes; 2 the skeleton with
 `a3ob_rig_joint_depth` and `Cd`; 3 the posed mesh of the chosen test pose.

@@ -27,7 +27,8 @@ import numpy as np
 
 from .transfer import closest_points
 
-__all__ = ["point_deform", "lattice_transforms", "single_bone_pieces", "rigid_fit", "place_pieces", "surface_follow", "SMOOTH_RADIUS"]
+__all__ = ["point_deform", "lattice_transforms", "single_bone_pieces", "rigid_fit", "place_pieces", "surface_follow", "SMOOTH_RADIUS",
+           "hold_orientation"]
 
 #: The reach (metres) of the average of the moves of loose accessory points.
 SMOOTH_RADIUS = 0.5
@@ -194,6 +195,22 @@ def place_pieces(points: np.ndarray, caged: np.ndarray, piece: np.ndarray, out: 
         members = piece == number
         rotation, c, t = rigid_fit(points[members], caged[members])
         out[members] = t + (points[members] - c) @ rotation.T
+    return out
+
+
+def hold_orientation(points: np.ndarray, placed: np.ndarray, members: np.ndarray, seam: np.ndarray) -> np.ndarray:
+    """``placed`` with the ``members`` (a bool per point) moved by a shift only, so they keep the orientation they have in
+    ``points`` (task #83). The cage turns a head with the neck-top of the sample body it is carried by; a head is a rigid mass
+    that has its own tilt, and Unpose is not to nod it. The shift is the average move the cage gives the ``seam`` points (the
+    members that share an edge with a non-member, the base of the head), so the head stays seated on the neck where the cage
+    puts it. With no seam point all the members count. Nothing changes when there is no member."""
+    out = placed.copy()
+    members = np.asarray(members, dtype=bool)
+    if not members.any():
+        return out
+    seam = np.asarray(seam, dtype=bool) & members
+    use = seam if seam.any() else members
+    out[members] = points[members] + (placed[use] - points[use]).mean(axis=0)
     return out
 
 

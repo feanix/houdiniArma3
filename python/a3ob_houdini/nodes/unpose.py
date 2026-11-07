@@ -31,8 +31,8 @@ Arma one; a rigid piece by one matrix. Neither method changes the overall size.
 
 import numpy as np
 
-from a3ob_core.rig import (ORIGIN_RIGID, bone_displacements, bone_moves, place_pieces, point_deform, single_bone_pieces,
-                           surface_follow, unpose_points)
+from a3ob_core.rig import (ORIGIN_RIGID, bone_displacements, bone_moves, hold_orientation, place_pieces, point_deform,
+                           single_bone_pieces, surface_follow, unpose_points)
 
 from .. import rig_weights
 from ..errors import UserError
@@ -83,6 +83,11 @@ SPEC = NodeSpec(
              "Move all the points of a rigid piece (made by Accessory Weights in Rigid mode, or an island outside the Body "
              "Group that follows one bone only) with one rigid transform, so the piece keeps its shape. Off: every point "
              "follows the cage (or its own weights in the Bones method), which can stretch a rigid piece."),
+        Parm("keephead", "Head Keeps Its Tilt", "toggle", True,
+             "Cage method: move the head (the points that follow the head bone, with the rigid pieces that follow it, such as a "
+             "helmet) by a shift only, so it keeps the tilt it has in your mesh. The cage would turn it with the neck of the sample "
+             "body, which is not your head's tilt (the sample body has no head to say what that is). The shift is the one the "
+             "cage gives the base of the head, so the head stays seated on the neck. Off: the head follows the cage."),
         Parm("group", "Group", "group", "",
              "The points to unpose. Empty means all points. The menu lists the point groups of the input and shows the "
              "P3D name of a selection; picking adds or removes the group. The arrow button picks points in the "
@@ -134,6 +139,11 @@ def cook(node, report: Report) -> None:
             loose = active & (piece < 0) & ~_body_mask(geo, values["bodygroup"], count)
             if loose.any():  # clothes and loose gear: carried by the body surface at their own distance (task #82)
                 placed[loose] = surface_follow(positions[loose], rest, deformed, polys)
+            if values["keephead"]:
+                held = _head_points(names, weights, active & ~loose, piece)
+                if held.any():
+                    placed = hold_orientation(positions, placed, held, _seam_points(geo, held, active))
+                    report.info("Head: %d points keep their tilt (moved by a shift only)." % int(held.sum()))
             moved[index] = placed[index]
             geo.setPointFloatAttribValues("P", [float(v) for v in moved.reshape(-1)])
     else:
@@ -165,18 +175,56 @@ def _cage(geo, node, positions: np.ndarray):
     return point_deform(positions, lattice, target, polys), lattice, target, polys
 
 
-def _add_islands(geo, group: str, weights: np.ndarray, piece: np.ndarray, active: np.ndarray, count: int) -> np.ndarray:
-    """``piece`` plus a new piece for each island outside the body group whose points follow one bone only."""
-    body = _body_mask(geo, group, count)
+def _polygon_edges(geo) -> np.ndarray:
+    """The edges (point number pairs, (m, 2)) of the polygons of ``geo``; a packed primitive has none."""
     edges = []
     for prim in geo.prims():
         if isinstance(prim, hou.PackedPrim):
             continue
         ring = [v.point().number() for v in prim.vertices()]
         edges.extend(zip(ring, ring[1:] + ring[:1]))
+    return np.array(edges, dtype=np.int64).reshape(-1, 2)
+
+
+def _add_islands(geo, group: str, weights: np.ndarray, piece: np.ndarray, active: np.ndarray, count: int) -> np.ndarray:
+    """``piece`` plus a new piece for each island outside the body group whose points follow one bone only."""
+    body = _body_mask(geo, group, count)
     first = int(piece.max()) + 1 if (piece >= 0).any() else 0
-    found = single_bone_pieces(np.array(edges, dtype=np.int64).reshape(-1, 2), weights, body | (piece >= 0) | ~active, first)
+    found = single_bone_pieces(_polygon_edges(geo), weights, body | (piece >= 0) | ~active, first)
     return np.where(found >= 0, found, piece)
+
+
+#: A point belongs to the head when at least this share of its weight is on the head bone.
+HEAD_SHARE = 0.5
+
+
+def _head_points(names, weights: np.ndarray, active: np.ndarray, piece: np.ndarray) -> np.ndarray:
+    """The points that keep the head's tilt (a bool per point): those whose weight is mostly on the ``head`` bone, and every
+    point of a rigid piece whose weight is mostly on it (a helmet). Nothing when the skeleton has no head bone."""
+    bones = [i for i, name in enumerate(names) if name.lower() == "head"]
+    total = weights.sum(axis=1)
+    held = np.zeros(len(weights), dtype=bool)
+    if not bones:
+        return held
+    share = np.where(total > 0, weights[:, bones[0]] / np.maximum(total, 1e-12), 0.0)
+    held = active & (share >= HEAD_SHARE)
+    for number in np.unique(piece[active & (piece >= 0)]):
+        members = active & (piece == number)
+        if float(share[members].mean()) >= HEAD_SHARE:
+            held |= members
+    return held
+
+
+def _seam_points(geo, held: np.ndarray, active: np.ndarray) -> np.ndarray:
+    """The held points that share an edge with a point that is not held (the base of the head)."""
+    edges = _polygon_edges(geo)
+    seam = np.zeros(len(held), dtype=bool)
+    if len(edges):
+        a, b = edges[:, 0], edges[:, 1]
+        across = (held[a] != held[b]) & active[a] & active[b]
+        seam[a[across & held[a]]] = True
+        seam[b[across & held[b]]] = True
+    return seam
 
 
 def _rigid_pieces(geo, wanted: bool, count: int) -> np.ndarray:

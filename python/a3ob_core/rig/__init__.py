@@ -14,6 +14,7 @@ Houdini, and hython has numpy. The skeleton code below does not need it yet.
 - ``landmarks`` and ``fit``: the landmarks of a humanoid mesh (guess, symmetry, snap) and the rigid fit of the skeleton
   and the sample body to them (task #66).
 - ``foot``: the heel, toe tip and sole of the feet, the foot landmarks of Refine and the sole step (task #82).
+- ``hand``: bends the finger joints of the fitted skeleton to the user's finger mesh (task #83).
 - ``unpose``: moves a weighted mesh from the fitted pose back onto the Arma rest pose (task #67).
 - ``check``: the weight problems and the pose stress and volume test of the Rig Check node (task #68; use ``rig.check``).
 """
@@ -30,8 +31,10 @@ from .pivots import pivot_positions, read_pivots_file
 from .skeleton import SKIP_PATTERNS, Joint, SkeletonPlan, check_bones, plan_skeleton
 from .transfer import (ORIGIN_COPIED, ORIGIN_FILLED, ORIGIN_NONE, ORIGIN_NONRIGID, ORIGIN_RIGID, Piece, Settings,
                        TransferResult, accessory_layer, drop_small_pieces, is_twist, transfer_body, twist_targets)
-from .cage import lattice_transforms, place_pieces, point_deform, rigid_fit, single_bone_pieces, surface_follow
+from .cage import (hold_orientation, lattice_transforms, place_pieces, point_deform, rigid_fit, single_bone_pieces,
+                   surface_follow)
 from .foot import FOOT_LANDMARKS, Foot, find_feet, foot_landmarks, lay_on_sole
+from .hand import bend_fingers
 from .unpose import BoneMoves, bone_displacements, bone_moves, unpose_points
 from .weights import (CAPT_FLOATS, GRID, CleanStats, capture_lists, clean_weights, grid_units, inverse_rest_floats,
                       match_bone_names, matrix_from_capture)
@@ -41,8 +44,8 @@ BONE_OF = {item.name: item.bone for item in LANDMARKS}
 
 __all__ = [
     "BONE_OF", "LANDMARK_NAMES", "LANDMARK_PAIRS", "LANDMARKS", "Landmark", "Template", "TORSO_BONES", "FitResult",
-    "lattice_transforms", "place_pieces", "point_deform", "rigid_fit", "single_bone_pieces", "surface_follow",
-    "FOOT_LANDMARKS", "Foot", "find_feet", "foot_landmarks", "lay_on_sole",
+    "hold_orientation", "lattice_transforms", "place_pieces", "point_deform", "rigid_fit", "single_bone_pieces", "surface_follow",
+    "FOOT_LANDMARKS", "Foot", "find_feet", "foot_landmarks", "lay_on_sole", "bend_fingers",
     "BoneMoves", "aim_targets", "bone_displacements", "bone_moves", "normalised_weights", "unpose_points",
     "CHIN_FROM_HEAD", "HEAD_SHARE", "body_scale", "bone_frames", "fit_skeleton", "joint_targets", "skin_points", "swing",
     "facing_sign", "find_groin", "follow_mirror", "guess_landmarks", "is_set", "mirror_x", "make_template", "snap_to_surface", "symmetrize", "drop_small_pieces",

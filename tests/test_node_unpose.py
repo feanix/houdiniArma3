@@ -336,6 +336,93 @@ class TestUnposeOnSamples(NodeTestCase):
         ratios, _ = self.edge_ratios(loose, cuff, stretched)
         self.assertGreater(float(np.abs(ratios - 1).max()), 1e-4)
 
+    # ---- fingers and head (task #83) ---------------------------------------------------------------------------------
+
+    def run_pipeline(self, mesh, method="cage", **fit_parms):
+        """Rig Fit, Weight Transfer, Weight Cleanup and Unpose on ``mesh``; returns ``(unpose node, Rig Fit node)``."""
+        fit = self.fit(mesh, "all", snap=0, **fit_parms)
+        transfer = self.network.createNode("a3ob_weight_transfer")
+        transfer.setInput(0, mesh)
+        transfer.setInput(1, fit)
+        transfer.setInput(2, self.skeleton)
+        cleanup = self.network.createNode("a3ob_weight_cleanup")
+        cleanup.setInput(0, transfer)
+        cleanup.setInput(1, self.skeleton)
+        node = self.unpose(cleanup, fit, method=method)
+        self.assertEqual(cook(node).errors, ())
+        return node, fit
+
+    def test_task_83_curled_fingers_are_fitted_and_come_back_straight_through_rig_fit_and_unpose(self):
+        """Made-up case with a known answer: the fingers of the sample are curled 30, 40 and 20 degrees at their three joints.
+        With Bend Fingers the fitted finger joints follow the curl and Unpose gives straight fingers (the sample's own); with
+        it off the straight chains cannot follow the curl and the fingers come back worse."""
+        mats, world_pos = rig_fit_tests.TestRigFitOnSamples.pose(self, curl=(30.0, 40.0, 20.0))
+        truth = self.true_landmarks(mats, world_pos)
+        mesh = self.user_mesh(self.posed_points(mats), truth)
+        owner = self.full_W[self.used].argmax(axis=1)
+        fingers = np.array([self.names[b].startswith(("LeftHand", "RightHand")) and "Thumb" not in self.names[b] and
+                            self.names[b] not in ("LeftHand", "RightHand") for b in owner])
+        self.assertGreater(int(fingers.sum()), 100)
+        hand_joints = [i for i, n in enumerate(self.names) if n.startswith(("LeftHand", "RightHand")) and n[-1] in "23" and
+                       "Thumb" not in n]
+        worst = {}
+        for bend in (0, 1):
+            node, fit = self.run_pipeline(mesh, "cage", refine=1, bendfingers=bend)
+            error = np.linalg.norm(self.points_of(node)[:len(self.P)] - self.P, axis=1)
+            joints = np.array(self.part(fit, "fitted_skeleton").pointFloatAttribValues("P")).reshape(-1, 3)
+            joint_error = np.linalg.norm(joints[hand_joints] - world_pos[hand_joints], axis=1)
+            worst[bend] = (float(error[fingers].mean()), float(joint_error.mean()))
+            print("   task 83 curled fingers, Bend Fingers %d: fitted finger joints %.2f cm off, finger points back %.2f cm off the "
+                  "Arma rest on average (%.2f cm at most)" % (bend, 100 * worst[bend][1], 100 * worst[bend][0], 100 * error[fingers].max()))
+        self.assertLess(worst[1][1], 0.5 * worst[0][1])  # the fitted joints are far nearer the true ones
+        self.assertLess(worst[1][1], 0.015)
+        self.assertLess(worst[1][0], 0.7 * worst[0][0])  # and the unposed fingers are nearer the sample's
+        self.assertLess(worst[1][0], 0.015)
+
+    def head_case(self, pitch):
+        """The sample body with its top slice (the neck stub and above) as the ``head`` bone's points, the part above the chest
+        bent forward by ``pitch`` degrees about the X axis, as the wrapped body of a character whose neck leans: the cage then
+        turns that slice back. Returns ``(mesh, rest body points, head mask, wrapped points)``."""
+        top = self.full_P[self.meshed, 1].max()
+        head = self.meshed & (self.full_P[:, 1] > top - 0.07)
+        bend = self.meshed & (self.full_P[:, 1] > top - 0.20)
+        pivot = np.array([0.0, top - 0.20, float(self.full_P[bend, 2].mean())])
+        bent = self.full_P.copy()
+        bent[bend] = (self.full_P[bend] - pivot) @ rig_fit_tests.rotation_about([1, 0, 0], pitch).T + pivot
+        geo = hou.Geometry()
+        geo.copy(self.body.geometry())
+        geo.setPointFloatAttribValues("P", [float(v) for v in bent.reshape(-1)])
+        for group in geo.pointGroups():  # the head slice leaves its bones and follows the head bone only
+            for point in [p for p in geo.points() if head[p.number()] and group.contains(p)]:
+                if group.name().lower() in [n.lower() for n in self.names]:
+                    group.remove(point)
+        group = next((g for g in geo.pointGroups() if g.name().lower() == "head"), None) or geo.createPointGroup("head")
+        group.add([p for p in geo.points() if head[p.number()]])
+        return make_source(self.network, geo), bent, head
+
+    def test_task_83_the_head_keeps_its_tilt_through_the_cage_unpose(self):
+        """Made-up head tilted 12 degrees against the neck: Unpose gives it no turn (Kabsch of its points before and after), the
+        way the cage alone does turn it, and the base of the head stays seated where the cage puts the neck."""
+        from a3ob_core.digest.pose import bone_turn, turn_angles
+        pitch = 12.0
+        mesh, bent, head = self.head_case(pitch)
+        results = {}
+        for keep in (0, 1):
+            node = self.unpose(mesh, self.cage_source(bent), method="cage", bodygroup="", keephead=keep)
+            result = cook(node)
+            self.assertEqual(result.errors, ())
+            out = self.points_of(node)
+            rotation, rms = bone_turn(bent[head], out[head])
+            results[keep] = (turn_angles(rotation), rms)
+            print("   task 83 head tilted %.0f degrees, Head Keeps Its Tilt %d: head turned pitch %.2f yaw %.2f roll %.2f degrees, "
+                  "rms %.3f cm; %s" % (pitch, keep, *results[keep][0], 100 * rms, result.messages[0]))
+            if keep:
+                self.assertIn("points keep their tilt", " ".join(result.messages))
+        self.assertGreater(abs(results[0][0][0]), 5.0)  # the cage does turn it
+        self.assertLess(abs(results[1][0][0]), 0.5)  # and now it is not turned (the criterion asks for 2 degrees)
+        self.assertLess(abs(results[1][0][1]) + abs(results[1][0][2]), 0.5)
+        self.assertLess(results[1][1], 1e-4)  # exactly rigid: a pure shift
+
     def test_task_80_a_rig_fit_output_without_the_rest_body_is_a_clear_error(self):
         mesh = self.sample_with_points(self.full_P)
         node = self.unpose(mesh, self.skeleton_source(self.rest), method="cage", bodygroup="")

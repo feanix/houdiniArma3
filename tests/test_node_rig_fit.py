@@ -76,12 +76,23 @@ class TestRigFitOnSamples(NodeTestCase):
     # ---- the posed copy -------------------------------------------------------------------------------------------
 
     def pose(self, arms=-20.0, legs=8.0, arm_scale=1.10, leg_scale=1.08, size=1.05, hand_swing=0.0, hand_twist=0.0,
-             finger_scale=1.0):
+             finger_scale=1.0, curl=None):
         """``(4x4 matrices, world joint positions)`` of the spike's scenario C (or a part of it). ``hand_swing`` turns each
         hand about the Z axis (in the plane of the A-pose), ``hand_twist`` about the axis of its forearm (the palm turns),
-        both in degrees; ``finger_scale`` lengthens every bone from a hand down (task #70)."""
+        both in degrees; ``finger_scale`` lengthens every bone from a hand down (task #70). ``curl`` is ``(knuckle, middle,
+        end)`` in degrees: every finger (not the thumb) is bent by these at its three joints, towards the palm (task #83)."""
         local = {"LeftArm": rotation_z(arms), "RightArm": rotation_z(-arms), "LeftUpLeg": rotation_z(legs),
                  "RightUpLeg": rotation_z(-legs)}
+        if curl:
+            from a3ob_core.rig.hand import FINGERS, _palm_normal
+            for side, sign in (("Left", 1.0), ("Right", -1.0)):
+                palm = _palm_normal(self.rest, self.index, side.lower(), np.eye(3))
+                for finger in FINGERS[:4]:
+                    names = ["%sHand%s%d" % (side, finger.capitalize(), k) for k in (1, 2, 3)]
+                    direction = self.rest[self.index[names[1].lower()]] - self.rest[self.index[names[0].lower()]]
+                    axis = np.cross(direction, palm)
+                    for name, degrees in zip(names, curl):
+                        local[name] = rotation_about(axis, sign * degrees)
         for side, sign in (("Left", 1.0), ("Right", -1.0)):
             axis = self.rest[self.index[side.lower() + "hand"]] - self.rest[self.index[side.lower() + "forearm"]]
             local[side + "Hand"] = rotation_z(sign * hand_swing) @ rotation_about(axis, sign * hand_twist)  # mirrored, so Symmetry keeps both hands
