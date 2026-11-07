@@ -77,12 +77,15 @@ def wrap_distance_page(wrapped: np.ndarray, wrapped_tris: np.ndarray, labels: Op
                        owner_tris: np.ndarray, source_wrapped: Source, source_owner: Source, front: float = 1.0) -> Page:
     """The page. ``wrapped``/``wrapped_tris`` is the wrapped body, ``labels`` its region per point (None: no weights),
     ``owner``/``owner_tris`` the user's body group."""
-    dist, by_region = region_distances(wrapped, np.asarray(labels if labels is not None else [""] * len(wrapped), dtype=object),
-                                       owner, owner_tris)
+    used = np.zeros(len(wrapped), dtype=bool)  # points that belong to polygons only (a proxy marker's points do not)
+    used[np.unique(wrapped_tris)] = True
+    names = np.asarray(labels if labels is not None else [""] * len(wrapped), dtype=object)
+    dist, by_region = region_distances(wrapped[used], names[used], owner, owner_tris)
     p50, p95 = percentiles(dist, (50, 95))
-    summary = "wrap-distance: wrapped to your body: median %s, p95 %s, max %s cm, %s points" % (
+    summary = "wrap-distance: median %s, p95 %s, max %s cm over %s points" % (
         cm(p50), cm(p95), cm(float(dist.max()) if len(dist) else None), count(len(dist)))
-    context = ["scene: " + source_wrapped.scene_name(), source_wrapped.line("wrapped: "), source_owner.line("your body: ")]
+    context = ["scene: %s; distance of the wrapped body to your body" % source_wrapped.scene_name(),
+               source_wrapped.line("wrapped: "), source_owner.line("your body: ")]
     widths = (17, 7, 7, 7, 7)
     body = [row(("region", "points", "median", "p95", "max"), widths, 1)]
     missing: List[str] = []
