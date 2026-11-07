@@ -258,6 +258,20 @@ class TestDigestsOnTheSamples(NodeTestCase):
         for page in (skeleton, fitted, compare, weights, deform, landmarks):
             self.assertEqual(page.size_notice(), "", page.text())
 
+    def test_feet_and_wrap_distance(self):
+        """What this catches: a feet page that reads the wrong parts of Rig Fit (the sample's soles are flat, as the advisor
+        measured on the owner scene: -0.6 and -0.2 degrees), a wrap distance that is not zero for a body wrapped onto itself."""
+        feet = digest.feet([self.fit.path()])
+        rows = [line.split() for line in feet.lines() if line.startswith(("your body", "wrapped body", "Arma sample"))]
+        self.assertEqual(len(rows), 6, feet.text())
+        for row in rows:
+            self.assertLess(abs(float(row[-5])), 1.0, feet.text())  # the pitch column of each row, in degrees
+        wrap = digest.wrap_distance(self.fit.path())
+        self.assertIn("wrapped body to your body", wrap.lines()[0])
+        self.assertIn("foot ends", wrap.text())
+        for page in (feet, wrap):
+            self.assertEqual(page.size_notice(), "", page.text())
+
 
 if __name__ == "__main__":
     unittest.main()

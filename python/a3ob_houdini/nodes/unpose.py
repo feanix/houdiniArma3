@@ -20,6 +20,11 @@ in Rigid mode, D41, and islands outside the Body Group that follow one bone only
 rigid transform each (rotation and shift, no size): the one that fits the places the cage gives their points best, so the
 piece stays on the body where the cage puts it (the helmet follows the head) and none of its edges changes.
 
+The other points outside the Body Group (clothes that bend, loose gear: task #82) are not bent by the cage. Each keeps its
+offset from its closest point on the wrapped body (``fitted_body``) and moves with that place of the surface to the same place
+of ``rest_body`` (``cage.surface_follow``), turned by the rotation the cage has there; the moves of the loose points within 50 cm
+are averaged, so that a piece that sits tight on a surface that is stretched (hands, collar) is not stretched with it.
+
 Method **Bones** (the old one): each point moves by the inverse of its blended bone matrix, from the fitted skeleton to the
 Arma one; a rigid piece by one matrix. Neither method changes the overall size.
 """
@@ -27,7 +32,7 @@ Arma one; a rigid piece by one matrix. Neither method changes the overall size.
 import numpy as np
 
 from a3ob_core.rig import (ORIGIN_RIGID, bone_displacements, bone_moves, place_pieces, point_deform, single_bone_pieces,
-                           unpose_points)
+                           surface_follow, unpose_points)
 
 from .. import rig_weights
 from ..errors import UserError
@@ -62,14 +67,17 @@ SPEC = NodeSpec(
              items=(("cage", "Cage"), ("bones", "Bones")),
              item_help=(("cage", "Move the points by a cage: the sample body wrapped onto your body (fitted body of Rig Fit) "
                                  "is taken to the sample body in the Arma rest pose (Point Deform). It follows your body's "
-                                 "proportions. Rigid pieces then move by one rigid transform each."),
+                                 "proportions. Rigid pieces then move by one rigid transform each, and loose clothes and gear "
+                                 "(points outside the Body Group) are carried by the wrapped body's surface at their own "
+                                 "distance."),
                         ("bones", "Move each point by the inverse of its blended bone matrix, from the fitted skeleton to the "
                                   "Arma one. Fast, but it cannot express that your body has other proportions than the "
                                   "sample (thighs can telescope, hands crumple)."))),
         Parm("bodygroup", "Body Group", "group", "body",
              "Cage method: the point group of your mesh that is the bare body, the one Rig Fit wrapped onto. Its points "
              "always follow the cage. A piece outside it whose points follow one bone only (a helmet) is moved as a rigid "
-             "piece; other points outside it (clothes that bend) follow the cage. Empty means the whole mesh is body.",
+             "piece; other points outside it (clothes that bend) keep their distance from the closest point of the "
+             "wrapped body and move with that place of its surface. Empty means the whole mesh is body.",
              group_type="points"),
         Parm("rigid_pieces", "Rigid Pieces Keep Their Shape", "toggle", True,
              "Move all the points of a rigid piece (made by Accessory Weights in Rigid mode, or an island outside the Body "
@@ -121,8 +129,12 @@ def cook(node, report: Report) -> None:
         if len(index):
             if values["rigid_pieces"]:
                 piece = _add_islands(geo, values["bodygroup"], weights, piece, active, count)
-            caged = _cage(geo, node, positions)
-            moved[index] = place_pieces(positions, caged, np.where(active, piece, -1))[index]
+            caged, rest, deformed, polys = _cage(geo, node, positions)
+            placed = place_pieces(positions, caged, np.where(active, piece, -1))
+            loose = active & (piece < 0) & ~_body_mask(geo, values["bodygroup"], count)
+            if loose.any():  # clothes and loose gear: carried by the body surface at their own distance (task #82)
+                placed[loose] = surface_follow(positions[loose], rest, deformed, polys)
+            moved[index] = placed[index]
             geo.setPointFloatAttribValues("P", [float(v) for v in moved.reshape(-1)])
     else:
         moves = bone_moves(arma.parents, np.array(arma.positions), np.array(fitted.positions))
@@ -132,9 +144,14 @@ def cook(node, report: Report) -> None:
     _report(report, names, positions, moved, weights, index, piece, int((active & ~weighted).sum()), moves)
 
 
-def _cage(geo, node, positions: np.ndarray) -> np.ndarray:
-    """Every point of ``geo`` moved by the cage: rest lattice ``fitted_body``, deformed lattice ``rest_body``, both without
-    proxy markers (so the point order matches). The maths of the prototype's Point Deform node (``point_deform``)."""
+def _body_mask(geo, group: str, count: int) -> np.ndarray:
+    return rig_weights.group_mask(NAME, geo, group, "Body Group") if group.strip() else np.ones(count, bool)
+
+
+def _cage(geo, node, positions: np.ndarray):
+    """``(caged, rest lattice, deformed lattice, lattice polygons)``: every point of ``geo`` moved by the cage (rest lattice
+    ``fitted_body``, deformed lattice ``rest_body``, both without proxy markers so the point order matches; the maths of the
+    prototype's Point Deform node, ``point_deform``) and the two lattices for the loose accessories."""
     rest = rig_weights.without_markers(rig_weights.read_part(NAME, node.inputGeometry(1), rig_weights.PART_BODY, "input 2"))
     deformed = rig_weights.without_markers(
         rig_weights.read_part(NAME, node.inputGeometry(1), rig_weights.PART_REST_BODY, "input 2"))
@@ -145,12 +162,12 @@ def _cage(geo, node, positions: np.ndarray) -> np.ndarray:
     polys = [[v.point().number() for v in prim.vertices()] for prim in rest.prims() if isinstance(prim, hou.Polygon)]
     lattice = np.array(rest.pointFloatAttribValues("P"), dtype=np.float64).reshape(-1, 3)
     target = np.array(deformed.pointFloatAttribValues("P"), dtype=np.float64).reshape(-1, 3)
-    return point_deform(positions, lattice, target, polys)
+    return point_deform(positions, lattice, target, polys), lattice, target, polys
 
 
 def _add_islands(geo, group: str, weights: np.ndarray, piece: np.ndarray, active: np.ndarray, count: int) -> np.ndarray:
     """``piece`` plus a new piece for each island outside the body group whose points follow one bone only."""
-    body = rig_weights.group_mask(NAME, geo, group, "Body Group") if group.strip() else np.ones(count, bool)
+    body = _body_mask(geo, group, count)
     edges = []
     for prim in geo.prims():
         if isinstance(prim, hou.PackedPrim):

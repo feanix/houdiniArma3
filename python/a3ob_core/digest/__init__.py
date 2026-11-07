@@ -11,12 +11,14 @@ at most 25 lines of 80 columns. It never judges. The code here takes numpy array
 - ``skeleton``: ``skeleton_page`` and ``compare_page`` (joint lengths and the body measures).
 - ``deform``: ``deform_page`` (the edge-length ratio of mesh B against mesh A).
 - ``weights``: ``weights_page`` (influences, sums, points per bone).
+- ``feet``: ``feet_page`` (sole pitch, heel and toe) and ``wrap_distance_page`` (the wrapped body against the user's; task #82).
 - ``landmarks``: ``landmarks_page`` (landmarks beside the mesh and the Arma sample).
 - ``regions``: the body region of a bone.
 """
 
-from . import deform, landmarks, regions, skeleton, weights
+from . import deform, feet, landmarks, regions, skeleton, weights
 from .deform import deform_page, edge_ratios
+from .feet import feet_page, wrap_distance_page
 from .landmarks import SampleSide, landmarks_page
 from .page import (EXIT_ANSWERED, EXIT_COULD_NOT, EXIT_WRONG_QUESTION, MAX_COLUMNS, MAX_LINES, NR, CouldNotAnswer,
                    DigestError, Page, WrongQuestion)
@@ -24,7 +26,7 @@ from .skeleton import Skel, Source, compare_page, measure_values, skeleton_page
 from .weights import weight_figures, weights_page
 
 __all__ = [
-    "deform", "landmarks", "regions", "skeleton", "weights", "deform_page", "edge_ratios", "SampleSide", "landmarks_page",
+    "feet", "feet_page", "wrap_distance_page", "deform", "landmarks", "regions", "skeleton", "weights", "deform_page", "edge_ratios", "SampleSide", "landmarks_page",
     "EXIT_ANSWERED", "EXIT_COULD_NOT", "EXIT_WRONG_QUESTION", "MAX_COLUMNS", "MAX_LINES", "NR", "CouldNotAnswer",
     "DigestError", "Page", "WrongQuestion", "Skel", "Source", "compare_page", "measure_values", "skeleton_page",
     "weight_figures", "weights_page",

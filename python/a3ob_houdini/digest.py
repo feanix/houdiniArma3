@@ -39,7 +39,7 @@ try:
 except ImportError:  # the pure parts are also read under plain Python
     hou = None
 
-__all__ = ["skeleton", "skeleton_compare", "deform_compare", "weights", "landmarks", "DIGESTS", "main"]
+__all__ = ["skeleton", "skeleton_compare", "deform_compare", "weights", "landmarks", "feet", "wrap_distance", "DIGESTS", "main"]
 
 LABEL = "digest"
 #: The Rig Check limits the weights page puts beside its figures.
@@ -263,9 +263,68 @@ def landmarks(path: str, mesh: Optional[str] = None, group: str = ""):
     return core.landmarks_page(positions, points, side, Source(_scene(), node.path(), used), label, fitted)
 
 
+def _body_points(geo, group: str, node, explicit: bool = False):
+    """The points that belong to polygons, only those of the point group ``group`` when the mesh has it."""
+    positions, tris = rig_weights.read_mesh(geo)
+    used = np.zeros(len(positions), dtype=bool)
+    used[np.unique(tris)] = True
+    mask = _group(geo, group, node, explicit)
+    return positions[used & mask] if mask is not None else positions[used]
+
+
+def feet(paths: List[str], part: Optional[str] = None, group: str = "body"):
+    """The ``feet`` digest: the sole pitch, heel and toe-tip of each foot of the bodies at ``paths``. A Rig Fit node gives
+    three rows (your body: input 1, ``group``; the wrapped body: its ``fitted_body`` part; the Arma sample: input 3); any other
+    node gives one row (its points in ``group``, or all of them when it has no such group; ``part`` picks a Rig Fit part)."""
+    entries, sources = [], []
+    front = 1.0
+    for path in paths:
+        node = _node(path)
+        if "rig_fit" in _kind(node) and not part:
+            owner, sample = _input(node, 0), _input(node, 2)
+            wrapped, _ = _part(_geometry(node), rig_weights.PART_BODY, node, None)
+            for label, geo, grp in (("your body", owner, group), ("wrapped body", wrapped, ""), ("Arma sample", sample, "")):
+                if geo is None:
+                    continue
+                entries.append((label, _body_points(geo, grp, node)))
+            sources.append(Source(_scene(), node.path(), "rows: your body, wrapped, sample"))
+        else:
+            geo, used = _part(_geometry(node), rig_weights.PART_BODY, node, part)
+            entries.append((node.name() + (":" + used if used else ""), _body_points(geo, group, node)))
+            sources.append(Source(_scene(), node.path(), used))
+    return core.feet_page(entries, sources, front)
+
+
+def wrap_distance(path: str, group: str = "body"):
+    """The ``wrap-distance`` digest: how far the wrapped sample body of the Rig Fit node at ``path`` lies from your body (its
+    input 1, the point group ``group``), per body region, and how far its heel and toe tips are."""
+    node = _node(path)
+    if "rig_fit" not in _kind(node):
+        raise WrongQuestion("%s is a %s node; wrap-distance reads a Rig Fit node" % (node.path(), _kind(node)))
+    wrapped_geo, used = _part(_geometry(node), rig_weights.PART_BODY, node, None)
+    owner_geo = _input(node, 0)
+    if owner_geo is None:
+        raise CouldNotAnswer("%s has no mesh on input 1" % node.path())
+    wrapped, wrapped_tris = rig_weights.read_mesh(wrapped_geo)
+    owner, owner_tris = rig_weights.read_mesh(owner_geo)
+    mask = _group(owner_geo, group, node, group != "body") if group else None
+    if mask is not None:  # the triangles of the group only; the points keep their numbers
+        owner_tris = owner_tris[mask[owner_tris].all(axis=1)]
+    if not len(wrapped_tris) or not len(owner_tris):
+        raise CouldNotAnswer("%s: the wrapped body or your body has no polygons" % node.path())
+    matrix, _, _ = _read_weights(wrapped_geo, node.path())
+    labels = core.deform.dominant_labels(matrix, _bones(), "region") if matrix is not None else None
+    used_points = np.zeros(len(wrapped), dtype=bool)
+    used_points[np.unique(wrapped_tris)] = True
+    if labels is not None:
+        labels = np.where(used_points, labels, "")
+    return core.wrap_distance_page(wrapped, wrapped_tris, labels, owner, owner_tris, Source(_scene(), node.path(), used),
+                                   Source(_scene(), node.path() + " input 1", "group " + group if group else ""))
+
+
 # ---- the command line ---------------------------------------------------------------------------------------------------
 
-DIGESTS = ("skeleton", "skeleton-compare", "deform-compare", "weights", "landmarks")
+DIGESTS = ("skeleton", "skeleton-compare", "deform-compare", "weights", "landmarks", "feet", "wrap-distance")
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -274,13 +333,14 @@ def _parser() -> argparse.ArgumentParser:
                                 epilog="exit 0 answered, 1 could not answer, 2 the question was written wrongly")
     p.add_argument("digest", choices=DIGESTS)
     p.add_argument("scene", help="the .hip/.hiplc/.hipnc file")
-    p.add_argument("nodes", nargs="+", metavar="node", help="node path; skeleton-compare and deform-compare take A then B")
+    p.add_argument("nodes", nargs="+", metavar="node", help="node path; skeleton-compare and deform-compare take A then B; feet takes any number")
     p.add_argument("--part", help="the Rig Fit part to read from the node (A for the compares)")
     p.add_argument("--part-b", help="the part of node B")
     p.add_argument("--rest", help="skeleton: the Arma skeleton node (default: this node if a Rig Skeleton, else Rig Fit input 2)")
     p.add_argument("--by", default="region", choices=("region", "bone"), help="deform-compare: rows per region or bone")
     p.add_argument("--group", default="", help="deform-compare, landmarks: a point group (deform-compare: its size before "
-                   "and after; landmarks: the points the mesh measures run on)")
+                   "and after; landmarks: the points the mesh measures run on); feet, wrap-distance: your body group "
+                   "(default body)")
     p.add_argument("--body", default="body", help="deform-compare: the body group (default body)")
     p.add_argument("--mesh", help="landmarks: the node whose mesh the mesh measures read (default: the node's input 1)")
     p.add_argument("--all", action="store_true", help="skeleton, skeleton-compare, weights: list every joint or bone")
@@ -293,7 +353,7 @@ def run(argv: List[str]):
     if not os.path.isfile(args.scene):
         raise WrongQuestion("there is no scene file %s" % args.scene)
     wanted = 2 if args.digest.endswith("compare") else 1
-    if len(args.nodes) != wanted:
+    if args.digest != "feet" and len(args.nodes) != wanted:
         raise WrongQuestion("%s takes %d node path%s, not %d" % (args.digest, wanted, "" if wanted == 1 else "s", len(args.nodes)))
     try:
         hou.hipFile.load(args.scene, suppress_save_prompt=True, ignore_load_warnings=True)
@@ -308,6 +368,10 @@ def run(argv: List[str]):
         return deform_compare(first, args.nodes[1], args.by, args.group, args.body, args.part, args.part_b)
     if args.digest == "weights":
         return weights(first, args.all)
+    if args.digest == "feet":
+        return feet(args.nodes, args.part, args.group or "body")
+    if args.digest == "wrap-distance":
+        return wrap_distance(first, args.group or "body")
     return landmarks(first, args.mesh, args.group)
 
 

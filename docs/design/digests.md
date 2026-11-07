@@ -1,6 +1,6 @@
 # Digests
 
-Status: v1 built (task #81): `skeleton`, `skeleton-compare`, `deform-compare`, `weights`, `landmarks`. The model is the digest
+Status: v1 built (task #81): `skeleton`, `skeleton-compare`, `deform-compare`, `weights`, `landmarks`; `feet` and `wrap-distance` added in task #82. The model is the digest
 tools of the VoxelTerrarium project (its `docs/design/digest-tools.md`, sections 1 to 3, and its decision D232).
 
 ## 1. Why
@@ -33,7 +33,7 @@ measuring test.
 ## 3. Form
 
 - `python/a3ob_core/digest/`: pure code (numpy, no Houdini). `page.py` (the page, units, `n/r`, exit codes), `skeleton.py`,
-  `deform.py`, `weights.py`, `landmarks.py`, `regions.py` (the body region of a bone).
+  `deform.py`, `weights.py`, `landmarks.py`, `feet.py` (sole pitch, wrap distance), `regions.py` (the body region of a bone).
 - `python/a3ob_houdini/digest.py`: reads a node and calls the pure code. In a live session:
   `from a3ob_houdini import digest; print(digest.skeleton("/obj/rig_fit_66/rig_fit"))`.
 - `scripts/a3ob_digest.py`: `hython scripts/a3ob_digest.py <digest> <scene.hip*> <node path> [options]`. It loads the scene and
@@ -48,6 +48,8 @@ measuring test.
 | Did mesh B stretch or squash against mesh A (same topology)? Where, by region, and how did a group (helmet) change size? | `deform-compare <scene> <A> <B>` (`--by region\|bone`, `--group G`, `--body G`) |
 | How many points does each bone hold, which points have no weight, which have more than 4, how far is the sum from 1? | `weights <scene> <node>` (`--all`) |
 | Where are the landmarks, and what do the mesh and the Arma sample say at the same places? | `landmarks <scene> <node>` (`--mesh <node>`, `--group G`) |
+| What is the sole pitch of each foot, and where do the heel and the toe end, for your body, the wrapped body, the Arma sample and an unposed mesh? | `feet <scene> <node> [<node> ...]` (`--group G` for your body, default `body`; a Rig Fit node gives your body, the wrapped body and the sample, any other node its own points) |
+| How far is the wrapped sample body from your body, per region, and how far are its heel and toe from yours? | `wrap-distance <scene> <rig fit node>` (`--group G`) |
 
 `--part` and `--part-b` name the part of a Rig Fit output to read (`fitted_skeleton`, `fitted_body`, `landmarks`); the default
 is the part the digest needs.
@@ -75,6 +77,13 @@ is the part the digest needs.
 - **Landmarks:** heights are above the lowest point of the body concerned. The crotch on the mesh and the shoulder top come
   from `landmarks.measure`, the function the guess uses, run on the points of the chosen group; the Arma sample column is the
   template that `make_template` made from the sample body and skeleton.
+
+- **Feet (task #82):** the rule of `a3ob_core/rig/foot.py`, the one Rig Fit's foot landmarks use (docs/design/character-rigging.md,
+  Feet). Sole pitch: the angle of the edge, at the middle of the foot, of the lower convex hull of the foot seen from the side,
+  degrees, toes up positive; the reference is 0 and the Arma sample's own rows. Heel z and toe z: the back and the front end of
+  the foot (its farthest points along the forward axis); length: between them, seen from above. Wrap distance: from each wrapped
+  point to the closest point of the surface of your body group, per region of the wrapped point's dominant bone; foot ends: the
+  wrapped end minus yours along your foot's axis (plus = farther forward); the reference is 0.
 
 ## 6. Adding a digest
 

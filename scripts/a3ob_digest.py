@@ -2,7 +2,7 @@
 
     hython scripts/a3ob_digest.py <digest> <scene.hip*> <node path> [options]
 
-Digests: skeleton, skeleton-compare A B, deform-compare A B, weights, landmarks. ``--help`` lists the options. The scene is
+Digests: skeleton, skeleton-compare A B, deform-compare A B, weights, landmarks, feet N [N ...], wrap-distance. ``--help`` lists the options. The scene is
 loaded read-only and never saved. Exit code 0 answered, 1 could not answer, 2 the question was written wrongly.
 
 Run it with Houdini's own hython, without HOUDINI_PACKAGE_SKIP (the nodes of a rig scene need KineFX).

@@ -18,7 +18,7 @@ viewport. ``rig_weights.read_part`` takes a part out again.
 
 import numpy as np
 
-from a3ob_core.rig import (BONE_OF, LANDMARK_NAMES, body_scale, facing_sign, fit_skeleton, joint_targets, skin_points,
+from a3ob_core.rig import (BONE_OF, FOOT_LANDMARKS, foot_landmarks, lay_on_sole, LANDMARK_NAMES, body_scale, facing_sign, fit_skeleton, joint_targets, skin_points,
                            snap_to_surface, symmetrize)
 
 from .. import landmark_io, rig_weights
@@ -82,8 +82,10 @@ SPEC = NodeSpec(
         Parm("refine", "Refine", "toggle", True,
              "Wrap the fitted sample body onto your bare body with Topo Transfer, so it takes your proportions. Each "
              "landmark is moved to the closest point of the sample body and of your body; the pairs with the same name "
-             "guide the wrap. The fitted sample body part becomes the wrapped body, with its bone weights. Off: the "
-             "sample body is only posed and sized."),
+             "guide the wrap. The heel and the toe tip of each foot are found on both bodies by themselves and "
+             "guide it too, and the lower part of each wrapped foot is then laid on your sole, so the feet end where "
+             "yours end and stand flat. The fitted sample body part becomes the wrapped body, with its bone weights. "
+             "Off: the sample body is only posed and sized."),
         Parm("bodygroup", "Body Group", "group", "body",
              "The point group of your mesh that Refine wraps onto: the bare body, without hair, helmet or other "
              "accessories. Empty means the whole mesh.", group_type="points"),
@@ -134,7 +136,7 @@ def cook(node, report: Report) -> None:
 
     body = _body_geo(sample_in, skin_points(positions_s, found.weights, rest, fitted))
     if values["refine"]:
-        body = _refine(body, mesh_in, user, values["bodygroup"])
+        body = _refine(body, mesh_in, user, values["bodygroup"], facing_sign(skin_in))
     parts = {rig_weights.PART_SKELETON: _skeleton_geo(node.inputGeometry(1), fitted),
              rig_weights.PART_BODY: body,
              rig_weights.PART_LANDMARKS: _landmarks_geo(user),
@@ -207,33 +209,49 @@ def _body_group_only(mesh_in, group: str):
     return out
 
 
-def _refine(body, mesh_in, user, group: str):
+def _refine(body, mesh_in, user, group: str, front: float = 1.0):
     """The fitted sample body ``body`` wrapped onto the points of ``group`` of ``mesh_in`` with the Topo Transfer verb (a
     verb, so no node is needed inside this Python SOP). The landmarks are snapped to the closest point of each surface and
-    matched by their ``name``."""
+    matched by their ``name``. The heel and the toe tip of each foot (``foot_landmarks``, task #82) are found on both
+    surfaces and added as four more pairs, so the wrapped feet end where the user's feet end."""
     template = rig_weights.without_markers(body)
     target = _body_group_only(mesh_in, group)
     template_p, template_tris = rig_weights.read_mesh(template)
     target_p, target_tris = rig_weights.read_mesh(target)
     if not len(target_tris):
         raise UserError(format_problem(NAME, "the body to wrap onto has no polygons", "Check Body Group"))
+    feet_template = foot_landmarks(template_p, template_tris, front)
+    feet_target = foot_landmarks(target_p, target_tris, front)
+    both = [name for name in FOOT_LANDMARKS if name in feet_template and name in feet_target]  # a pair needs both ends
+    feet_template, feet_target = ({name: found[name] for name in both} for found in (feet_template, feet_target))
     wrapped = hou.Geometry()
-    verb = hou.sopNodeTypeCategory().nodeVerb("topotransfer")
+    verb =hou.sopNodeTypeCategory().nodeVerb("topotransfer")
     verb.setParms({"enablegeometryconstraints": 1, "landmarkattrib": "name"})
     try:
-        verb.execute(wrapped, [template, target, _landmarks_geo(snap_to_surface(user, template_p, template_tris)),
-                               _landmarks_geo(snap_to_surface(user, target_p, target_tris))])
+        verb.execute(wrapped, [template, target,
+                               _landmarks_geo(snap_to_surface(user, template_p, template_tris),
+                                              feet_template),
+                               _landmarks_geo(snap_to_surface(user, target_p, target_tris),
+                                              feet_target)])
     except hou.OperationFailed as problem:
         raise UserError(format_problem(NAME, "Topo Transfer failed: %s" % problem, "Check Body Group (the body should be "
                                        "one clean surface) and the landmarks, or switch Refine off")) from None
+    flat = lay_on_sole(np.array(wrapped.pointFloatAttribValues("P"), dtype=np.float64).reshape(-1, 3), target_p, target_tris, front)
+    wrapped.setPointFloatAttribValues("P", [float(v) for v in flat.reshape(-1)])
     return wrapped
 
 
-def _landmarks_geo(user):
+def _landmarks_geo(user, feet=None):
+    """The landmarks as named points; ``feet`` (heel and toe tips, Refine only) are added after them."""
     geo = hou.Geometry()
     geo.addAttrib(hou.attribType.Point, "name", "")
     names = [name for name in LANDMARK_NAMES if name in user]
-    geo.createPoints([tuple(float(v) for v in user[name]) for name in names])
+    positions = [user[name] for name in names]
+    for name in FOOT_LANDMARKS:
+        if feet and name in feet:
+            names.append(name)
+            positions.append(feet[name])
+    geo.createPoints([tuple(float(v) for v in position) for position in positions])
     geo.setPointStringAttribValues("name", names)
     return geo
 

@@ -33,7 +33,7 @@
 	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('unpose', 'bodygroup', kwargs)" ]
 	    language python
 	}
-	help	"Cage method: the point group of your mesh that is the bare body, the one Rig Fit wrapped onto. Its points always follow the cage. A piece outside it whose points follow one bone only (a helmet) is moved as a rigid piece; other points outside it (clothes that bend) follow the cage. Empty means the whole mesh is body."
+	help	"Cage method: the point group of your mesh that is the bare body, the one Rig Fit wrapped onto. Its points always follow the cage. A piece outside it whose points follow one bone only (a helmet) is moved as a rigid piece; other points outside it (clothes that bend) keep their distance from the closest point of the wrapped body and move with that place of its surface. Empty means the whole mesh is body."
 	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
 	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
 	parmtag	{ "script_action_icon" "BUTTONS_reselect" }

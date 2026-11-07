@@ -912,6 +912,33 @@ the point below). `a3ob_core/rig/landmarks.py` (guess, symmetry, snap) and `fit.
   string `name` (Use Landmark Attribute). Enable Geometry Constraints is on: it handles the small extra island of the sample body.
   The result replaces the `fitted_body` part, keeps the groups and weights of the sample body, and Weight Transfer reads it
   unchanged. Why: per-bone fitting cannot express proportion differences (thick stomach, short thighs); the wrap does.
+- **Feet (task #82).** The 18 landmarks stop at the ankle, so nothing held the ends of the feet: on the owner scene the wrapped
+  sample foot ended 1.5 cm short at the heel, 0.7 cm short at the toe, and its sole floated 1.0 to 1.8 cm above the owner's
+  from the ball of the foot forward (sole pitch +5 degrees, toes up). Two things fix it, both in `a3ob_core/rig/foot.py`
+  and both found from the meshes, so the user sets nothing.
+  1. *Foot landmarks.* Four more pairs per foot, `lm_heel_l|r`, `lm_toe_l|r`, `lm_sole_heel_l|r`, `lm_sole_toe_l|r`, are found on
+     the template and on the target and passed to Topo Transfer with the 18 (not among the 18 landmarks of Rig Landmarks and
+     not in the landmarks part). The rule (`find_feet`): a foot is the points on one side of the middle between the feet; its
+     sole band is the points less than 3.5 % of the body height above its own lowest point; its forward axis is the long
+     axis of the band seen from above, turned to face +Z; the heel and the toe tip are the means of the band points within 1 %
+     of the height of the back end and of the front end along that axis (a mean, so one stray vertex does not move it). The
+     sole line is the edge, at the middle of the foot, of the lower convex hull of the foot seen from the side; the two sole
+     points are the back and the front end of the band points that touch that line (within 0.3 % of the height): where the flat
+     sole begins at the heel and ends at the ball. Why this is robust: everything is relative to the foot's own lowest point and
+     to the body height (a shoe, a bare foot, another size, a body that does not stand at y = 0 give the same rule); the same
+     rule runs on both bodies, so a pair means the same thing on both; the hull edge does not depend on how many vertices the
+     sole has (the sample's sole has a few, the owner's many: a fit through the lowest point of each slice read bumps on the
+     sparse sole). Each point is moved to the closest point of its surface and matched by name. A foot that is not found on
+     one of the two bodies gives no pair.
+  2. *Sole step* (`lay_on_sole`, after the wrap). Landmarks alone were not enough: with only the heel and toe pairs the
+     wrapped sole still floated 1.5 cm in the middle (Cage sole pitch -5.2 degrees against the sample's -0.4). Each point of
+     the wrapped foot less than 3 % of the body height above the wrapped foot's lowest point moves to the closest point of the
+     user's body (fully below 1.8 % of the height, less and less above), so the lower foot lies on the user's sole and the
+     rest does not move.
+  Measured on the owner scene (digests `feet`, `wrap-distance`): wrapped foot ends 1.5 cm short at the heel and 0.8 cm at the
+  toe before, 0.1 and 0.0 cm after; wrapped sole pitch 4.9 / 5.3 degrees before, 0.1 after (the owner's: 0.2); Cage Unpose sole
+  pitch -9.9 / -9.5 before, -0.9 / -0.5 after (the sample's -0.4 / 0.0); Bones -5.8 either way. Sole pitch is the hull edge
+  angle, toes up positive; the advisor's by-hand figures were within 1 degree of these.
 - **The guess** runs the same measurements on the sample body, where the joints are known, and on your mesh, and moves each
   joint by the difference (so a measurement bias cancels). Legs: the centre line of slices; hip: pelvis width at hip height;
   arms: the principal axis of the points near the arm (not above the axis, not the hand), shoulder where the axis passes the
@@ -1076,11 +1103,40 @@ skeleton. The maths is `a3ob_core/rig/unpose.py`.
   body where the cage puts it (from the cage around it rather than the bone's move, because the cage knows the body's
   proportions and the bone's move does not) and no edge changes. Pieces are the `a3ob_rig_piece` of Accessory Weights in
   Rigid mode and each island of points outside the Body Group whose points all have weight on the same single bone (the
-  helmet). Other points outside the Body Group (clothes that bend) follow the cage.
+  helmet). Other points outside the Body Group (clothes that bend) are *loose accessories* (task #82, below): they do not
+  follow the cage.
+- **Loose accessories (task #82).** In #80 they followed the cage like the body. The advisor found the collar-area squash
+  (Spine3 edges p1 0.647) came for the most part from the `nonrigid_example` piece (49 of the 69 edges under 0.80), which
+  sits 0 to 4 cm off the body and was bent with the cage where the body is stretched most (hands, collar). Rule
+  (`cage.surface_follow`): each loose point finds its closest point `c` on the wrapped body (`fitted_body`: the place in a
+  triangle) and keeps its offset `x - c` there, turned by the rotation the cage uses at that place (the barycentric blend of
+  the three corners' frames, made a rotation again); on `rest_body` it goes to the same place `c'` of the same triangle:
+  `x' = c' + (x - c) R`. The offset along the normal is therefore kept (a rotation keeps lengths). Then each point takes the
+  average of the moves of the loose points within 50 cm of it, each move applied to this point (weight
+  `(1 - (d / 0.5)^2)^2`): on a surface that only turns and moves all the moves are the same, so the average is exact and a
+  loose piece keeps every edge (test); where the surface stretches 25 % in a hand, a few centimetres of cloth do not stretch
+  with it. Why 50 cm: the piece is 115 cm wide; with the moves of the nearest points alone (no average) its edges were
+  0.63 to 1.9 (p1, p99), with 10 cm 0.87 / 1.26, 20 cm 0.90 / 1.17, 35 cm 0.95 / 1.10, 50 cm 0.95 / 1.10 (the remaining 10 %
+  is the real difference in arm length between the sample and the owner). It is a constant (`SMOOTH_RADIUS`), not a
+  parameter. The cost: a loose piece follows the body at the scale of limbs, not of folds. Rigid pieces are still moved by
+  one Kabsch transform each (D41): a rigid piece must not change shape at all, which no blend of surface moves guarantees
+  (test: edge ratio 0.99999872 to 1.00000226).
+- **The 4 cm above the wrapped body** (owner body top 159.1 cm, wrapped top 155.2 cm). It does not matter for the squash: the
+  squashed collar body edges (20 before, 19 after) all lie below 146.0 cm, at least 9 cm under the wrapped top, so the lattice
+  covers them. Points above the wrapped top take the nearest lattice points (a cap of the neck), which is why the neck does
+  not tear; their edges are not in the 19.
 - **Measured** on the owner scene (`Character_79_refine.hiplc`, /obj/rig_fit_66, 12888 points, edge length after over before,
   38295 edges). Bones method before: median 0.980, helmet 0.980 (all the same), body p1 0.700 / p99 1.386, hands p1 0.51 /
   p99 2.19. Cage after: median 1.000, helmet 1.000 / 1.000, body p1 0.742 / p99 1.259, hands p1 0.699 / p99 1.444; the
   prototype body: p1 0.698 / p99 1.333.
+
+**Measured with feet and loose accessories (task #82)** on the same scene: nonrigid_example edge ratio p1 0.789 / p99 1.355
+before, 0.946 / 1.097 after; helmet 1.000 / 1.000 (exact); body p1 0.744 / p99 1.261 (#80: 0.742 / 1.259; the feet are
+shorter than the stretched #80 feet (foot edge median 0.942, 1.002 in #80; length 26.7 cm, 30.1 in #80, the sample's 27.5), which moved these by 0.002); Spine3 edges p1 0.647 before, 0.794
+after; body edges under 0.80 at the collar (y above 130 cm) 20 before, 19 after (they are body edges the cage squashes: the
+wrap of the shoulders and neck is the remaining cause). Rig Check on rig_check_arma: 7 joints outside before and after;
+points stretched over 30 %: 287 before, 318 after; points losing over 30 % of their volume: 690 before, 685 after (the weights
+did not change; the loose piece is placed differently).
 
 **Rig Check** (inputs: 1 mesh with weights; 2 skeleton). Outputs: 1 mesh with the problem attributes; 2 the skeleton with
 `a3ob_rig_joint_depth` and `Cd`; 3 the posed mesh of the chosen test pose.
