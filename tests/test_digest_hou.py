@@ -267,7 +267,7 @@ class TestDigestsOnTheSamples(NodeTestCase):
         for row in rows:
             self.assertLess(abs(float(row[-5])), 1.0, feet.text())  # the pitch column of each row, in degrees
         wrap = digest.wrap_distance(self.fit.path())
-        self.assertIn("wrapped body to your body", wrap.lines()[0])
+        self.assertIn("wrapped to your body", wrap.lines()[0])
         self.assertIn("foot ends", wrap.text())
         for page in (feet, wrap):
             self.assertEqual(page.size_notice(), "", page.text())

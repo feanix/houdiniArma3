@@ -58,8 +58,8 @@ def feet_page(entries: Sequence[Tuple[str, Optional[np.ndarray]]], sources: Sequ
         if rows[0][1] == "-":
             missing.append("feet of %s (no body points, or no foot found)" % label)
         pitches += [float(r[2]) for r in rows if r[2] != NR]
-    body.append("pitch in degrees, toes up positive; cm: heel z and toe z are the ends of the foot, sole y its lowest point")
-    body.append("reference: a flat sole is 0.0; the Arma sample's rows are what an unposed character is measured against")
+    body.append("pitch in degrees, toes up positive; cm: z of the foot ends, sole y = lowest")
+    body.append("reference: flat sole = 0.0; compare an unposed mesh with the Arma sample rows")
     spread = "%s to %s deg" % (num(min(pitches)), num(max(pitches))) if pitches else NR
     summary = "feet: %d bod%s, sole pitch %s" % (len(entries), "y" if len(entries) == 1 else "ies", spread)
     context = ["scene: " + sources[0].scene_name()] if sources else []
@@ -80,7 +80,7 @@ def wrap_distance_page(wrapped: np.ndarray, wrapped_tris: np.ndarray, labels: Op
     dist, by_region = region_distances(wrapped, np.asarray(labels if labels is not None else [""] * len(wrapped), dtype=object),
                                        owner, owner_tris)
     p50, p95 = percentiles(dist, (50, 95))
-    summary = "wrap-distance: wrapped body to your body, median %s cm, p95 %s cm, max %s cm, %s points" % (
+    summary = "wrap-distance: wrapped to your body: median %s, p95 %s, max %s cm, %s points" % (
         cm(p50), cm(p95), cm(float(dist.max()) if len(dist) else None), count(len(dist)))
     context = ["scene: " + source_wrapped.scene_name(), source_wrapped.line("wrapped: "), source_owner.line("your body: ")]
     widths = (17, 7, 7, 7, 7)
@@ -102,7 +102,8 @@ def wrap_distance_page(wrapped: np.ndarray, wrapped_tris: np.ndarray, labels: Op
                 a, b = getattr(mine[side], pick), getattr(theirs[side], pick)
                 gap = float((a - b) @ theirs[side].axis)  # along the foot, plus is farther forward than yours
             ends.append("%s %s %s" % (what, tag, num(None if gap is None else 100.0 * gap)))
-    body.append("foot ends, wrapped minus yours along the foot, cm: " + "; ".join(ends))
+    body.append("foot ends, wrapped minus yours along the foot, cm (plus = farther forward):")
+    body.append("  " + "; ".join(ends))
     body.append("reference: 0.0 is a wrap that fits your body exactly")
     if not mine or not theirs:
         missing.append("foot ends (no foot found on the wrapped body or on your body)")

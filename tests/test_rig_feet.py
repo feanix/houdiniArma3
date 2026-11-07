@@ -188,19 +188,21 @@ class TestPages(unittest.TestCase):
         self.assertEqual(len(rows), 4)
         self.assertTrue(rows[0].split()[2].startswith("4."), rows[0])  # toes up positive, about 4 degrees
         self.assertTrue(rows[2].split()[2] in ("0.0", "-0.0"), rows[2])
-        self.assertIn("reference: a flat sole is 0.0", text)
+        self.assertIn("reference: flat sole = 0.0", text)
         self.assertIn("feet of nothing", text)  # a body that was not recorded says so
-        self.assertLessEqual(len(page.lines()), 25)
+        self.assertEqual(page.size_notice(), "", page.text())  # at most 25 lines of 80 columns
 
     def test_the_wrap_distance_page_has_zero_for_a_wrap_that_fits(self):
         P, tris = sole_plane()
         wrapped = np.array([(0.0, 0.0, 0.0), (0.1, 0.0, 0.1), (-0.1, 0.0, 0.2)])
         page = wrap_distance_page(wrapped, np.array([(0, 1, 2)]), None, P, tris, Source("s.hiplc", "/obj/a", "fitted_body"),
                                   Source("s.hiplc", "/obj/a input 1"))
-        self.assertIn("median 0.0 cm", page.lines()[0])
+        self.assertIn("median 0.0,", page.lines()[0])
         lifted = wrap_distance_page(wrapped + (0.0, 0.02, 0.0), np.array([(0, 1, 2)]), None, P, tris,
                                     Source("s.hiplc", "/obj/a", "fitted_body"), Source("s.hiplc", "/obj/a input 1"))
-        self.assertIn("median 2.0 cm", lifted.lines()[0])
+        self.assertIn("median 2.0,", lifted.lines()[0])
+        for shown in (page, lifted):
+            self.assertEqual(shown.size_notice(), "", shown.text())
 
 
 if __name__ == "__main__":
