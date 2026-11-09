@@ -116,8 +116,9 @@ lead-in ("Houdini window.", "Outside Houdini."). The tests cannot run such a ste
 
 ## Quoted interface text (checked by tests)
 
-When a guide quotes text that the reader will see in Houdini, mark it with one of these tags and classes. `tests/test_user_guides.py`
-finds them and checks each against the real tools, so a rename in the code breaks the test instead of the guide.
+When a guide quotes text that the reader will see in Houdini, mark it with one of these tags and classes. The guide checks
+live in the developer repository. They find these marks and check each against the real tools, so a rename in the code
+breaks the check instead of the guide.
 
 | Mark-up | What it quotes | Checked against |
 | ------- | -------------- | --------------- |

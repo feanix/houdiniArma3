@@ -20,6 +20,9 @@ classifiers = [
 ]
 
 [project.urls]
+Homepage = "https://github.com/feanix/houdiniArma3"
+Source = "https://github.com/feanix/houdiniArma3"
+Issues = "https://github.com/feanix/houdiniArma3/issues"
 Upstream = "https://github.com/MrClock8163/Arma3ObjectBuilder"
 
 [tool.setuptools.packages.find]

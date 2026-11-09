@@ -68,4 +68,6 @@ export. The reference pages describe every node.
 License: GPL-3.0-or-later, as a modified version of A3OB. See [LICENSE](LICENSE)
 and [NOTICE.md](NOTICE.md) for the credits to A3OB and its authors (MrClock and Hans-Joerg "Alwarren" Frieden).
 
-Found a problem? Please report it on the issues page of the project's repository.
+Source: <https://github.com/feanix/houdiniArma3>
+
+Found a problem? Please report it on the [issues page](https://github.com/feanix/houdiniArma3/issues).
