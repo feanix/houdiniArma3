@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weight Transfer - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
+<h1>Weight Transfer</h1>
+<p class="lead">Copies the bone weights of a source body (the sample character) onto the body of your mesh. Accessories are weighted by Accessory Weights.</p>
+<p>Copies the bone weights of a source body (for example Bohemia&#x27;s sample character) onto your mesh. Each point of your mesh takes the weights of the closest point on the body when it is near enough and faces the same way. The points that don&#x27;t match are filled in smoothly from their neighbours.</p>
+<p>The node weights only the body: the tight polygons that follow the skin (skin, undergarments, shoes). Put them in the Body group; empty means every point. Points outside the group keep the weights they have, none on a fresh mesh. Weight a helmet, pouches or straps with Accessory Weights after this node. The result is bone selections in the model.cfg spelling, with a3ob_rig_origin (where each weight came from). Run Weight Cleanup last.</p>
+<table class="facts">
+<tr><th>Houdini name</th><td><code>a3ob_weight_transfer</code></td></tr>
+<tr><th>Where to find it</th><td>Tab menu, A3OB, Weight Transfer</td></tr>
+<tr><th>Inputs</th><td>3</td></tr>
+</table>
+<h2>Inputs</h2>
+<ol>
+<li value="1">Input 1: Your mesh. The mesh that gets the weights. It should lie on top of the source body (fit it first).</li>
+<li value="2">Input 2: Source body. The body with bone weights: bone selections (point groups with a3ob_w weights), for example the sample character from Extract LOD. The output of Rig Fit goes here as it is: its fitted sample body is used.</li>
+<li value="3">Input 3: Skeleton. The skeleton, for example from Rig Skeleton. Its joint names decide which selections are bones and how they are spelled.</li>
+</ol>
+<h2>Parameters</h2>
+<p>Parameters are in the order they appear on the node.</p>
+<section class="parm" id="body">
+<h3>Body <code>body</code></h3>
+<p>The tight body-conforming polygons: skin, undergarments, shoes. A point group or a primitive group (its primitives&#x27; points count). They get their weights from the source body. Empty means every point. Points outside the group keep the weights they have (none on a fresh mesh): weight them with Accessory Weights.</p>
+<dl>
+<dt>Type</dt><dd>Group picker (text; the menu lists the point groups and primitive groups of the input that are yours, without the bone groups (a primitive group counts as the points of its primitives; typing a bone group name still works) of the input, the arrow button picks in the viewport)</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="distance">
+<h3>Match Distance <code>distance</code></h3>
+<p>How far from the source body a point may be and still copy its weights, as a share of the size of your mesh (the diagonal of its bounding box). Points that are farther are filled in from their neighbours.</p>
+<dl>
+<dt>Type</dt><dd>Number</dd>
+<dt>Default</dt><dd>0.05</dd>
+<dt>Allowed</dt><dd>At least 0; no upper limit</dd>
+</dl>
+</section>
+<section class="parm" id="angle">
+<h3>Match Angle <code>angle</code></h3>
+<p>How much the surface direction may differ, in degrees, for a point to copy weights. A point that faces another way (a sleeve against the torso) is filled in instead.</p>
+<dl>
+<dt>Type</dt><dd>Number</dd>
+<dt>Default</dt><dd>35</dd>
+<dt>Allowed</dt><dd>From 0 to 180</dd>
+</dl>
+</section>
+<section class="parm" id="minpiece">
+<h3>Smallest Piece <code>minpiece</code></h3>
+<p>Loose pieces of the source body with fewer points than this are not used (the sample&#x27;s proxy triangles).</p>
+<dl>
+<dt>Type</dt><dd>Whole number</dd>
+<dt>Default</dt><dd>10</dd>
+<dt>Allowed</dt><dd>At least 1; no upper limit</dd>
+</dl>
+</section>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

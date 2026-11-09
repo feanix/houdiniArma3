@@ -1,0 +1,145 @@
+= Rig Check =
+
+#type: node
+#context: sop
+#internal: a3ob_rig_check
+#tags: arma, p3d
+
+"""Shows what is wrong with the bone weights of a rigged mesh, and how it stretches, squashes and loses volume in test poses."""
+
+Rig Check finds the weak places of a rigged mesh before you export. Connect your weighted mesh to input 1 and the skeleton to input 2 (the Arma skeleton, or the output of Rig Fit as it is). The mesh keeps its geometry and gains point attributes that say what is wrong: where each weight came from, weight jumps between neighbours, more than 4 bones, a weight sum that is not 1, rigid pieces that straddle a joint, and how far each joint sits inside the mesh. The message of the node counts each problem and warns above the limits.
+
+The pose test bends the mesh into built-in test poses (arms raised, arms forward, elbows, hips, knees, spine, neck, wrists, or one key frame of an Arma .rtm file) with linear blend skinning, the way Arma does it, and measures two things. Stress is how much the edges of a point stretch or shrink (red and blue). Volume is the volume around each point against the rest mesh: purple where it is lost (a pinched elbow or knee, which needs smoother weights or more edge loops), teal where it is gained. Volume is worked out for each point as the volume of the cone from the point's own blend of joints to the triangles around it, which grows and shrinks with the area of the skin and its distance from the bone. The message names the joints with the worst loss.
+
+Switch on Visualize to colour the points by the Show entry in the viewport. It is a viewport colour only: the geometry, its Cd and the P3D export are not changed. The Output menu shows the posed mesh or the skeleton instead (a node of this kind has one output): use it to look, not to export.
+
+@inputs
+
+Weighted mesh:
+    The mesh with its bone weights (bone selections, or capture weights).
+
+Skeleton:
+    The skeleton the weights are for, for example from Rig Skeleton, or the output of Rig Fit as it is.
+
+@parameters
+
+Show:
+    #id: show
+
+    What Visualize colours. Every problem is also written as a point attribute.
+
+    Type: Menu. Default: Stress.
+
+    Origin:
+        Where each weight came from (a3ob_rig_origin, written by Weight Transfer and Accessory Weights): black none, grey copied, orange filled in, blue rigid piece, green non-rigid piece.
+
+    Jump:
+        How different the weights are from the weights of the neighbour points: white none, red completely different bones (a3ob_rig_jump).
+
+    Influences:
+        How many bones hold a weight: grey to white for 1 to 4, magenta for 5, red for more (a3ob_rig_infl). Arma keeps only 4.
+
+    Sum:
+        How far the weights add up from 1: white fine, yellow a little off, red a lot, black no weight at all (a3ob_rig_sumerr).
+
+    Straddle:
+        A rigid piece whose points favour more than one bone: red when half of its points are on another bone than the rest (a3ob_rig_straddle).
+
+    Stress:
+        How much the skin stretches (red) or is squashed (blue) in the chosen test pose (a3ob_rig_stress).
+
+    Volume:
+        Where the mesh loses volume (purple) or gains it (teal) in the chosen test pose, against the rest mesh, skinned the way Arma does it (a3ob_rig_volume_change). Purple shows the joints that need smoother weights or more edge loops.
+
+    Heaviest bone:
+        The heaviest bone of each point, in a repeating run of twelve colours, to read the regions at a glance (a3ob_rig_dominant).
+
+Pose:
+    #id: pose
+
+    The test pose that Stress and Volume measure and that the posed mesh shows. Worst of all measures every pose and keeps the largest change of each point.
+
+    Type: Menu. Default: Worst of all.
+
+    Worst of all:
+        Poses the mesh in every built-in test pose below and keeps, for each point, the largest change. The posed mesh is the pose with the most stress.
+
+    Arms raised 90:
+        Arms raised 90. The bones below the bent ones follow; a bone the skeleton lacks is skipped.
+
+    Arms forward 90:
+        Arms forward 90. The bones below the bent ones follow; a bone the skeleton lacks is skipped.
+
+    Elbows bent 90:
+        Elbows bent 90. The bones below the bent ones follow; a bone the skeleton lacks is skipped.
+
+    Hips flexed 90 (sitting):
+        Hips flexed 90 (sitting). The bones below the bent ones follow; a bone the skeleton lacks is skipped.
+
+    Knees bent 90:
+        Knees bent 90. The bones below the bent ones follow; a bone the skeleton lacks is skipped.
+
+    Spine bent 30 forward:
+        Spine bent 30 forward. The bones below the bent ones follow; a bone the skeleton lacks is skipped.
+
+    Neck turned 45:
+        Neck turned 45. The bones below the bent ones follow; a bone the skeleton lacks is skipped.
+
+    Wrists bent 45:
+        Wrists bent 45. The bones below the bent ones follow; a bone the skeleton lacks is skipped.
+
+    RTM frame:
+        One frame of an Arma animation file (RTM File and RTM Key Frame). Not part of Worst of all.
+
+RTM File:
+    #id: rtmfile
+
+    A plain Arma animation (.rtm) whose frame is the test pose.
+
+    Type: File path. Default: (empty). Files: `*.rtm`. Shown when: Pose is RTM frame.
+
+RTM Key Frame:
+    #id: rtmframe
+
+    Which key frame of the file to pose with, counted from 0. A number past the last frame takes the last one.
+
+    Type: Whole number. Default: 0. Allowed: At least 0; no upper limit. Shown when: Pose is RTM frame.
+
+Stress Range:
+    #id: stress_range
+
+    The change of length (Stress) or volume (Volume) that shows as full colour: 0.3 is 30 %. Stress and volume above this are warned about.
+
+    Type: Number. Default: 0.3. Allowed: At least 0.01; no upper limit.
+
+Jump Limit:
+    #id: jump_limit
+
+    A weight jump above this is warned about. 0 is the same weights as the neighbour, 1 is completely different bones.
+
+    Type: Number. Default: 0.5. Allowed: From 0 to 1.
+
+Output:
+    #id: view
+
+    What the node outputs. The checked mesh keeps your geometry and only gains attributes. Use the others to look; do not export them.
+
+    Type: Menu. Default: Checked mesh.
+
+    Checked mesh:
+        Your mesh with the problem attributes. Its P3D export is the same as without the node.
+
+    Posed mesh:
+        Your mesh bent into the chosen test pose, so you can see the deformation.
+
+    Skeleton:
+        The skeleton with a3ob_rig_joint_depth and Cd: green inside the mesh, yellow within 1 cm of the surface, red outside.
+
+Visualize:
+    #id: visualize
+
+    Colour the points in the viewport by the Show entry. This is a node visualizer, so the geometry (and any Cd it has) is not changed. The export ignores it. The Visualize colours show only when the Visualization button on the right toolbar of the viewport is on.
+
+    Type: On or off. Default: Off.
+
+The full page for this node is docs/user/reference/a3ob_rig_check.html in the A3OB folder. Open it in a web browser.

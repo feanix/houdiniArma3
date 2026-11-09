@@ -1,0 +1,14 @@
+Operator:     a3ob_extract_lod
+Label:        Extract LOD
+Path:         oplib:/Sop/a3ob_extract_lod?Sop/a3ob_extract_lod
+Icon:         SOP_python
+Table:        Sop
+License:      
+Extra:        
+User:         
+Inputs:       1 to 1
+Subnet:       false
+Python:       true
+Empty:        false
+Modified:     Mon Nov  3 12:00:00 2026
+

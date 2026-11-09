@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RTM Import - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
+<h1>RTM Import</h1>
+<p class="lead">Poses the Arma skeleton with an Arma RTM animation file. The timeline plays the animation; Bone Deform skins a rigged mesh with it.</p>
+<p>Plays an Arma animation (a plain or binarised .rtm file, or one of the animations in the game&#x27;s own PBO files) on the Arma skeleton, so you can see your rigged mesh move the way it will in the game. Connect the Arma skeleton from Rig Skeleton to the input. The output is the same skeleton with its joints posed for the current frame. Put it into the third input of Bone Deform (the Arma skeleton in the second) with your mesh from Weights Convert, then press Play.</p>
+<p>An RTM holds key frames with a phase from 0 to 1, not a speed: the speed is in the game&#x27;s config. So you choose how long one cycle is, in timeline frames (the default is 24) or in seconds, and where it starts. At the end it loops or holds. The animation&#x27;s displacement (how far a walk moves the character in one cycle) is left out unless you switch Apply Displacement on. Between two key frames the pose of each joint, relative to its parent, is blended.</p>
+<p>Bones in the file that the skeleton lacks are ignored (face bones, slots, camera, and Weapon and launcher, which carry the weapon model in the game). A joint the file lacks stays at rest. The message of the node lists both and shows the frame in the cycle; the same numbers are on the geometry as the details a3ob_rtm_frame, a3ob_rtm_phase and a3ob_rtm_cycle. The animation does not depend on how the joints&#x27; own axes are turned: the node multiplies the animation onto them, so the mesh moves the same with any skeleton frames.</p>
+<p>To use an animation of the game, set Animation From to Arma 3 game, type some words of its name in Filter and pick it in the Animation menu (it names the PBO each one is in). Arma 3 Folder can stay empty: the node then looks at the environment variable A3OB_ARMA3, the A3OB settings file and your Steam library. The game stores its animations in binarised form (BMTR), which is stored relative to the parent bone; the node uses the parents of the skeleton to make the poses. Nothing from the game is copied.</p>
+<table class="facts">
+<tr><th>Houdini name</th><td><code>a3ob_rtm_import</code></td></tr>
+<tr><th>Where to find it</th><td>Tab menu, A3OB, RTM Import</td></tr>
+<tr><th>Inputs</th><td>1</td></tr>
+</table>
+<h2>Inputs</h2>
+<ol>
+<li value="1">Input 1: Arma skeleton. The Arma rest skeleton from Rig Skeleton. Its joints are posed; the points, names and bone lines stay.</li>
+</ol>
+<h2>Parameters</h2>
+<p>Parameters are in the order they appear on the node.</p>
+<section class="parm" id="source">
+<h3>Animation From <code>source</code></h3>
+<p>Where the animation comes from.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>File</dd>
+</dl>
+<p>Choices:</p>
+<ul>
+<li>File <code>file</code>: A plain .rtm file, a binarised one (BMTR, as in the game&#x27;s PBO files), or an entry inside a PBO written as path/to/anims_f.pbo|a3/anims_f/data/anim/sdr/mov/erc/wlk/rfl/amovpercmwlksraswrfldf.rtm.</li>
+<li>Arma 3 game <code>game</code>: One of the animations in the game&#x27;s anims PBO files (anims_f_data.pbo and the expansions&#x27; own). Pick it in Animation; Filter narrows the list.</li>
+</ul>
+</section>
+<section class="parm" id="file">
+<h3>RTM File <code>file</code></h3>
+<p>A plain Arma animation (.rtm), a binarised one (BMTR, read with the parents of the skeleton), or an entry inside a PBO written as path/to/anims_f.pbo|a3/anims_f/data/anim/sdr/mov/erc/wlk/rfl/amovpercmwlksraswrfldf.rtm. Bones the skeleton lacks (Weapon, launcher, face and slot bones, Hips) are ignored; joints the file lacks stay at rest.</p>
+<dl>
+<dt>Type</dt><dd>File path</dd>
+<dt>Default</dt><dd>(empty)</dd>
+<dt>Files</dt><dd>*.rtm *.pbo</dd>
+<dt>Shown when</dt><dd>Animation From is File</dd>
+</dl>
+</section>
+<section class="parm" id="arma3">
+<h3>Arma 3 Folder <code>arma3</code></h3>
+<p>The Arma 3 game folder (the one that holds Addons). Empty uses the environment variable A3OB_ARMA3, then the Arma 3 Folder stored in the A3OB settings file, then the Arma 3 folder of your Steam library.</p>
+<dl>
+<dt>Type</dt><dd>Folder path</dd>
+<dt>Default</dt><dd>(empty)</dd>
+<dt>Shown when</dt><dd>Animation From is Arma 3 game</dd>
+</dl>
+</section>
+<section class="parm" id="filter">
+<h3>Filter <code>filter</code></h3>
+<p>Words that the animation name must contain (any case); a word may have * or ?. Example: wlk ras rfl finds the rifle walks of the standing man. The Animation menu then lists only those.</p>
+<dl>
+<dt>Type</dt><dd>Text</dd>
+<dt>Default</dt><dd>(empty)</dd>
+<dt>Shown when</dt><dd>Animation From is Arma 3 game</dd>
+</dl>
+</section>
+<section class="parm" id="anim">
+<h3>Animation <code>anim</code></h3>
+<p>The animation from the game&#x27;s PBO files. The menu lists the animations that match Filter, 300 at most, with the PBO each one is in.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>(none)</dd>
+<dt>Shown when</dt><dd>Animation From is Arma 3 game</dd>
+</dl>
+<p>The choices are made when you open the menu, from the geometry or the settings.</p>
+</section>
+<section class="parm" id="playback">
+<h3>Playback <code>playback</code></h3>
+<p>How the length of one cycle is given. An RTM file holds phases (0 to 1) only; how fast it plays in the game is set in the config, so you choose it here.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>Frames per cycle</dd>
+</dl>
+<p>Choices:</p>
+<ul>
+<li>Frames per cycle <code>frames</code>: One cycle takes the number of timeline frames in Frames per Cycle.</li>
+<li>Seconds per cycle <code>seconds</code>: One cycle takes Seconds per Cycle, whatever the frame rate of the scene.</li>
+</ul>
+</section>
+<section class="parm" id="cycleframes">
+<h3>Frames per Cycle <code>cycleframes</code></h3>
+<p>How many timeline frames one cycle of the animation takes. The default is 24, one second at 24 frames per second.</p>
+<dl>
+<dt>Type</dt><dd>Whole number</dd>
+<dt>Default</dt><dd>24</dd>
+<dt>Allowed</dt><dd>At least 1; no upper limit</dd>
+<dt>Shown when</dt><dd>Playback is Frames per cycle</dd>
+</dl>
+</section>
+<section class="parm" id="cycleseconds">
+<h3>Seconds per Cycle <code>cycleseconds</code></h3>
+<p>How many seconds one cycle takes. The default is 1.</p>
+<dl>
+<dt>Type</dt><dd>Number</dd>
+<dt>Default</dt><dd>1</dd>
+<dt>Allowed</dt><dd>At least 0.01; no upper limit</dd>
+<dt>Shown when</dt><dd>Playback is Seconds per cycle</dd>
+</dl>
+</section>
+<section class="parm" id="startframe">
+<h3>Start Frame <code>startframe</code></h3>
+<p>The timeline frame where the cycle starts (phase 0). Playback before it holds the first frame, or runs the cycle backwards when Loop is on.</p>
+<dl>
+<dt>Type</dt><dd>Number</dd>
+<dt>Default</dt><dd>1</dd>
+</dl>
+</section>
+<section class="parm" id="wrap">
+<h3>At the End <code>wrap</code></h3>
+<p>What happens after the last frame of the cycle.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>Loop</dd>
+</dl>
+<p>Choices:</p>
+<ul>
+<li>Loop <code>loop</code>: The cycle starts again. With Apply Displacement on, the character keeps walking on.</li>
+<li>Hold <code>hold</code>: The last frame stays, and the first frame before the start.</li>
+</ul>
+</section>
+<section class="parm" id="displace">
+<h3>Apply Displacement <code>displace</code></h3>
+<p>Move the skeleton by the displacement of the animation (how far the character walks in one cycle, in the file) times the cycles played. Off keeps the character in place.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>Off</dd>
+</dl>
+</section>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

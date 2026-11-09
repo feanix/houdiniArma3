@@ -1,0 +1,120 @@
+# Dialog script for a3ob_rtm_import, version 1
+
+{
+    name	a3ob_rtm_import
+    script	a3ob_rtm_import
+    label	"RTM Import"
+
+    help {
+	"Poses the Arma skeleton with an Arma RTM animation file. The timeline plays the animation; Bone Deform skins a rigged mesh with it."
+    }
+
+    inputlabel	1	"Arma skeleton"
+
+    parm {
+	name	"source"
+	label	"Animation From"
+	type	string
+	default	{ "file" }
+	menu {
+	    "file"	"File"
+	    "game"	"Arma 3 game"
+	}
+	help	"Where the animation comes from."
+    }
+    parm {
+	name	"file"
+	label	"RTM File"
+	type	file
+	default	{ "" }
+	help	"A plain Arma animation (.rtm), a binarised one (BMTR, read with the parents of the skeleton), or an entry inside a PBO written as path/to/anims_f.pbo|a3/anims_f/data/anim/sdr/mov/erc/wlk/rfl/amovpercmwlksraswrfldf.rtm. Bones the skeleton lacks (Weapon, launcher, face and slot bones, Hips) are ignored; joints the file lacks stay at rest."
+	hidewhen	"{ source != file }"
+	parmtag	{ "filechooser_mode" "read" }
+	parmtag	{ "filechooser_pattern" "*.rtm *.pbo" }
+    }
+    parm {
+	name	"arma3"
+	label	"Arma 3 Folder"
+	type	directory
+	default	{ "" }
+	help	"The Arma 3 game folder (the one that holds Addons). Empty uses the environment variable A3OB_ARMA3, then the Arma 3 Folder stored in the A3OB settings file, then the Arma 3 folder of your Steam library."
+	hidewhen	"{ source != game }"
+    }
+    parm {
+	name	"filter"
+	label	"Filter"
+	type	string
+	default	{ "" }
+	help	"Words that the animation name must contain (any case); a word may have * or ?. Example: wlk ras rfl finds the rifle walks of the standing man. The Animation menu then lists only those."
+	hidewhen	"{ source != game }"
+    }
+    parm {
+	name	"anim"
+	label	"Animation"
+	type	string
+	default	{ "" }
+	menu {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['menu']).menu('rtm_import', 'anims', kwargs)" ]
+	    language python
+	}
+	help	"The animation from the game's PBO files. The menu lists the animations that match Filter, 300 at most, with the PBO each one is in."
+	hidewhen	"{ source != game }"
+    }
+    parm {
+	name	"playback"
+	label	"Playback"
+	type	string
+	default	{ "frames" }
+	menu {
+	    "frames"	"Frames per cycle"
+	    "seconds"	"Seconds per cycle"
+	}
+	help	"How the length of one cycle is given. An RTM file holds phases (0 to 1) only; how fast it plays in the game is set in the config, so you choose it here."
+    }
+    parm {
+	name	"cycleframes"
+	label	"Frames per Cycle"
+	type	integer
+	size	1
+	default	{ "24" }
+	range	{ 1! 10 }
+	help	"How many timeline frames one cycle of the animation takes. The default is 24, one second at 24 frames per second."
+	hidewhen	"{ playback != frames }"
+    }
+    parm {
+	name	"cycleseconds"
+	label	"Seconds per Cycle"
+	type	float
+	size	1
+	default	{ "1.0" }
+	range	{ 0.01! 10 }
+	help	"How many seconds one cycle takes. The default is 1."
+	hidewhen	"{ playback != seconds }"
+    }
+    parm {
+	name	"startframe"
+	label	"Start Frame"
+	type	float
+	size	1
+	default	{ "1.0" }
+	help	"The timeline frame where the cycle starts (phase 0). Playback before it holds the first frame, or runs the cycle backwards when Loop is on."
+    }
+    parm {
+	name	"wrap"
+	label	"At the End"
+	type	string
+	default	{ "loop" }
+	menu {
+	    "loop"	"Loop"
+	    "hold"	"Hold"
+	}
+	help	"What happens after the last frame of the cycle."
+    }
+    parm {
+	name	"displace"
+	label	"Apply Displacement"
+	type	toggle
+	default	{ "0" }
+	help	"Move the skeleton by the displacement of the animation (how far the character walks in one cycle, in the file) times the cycles played. Off keeps the character in place."
+    }
+}

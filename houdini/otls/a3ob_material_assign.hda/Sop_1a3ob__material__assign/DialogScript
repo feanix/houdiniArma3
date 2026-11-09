@@ -1,0 +1,196 @@
+# Dialog script for a3ob_material_assign, version 1
+
+{
+    name	a3ob_material_assign
+    script	a3ob_material_assign
+    label	"Material Assign"
+
+    help {
+	"Sets the texture and the material (rvmat) of the polygons in a group, or of all polygons."
+    }
+
+    inputlabel	1	"LOD geometry"
+
+    parm {
+	name	"group"
+	label	"Group"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('material_assign', 'group', kwargs)" ]
+	    language python
+	}
+	help	"Which polygons to set. Empty means all polygons. The menu lists the groups of the input (primitive groups or point groups, as Group Type says) and shows the P3D name of a selection; picking adds or removes the group. The arrow button picks in the viewport. You can also type group names, patterns or numbers like 0-3."
+	parmtag	{ "script_action" "import soputils\nkwargs['geometrytype'] = kwargs['node'].parmTuple('grouptype')\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"grouptype"
+	label	"Group Type"
+	type	string
+	default	{ "prims" }
+	menu {
+	    "prims"	"Primitives"
+	    "points"	"Points"
+	}
+	help	"Primitives: the polygons in the group. Points: the polygons whose points are all in the group."
+    }
+    parm {
+	name	"settex"
+	label	"Set Texture"
+	type	toggle
+	default	{ "1" }
+	help	"On: this node gives the polygons the texture chosen below. Off: the polygons keep the texture they already have (from the file or an earlier node), for example when you only want to change the material."
+    }
+    parm {
+	name	"texsource"
+	label	"Texture Source"
+	type	string
+	default	{ "file" }
+	menu {
+	    "file"	"File"
+	    "color"	"Color"
+	    "custom"	"Custom texture text"
+	}
+	help	"Where the texture comes from. File: a texture file you pick. Color: a plain colour, written as a generated texture line. Custom texture text: a texture line you type or pick from the common list."
+	disablewhen	"{ settex != 1 }"
+    }
+    parm {
+	name	"texture"
+	label	"Texture File"
+	type	file
+	default	{ "" }
+	help	"The texture file (.paa, .tga or .png). Slashes are written as backslashes. When Write Textures as .paa is on (as in the Arma 3 release preset), the export writes every ending but .paa as .paa (camo1_co.png becomes camo1_co.paa); making that .paa is up to you. When you export with Relative Paths on, the path is mapped to the in-game path (see the Relative Paths tooltip of P3D Export)."
+	disablewhen	"{ settex != 1 }"
+	hidewhen	"{ texsource != file }"
+	parmtag	{ "filechooser_mode" "read" }
+	parmtag	{ "filechooser_pattern" "*.paa *.tga *.png" }
+    }
+    parm {
+	name	"texcolor"
+	label	"Color"
+	type	color4
+	size	4
+	default	{ "1" "1" "1" "1" }
+	range	{ 0 1 }
+	help	"The colour of the generated texture, with alpha (each 0 to 1). Click the swatch to pick one."
+	disablewhen	"{ settex != 1 }"
+	hidewhen	"{ texsource != color }"
+    }
+    parm {
+	name	"colortype"
+	label	"Color Type"
+	type	string
+	default	{ "CO" }
+	menu {
+	    "CO"	"CO - Color Value"
+	    "CA"	"CA - Texture with Alpha"
+	    "LCO"	"LCO - Terrain Texture Layer Color"
+	    "SKY"	"SKY - Sky texture"
+	    "NO"	"NO - Normal Map"
+	    "NS"	"NS - Normal map specular with Alpha"
+	    "NOF"	"NOF - Normal map faded"
+	    "NON"	"NON - Normal map noise"
+	    "NOHQ"	"NOHQ - Normal map High Quality"
+	    "NOPX"	"NOPX - Normal Map with paralax"
+	    "NOVHQ"	"NOVHQ - two-part DXT5 compression"
+	    "DT"	"DT - Detail Texture"
+	    "CDT"	"CDT - Colored detail texture"
+	    "MCO"	"MCO - Multiply color"
+	    "DTSMDI"	"DTSMDI - Detail SMDI map"
+	    "MC"	"MC - Macro Texture"
+	    "AS"	"AS - Ambient Shadow texture"
+	    "ADS"	"ADS - Ambient Shadow in Blue"
+	    "PR"	"PR - Ambient shadow from directions"
+	    "SM"	"SM - Specular Map"
+	    "SMDI"	"SMDI - Specular Map, optimized"
+	    "MASK"	"MASK - Mask for multimaterial"
+	    "TI"	"TI - Thermal imaging map"
+	}
+	help	"What the colour is used for in the game. The usual choice is CO (colour value); the other choices are texture types such as normal map (NO) or specular map (SM)."
+	disablewhen	"{ settex != 1 }"
+	hidewhen	"{ texsource != color }"
+    }
+    parm {
+	name	"color"
+	label	"Color (old scenes)"
+	type	float
+	size	4
+	default	{ "1.0" "1.0" "1.0" "1.0" }
+	help	"Never shown. It only keeps the colour of scenes saved before Color became a colour picker: when a scene loads, a colour that is not white is moved into Color and this goes back to white. Change Color instead."
+	invisible
+    }
+    parm {
+	name	"raw"
+	label	"Texture Text"
+	type	string
+	default	{ "" }
+	help	"A texture line, copied exactly as typed. It is either a path or a generated texture such as #(argb,8,8,3)color(1,0,0,1,CO), which is a plain red."
+	disablewhen	"{ settex != 1 }"
+	hidewhen	"{ texsource != custom }"
+    }
+    parm {
+	name	"commonproc"
+	label	"Pick a Common Texture"
+	type	string
+	default	{ "none" }
+	menu {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['menu']).menu('material_assign', 'commonproc', kwargs)" ]
+	    language python
+	}
+	help	"Copies a frequently used texture line from the common data file into Texture Text and switches Texture Source to Custom texture text. Add your own lines in the common data file of the Project root and presets tool."
+	disablewhen	"{ settex != 1 }"
+	hidewhen	"{ texsource != custom }"
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('material_assign', 'fillproc', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+    parm {
+	name	"setmat"
+	label	"Set Material"
+	type	toggle
+	default	{ "1" }
+	help	"On: this node gives the polygons the material chosen below. Off: the polygons keep the material they already have (from the file or an earlier node), for example when you only want to change the texture."
+    }
+    parm {
+	name	"material"
+	label	"Material File"
+	type	file
+	default	{ "" }
+	help	"The material file (.rvmat). Empty clears the material. Slashes are written as backslashes. When you export with Relative Paths on, the path is mapped to the in-game path (see the Relative Paths tooltip of P3D Export)."
+	disablewhen	"{ setmat != 1 }"
+	parmtag	{ "filechooser_mode" "read" }
+	parmtag	{ "filechooser_pattern" "*.rvmat" }
+    }
+    parm {
+	name	"commonmat"
+	label	"Pick a Common Material"
+	type	string
+	default	{ "none" }
+	menu {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['menu']).menu('material_assign', 'commonmat', kwargs)" ]
+	    language python
+	}
+	help	"Copies a frequently used material from the common data file into Material File and switches Set Material on. Add your own in the common data file of the Project root and presets tool."
+	disablewhen	"{ setmat != 1 }"
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('material_assign', 'fillmat', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+    parm {
+	name	"showviewport"
+	label	"Show in Viewport"
+	type	toggle
+	default	{ "1" }
+	help	"On: the polygons get a Houdini material that shows their texture in the viewport (one material per texture, in the network a3ob_viewport_materials inside the Geometry object). It only changes what Houdini shows; the P3D export ignores it. A .paa is shown from a .png, .tga or .tif of the same name next to it, else from a picture decoded from the .paa. A plain colour texture is shown as that colour. The material (rvmat) is not shown. In-game paths are only shown when the file is found under the project root. Materials that are no longer used stay in the network; they are harmless. Off: the polygons keep the Houdini material they came with."
+    }
+    parm {
+	name	"reloadtex"
+	label	"Reload Textures"
+	type	button
+	default	{ "0" }
+	help	"Use it after you change a texture file outside Houdini."
+	disablewhen	"{ showviewport != 1 }"
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('material_assign', 'reloadtex', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+}

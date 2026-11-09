@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LOD Weights - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
+<h1>LOD Weights</h1>
+<p class="lead">Gives a reduced LOD the bone weights of the finished Res 1: each point takes the weights of the closest place on Res 1.</p>
+<p>PolyReduce moves and merges points, so the weights it carries along no longer add up to 1. This node weights a reduced LOD again from the finished Res 1: each point takes the weights of the closest place on the Res 1 surface, interpolated across the Res 1 triangle, then limited to 4 bones and normalised like Weight Cleanup does.</p>
+<p>A rigid piece of Res 1 (a helmet or a plate from Accessory Weights in Rigid mode, or an island that follows one bone only) keeps its weights exactly: a point next to it takes the piece&#x27;s weights, with no blend. A point farther from Res 1 than Match Distance is listed in a warning and filled in from its neighbours. The bone selections of input 1 are replaced; its other groups and attributes stay. The points get a3ob_rig_origin (1 copied, 2 filled in, 3 rigid piece). LOD chain: Unpose, PolyReduce, LOD Weights (input 2 is the weighted Res 1), LOD Properties.</p>
+<table class="facts">
+<tr><th>Houdini name</th><td><code>a3ob_lod_weights</code></td></tr>
+<tr><th>Where to find it</th><td>Tab menu, A3OB, LOD Weights</td></tr>
+<tr><th>Inputs</th><td>3</td></tr>
+</table>
+<h2>Inputs</h2>
+<ol>
+<li value="1">Input 1: LOD to weight. The LOD that gets the weights, for example Res 1 after PolyReduce. Its own bone selections are replaced; its other groups and attributes stay.</li>
+<li value="2">Input 2: Weighted source (Res 1). The source with bone weights (point groups with a3ob_w weights), usually Res 1 after Unpose and the weight nodes. Rigid pieces (a3ob_rig_piece) keep their weights.</li>
+<li value="3">Input 3: Skeleton. The skeleton, for example from Rig Skeleton. Its joint names decide which selections are bones and how they are spelled. If its model.cfg class has isDiscrete = 1, every point keeps only its heaviest bone.</li>
+</ol>
+<h2>Parameters</h2>
+<p>Parameters are in the order they appear on the node.</p>
+<section class="parm" id="distance">
+<h3>Match Distance <code>distance</code></h3>
+<p>How far from the source a point may be and still copy its weights, as a share of the size of the LOD (the diagonal of its bounding box). Farther points are listed and filled in from their neighbours.</p>
+<dl>
+<dt>Type</dt><dd>Number</dd>
+<dt>Default</dt><dd>0.05</dd>
+<dt>Allowed</dt><dd>At least 0; no upper limit</dd>
+</dl>
+</section>
+<section class="parm" id="maxbones">
+<h3>Max Bones per Point <code>maxbones</code></h3>
+<p>The most bones one point may have. Arma allows 4. The lightest weights beyond this are dropped.</p>
+<dl>
+<dt>Type</dt><dd>Whole number</dd>
+<dt>Default</dt><dd>4</dd>
+<dt>Allowed</dt><dd>From 1 to 16</dd>
+</dl>
+</section>
+<section class="parm" id="threshold">
+<h3>Prune Below <code>threshold</code></h3>
+<p>Weights below this are dropped. A point never loses its heaviest weight.</p>
+<dl>
+<dt>Type</dt><dd>Number</dd>
+<dt>Default</dt><dd>0.01</dd>
+<dt>Allowed</dt><dd>From 0 to 1</dd>
+</dl>
+</section>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

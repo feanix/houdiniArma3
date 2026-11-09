@@ -1,0 +1,57 @@
+# Dialog script for a3ob_weight_transfer, version 1
+
+{
+    name	a3ob_weight_transfer
+    script	a3ob_weight_transfer
+    label	"Weight Transfer"
+
+    help {
+	"Copies the bone weights of a source body (the sample character) onto the body of your mesh. Accessories are weighted by Accessory Weights."
+    }
+
+    inputlabel	1	"Your mesh"
+    inputlabel	2	"Source body"
+    inputlabel	3	"Skeleton"
+
+    parm {
+	name	"body"
+	label	"Body"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('weight_transfer', 'body', kwargs)" ]
+	    language python
+	}
+	help	"The tight body-conforming polygons: skin, undergarments, shoes. A point group or a primitive group (its primitives' points count). They get their weights from the source body. Empty means every point. Points outside the group keep the weights they have (none on a fresh mesh): weight them with Accessory Weights."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"distance"
+	label	"Match Distance"
+	type	float
+	size	1
+	default	{ "0.05" }
+	range	{ 0! 10 }
+	help	"How far from the source body a point may be and still copy its weights, as a share of the size of your mesh (the diagonal of its bounding box). Points that are farther are filled in from their neighbours."
+    }
+    parm {
+	name	"angle"
+	label	"Match Angle"
+	type	float
+	size	1
+	default	{ "35.0" }
+	range	{ 0! 180! }
+	help	"How much the surface direction may differ, in degrees, for a point to copy weights. A point that faces another way (a sleeve against the torso) is filled in instead."
+    }
+    parm {
+	name	"minpiece"
+	label	"Smallest Piece"
+	type	integer
+	size	1
+	default	{ "10" }
+	range	{ 1! 10 }
+	help	"Loose pieces of the source body with fewer points than this are not used (the sample's proxy triangles)."
+    }
+}

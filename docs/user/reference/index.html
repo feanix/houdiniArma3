@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<h1>Reference</h1>
+<p class="lead">Every node and shelf tool, with all of its parameters. In Houdini, click the <strong>?</strong> icon at the top right of the parameter pane (or press F1 over the node) to read its help. This site has the same text.</p>
+<h2>A typical network</h2>
+<p>Most models follow this chain. Import a model, take one LOD out, edit it, put the LODs back together, check them and export.</p>
+<ol class="network">
+<li>P3D Import</li>
+<li>Extract LOD</li>
+<li class="optional">Your edits</li>
+<li>Assemble LODs</li>
+<li>Validate</li>
+<li>P3D Export</li>
+</ol>
+<h2>Nodes</h2>
+<p>Add these from the Tab menu, in the A3OB submenu.</p>
+<ul class="cards">
+<li><a href="a3ob_accessory_weights.html">Accessory Weights</a><span>Weights accessories (a helmet, pouches, a strap) from points that already have weights: the body or another accessory.</span></li>
+<li><a href="a3ob_assemble_lods.html">Assemble LODs</a><span>Puts edited LODs back into a P3D geometry. Input 1 is the base; inputs 2 and up are LOD geometries.</span></li>
+<li><a href="a3ob_components.html">Components</a><span>Makes the component groups (Component01, Component02, ...) of a Geometry LOD, one per connected piece.</span></li>
+<li><a href="a3ob_extract_lod.html">Extract LOD</a><span>Takes one LOD out of a P3D geometry and outputs it as a LOD geometry that you can edit.</span></li>
+<li><a href="a3ob_lod_properties.html">LOD Properties</a><span>Sets the LOD type, resolution, named properties and LOD copies of a LOD geometry.</span></li>
+<li><a href="a3ob_lod_weights.html">LOD Weights</a><span>Gives a reduced LOD the bone weights of the finished Res 1: each point takes the weights of the closest place on Res 1.</span></li>
+<li><a href="a3ob_mass.html">Mass</a><span>Sets the mass of each point of a Geometry LOD (the #Mass# data of the P3D file).</span></li>
+<li><a href="a3ob_material_assign.html">Material Assign</a><span>Sets the texture and the material (rvmat) of the polygons in a group, or of all polygons.</span></li>
+<li><a href="a3ob_model_cfg.html">Model Cfg</a><span>Writes the model.cfg a character P3D needs (uniform, vest, headgear and other gear on the man skeleton) into a folder, or adds the P3D&#x27;s class to the model.cfg that is already there. The messages show what Write model.cfg would do. The output is the input.</span></li>
+<li><a href="a3ob_p3d_export.html">P3D Export</a><span>Checks a P3D geometry or a LOD geometry like Validate and writes it as a .p3d file when Save to Disk is pressed. The output is the input. Shadow and underground LODs are always written with hard edges (the geometry here is not changed).</span></li>
+<li><a href="a3ob_p3d_import.html">P3D Import</a><span>Reads an Arma 3 .p3d file (MLOD) and outputs one packed primitive per LOD.</span></li>
+<li><a href="a3ob_proxy.html">Proxy</a><span>Adds proxies (references to other .p3d files, such as weapon slots or seats) as packed primitives.</span></li>
+<li><a href="a3ob_rig_check.html">Rig Check</a><span>Shows what is wrong with the bone weights of a rigged mesh, and how it stretches, squashes and loses volume in test poses.</span></li>
+<li><a href="a3ob_rig_fit.html">Rig Fit</a><span>Fits the Arma skeleton and the sample body to your mesh, from landmarks that you set or that are guessed.</span></li>
+<li><a href="a3ob_rig_landmarks.html">Rig Landmarks</a><span>Places the landmarks of your character (chin, groin, shoulders, elbows, wrists, hips, knees, ankles, middle fingers, thumbs) for Rig Fit, as positions that you drag in the viewport.</span></li>
+<li><a href="a3ob_rig_skeleton.html">Rig Skeleton</a><span>Builds the Arma 3 character skeleton as a KineFX skeleton, from a model.cfg and a pivots .p3d file. Each joint&#x27;s X axis points down its bone to the next joint, and the hinge of elbows, knees, fingers and thumbs is on Z.</span></li>
+<li><a href="a3ob_rtm_import.html">RTM Import</a><span>Poses the Arma skeleton with an Arma RTM animation file. The timeline plays the animation; Bone Deform skins a rigged mesh with it.</span></li>
+<li><a href="a3ob_unpose.html">Unpose</a><span>Moves your weighted mesh from the pose of the fitted skeleton back onto the Arma rest pose, by a cage from your body to the sample body.</span></li>
+<li><a href="a3ob_validate.html">Validate</a><span>Checks a P3D geometry or a LOD geometry the way the export does and shows what is wrong. Changes nothing. Shadow and underground LODs are always written with hard edges, so the message line says when the export will do that.</span></li>
+<li><a href="a3ob_weight_cleanup.html">Weight Cleanup</a><span>Makes the bone weights follow Arma&#x27;s rules: at most 4 bones per point, weights in steps of 1/254, sum 1.</span></li>
+<li><a href="a3ob_weight_transfer.html">Weight Transfer</a><span>Copies the bone weights of a source body (the sample character) onto the body of your mesh. Accessories are weighted by Accessory Weights.</span></li>
+<li><a href="a3ob_weights_convert.html">Weights Convert</a><span>Converts bone weights between P3D selections (point groups) and KineFX capture weights for the skeleton.</span></li>
+</ul>
+<h2>Shelf tools</h2>
+<p>These are the buttons on the A3OB shelf.</p>
+<ul class="cards">
+<li><a href="tool-a3ob_selection_browser.html">Selection browser</a><span>Lists the point groups of the selected SOP node by their P3D name. Copies an encoded name, or adds a Group, Group Delete or Group Rename node.</span></li>
+<li><a href="tool-a3ob_quick_export.html">Quick Export</a><span>Exports the selected SOP node (or the display node of the current network) to a .p3d file with a preset. Adds no node.</span></li>
+<li><a href="tool-a3ob_new_p3d.html">New P3D</a><span>Builds the starter network (Resolution 1, Geometry and Memory LODs, Assemble LODs, P3D Export) in the open SOP network or in a new Geometry object.</span></li>
+<li><a href="tool-a3ob_batch_convert.html">Batch folder convert</a><span>Re-exports every .p3d in a folder with a preset into an output folder and writes a report: identical, different or failed for each file. The sources are never changed.</span></li>
+<li><a href="tool-a3ob_project_settings.html">Project root and presets</a><span>Sets the project root, picks, edits and deletes export presets, sets the common data file, and sets the Arma 3 Samples folder that the rigging nodes start from. Stored in one JSON file in the Houdini user preferences. Changes nothing in a scene.</span></li>
+<li><a href="tool-a3ob_reload.html">Reload A3OB</a><span>Loads the A3OB code again after the package was updated, without restarting Houdini.</span></li>
+</ul>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

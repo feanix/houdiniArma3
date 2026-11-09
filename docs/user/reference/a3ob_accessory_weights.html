@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Accessory Weights - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
+<h1>Accessory Weights</h1>
+<p class="lead">Weights accessories (a helmet, pouches, a strap) from points that already have weights: the body or another accessory.</p>
+<p>Accessories do not follow the skin: a helmet turns with the head, a pouch with the belt, a bandolier bends with the chest. This node weights them from points that already have weights. Put the accessory points in the Target Group and the points that give the weights in the Source Group: the body, or another accessory (a pouch can take its weights from the belt). Chain one node per accessory after Weight Transfer, and run Weight Cleanup last.</p>
+<p>Rigid mode gives every connected piece of the target one bone or one fixed blend. Auto picks the bone with the most source weight under the piece (a twist bone counts for the next bone down the chain); Fixed blend gives every point the average; Bone gives every piece the bone you pick from the menu of the skeleton. Non-rigid mode lets each point take the source weights under it and smooths them along the piece. A target point with no source point within the distance limit takes the nearest weighted source point, and the node warns with the count. The result is bone selections, a3ob_rig_origin (3 rigid, 4 non-rigid) and a3ob_rig_piece (the number of the rigid or non-rigid piece, which Unpose uses).</p>
+<table class="facts">
+<tr><th>Houdini name</th><td><code>a3ob_accessory_weights</code></td></tr>
+<tr><th>Where to find it</th><td>Tab menu, A3OB, Accessory Weights</td></tr>
+<tr><th>Inputs</th><td>2</td></tr>
+</table>
+<h2>Inputs</h2>
+<ol>
+<li value="1">Input 1: Your mesh. The mesh with the weighted body (from Weight Transfer) and the accessories. Both groups below are point groups of this mesh.</li>
+<li value="2">Input 2: Skeleton. The skeleton, for example from Rig Skeleton; the output of Rig Fit goes here as it is (its fitted skeleton is used). Its joint names decide which selections are bones and how they are spelled; its hierarchy says where a twist bone&#x27;s weight goes.</li>
+</ol>
+<h2>Parameters</h2>
+<p>Parameters are in the order they appear on the node.</p>
+<section class="parm" id="target">
+<h3>Target Group <code>target</code></h3>
+<p>The accessory points to weight. Required. A point group or a primitive group (its primitives&#x27; points count). Each connected piece of the group is one piece, or each name when Pieces From is Names.</p>
+<dl>
+<dt>Type</dt><dd>Group picker (text; the menu lists the point groups and primitive groups of the input that are yours, without the bone groups (a primitive group counts as the points of its primitives; typing a bone group name still works) of the input, the arrow button picks in the viewport)</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="source">
+<h3>Source Group <code>source</code></h3>
+<p>The points that give the weights (a point group or a primitive group): the body, or another accessory that already has weights. Points of it with no bone weight are ignored, with a warning. Not used when Rigid uses a picked bone.</p>
+<dl>
+<dt>Type</dt><dd>Group picker (text; the menu lists the point groups and primitive groups of the input that are yours, without the bone groups (a primitive group counts as the points of its primitives; typing a bone group name still works) of the input, the arrow button picks in the viewport)</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="mode">
+<h3>Mode <code>mode</code></h3>
+<p>How the accessory is weighted.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>Rigid</dd>
+</dl>
+<p>Choices:</p>
+<ul>
+<li>Rigid <code>rigid</code>: Every connected piece of the target follows one bone or one fixed blend (a helmet, a pouch).</li>
+<li>Non-rigid <code>nonrigid</code>: Each point takes the weights of the source under it, smoothed along the piece (a bandolier, a cable).</li>
+</ul>
+</section>
+<section class="parm" id="use">
+<h3>Rigid Uses <code>use</code></h3>
+<p>How a rigid piece is weighted.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>Auto</dd>
+<dt>Shown when</dt><dd>Mode is Rigid</dd>
+</dl>
+<p>Choices:</p>
+<ul>
+<li>Auto <code>auto</code>: The whole piece follows the one bone with the most source weight under it (weight 1).</li>
+<li>Fixed blend <code>blend</code>: Every point gets the same mix of bones, the average of the source under the piece.</li>
+<li>Bone <code>bone</code>: Every piece follows the bone you pick below.</li>
+</ul>
+</section>
+<section class="parm" id="bone">
+<h3>Bone <code>bone</code></h3>
+<p>The bone every rigid piece follows. The menu lists the bones of the skeleton on input 2.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>head</dd>
+<dt>Shown when</dt><dd>Mode is Rigid and Rigid Uses is Bone</dd>
+</dl>
+<p>The choices are made when you open the menu, from the geometry or the settings.</p>
+</section>
+<section class="parm" id="merge_twist">
+<h3>Merge Twist Bones <code>merge_twist</code></h3>
+<p>The weight of a twist bone (a name ending in Roll) counts for the next bone down the chain that is not a twist, so a piece on the elbow follows the forearm.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>On</dd>
+<dt>Shown when</dt><dd>Mode is Rigid and Rigid Uses is Auto</dd>
+</dl>
+</section>
+<section class="parm" id="piecesfrom">
+<h3>Pieces From <code>piecesfrom</code></h3>
+<p>How a rigid target is cut into pieces. Non-rigid mode always uses connected pieces.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>Names</dd>
+<dt>Shown when</dt><dd>Mode is Rigid</dd>
+</dl>
+<p>Choices:</p>
+<ul>
+<li>Names <code>names</code>: Polygons with the same name are one piece, even when the parts do not touch (a helmet, its visor and its bolts). Polygons with no name, or a mesh without the name attribute, use connected pieces, and so does a mesh where every polygon has the same name (the node warns about that: give the parts their own names). A point shared by two names goes to the name with most of its polygons.</li>
+<li>Connected Pieces <code>connected</code>: Every connected piece is weighted on its own.</li>
+</ul>
+</section>
+<section class="parm" id="nameattr">
+<h3>Name Attribute <code>nameattr</code></h3>
+<p>The primitive string attribute that holds the piece names. FBX, Alembic and most modelling tools write &#x27;name&#x27;.</p>
+<dl>
+<dt>Type</dt><dd>Text</dd>
+<dt>Default</dt><dd>name</dd>
+<dt>Shown when</dt><dd>Mode is Rigid and Pieces From is Names</dd>
+</dl>
+</section>
+<section class="parm" id="distance">
+<h3>Match Distance <code>distance</code></h3>
+<p>How far from the source a target point may be and still count, as a share of the size of the target and source groups together (the diagonal of their bounding box). A point with no source this close takes the nearest weighted source point, with a warning.</p>
+<dl>
+<dt>Type</dt><dd>Number</dd>
+<dt>Default</dt><dd>0.05</dd>
+<dt>Allowed</dt><dd>At least 0; no upper limit</dd>
+</dl>
+</section>
+<section class="parm" id="angle">
+<h3>Match Angle <code>angle</code></h3>
+<p>How much the surface direction may differ, in degrees, for a point to copy weights. A point that faces another way is filled in from its neighbours on the piece.</p>
+<dl>
+<dt>Type</dt><dd>Number</dd>
+<dt>Default</dt><dd>35</dd>
+<dt>Allowed</dt><dd>From 0 to 180</dd>
+<dt>Shown when</dt><dd>Mode is Non-rigid</dd>
+</dl>
+</section>
+<section class="parm" id="smooth">
+<h3>Smoothing Passes <code>smooth</code></h3>
+<p>How many times the weights are averaged with their neighbours along the piece.</p>
+<dl>
+<dt>Type</dt><dd>Whole number</dd>
+<dt>Default</dt><dd>8</dd>
+<dt>Allowed</dt><dd>From 0 to 100</dd>
+<dt>Shown when</dt><dd>Mode is Non-rigid</dd>
+</dl>
+</section>
+<section class="parm" id="minpiece">
+<h3>Smallest Piece <code>minpiece</code></h3>
+<p>A piece of the target with fewer points than this is ignored: it gets no weights. A named piece counts all its parts together.</p>
+<dl>
+<dt>Type</dt><dd>Whole number</dd>
+<dt>Default</dt><dd>10</dd>
+<dt>Allowed</dt><dd>At least 1; no upper limit</dd>
+</dl>
+</section>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

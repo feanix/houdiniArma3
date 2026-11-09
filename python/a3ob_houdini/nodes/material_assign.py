@@ -1,0 +1,264 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# houdiniArma3: a Houdini port of Arma 3 Object Builder (A3OB).
+"""The Material Assign node (ux-tools.md section 5.6): texture and material (rvmat) on a set of polygons.
+
+It copies its input and writes the primitive strings ``a3ob_texture`` and ``a3ob_material`` (spec 5 and 12), on
+polygons. Houdini's ``material`` is never touched; ``shop_materialpath`` only through "Show in Viewport"
+(``viewport_material``, task #54), which the P3D export ignores. File paths get ``\\`` for ``/``
+(D14 Q-6); procedural and custom texture text is copied as typed.
+"""
+
+import logging
+import traceback
+
+from .. import geo_edit, material_text, names, settings, viewport_material
+from ..errors import UserError
+from ..messages import Report, format_problem
+from ..params import NodeSpec, Parm, read_parms
+
+__all__ = ["SPEC", "cook", "BUTTONS", "MENUS", "loaded"]
+
+NAME = "Material Assign"
+LOGGER = logging.getLogger("a3ob")
+_PENDING = {}  # node path -> Report from the Reload Textures button, shown by the next cook
+
+_TEX_ON = (("settex", ("1",)),)
+_MAT_ON = (("setmat", ("1",)),)
+WHITE = (1.0, 1.0, 1.0, 1.0)
+
+SPEC = NodeSpec(
+    kind="material_assign",
+    label="Material Assign",
+    summary="Sets the texture and the material (rvmat) of the polygons in a group, or of all polygons.",
+    inputs=(1, 1),
+    input_labels=("LOD geometry",),
+    input_help=("The LOD whose polygons get the texture and material.",),
+    parms=(
+        Parm("group", "Group", "group", "",
+             "Which polygons to set. Empty means all polygons. The menu lists the groups of the input (primitive "
+             "groups or point groups, as Group Type says) and shows the P3D name of a selection; picking adds or "
+             "removes the group. The arrow button picks in the viewport. You can also type group names, patterns "
+             "or numbers like 0-3.", group_follow="grouptype"),
+        Parm("grouptype", "Group Type", "menu", "prims",
+             "Primitives: the polygons in the group. Points: the polygons whose points are all in the group.",
+             items=(("prims", "Primitives"), ("points", "Points"))),
+        Parm("settex", "Set Texture", "toggle", True,
+             "On: this node gives the polygons the texture chosen below. Off: the polygons keep the texture they "
+             "already have (from the file or an earlier node), for example when you only want to change the "
+             "material."),
+        Parm("texsource", "Texture Source", "menu", "file",
+             "Where the texture comes from. File: a texture file you pick. Color: a plain colour, written as a "
+             "generated texture line. Custom texture text: a texture line you type or pick from the common list.",
+             items=(("file", "File"), ("color", "Color"), ("custom", "Custom texture text")),
+             enable_when=_TEX_ON),
+        Parm("texture", "Texture File", "file", "",
+             "The texture file (.paa, .tga or .png). Slashes are written as backslashes. When Write Textures as "
+             ".paa is on (as in the Arma 3 release preset), the export writes every ending but .paa as .paa "
+             "(camo1_co.png becomes camo1_co.paa); making that .paa is up to you. When you "
+             "export with Relative Paths on, the path is mapped to the in-game path (see the Relative Paths tooltip "
+             "of P3D Export).",
+             file_pattern="*.paa *.tga *.png", show_when=(("texsource", ("file",)),), enable_when=_TEX_ON),
+        Parm("texcolor", "Color", "color", (1.0, 1.0, 1.0, 1.0),
+             "The colour of the generated texture, with alpha (each 0 to 1). Click the swatch to pick one.",
+             show_when=(("texsource", ("color",)),), enable_when=_TEX_ON),
+        Parm("colortype", "Color Type", "menu", "CO",
+             "What the colour is used for in the game. The usual choice is CO (colour value); the other choices "
+             "are texture types such as normal map (NO) or specular map (SM).",
+             items=tuple((token, "%s - %s" % (token, text)) for token, text in material_text.COLOR_TYPES),
+             show_when=(("texsource", ("color",)),), enable_when=_TEX_ON),
+        Parm("color", "Color (old scenes)", "float", (1.0, 1.0, 1.0, 1.0),
+             "Never shown. It only keeps the colour of scenes saved before Color became a colour picker: when a "
+             "scene loads, a colour that is not white is moved into Color and this goes back to white. Change Color "
+             "instead.",
+             size=4, hidden=True),
+        Parm("raw", "Texture Text", "string", "",
+             "A texture line, copied exactly as typed. It is either a path or a generated texture such as "
+             "#(argb,8,8,3)color(1,0,0,1,CO), which is a plain red.",
+             show_when=(("texsource", ("custom",)),), enable_when=_TEX_ON),
+        Parm("commonproc", "Pick a Common Texture", "menu", "none",
+             "Copies a frequently used texture line from the common data file into Texture Text and switches "
+             "Texture Source to Custom texture text. Add your own lines in the common data file of the Project root "
+             "and presets tool.",
+             action="fillproc", menu_action="commonproc",
+             show_when=(("texsource", ("custom",)),), enable_when=_TEX_ON),
+        Parm("setmat", "Set Material", "toggle", True,
+             "On: this node gives the polygons the material chosen below. Off: the polygons keep the material they "
+             "already have (from the file or an earlier node), for example when you only want to change the "
+             "texture."),
+        Parm("material", "Material File", "file", "",
+             "The material file (.rvmat). Empty clears the material. Slashes are written as backslashes. When you "
+             "export with Relative Paths on, the path is mapped to the in-game path (see the Relative Paths "
+             "tooltip of P3D Export).",
+             file_pattern="*.rvmat", enable_when=_MAT_ON),
+        Parm("commonmat", "Pick a Common Material", "menu", "none",
+             "Copies a frequently used material from the common data file into Material File and switches Set "
+             "Material on. Add your own in the common data file of the Project root and presets tool.",
+             action="fillmat", menu_action="commonmat", enable_when=_MAT_ON),
+        Parm("showviewport", "Show in Viewport", "toggle", True,
+             "On: the polygons get a Houdini material that shows their texture in the viewport (one material per "
+             "texture, in the network a3ob_viewport_materials inside the Geometry object). It only changes what "
+             "Houdini shows; the P3D export ignores it. A .paa is shown from a .png, .tga or .tif of the same name "
+             "next to it, else from a picture decoded from the .paa. A plain colour texture is shown as that "
+             "colour. The material (rvmat) is not shown. In-game paths are only shown when the file is found under "
+             "the project root. Materials that are no longer used stay in the network; they are harmless. "
+             "Off: the polygons keep the Houdini material they came with."),
+        Parm("reloadtex", "Reload Textures", "button", "",
+             "Use it after you change a texture file outside Houdini.", action="reloadtex",
+             enable_when=(("showviewport", ("1",)),)),
+    ),
+    on_loaded=True,
+)
+
+
+def loaded(node) -> None:
+    """The OnLoaded event: an old scene stored its colour in the hidden ``color``. Move it into ``texcolor`` and
+    set ``color`` back to white ("not stored"), so a colour typed later counts, white included."""
+    old = tuple(node.parmTuple("color").eval())
+    if old != WHITE:
+        # Only move it when the picker is still white: a colour picked there wins.
+        if tuple(node.parmTuple("texcolor").eval()) == WHITE:
+            node.parmTuple("texcolor").set(old)
+        node.parmTuple("color").set(WHITE)
+
+
+def _check_text(text: str, field: str) -> str:
+    problem = names.check_encodable(text)
+    if problem:
+        raise UserError(format_problem(NAME, "%s has a character that a P3D file cannot hold (%s)" % (field, problem),
+                                       "Use only characters of the Windows 1252 code page"))
+    return text
+
+
+def _texture_text(values) -> str:
+    source = values["texsource"]
+    if source == "file":
+        return material_text.normalise_path(_check_text(values["texture"], "The texture"))
+    if source == "color":
+        color = tuple(values["texcolor"])
+        if any(not 0.0 <= channel <= 1.0 for channel in color):
+            raise UserError(format_problem(NAME, "the colour %s has a channel outside 0 to 1" % (tuple(color),),
+                                           "Use values from 0 to 1"))
+        return material_text.color_texture(color, values["colortype"])
+    if source == "custom":
+        return _check_text(values["raw"], "The raw texture text")
+    raise UserError(format_problem(NAME, "%r is not a texture source" % source, "Pick File, Color or Custom texture text"))
+
+
+def _polygons(geo, group: str, group_type: str):
+    """The polygons to set, in primitive order."""
+    import hou
+    group = group.strip()
+    try:
+        if not group:
+            chosen = geo.prims()
+        elif group_type == "points":
+            members = {point.number() for point in geo.globPoints(group)}
+            chosen = [prim for prim in geo.prims() if prim.numVertices() and
+                      all(point.number() in members for point in prim.points())]
+        else:
+            chosen = geo.globPrims(group)
+    except hou.OperationFailed:
+        raise UserError(format_problem(NAME, "%r is not a valid group" % group,
+                                       "Use a group name or numbers like 0 2-5")) from None
+    return [prim for prim in chosen if isinstance(prim, hou.Polygon)]
+
+
+def _set_strings(geo, name: str, numbers, text: str) -> None:
+    import hou
+    if geo.findPrimAttrib(name) is None:
+        geo.addAttrib(hou.attribType.Prim, name, "")
+    current = list(geo.primStringAttribValues(name))
+    for number in numbers:
+        current[number] = text
+    geo.setPrimStringAttribValues(name, current)
+
+
+def cook(node, report: Report) -> None:
+    """Copy the input and set the texture and material strings."""
+    values = read_parms(node, SPEC)
+    pending = _PENDING.pop(node.path(), None)  # the answer of the Reload Textures button
+    if pending is not None:
+        report.items.extend(pending.items)
+    geo = geo_edit.copy_input(node, NAME)
+    texture = _texture_text(values) if values["settex"] else None
+    material = (material_text.normalise_path(_check_text(values["material"], "The material"))
+                if values["setmat"] else None)
+    if texture is not None and values["texsource"] == "file" and texture and not material_text.has_known_extension(texture):
+        report.warning(format_problem(NAME, "the texture %r does not end in .paa, .tga or .png" % texture,
+                                      "Check the path"))
+    if material and not material_text.has_known_extension(material):
+        report.warning(format_problem(NAME, "the material %r does not end in .rvmat" % material, "Check the path"))
+    polygons = _polygons(geo, values["group"], values["grouptype"])
+    if not polygons:
+        report.warning(format_problem(NAME, "no polygons match" + (" the group %r" % values["group"].strip()
+                                                                    if values["group"].strip() else ""),
+                                      "Nothing was set"))
+        return
+    numbers = [prim.number() for prim in polygons]
+    if texture is not None:
+        _set_strings(geo, "a3ob_texture", numbers, texture)
+    if material is not None:
+        _set_strings(geo, "a3ob_material", numbers, material)
+    report.info("Set on %d polygons." % len(polygons))
+    if values["showviewport"]:
+        current = settings.load()[0]
+        viewport_material.apply(node, geo, numbers, report, settings.effective_root(current),
+                                current.paa_cache_dir or None)
+
+
+def _common_items(section: str):
+    """Menu items from the settings module: the built-in lists plus the common data file. Never raises."""
+    data, _ = settings.common_data(settings.load()[0])
+    return [("none", "(choose)")] + [(key, key) for key in sorted(data[section], key=str.lower)]
+
+
+def _fill(kwargs, section: str, target: str, switch: str, switch_to) -> None:
+    """A Common menu was changed: copy the chosen entry into ``target``, then show "(choose)" again."""
+    node = kwargs["node"]
+    token = kwargs["parm"].eval()
+    if token != "none":
+        data, _ = settings.common_data(settings.load()[0])
+        if token in data[section]:
+            node.parm(target).set(data[section][token])
+            node.parm(switch).set(switch_to)
+    kwargs["parm"].set("none")
+
+
+def fill_proc(kwargs) -> None:
+    _fill(kwargs, "procedurals", "raw", "texsource", "custom")
+
+
+def fill_mat(kwargs) -> None:
+    _fill(kwargs, "materials", "material", "setmat", 1)
+
+
+def reload_textures(kwargs) -> None:
+    """The Reload Textures button: decode the shown .paa again, make the viewport reload the pictures, cook again.
+    Never raises; a failure shows on the node. With nothing shown it only says so."""
+    node = kwargs["node"]
+    report = Report()
+    try:
+        if not node.parm("showviewport").eval():
+            report.info("Reload Textures: Show in Viewport is off, so no texture is shown.")
+        else:
+            current = settings.load()[0]
+            images = viewport_material.reload_shown(node.geometry(), settings.effective_root(current),
+                                                    current.paa_cache_dir or None)
+            if images:
+                report.info("Reloaded %d texture%s." % (len(images), "" if len(images) == 1 else "s"))
+            else:
+                report.info("Reload Textures: no texture is shown, so there is nothing to reload.")
+    except Exception as ex:  # a button callback must not raise (Houdini would only print it)
+        LOGGER.error("Reload Textures failed:\n%s", traceback.format_exc())
+        report.warning(format_problem(NAME, "Reload Textures failed (%s: %s)" % (type(ex).__name__, ex),
+                                      "Check the texture files, then press the button again"))
+    _PENDING[node.path()] = report  # the cook shows it: messages added outside a cook do not stay on the node
+    try:
+        node.cook(force=True)
+    except Exception:  # hou.OperationFailed when the node has errors: they show anyway
+        pass
+
+
+BUTTONS = {"fillproc": fill_proc, "fillmat": fill_mat, "reloadtex": reload_textures}
+MENUS = {"commonproc": lambda kwargs: _common_items("procedurals"), "commonmat": lambda kwargs: _common_items("materials")}

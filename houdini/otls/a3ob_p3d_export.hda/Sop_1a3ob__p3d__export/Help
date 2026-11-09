@@ -1,0 +1,374 @@
+= P3D Export =
+
+#type: node
+#context: sop
+#internal: a3ob_p3d_export
+#tags: arma, p3d
+
+"""Checks a P3D geometry or a LOD geometry like Validate and writes it as a .p3d file when Save to Disk is pressed. The output is the input. Shadow and underground LODs are always written with hard edges (the geometry here is not changed)."""
+
+This node is the end of a network. It checks the geometry the way Validate does and, when you press Save to Disk, writes a .p3d file you can use in Arma. The output is the same as the input, so you can keep working after it.
+
+The options are in tabs. A new node starts from the preset that is active in the Project root and presets tool. In Selection Mask, type group names separated by spaces; a name may use `*` and ?, and ^ before a name leaves it out. The menu lists the input's point groups: picking one adds it to the mask or removes it. The info line on the node says how many selections will be written.
+
+@inputs
+
+P3D geometry or LOD geometry:
+    The model to check and write: a whole P3D from Assemble LODs, or a single LOD.
+
+@parameters
+
+Output File:
+    #id: file
+
+    The .p3d file to write.
+
+    Type: File path (can name a new file). Default: $HIP/$HIPNAME.p3d. Files: `*.p3d`.
+
+Save to Disk:
+    #id: save
+
+    Check the input again and write the file. Nothing is written when there are errors.
+
+    Type: Button.
+
+Keep a .bak:
+    #id: backup
+
+    When a file is overwritten, keep the old one as .bak.
+
+    Type: On or off. Default: Off.
+
+== Error Checking == (tab_checking)
+
+These parameters are in the Error Checking tab.
+
+Check:
+    #id: check
+
+    Type: Menu. Default: Every cook.
+
+    Every cook:
+        Check whenever the node cooks.
+
+    When saving:
+        Check only on Save to Disk (for large models).
+
+Errors Show As:
+    #id: errorlevel
+
+    Type: Menu. Default: Error (stop here).
+
+    Error (stop here):
+        The node turns red and the nodes below it stop.
+
+    Warning (keep geometry):
+        The node turns yellow and the geometry keeps flowing; the text still starts with Error:. Saving stops on errors either way.
+
+Warnings Count As Errors:
+    #id: strict
+
+    Treat every warning as an error. Off by default: a warning can be what you meant.
+
+    Type: On or off. Default: Off.
+
+Duplicate LODs:
+    #id: dupes
+
+    What to do with a LOD whose type and resolution were already written: Fail, Skip the later one, or Ignore and write both.
+
+    Type: Menu. Default: Fail.
+
+    Choices: Fail, Skip, Ignore.
+
+Max Messages:
+    #id: maxmessages
+
+    How many messages the node shows. The rest are counted in one line and listed in Windows > Log Viewer (source A3OB).
+
+    Type: Whole number. Default: 25. Allowed: At least 1; no upper limit.
+
+== Presets == (tab_presets)
+
+These parameters are in the Presets tab.
+
+Preset:
+    #id: preset
+
+    A saved set of the options below: Lossless, Arma 3 release, or one you saved with the Project root and presets shelf tool. A new node starts with the preset that is active there. Pick one and press Apply. Choosing does not change anything by itself.
+
+    Type: Menu. Default: Lossless.
+
+    The choices are made when you open the menu, from the geometry or the settings.
+
+Apply:
+    #id: apply
+
+    Fill the options below from the chosen preset. Project Root and Keep a .bak stay as they are.
+
+    Type: Button.
+
+== Paths & Names == (tab_paths)
+
+These parameters are in the Paths & Names tab.
+
+Relative Paths:
+    #id: relpaths
+
+    Write texture, material and proxy files picked with a drive letter as in-game paths. First, the nearest $PBOPREFIX$ file in the file's folder or above it gives the prefix (a file in addons\props with mymod\ame\addons\props there becomes mymod\ame\addons\props\...). Second, a HEMTT project (a folder with .hemtt\project.toml) with the file under addons\<name> gets the prefix mainprefix\prefix\addons\<name>. Third, the Project Root is cut off, or at least the drive letter (with a warning). Paths without a drive letter are written as typed, so you can also type the in-game path directly.
+
+    Type: On or off. Default: Off.
+
+Project Root:
+    #id: projectroot
+
+    Used by Relative Paths only when the file has no $PBOPREFIX$ file and is not in a HEMTT addon: this folder is cut off the start of the path. Empty means the root from the shelf settings, or P:\ without one.
+
+    Type: Folder path. Default: (empty).
+
+Write Textures as .paa:
+    #id: paatextures
+
+    Write a texture path that ends in .png, .tga, .tif or any other picture ending as .paa (camo1_co.png becomes camo1_co.paa). Procedural textures and paths that already end in .paa are not changed. The game reads .paa only, and making the .paa file exist before you build the PBO is your job. Off: paths are written as they are. On in the Arma 3 release preset.
+
+    Type: On or off. Default: Off.
+
+Lowercase:
+    #id: lowercase
+
+    Write texture and material paths, selection names (so proxy paths too) and property names and values in lower case, as Object Builder does. Warns when two names become equal.
+
+    Type: On or off. Default: Off.
+
+Translate Names to Czech:
+    #id: czech
+
+    Rename selections that have an English name from Object Builder's table (body becomes telo, weapon becomes zbran) to the Czech name the game uses. Whole name, any case. Warns when two selections end up equal.
+
+    Type: On or off. Default: Off.
+
+Renumber Components:
+    #id: renumber
+
+    Rename every selection that starts with component and digits to component01, component02, ... in the order they are written, per LOD. The name is lowercased and any text after the digits is lost.
+
+    Type: On or off. Default: Off.
+
+== Selections == (tab_selections)
+
+These parameters are in the Selections tab.
+
+Selection Mask:
+    #id: selmask
+
+    Which point groups become selections in the file. Leave as is to write all of them except Houdini's internal ones (names starting with `__`).
+
+    Type: Menu (pick several; each pick adds or removes an entry in the text). Default: `* ^__*`.
+
+    The choices are made when you open the menu, from the geometry or the settings.
+
+Auto-Components:
+    #id: autocomponents
+
+    Geometry LODs without a component selection get one per connected piece.
+
+    Type: On or off. Default: Off.
+
+== File Layout == (tab_layout)
+
+These parameters are in the File Layout tab.
+
+Sort LODs:
+    #id: sortlods
+
+    Write the LODs sorted by resolution. Off keeps your order.
+
+    Type: On or off. Default: Off.
+
+Sort Sections:
+    #id: sortsections
+
+    Order the faces by texture and material, as Object Builder does. This changes the face order.
+
+    Type: On or off. Default: Off.
+
+Drop UVs:
+    #id: dropuvs
+
+    LODs of a type that does not use UVs (Geometry, Memory, Roadway, the fire and view geometry types) are written without UV sets and with zero face UVs, as Object Builder does. The geometry on the node is not changed.
+
+    Type: On or off. Default: Off.
+
+== LOD Rules == (tab_rules)
+
+These parameters are in the LOD Rules tab.
+
+Check LOD-Type Rules:
+    #id: typerules
+
+    Warn about what Object Builder's validator would: rules for geometry, shadow, roadway and other LOD types. Each rule has its own switch below.
+
+    Type: On or off. Default: On.
+
+Triangulate Where Needed:
+    #id: triangulate
+
+    Divide only the polygons that break the rules, in the written file (the geometry on the node is not changed): polygons with more than 4 points in any LOD, quads that are not convex in Geometry and Shadow Volume LODs, and every quad in Underground LODs. Triangles and allowed quads are left as they are. Uses Divide with Convex Polygons, Maximum Edges 3 and Avoid Small Angles, and warns for each LOD it changed. Off: those polygons stay and the checks report them.
+
+    Type: On or off. Default: On.
+
+At most 2 UV sets:
+    #id: t2uv2
+
+    The LOD has no more than 2 UV sets.
+
+    Type: On or off. Default: On.
+
+Contiguous mesh:
+    #id: t2contig
+
+    Geometry, shadow and underground LODs: no flipped polygons (shared edges run in opposite directions).
+
+    Type: On or off. Default: On.
+
+Triangulated:
+    #id: t2tri
+
+    Underground LODs: every polygon is a triangle. Geometry and shadow LODs: triangles and convex quads.
+
+    Type: On or off. Default: On.
+
+Convex mesh:
+    #id: t2convex
+
+    Geometry and underground LODs: every shared edge is convex or flat.
+
+    Type: On or off. Default: On.
+
+Component selections:
+    #id: t2comp
+
+    Geometry and underground LODs: a group called component01, component02, ... exists.
+
+    Type: On or off. Default: On.
+
+Mass is set:
+    #id: t2mass
+
+    Geometry LOD: a note (not a warning) when the points have a total mass below 0.001.
+
+    Type: On or off. Default: On.
+
+Every point has mass:
+    #id: t2massall
+
+    Geometry LOD: every point has a mass of at least 0.001.
+
+    Type: On or off. Default: On.
+
+No materials:
+    #id: t2nomat
+
+    Underground LODs: no polygon has a texture or material. Shadow LODs may have them.
+
+    Type: On or off. Default: On.
+
+Conventional shadow resolution:
+    #id: t2shadowres
+
+    Shadow LODs: the resolution is 0, 10, 1000, 1010 or 1020. Off by default.
+
+    Type: On or off. Default: Off.
+
+Shadow not disabled:
+    #id: t2shadowoff
+
+    Shadow LODs: no LODNoShadow = 1 property. Off by default.
+
+    Type: On or off. Default: Off.
+
+No edges in point clouds:
+    #id: t2pcedge
+
+    Memory, land contact and hit-point LODs: no 2-point primitives.
+
+    Type: On or off. Default: On.
+
+No faces in point clouds:
+    #id: t2pcface
+
+    Memory, land contact and hit-point LODs: no polygons.
+
+    Type: On or off. Default: On.
+
+Has polygons:
+    #id: t2rwfaces
+
+    Roadway, ground layer and paths LODs: at least one polygon.
+
+    Type: On or off. Default: On.
+
+Roadway point limit:
+    #id: t2rwlimit
+
+    Roadway LODs: at most 255 points.
+
+    Type: On or off. Default: On.
+
+Roadway sound textures:
+    #id: t2rwsound
+
+    Roadway LODs: every polygon has a texture (the sound).
+
+    Type: On or off. Default: On.
+
+Ground layer UV set:
+    #id: t2gluv
+
+    Ground layer LODs: exactly one UV set.
+
+    Type: On or off. Default: On.
+
+Ground layer UV values:
+    #id: t2gluvvalues
+
+    Ground layer LODs: every UV is (0, 0), (1, 0), (1, 1) or (1, -1).
+
+    Type: On or off. Default: On.
+
+Path entry points:
+    #id: t2pathentry
+
+    Paths LODs: a group called in01, in02, ... exists.
+
+    Type: On or off. Default: On.
+
+Path position points:
+    #id: t2pathpos
+
+    Paths LODs: the same test as the entry rule (as in Object Builder, which tests entry points twice).
+
+    Type: On or off. Default: On.
+
+At most 4 bones per point:
+    #id: t2wgt4
+
+    Visual, view and shadow LODs with selections named like the bones of the Arma 3 man skeleton (OFP2_ManSkeleton, case ignored): no point is weighted to more than 4 bones.
+
+    Type: On or off. Default: On.
+
+Bone weights add up to 1:
+    #id: t2wgtsum
+
+    The same LODs: the bone weights of a point add up to 1, within 0.02 (Bohemia's own sample character adds up to 0.992 and works in the game).
+
+    Type: On or off. Default: On.
+
+Every point has a bone weight:
+    #id: t2wgtnone
+
+    The same LODs: every point has a weight in at least one bone selection.
+
+    Type: On or off. Default: On.
+
+The full page for this node is docs/user/reference/a3ob_p3d_export.html in the A3OB folder. Open it in a web browser.

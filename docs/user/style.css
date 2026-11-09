@@ -1,0 +1,273 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * houdiniArma3 user docs: the one stylesheet for every page in docs/user/.
+ *
+ * Plain CSS. No JavaScript, no web fonts, no images needed to read the pages.
+ * Light and dark colours follow the reader's system setting (prefers-color-scheme).
+ *
+ * Classes a page may use (the page layout itself is in docs/user/README.md):
+ *   .note        a hint or side remark          <p class="note">...</p>
+ *   .warning     something that can lose work   <p class="warning">...</p>
+ *   .todo        a placeholder to be replaced   <p class="todo">...</p>
+ *   .gui, .outside  a step in the Houdini window / in another program (lead-in word is added)
+ *   kbd, samp    interface text (button, menu entry, node) and a node message
+ *   pre > code   a block of code or a file path
+ *   code         a short piece of code, a node name or a parameter name in a sentence
+ *   .network     a simple network diagram       <ol class="network"><li>Node</li>...</ol>
+ *   .network .optional   a node that is not always needed
+ *   .parm        one parameter in the reference  <section class="parm" id="name">...</section>
+ *   .facts       a small table of key facts      <table class="facts">...</table>
+ *   .cards       a grid of links to pages        <ul class="cards"><li><a>...</a><span>...</span></li></ul>
+ */
+
+:root {
+  --bg: #ffffff;
+  --fg: #1d2127;
+  --muted: #5a6370;
+  --line: #d5dae1;
+  --panel: #f3f5f8;
+  --link: #0b5cad;
+  --accent: #b34700;
+  --note-bg: #eaf3fc;
+  --note-line: #5b9bd5;
+  --warn-bg: #fdf0e3;
+  --warn-line: #d9822b;
+  --todo-bg: #f3eefb;
+  --todo-line: #8a6cc2;
+  --code-bg: #eef0f4;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15181d;
+    --fg: #e3e6ea;
+    --muted: #9aa3af;
+    --line: #333a44;
+    --panel: #1d2128;
+    --link: #7db6f2;
+    --accent: #f0a060;
+    --note-bg: #17283a;
+    --note-line: #4b84bd;
+    --warn-bg: #3a2616;
+    --warn-line: #d9822b;
+    --todo-bg: #261f35;
+    --todo-line: #8a6cc2;
+    --code-bg: #232830;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.6;
+}
+
+a { color: var(--link); }
+a:hover { text-decoration-thickness: 2px; }
+
+header.site {
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+header.site .inner,
+main,
+footer.site .inner {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.site-title {
+  display: block;
+  padding-top: 0.75rem;
+  font-weight: 700;
+  color: var(--fg);
+  text-decoration: none;
+}
+
+nav.site ul {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+
+nav.site a { text-decoration: none; }
+nav.site a:hover { text-decoration: underline; }
+nav.site a[aria-current="page"] { font-weight: 700; color: var(--accent); }
+
+main { padding-top: 1.5rem; padding-bottom: 2rem; }
+
+h1, h2, h3 { line-height: 1.25; }
+h1 { font-size: 1.9rem; margin: 0 0 0.5rem; }
+h2 { font-size: 1.4rem; margin: 2rem 0 0.5rem; border-bottom: 1px solid var(--line); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin: 1.25rem 0 0.25rem; }
+
+.crumbs { color: var(--muted); font-size: 0.9rem; margin: 0 0 0.75rem; }
+.lead { font-size: 1.1rem; color: var(--muted); }
+
+code, pre {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  font-size: 0.92em;
+}
+
+code { background: var(--code-bg); padding: 0.1em 0.3em; border-radius: 3px; }
+
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+}
+
+pre code { background: none; padding: 0; }
+
+.note, .warning, .todo {
+  margin: 1rem 0;
+  padding: 0.6rem 1rem;
+  border-left: 4px solid;
+  border-radius: 0 4px 4px 0;
+}
+
+.note { background: var(--note-bg); border-color: var(--note-line); }
+.warning { background: var(--warn-bg); border-color: var(--warn-line); }
+.todo { background: var(--todo-bg); border-color: var(--todo-line); }
+
+.note::before, .warning::before, .todo::before { font-weight: 700; }
+.note::before { content: "Note. "; }
+.warning::before { content: "Careful. "; }
+.todo::before { content: "Still to write. "; }
+
+/* A step that needs the Houdini window, or a program other than Houdini. These steps are not run by the tests. */
+.gui, .outside {
+  margin: 1rem 0;
+  padding: 0.4rem 1rem;
+  border-left: 4px solid var(--line);
+  border-radius: 0 4px 4px 0;
+  background: var(--panel);
+}
+
+.gui::before { content: "Houdini window. "; font-weight: 700; }
+.outside::before { content: "Outside Houdini. "; font-weight: 700; }
+
+/* Text the reader sees in the interface: a button, a menu entry, a node name (kbd), a node message (samp). */
+kbd {
+  font-family: inherit;
+  font-size: 0.95em;
+  font-weight: 600;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0 0.3em;
+}
+
+samp {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  font-size: 0.9em;
+  background: var(--code-bg);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+}
+
+table { border-collapse: collapse; width: 100%; margin: 0.75rem 0; }
+th, td { text-align: left; vertical-align: top; padding: 0.35rem 0.6rem; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 600; }
+
+table.facts { width: auto; min-width: 60%; }
+table.facts th { white-space: nowrap; padding-right: 1.5rem; }
+
+/* Screenshots stay inside the page width on narrow windows (the width and height attributes keep the shape). */
+img { max-width: 100%; height: auto; }
+
+/* A simple network diagram: boxes in a row, with an arrow between them. */
+ol.network {
+  list-style: none;
+  margin: 1rem 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0;
+}
+
+ol.network li {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  margin-right: 1.6rem;
+  position: relative;
+  font-weight: 600;
+}
+
+ol.network li:not(:last-child)::after {
+  content: "\2192";
+  position: absolute;
+  right: -1.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-weight: 400;
+}
+
+ol.network li.optional { border-style: dashed; font-weight: 400; }
+
+/* One parameter in the generated reference. */
+section.parm {
+  border-top: 1px solid var(--line);
+  padding: 0.5rem 0 0.75rem;
+}
+
+section.parm h3 { margin-top: 0.25rem; }
+section.parm h3 code { font-weight: 400; font-size: 0.8em; color: var(--muted); }
+section.parm p { margin: 0.25rem 0; }
+section.parm dl { margin: 0.25rem 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.1rem 1rem; }
+section.parm dt { color: var(--muted); }
+section.parm dd { margin: 0; }
+section.parm ul { margin: 0.25rem 0; padding-left: 1.25rem; }
+section.parm .rows { margin-left: 1rem; padding-left: 1rem; border-left: 3px solid var(--line); }
+
+/* A folder (group box or tab) in the generated reference: its parameters sit inside. */
+section.folder { border-top: 2px solid var(--line); padding: 0.5rem 0 0.25rem; }
+section.folder > h3 { margin-top: 0.25rem; }
+section.folder > h3 code { font-weight: 400; font-size: 0.8em; color: var(--muted); }
+section.folder .folder-body { margin-left: 1rem; padding-left: 1rem; border-left: 3px solid var(--line); }
+
+ul.cards {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.75rem;
+}
+
+ul.cards li {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.6rem 0.9rem;
+}
+
+ul.cards li a { font-weight: 700; display: block; }
+ul.cards li span { color: var(--muted); font-size: 0.92rem; }
+
+footer.site {
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 0.9rem;
+  padding: 1rem 0 1.5rem;
+}
+
+footer.site p { margin: 0.25rem 0; }

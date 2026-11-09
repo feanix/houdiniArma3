@@ -1,0 +1,74 @@
+# Dialog script for a3ob_model_cfg, version 1
+
+{
+    name	a3ob_model_cfg
+    script	a3ob_model_cfg
+    label	"Model Cfg"
+
+    help {
+	"Writes the model.cfg a character P3D needs (uniform, vest, headgear and other gear on the man skeleton) into a folder, or adds the P3D's class to the model.cfg that is already there. The messages show what Write model.cfg would do. The output is the input."
+    }
+
+    inputlabel	1	"P3D geometry or LOD geometry (optional)"
+
+    parm {
+	name	"folder"
+	label	"Folder"
+	type	directory
+	default	{ "" }
+	help	"The folder to write model.cfg into. Normally the folder of the P3D, or a folder above it. The file is named model.cfg."
+    }
+    parm {
+	name	"model"
+	label	"Model Names"
+	type	string
+	default	{ "" }
+	help	"The P3D file names without .p3d, separated by spaces or commas. Each gets one class in CfgModels, named exactly like the file. Capitals matter to the build tools."
+    }
+    parm {
+	name	"fromexport"
+	label	"From P3D Export"
+	type	button
+	default	{ "0" }
+	help	"Take Folder and Model Names from the Output File of the P3D Export node in this network (the one that shares this node's input, or the only one)."
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('model_cfg', 'fromexport', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+    parm {
+	name	"base"
+	label	"Base Class"
+	type	string
+	default	{ "ArmaMan" }
+	help	"The CfgModels class that holds the shared settings and sections of man models. Each model class inherits from it. It is added when the file has none."
+    }
+    parm {
+	name	"skeleton"
+	label	"Skeleton"
+	type	string
+	default	{ "OFP2_ManSkeleton" }
+	help	"The CfgSkeletons class with the Arma 3 man skeleton (103 bones and their parents). It is added when the file has none; a class of that name that is there is kept as it is."
+    }
+    parm {
+	name	"extra"
+	label	"Extra Sections"
+	type	string
+	default	{ "" }
+	help	"More section names (selections that a config can retexture or hide, for example camo3), separated by spaces or commas. They are added to the sections of the base class, on top of the usual man list (camo, camo1, camo2, personality, hl, injury_*, insignia ...)."
+    }
+    parm {
+	name	"scan"
+	label	"Add Selections of the Input"
+	type	toggle
+	default	{ "0" }
+	help	"Also add the selections of the input geometry (visual LODs) that are not bones, proxies or a3ob_ helper groups, for example camo1. Off: they are only listed in the messages. Does nothing without an input. Check the list first: working groups of your own show up here too."
+    }
+    parm {
+	name	"write"
+	label	"Write model.cfg"
+	type	button
+	default	{ "0" }
+	help	"Create model.cfg, or update the one in the folder: only the model classes are added or replaced (and Default, the base class and the skeleton if missing). Everything else in the file stays. An old file is kept as model.cfg.bak. A binarized file or a file that cannot be read is refused."
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('model_cfg', 'write', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+}

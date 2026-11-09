@@ -1,0 +1,91 @@
+= Unpose =
+
+#type: node
+#context: sop
+#internal: a3ob_unpose
+#tags: arma, p3d
+
+"""Moves your weighted mesh from the pose of the fitted skeleton back onto the Arma rest pose, by a cage from your body to the sample body."""
+
+Weight Transfer and Weight Cleanup weight your mesh in the pose of the fitted skeleton, the one Rig Fit made inside your mesh. Arma needs the mesh in its own rest pose. This node moves every point back: it applies the inverse of the bone matrices that carry the Arma skeleton to the fitted one, blended with the weights of the point. The weights are not changed.
+
+Connect your weighted mesh to input 1, the output of Rig Fit as it is to input 2 (its fitted skeleton is used) and the Arma skeleton to input 3. The move of each bone is worked out from the joint positions only: how the bone turned, and how much longer or shorter it is along the bone (a longer arm is not a thicker arm). A perfect fit moves nothing. The message gives the mean and the largest move of the points, and the bones whose points moved most. The Arma rest pose has the pelvis at the origin, so these moves include the walk from where your character stands to there, about a metre.
+
+A rigid piece (a helmet or a pouch made by Accessory Weights in Rigid mode) is moved by one matrix for all its points, so it keeps its shape. The unpose can only remove what the fitted skeleton describes: a landmark that is a few centimetres off in Rig Fit leaves the mesh a few centimetres off here.
+
+@inputs
+
+Your mesh:
+    Your mesh with its cleaned bone weights, for example from Weight Cleanup.
+
+Fitted skeleton:
+    The output of Rig Fit as it is (its fitted skeleton, fitted body and rest body are used).
+
+Arma skeleton:
+    The Arma skeleton, for example from Rig Skeleton. It must have the same bones as the fitted one.
+
+@parameters
+
+Method:
+    #id: method
+
+    How the points move back to the Arma rest pose. Neither method changes the overall size.
+
+    Type: Menu. Default: Cage.
+
+    Cage:
+        Move the points by a cage: the sample body wrapped onto your body (fitted body of Rig Fit) is taken to the sample body in the Arma rest pose (Point Deform). It follows your body's proportions. Rigid pieces then move by one rigid transform each, and loose clothes and gear (points outside the Body Group) are carried by the wrapped body's surface at their own distance.
+
+    Bones:
+        Move each point by the inverse of its blended bone matrix, from the fitted skeleton to the Arma one. Fast, but it cannot express that your body has other proportions than the sample (thighs can telescope, hands crumple).
+
+Body Group:
+    #id: bodygroup
+
+    Cage method: the point group or primitive group of your mesh that is the bare body, the one Rig Fit wrapped onto. Its points always follow the cage. A piece outside it whose points follow one bone only (a helmet) is moved as a rigid piece; other points outside it (clothes that bend) keep their distance from the closest point of the wrapped body and move with that place of its surface. Empty means the whole mesh is body.
+
+    Type: Group picker (text; the menu lists the point groups and primitive groups of the input that are yours, without the bone groups (a primitive group counts as the points of its primitives; typing a bone group name still works) of the input, the arrow button picks in the viewport). Default: body.
+
+Rigid Pieces Keep Their Shape:
+    #id: rigid_pieces
+
+    Move all the points of a rigid piece (made by Accessory Weights in Rigid mode, or an island outside the Body Group that follows one bone only) with one rigid transform, so the piece keeps its shape. A piece of one bone that stands beyond the cage (a helmet above the neck of the headless sample) is put at the joint of its bone: it keeps its offset to the joint, and the neck is carried along. Off: every point follows the cage (or its own weights in the Bones method), which can stretch a rigid piece.
+
+    Type: On or off. Default: On.
+
+Head Keeps Its Tilt:
+    #id: keephead
+
+    Cage method: move the head (the points that follow the head bone, with the rigid pieces that follow it, such as a helmet) by a shift only, so it keeps the tilt it has in your mesh. The cage would turn it with the neck of the sample body, which is not your head's tilt (the sample body has no head to say what that is). The shift is the one the cage gives the base of the head; for a head beyond the cage (nothing of the sample there to follow) it is the move of the head joint, so the head keeps its offset to the joint, and the neck is carried along with it. Off: the head follows the cage.
+
+    Type: On or off. Default: On.
+
+Fingers Keep Their Shape:
+    #id: keepfingers
+
+    Cage method: move each finger segment (the points that follow a finger bone) by one rigid transform, the one that takes the segment of the wrapped body to the segment of the sample body, and blend the segments by your mesh's bone weights (the palm follows the cage). The cage alone lets the lattice of the neighbouring fingers pull a finger (fingers of your mesh are packed, the sample's are coarse), which flattens and widens them. Off: the fingers follow the cage.
+
+    Type: On or off. Default: On.
+
+Soles Keep Their Tilt:
+    #id: keepsoles
+
+    Cage method: turn each foot back about its forward axis by the sideways roll that the cage added, so the sole keeps the sideways tilt it has in your mesh (the cage rolled the feet onto their outer edges by 5 to 6 degrees, though the wrapped and the sample soles are both flat). Pitch and toe-out are not changed. Off: the feet follow the cage.
+
+    Type: On or off. Default: On.
+
+Neck Fade Length (cm):
+    #id: neckfade
+
+    Cage method: how far down the neck and chest the body is carried along with the head. The head is put at its joint, and the neck that leaves it moves with it. From the neck joint downwards the carrying fades out over this length, and the neck and chest are stretched there to meet the cage again. A longer fade spreads the stretch over more of the neck and chest; too long a fade carries the chest and the base of the shoulders and makes the stretch worse beside the neck. On the owner scene 20 to 30 cm worked best (the old fade was 24 cm). Shoulders, arms and the rest of the body do not follow the neck, whatever the length.
+
+    Type: Number. Default: 30. Allowed: From 1 to 100.
+
+Group:
+    #id: group
+
+    The points to unpose. Empty means all points. A point group or a primitive group (its primitives' points count) works. The menu lists your point and primitive groups of the input and shows the P3D name of a selection; picking adds or removes the group. The arrow button picks points in the viewport. You can also type group names, patterns or point numbers (for example 0-3).
+
+    Type: Group picker (text; the menu lists the point groups and primitive groups of the input that are yours, without the bone groups (a primitive group counts as the points of its primitives; typing a bone group name still works) of the input, the arrow button picks in the viewport). Default: (empty).
+
+The full page for this node is docs/user/reference/a3ob_unpose.html in the A3OB folder. Open it in a web browser.

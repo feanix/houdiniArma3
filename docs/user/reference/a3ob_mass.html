@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mass - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
+<h1>Mass</h1>
+<p class="lead">Sets the mass of each point of a Geometry LOD (the #Mass# data of the P3D file).</p>
+<p>Arma needs a mass for each point of a Geometry LOD to work out how a vehicle or object moves. This node sets that mass in one of several ways.</p>
+<table class="facts">
+<tr><th>Houdini name</th><td><code>a3ob_mass</code></td></tr>
+<tr><th>Where to find it</th><td>Tab menu, A3OB, Mass</td></tr>
+<tr><th>Inputs</th><td>1</td></tr>
+</table>
+<h2>Inputs</h2>
+<ol>
+<li value="1">Input 1: LOD geometry. The Geometry LOD whose points get a mass.</li>
+</ol>
+<h2>Parameters</h2>
+<p>Parameters are in the order they appear on the node.</p>
+<section class="parm" id="mode">
+<h3>Mode <code>mode</code></h3>
+<p>How the mass is set. Only the number for the chosen way is shown.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>Uniform total</dd>
+</dl>
+<p>Choices:</p>
+<ul>
+<li>Set on each <code>each</code>: Gives every point the same mass, set by Mass per Point.</li>
+<li>Uniform total <code>total</code>: Sets the mass of the whole object (Total Mass) and shares it equally among the points.</li>
+<li>From density <code>density</code>: Works the mass out from the volume of each closed shape and the Density.</li>
+<li>Clear <code>clear</code>: Removes the mass. With a group, only those points go back to 0.</li>
+<li>Copy from mass <code>copyfrom</code>: Takes the mass from the point attribute called mass, which you made yourself.</li>
+<li>Copy to mass <code>copyto</code>: Copies the mass into a point attribute called mass, so you can see it or use it elsewhere.</li>
+</ul>
+</section>
+<section class="parm" id="mass_each">
+<h3>Mass per Point (kg) <code>mass_each</code></h3>
+<p>The mass in kilograms that every point gets. It cannot be below 0. The slider shows 0 to 10, and you can type a larger number.</p>
+<dl>
+<dt>Type</dt><dd>Number</dd>
+<dt>Default</dt><dd>1</dd>
+<dt>Allowed</dt><dd>At least 0; no upper limit</dd>
+<dt>Shown when</dt><dd>Mode is Set on each</dd>
+</dl>
+</section>
+<section class="parm" id="mass_total">
+<h3>Total Mass (kg) <code>mass_total</code></h3>
+<p>The mass in kilograms of the whole object. It is shared equally among the points. It cannot be below 0. The slider shows 0 to 10, and you can type a larger number.</p>
+<dl>
+<dt>Type</dt><dd>Number</dd>
+<dt>Default</dt><dd>1</dd>
+<dt>Allowed</dt><dd>At least 0; no upper limit</dd>
+<dt>Shown when</dt><dd>Mode is Uniform total</dd>
+</dl>
+</section>
+<section class="parm" id="density">
+<h3>Density (kg/m³) <code>density</code></h3>
+<p>The mass of one cubic metre of the material, in kilograms. Each closed shape gets its volume times this number. It cannot be below 0. The slider shows 0 to 10, and you can type a larger number.</p>
+<dl>
+<dt>Type</dt><dd>Number</dd>
+<dt>Default</dt><dd>1</dd>
+<dt>Allowed</dt><dd>At least 0; no upper limit</dd>
+<dt>Shown when</dt><dd>Mode is From density</dd>
+</dl>
+</section>
+<section class="parm" id="value">
+<h3>Value (old scenes) <code>value</code></h3>
+<p>Not shown. Scenes saved before the three mass parameters existed stored the number here. When a scene loads, a number of 0 or more is moved into the parameter of the current mode and this goes back to -1. A new node leaves it at -1.</p>
+<dl>
+<dt>Type</dt><dd>Number</dd>
+<dt>Default</dt><dd>-1</dd>
+</dl>
+</section>
+<section class="parm" id="group">
+<h3>Group <code>group</code></h3>
+<p>The points to change. Empty means all points. A point group or a primitive group (its primitives&#x27; points count) works. The menu lists your point and primitive groups of the input and shows the P3D name of a selection; picking adds or removes the group. The arrow button picks points in the viewport. You can also type group names, patterns or point numbers (for example 0-3).</p>
+<dl>
+<dt>Type</dt><dd>Group picker (text; the menu lists the point groups and primitive groups of the input that are yours, without the bone groups (a primitive group counts as the points of its primitives; typing a bone group name still works) of the input, the arrow button picks in the viewport)</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="visualize">
+<h3>Visualize <code>visualize</code></h3>
+<p>Colour the points in the viewport by their mass: blue is the least mass, red the most, black no mass. This is a node visualizer, so the geometry (and any Cd it has) is not changed. The export ignores it. The Visualize colours show only when the Visualization button on the right toolbar of the viewport is on.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>Off</dd>
+</dl>
+</section>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,55 @@
+= Weight Transfer =
+
+#type: node
+#context: sop
+#internal: a3ob_weight_transfer
+#tags: arma, p3d
+
+"""Copies the bone weights of a source body (the sample character) onto the body of your mesh. Accessories are weighted by Accessory Weights."""
+
+Copies the bone weights of a source body (for example Bohemia's sample character) onto your mesh. Each point of your mesh takes the weights of the closest point on the body when it is near enough and faces the same way. The points that don't match are filled in smoothly from their neighbours.
+
+The node weights only the body: the tight polygons that follow the skin (skin, undergarments, shoes). Put them in the Body group; empty means every point. Points outside the group keep the weights they have, none on a fresh mesh. Weight a helmet, pouches or straps with Accessory Weights after this node. The result is bone selections in the model.cfg spelling, with a3ob_rig_origin (where each weight came from). Run Weight Cleanup last.
+
+@inputs
+
+Your mesh:
+    The mesh that gets the weights. It should lie on top of the source body (fit it first).
+
+Source body:
+    The body with bone weights: bone selections (point groups with a3ob_w weights), for example the sample character from Extract LOD. The output of Rig Fit goes here as it is: its fitted sample body is used.
+
+Skeleton:
+    The skeleton, for example from Rig Skeleton. Its joint names decide which selections are bones and how they are spelled.
+
+@parameters
+
+Body:
+    #id: body
+
+    The tight body-conforming polygons: skin, undergarments, shoes. A point group or a primitive group (its primitives' points count). They get their weights from the source body. Empty means every point. Points outside the group keep the weights they have (none on a fresh mesh): weight them with Accessory Weights.
+
+    Type: Group picker (text; the menu lists the point groups and primitive groups of the input that are yours, without the bone groups (a primitive group counts as the points of its primitives; typing a bone group name still works) of the input, the arrow button picks in the viewport). Default: (empty).
+
+Match Distance:
+    #id: distance
+
+    How far from the source body a point may be and still copy its weights, as a share of the size of your mesh (the diagonal of its bounding box). Points that are farther are filled in from their neighbours.
+
+    Type: Number. Default: 0.05. Allowed: At least 0; no upper limit.
+
+Match Angle:
+    #id: angle
+
+    How much the surface direction may differ, in degrees, for a point to copy weights. A point that faces another way (a sleeve against the torso) is filled in instead.
+
+    Type: Number. Default: 35. Allowed: From 0 to 180.
+
+Smallest Piece:
+    #id: minpiece
+
+    Loose pieces of the source body with fewer points than this are not used (the sample's proxy triangles).
+
+    Type: Whole number. Default: 10. Allowed: At least 1; no upper limit.
+
+The full page for this node is docs/user/reference/a3ob_weight_transfer.html in the A3OB folder. Open it in a web browser.

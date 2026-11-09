@@ -1,0 +1,4 @@
+*.p3d binary
+*.paa binary
+*.rtm binary
+houdini/otls/** text eol=lf

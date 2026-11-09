@@ -1,0 +1,28 @@
+= Extract LOD =
+
+#type: node
+#context: sop
+#internal: a3ob_extract_lod
+#tags: arma, p3d
+
+"""Takes one LOD out of a P3D geometry and outputs it as a LOD geometry that you can edit."""
+
+P3D Import gives you each LOD of a model packed into one primitive. This node unpacks the LOD you pick, so you can edit its points and polygons like any other Houdini geometry.
+
+@inputs
+
+P3D geometry:
+    The geometry from P3D Import, with every LOD packed into its own primitive.
+
+@parameters
+
+LOD:
+    #id: lod
+
+    Which LOD to extract: pick one from the menu, or type its position in the P3D geometry (0 is the first) or its name, for example Geometry or Resolution 1.
+
+    Type: Menu. Default: 0.
+
+    The choices are made when you open the menu, from the geometry or the settings.
+
+The full page for this node is docs/user/reference/a3ob_extract_lod.html in the A3OB folder. Open it in a web browser.

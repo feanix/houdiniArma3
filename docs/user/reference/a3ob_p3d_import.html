@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P3D Import - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
+<h1>P3D Import</h1>
+<p class="lead">Reads an Arma 3 .p3d file (MLOD) and outputs one packed primitive per LOD.</p>
+<p>Use this node to bring an existing Arma 3 model into Houdini. A P3D file holds one or more LODs (versions of the model for different viewing distances). The node outputs one packed primitive for each LOD. Wire it into Extract LOD to edit one of them.</p>
+<table class="facts">
+<tr><th>Houdini name</th><td><code>a3ob_p3d_import</code></td></tr>
+<tr><th>Where to find it</th><td>Tab menu, A3OB, P3D Import</td></tr>
+<tr><th>Inputs</th><td>None</td></tr>
+</table>
+<h2>Parameters</h2>
+<p>Parameters are in the order they appear on the node.</p>
+<section class="parm" id="file">
+<h3>File <code>file</code></h3>
+<p>The .p3d model to open. Use the editable version Object Builder saves (MLOD). Files taken out of the game&#x27;s packed PBOs (binarized, ODOL) can&#x27;t be opened.</p>
+<dl>
+<dt>Type</dt><dd>File path</dd>
+<dt>Default</dt><dd>(empty)</dd>
+<dt>Files</dt><dd>*.p3d</dd>
+</dl>
+</section>
+<section class="parm" id="reload">
+<h3>Reload <code>reload</code></h3>
+<p>Read the file again from disk, for example after you saved it in Object Builder.</p>
+<dl>
+<dt>Type</dt><dd>Button</dd>
+</dl>
+</section>
+<section class="parm" id="lods">
+<h3>LODs <code>lods</code></h3>
+<p>Which LODs to bring in. Pick them from the menu, or type numbers or names. * means all. Picking from the menu replaces a * in the field, and a * next to other entries still means all.</p>
+<dl>
+<dt>Type</dt><dd>Menu (pick several; each pick adds or removes an entry in the text)</dd>
+<dt>Default</dt><dd>*</dd>
+</dl>
+<p>The choices are made when you open the menu, from the geometry or the settings.</p>
+</section>
+<section class="parm" id="facegroups">
+<h3>Explicit Face Groups <code>facegroups</code></h3>
+<p>A face group is a named set of faces. Every selection comes in as a group of points. Normally a face group is added only when the selection&#x27;s faces are not just the faces whose points are all in it. Turn this on to get a face group for every selection, for example when you want to select or blast faces by selection name.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>Off</dd>
+</dl>
+</section>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

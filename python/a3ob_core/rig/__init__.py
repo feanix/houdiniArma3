@@ -1,0 +1,67 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# houdiniArma3: a Houdini port of Arma 3 Object Builder (A3OB).
+"""Character rigging code that needs no Houdini (docs/design/character-rigging.md).
+
+This is the one part of ``a3ob_core`` that may use numpy (owner decision D37, Q14): the rig nodes only run inside
+Houdini, and hython has numpy. The skeleton code below does not need it yet.
+
+- ``model_cfg``: a small ``model.cfg`` reader (``CfgSkeletons``: bones, ``skeletonInherit``, ``isDiscrete``).
+- ``pivots``: the pivot positions of a pivots P3D (the Memory LOD selections).
+- ``skeleton``: puts the two together into the joint list of the Rig Skeleton node.
+- ``weights``: bone weights as numpy matrices: name matching, the capture lists, and the export clean-up (task #62).
+- ``transfer``: weight transfer by closest point and inpainting, with the rigid and non-rigid layers (task #65).
+- ``landmarks`` and ``fit``: the landmarks of a humanoid mesh (guess, symmetry, snap) and the rigid fit of the skeleton
+  and the sample body to them (task #66).
+- ``foot``: the heel, toe tip and sole of the feet, the foot landmarks of Refine and the sole step (task #82).
+- ``hand``: bends the finger joints of the fitted skeleton to the user's finger mesh (task #83).
+- ``orient``: the one joint orientation rule of every skeleton the nodes output (task #86).
+- ``unpose``: moves a weighted mesh from the fitted pose back onto the Arma rest pose (task #67).
+- ``rtm`` and ``rtm_pose``: the plain RTM animation reader and writer, and the poses from it (task #87; use ``rig.rtm``,
+  ``rig.rtm_pose``).
+- ``lod_weights``: the weights of a reduced LOD from the finished Res 1 (task #92).
+- ``check``: the weight problems and the pose stress and volume test of the Rig Check node (task #68; use ``rig.check``).
+"""
+
+from . import check, rtm, rtm_pose
+from .fit import (TORSO_BONES, FitResult, aim_targets, body_scale, bone_frames, fit_skeleton, joint_targets,
+                  normalised_weights, skin_points, swing)
+from .landmarks import (CHIN_FROM_HEAD, CHIN_FRONT_SHARE, HEAD_SHARE, LANDMARKS, chin_from_head, Landmark, Template, facing_sign, find_groin,
+                        follow_mirror, guess_landmarks, is_set, make_template, mirror_x, snap_to_surface, symmetrize)
+from .landmarks import NAMES as LANDMARK_NAMES
+from .landmarks import PAIRS as LANDMARK_PAIRS
+from .model_cfg import CfgClass, CfgError, CfgFile, Skeleton, parse_cfg, read_cfg_file, resolve_skeleton, skeleton_names
+from .pivots import pivot_positions, read_pivots_file
+from .skeleton import SKIP_PATTERNS, Joint, SkeletonPlan, check_bones, plan_skeleton
+from .transfer import (ORIGIN_COPIED, ORIGIN_FILLED, ORIGIN_NONE, ORIGIN_NONRIGID, ORIGIN_RIGID, Piece, Settings,
+                       TransferResult, accessory_layer, drop_small_pieces, is_twist, transfer_body, twist_targets)
+from .cage import (anchor_pieces, beyond_cage, carry_body, stem_share, piece_bones, finger_columns, hold_orientation, keep_finger_shape, keep_sole_tilt, lattice_transforms, place_pieces,
+                   point_deform, rigid_fit, single_bone_pieces, sole_roll, surface_follow)
+from .foot import FOOT_LANDMARKS, Foot, find_feet, foot_landmarks, lay_on_sole
+from .hand import bend_fingers
+from .orient import frames as joint_frames
+from .orient import rule_targets as joint_aim_targets
+from .unpose import BoneMoves, bone_displacements, bone_moves, unpose_points
+from .lod_weights import LodWeightsResult, lod_weights, source_pieces
+from .weights import (CAPT_FLOATS, GRID, CleanStats, capture_lists, clean_weights, grid_units, inverse_rest_floats,
+                      match_bone_names, matrix_from_capture)
+
+#: Landmark name -> the Arma joint it stands for ("" for a point on the skin).
+BONE_OF = {item.name: item.bone for item in LANDMARKS}
+
+__all__ = [
+    "LodWeightsResult", "lod_weights", "source_pieces",
+    "BONE_OF", "LANDMARK_NAMES", "LANDMARK_PAIRS", "LANDMARKS", "Landmark", "Template", "TORSO_BONES", "FitResult",
+    "finger_columns", "keep_finger_shape", "keep_sole_tilt", "sole_roll", "anchor_pieces", "beyond_cage", "carry_body", "stem_share", "piece_bones",
+    "hold_orientation", "lattice_transforms", "place_pieces", "point_deform", "rigid_fit", "single_bone_pieces", "surface_follow",
+    "FOOT_LANDMARKS", "Foot", "find_feet", "foot_landmarks", "lay_on_sole", "bend_fingers", "joint_frames", "joint_aim_targets",
+    "BoneMoves", "aim_targets", "bone_displacements", "bone_moves", "normalised_weights", "unpose_points",
+    "CHIN_FROM_HEAD", "CHIN_FRONT_SHARE", "HEAD_SHARE", "chin_from_head", "body_scale", "bone_frames", "fit_skeleton", "joint_targets", "skin_points", "swing",
+    "facing_sign", "find_groin", "follow_mirror", "guess_landmarks", "is_set", "mirror_x", "make_template", "snap_to_surface", "symmetrize", "drop_small_pieces",
+    "ORIGIN_COPIED", "ORIGIN_FILLED", "ORIGIN_NONE", "ORIGIN_NONRIGID", "ORIGIN_RIGID", "Piece", "Settings",
+    "TransferResult", "accessory_layer", "is_twist", "transfer_body", "twist_targets",
+    "CAPT_FLOATS", "GRID", "CleanStats", "capture_lists", "clean_weights", "grid_units", "inverse_rest_floats",
+    "match_bone_names", "matrix_from_capture",
+    "CfgClass", "CfgError", "CfgFile", "Skeleton", "parse_cfg", "read_cfg_file", "resolve_skeleton", "skeleton_names",
+    "pivot_positions", "read_pivots_file", "SKIP_PATTERNS", "Joint", "SkeletonPlan", "check_bones", "plan_skeleton",
+]

@@ -1,0 +1,43 @@
+# Dialog script for a3ob_lod_weights, version 1
+
+{
+    name	a3ob_lod_weights
+    script	a3ob_lod_weights
+    label	"LOD Weights"
+
+    help {
+	"Gives a reduced LOD the bone weights of the finished Res 1: each point takes the weights of the closest place on Res 1."
+    }
+
+    inputlabel	1	"LOD to weight"
+    inputlabel	2	"Weighted source (Res 1)"
+    inputlabel	3	"Skeleton"
+
+    parm {
+	name	"distance"
+	label	"Match Distance"
+	type	float
+	size	1
+	default	{ "0.05" }
+	range	{ 0! 10 }
+	help	"How far from the source a point may be and still copy its weights, as a share of the size of the LOD (the diagonal of its bounding box). Farther points are listed and filled in from their neighbours."
+    }
+    parm {
+	name	"maxbones"
+	label	"Max Bones per Point"
+	type	integer
+	size	1
+	default	{ "4" }
+	range	{ 1! 16! }
+	help	"The most bones one point may have. Arma allows 4. The lightest weights beyond this are dropped."
+    }
+    parm {
+	name	"threshold"
+	label	"Prune Below"
+	type	float
+	size	1
+	default	{ "0.01" }
+	range	{ 0! 1! }
+	help	"Weights below this are dropped. A point never loses its heaviest weight."
+    }
+}

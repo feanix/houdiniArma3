@@ -1,0 +1,114 @@
+# Dialog script for a3ob_rig_check, version 1
+
+{
+    name	a3ob_rig_check
+    script	a3ob_rig_check
+    label	"Rig Check"
+
+    help {
+	"Shows what is wrong with the bone weights of a rigged mesh, and how it stretches, squashes and loses volume in test poses."
+    }
+
+    inputlabel	1	"Weighted mesh"
+    inputlabel	2	"Skeleton"
+
+    parm {
+	name	"show"
+	label	"Show"
+	type	string
+	default	{ "stress" }
+	menu {
+	    "origin"	"Origin"
+	    "jump"	"Jump"
+	    "influences"	"Influences"
+	    "sum"	"Sum"
+	    "straddle"	"Straddle"
+	    "stress"	"Stress"
+	    "volume"	"Volume"
+	    "heaviest"	"Heaviest bone"
+	}
+	help	"What Visualize colours. Every problem is also written as a point attribute."
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('rig_check', 'show', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+    parm {
+	name	"pose"
+	label	"Pose"
+	type	string
+	default	{ "worst" }
+	menu {
+	    "worst"	"Worst of all"
+	    "arms_up"	"Arms raised 90"
+	    "arms_forward"	"Arms forward 90"
+	    "elbows"	"Elbows bent 90"
+	    "hips"	"Hips flexed 90 (sitting)"
+	    "knees"	"Knees bent 90"
+	    "spine"	"Spine bent 30 forward"
+	    "neck"	"Neck turned 45"
+	    "wrists"	"Wrists bent 45"
+	    "rtm"	"RTM frame"
+	}
+	help	"The test pose that Stress and Volume measure and that the posed mesh shows. Worst of all measures every pose and keeps the largest change of each point."
+    }
+    parm {
+	name	"rtmfile"
+	label	"RTM File"
+	type	file
+	default	{ "" }
+	help	"A plain Arma animation (.rtm) whose frame is the test pose."
+	hidewhen	"{ pose != rtm }"
+	parmtag	{ "filechooser_mode" "read" }
+	parmtag	{ "filechooser_pattern" "*.rtm" }
+    }
+    parm {
+	name	"rtmframe"
+	label	"RTM Key Frame"
+	type	integer
+	size	1
+	default	{ "0" }
+	range	{ 0! 10 }
+	help	"Which key frame of the file to pose with, counted from 0. A number past the last frame takes the last one."
+	hidewhen	"{ pose != rtm }"
+    }
+    parm {
+	name	"stress_range"
+	label	"Stress Range"
+	type	float
+	size	1
+	default	{ "0.3" }
+	range	{ 0.01! 10 }
+	help	"The change of length (Stress) or volume (Volume) that shows as full colour: 0.3 is 30 %. Stress and volume above this are warned about."
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('rig_check', 'range', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+    parm {
+	name	"jump_limit"
+	label	"Jump Limit"
+	type	float
+	size	1
+	default	{ "0.5" }
+	range	{ 0! 1! }
+	help	"A weight jump above this is warned about. 0 is the same weights as the neighbour, 1 is completely different bones."
+    }
+    parm {
+	name	"view"
+	label	"Output"
+	type	string
+	default	{ "mesh" }
+	menu {
+	    "mesh"	"Checked mesh"
+	    "posed"	"Posed mesh"
+	    "skeleton"	"Skeleton"
+	}
+	help	"What the node outputs. The checked mesh keeps your geometry and only gains attributes. Use the others to look; do not export them."
+    }
+    parm {
+	name	"visualize"
+	label	"Visualize"
+	type	toggle
+	default	{ "0" }
+	help	"Colour the points in the viewport by the Show entry. This is a node visualizer, so the geometry (and any Cd it has) is not changed. The export ignores it. The Visualize colours show only when the Visualization button on the right toolbar of the viewport is on."
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('rig_check', 'visualize', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+}

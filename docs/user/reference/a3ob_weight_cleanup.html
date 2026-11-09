@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weight Cleanup - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
+<h1>Weight Cleanup</h1>
+<p class="lead">Makes the bone weights follow Arma&#x27;s rules: at most 4 bones per point, weights in steps of 1/254, sum 1.</p>
+<p>Arma allows at most 4 bones per point and reads weights in steps of 1/254. This node makes the bone selections follow that: it drops tiny weights, keeps the heaviest bones, scales each point to a sum of 1 and snaps the weights to the 1/254 grid so the sum is exactly 1.</p>
+<p>It writes a3ob_rig_changed on the points: how much the weights of that point changed. The node message gives the counts and lists the points with no weight. If the model.cfg class of the skeleton has isDiscrete = 1, every point keeps only its heaviest bone.</p>
+<table class="facts">
+<tr><th>Houdini name</th><td><code>a3ob_weight_cleanup</code></td></tr>
+<tr><th>Where to find it</th><td>Tab menu, A3OB, Weight Cleanup</td></tr>
+<tr><th>Inputs</th><td>2</td></tr>
+</table>
+<h2>Inputs</h2>
+<ol>
+<li value="1">Input 1: Geometry. The LOD geometry with bone selections (point groups with a3ob_w weights).</li>
+<li value="2">Input 2: Skeleton. The skeleton, for example from Rig Skeleton. Its joint names decide which selections are bones. If its model.cfg class has isDiscrete = 1, every point keeps only its heaviest bone.</li>
+</ol>
+<h2>Parameters</h2>
+<p>Parameters are in the order they appear on the node.</p>
+<section class="parm" id="maxbones">
+<h3>Max Bones per Point <code>maxbones</code></h3>
+<p>The most bones one point may have. Arma allows 4. The lightest weights beyond this are dropped.</p>
+<dl>
+<dt>Type</dt><dd>Whole number</dd>
+<dt>Default</dt><dd>4</dd>
+<dt>Allowed</dt><dd>From 1 to 16</dd>
+</dl>
+</section>
+<section class="parm" id="threshold">
+<h3>Prune Below <code>threshold</code></h3>
+<p>Weights below this are dropped. A point never loses its heaviest weight, even when it is below this.</p>
+<dl>
+<dt>Type</dt><dd>Number</dd>
+<dt>Default</dt><dd>0.01</dd>
+<dt>Allowed</dt><dd>From 0 to 1</dd>
+</dl>
+</section>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

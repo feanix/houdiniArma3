@@ -1,0 +1,41 @@
+# Dialog script for a3ob_rig_skeleton, version 1
+
+{
+    name	a3ob_rig_skeleton
+    script	a3ob_rig_skeleton
+    label	"Rig Skeleton"
+
+    help {
+	"Builds the Arma 3 character skeleton as a KineFX skeleton, from a model.cfg and a pivots .p3d file. Each joint's X axis points down its bone to the next joint, and the hinge of elbows, knees, fingers and thumbs is on Z."
+    }
+
+    parm {
+	name	"cfg"
+	label	"Model Config"
+	type	file
+	default	{ "" }
+	help	"The model.cfg that holds the skeleton. This node reads exactly this one file. Arma also reads a <foldername>.cfg (which wins over model.cfg) and a <modelname>.cfg next to the model; if your skeleton is in one of those, pick that file. #include lines are not followed."
+	parmtag	{ "filechooser_mode" "read" }
+	parmtag	{ "filechooser_pattern" "*.cfg" }
+    }
+    parm {
+	name	"skeleton"
+	label	"Skeleton"
+	type	string
+	default	{ "" }
+	menu {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['menu']).menu('rig_skeleton', 'skeleton_choices', kwargs)" ]
+	    language python
+	}
+	help	"Which skeleton class of the file to build (the classes in CfgSkeletons, with their bone count). Empty means the first one that has bones. A class that inherits (skeletonInherit) gets the bones of the class it inherits from first."
+    }
+    parm {
+	name	"pivots"
+	label	"Pivots File"
+	type	file
+	default	{ "" }
+	help	"An editable pivots .p3d: its Memory LOD has one named selection per bone, and the first point of a selection is that bone's pivot. The game file named by pivotsModel in the model.cfg is packed and can't be read, so you point at the editable one here (the Samples have ManSkeleton_Pivots.p3d)."
+	parmtag	{ "filechooser_mode" "read" }
+	parmtag	{ "filechooser_pattern" "*.p3d" }
+    }
+}

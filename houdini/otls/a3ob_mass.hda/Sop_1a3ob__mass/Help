@@ -1,0 +1,86 @@
+= Mass =
+
+#type: node
+#context: sop
+#internal: a3ob_mass
+#tags: arma, p3d
+
+"""Sets the mass of each point of a Geometry LOD (the #Mass# data of the P3D file)."""
+
+Arma needs a mass for each point of a Geometry LOD to work out how a vehicle or object moves. This node sets that mass in one of several ways.
+
+@inputs
+
+LOD geometry:
+    The Geometry LOD whose points get a mass.
+
+@parameters
+
+Mode:
+    #id: mode
+
+    How the mass is set. Only the number for the chosen way is shown.
+
+    Type: Menu. Default: Uniform total.
+
+    Set on each:
+        Gives every point the same mass, set by Mass per Point.
+
+    Uniform total:
+        Sets the mass of the whole object (Total Mass) and shares it equally among the points.
+
+    From density:
+        Works the mass out from the volume of each closed shape and the Density.
+
+    Clear:
+        Removes the mass. With a group, only those points go back to 0.
+
+    Copy from mass:
+        Takes the mass from the point attribute called mass, which you made yourself.
+
+    Copy to mass:
+        Copies the mass into a point attribute called mass, so you can see it or use it elsewhere.
+
+Mass per Point (kg):
+    #id: mass_each
+
+    The mass in kilograms that every point gets. It cannot be below 0. The slider shows 0 to 10, and you can type a larger number.
+
+    Type: Number. Default: 1. Allowed: At least 0; no upper limit. Shown when: Mode is Set on each.
+
+Total Mass (kg):
+    #id: mass_total
+
+    The mass in kilograms of the whole object. It is shared equally among the points. It cannot be below 0. The slider shows 0 to 10, and you can type a larger number.
+
+    Type: Number. Default: 1. Allowed: At least 0; no upper limit. Shown when: Mode is Uniform total.
+
+Density (kg/m³):
+    #id: density
+
+    The mass of one cubic metre of the material, in kilograms. Each closed shape gets its volume times this number. It cannot be below 0. The slider shows 0 to 10, and you can type a larger number.
+
+    Type: Number. Default: 1. Allowed: At least 0; no upper limit. Shown when: Mode is From density.
+
+Value (old scenes):
+    #id: value
+
+    Not shown. Scenes saved before the three mass parameters existed stored the number here. When a scene loads, a number of 0 or more is moved into the parameter of the current mode and this goes back to -1. A new node leaves it at -1.
+
+    Type: Number. Default: -1.
+
+Group:
+    #id: group
+
+    The points to change. Empty means all points. A point group or a primitive group (its primitives' points count) works. The menu lists your point and primitive groups of the input and shows the P3D name of a selection; picking adds or removes the group. The arrow button picks points in the viewport. You can also type group names, patterns or point numbers (for example 0-3).
+
+    Type: Group picker (text; the menu lists the point groups and primitive groups of the input that are yours, without the bone groups (a primitive group counts as the points of its primitives; typing a bone group name still works) of the input, the arrow button picks in the viewport). Default: (empty).
+
+Visualize:
+    #id: visualize
+
+    Colour the points in the viewport by their mass: blue is the least mass, red the most, black no mass. This is a node visualizer, so the geometry (and any Cd it has) is not changed. The export ignores it. The Visualize colours show only when the Visualization button on the right toolbar of the viewport is on.
+
+    Type: On or off. Default: Off.
+
+The full page for this node is docs/user/reference/a3ob_mass.html in the A3OB folder. Open it in a web browser.

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concepts - A3OB for Houdini</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="index.html">Home</a></li>
+<li><a href="install.html">Install</a></li>
+<li><a href="quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="concepts.html" aria-current="page">Concepts</a></li>
+<li><a href="reference/index.html">Reference</a></li>
+<li><a href="about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<h1>Concepts</h1>
+<p class="lead">How a model is kept in Houdini, what the presets do, and what the checks mean.</p>
+
+<p>Read the quick start for your background first: <a href="quick-start-arma.html">Arma modders</a> or
+<a href="quick-start-houdini.html">Houdini users</a>. This page is for looking things up.</p>
+
+<ul>
+<li><a href="#p3d-geometry">A P3D file in Houdini</a></li>
+<li><a href="#lod-data">LOD data and properties</a></li>
+<li><a href="#selections">Selections</a></li>
+<li><a href="#proxies">Proxies</a></li>
+<li><a href="#mass">Mass</a></li>
+<li><a href="#surface">Textures, UVs and sharp edges</a></li>
+<li><a href="#paths">Game paths: the P drive, HEMTT and the project root</a></li>
+<li><a href="#presets">Presets</a></li>
+<li><a href="#rigging">Rigging</a></li>
+<li><a href="#validator">The checks: errors and warnings</a></li>
+<li><a href="#lossless">Lossless round trips</a></li>
+</ul>
+
+<h2 id="p3d-geometry">A P3D file in Houdini</h2>
+<p>A <strong>P3D</strong> file is the model format of Arma 3. Object Builder writes it. One file holds several
+<strong>LODs</strong> (levels of detail): separate versions of the model for different jobs. Some are for looking at
+(Resolution 1 is the most detailed, Resolution 2 is simpler and is used farther away). Others are for the game engine:
+Geometry is the collision shape, Memory holds named points such as where a muzzle is, Shadow Volume casts shadows.</p>
+<p>Houdini has no such thing as a file with several models inside, so the add-on uses two shapes of geometry. Both are
+ordinary Houdini geometry. Geometry in Houdini is points, polygons and the extra data attached to them.</p>
+
+<table class="facts">
+<tr><th>P3D geometry</th><td>The whole model. It has one <strong>packed primitive</strong> for each LOD, in file order.
+A packed primitive is a whole piece of geometry stored as one item, with its own place in space. Packed items cannot be
+edited point by point until you unpack them. Each item has a <code>name</code> such as <code>Resolution 1</code> or
+<code>Geometry</code>. <kbd class="ui-node">P3D Import</kbd> and <kbd class="ui-node">Assemble LODs</kbd> output this.</td></tr>
+<tr><th>LOD geometry</th><td>One LOD as ordinary, unpacked points and polygons. You edit this.
+<kbd class="ui-node">Extract LOD</kbd> makes it from the P3D geometry, and <kbd class="ui-node">Assemble LODs</kbd> packs
+it back.</td></tr>
+</table>
+
+<p>Most A3OB nodes work on a LOD geometry. <kbd class="ui-node">P3D Export</kbd> and
+<kbd class="ui-node">Validate</kbd> accept either shape. If you give them a LOD geometry, they write a file with just
+that one LOD.</p>
+<p>To see the packed items, open the <strong>Geometry Spreadsheet</strong> (a pane that lists the points, primitives and
+attributes of the selected node) on the Primitives tab. You will see one row for each LOD.</p>
+
+<h3>Why two shapes?</h3>
+<p>A Houdini node that merges several pieces of geometry loses the per-piece data of all but the first. LOD data is
+per piece, so LODs have to stay packed until you want to edit one. Edit one LOD at a time, then let
+<kbd class="ui-node">Assemble LODs</kbd> put it back. The <kbd class="ui-parm" data-node="a3ob_assemble_lods">Replace Matching LODs</kbd>
+switch matches an edited LOD to the original one of the same stored resolution signature and keeps its place in the
+list. LODs with no match are added at the end. LODs you did not touch pass through unchanged.</p>
+<p>Input 1 of <kbd class="ui-node">Assemble LODs</kbd> takes a base P3D geometry or a single LOD. A single LOD there is
+simply one more LOD, with no base, and gives no warning. If two or more LODs in the result share a type and a
+resolution (for example three LOD Properties nodes all left at Resolution 2), the node warns and names them and their
+inputs. <kbd class="ui-node">P3D Export</kbd> then follows its <kbd class="ui-parm" data-node="a3ob_p3d_export">Duplicate LODs</kbd>
+setting: an error (the default), skip the later ones, or write all of them. A P3D geometry on any input other than
+input 1 is still an error. After updating the add-on, click <kbd class="ui-shelf">Reload A3OB</kbd> on the shelf.</p>
+
+<h3>Coordinates</h3>
+<p>Up is Y in Arma and in Houdini. The model's left stays on the same side. Arma's Z axis points the other way from
+Houdini's, so the importer negates Z and the exporter undoes it. The order of the corners of each polygon is reversed
+in the same step so that the front of every polygon stays the front. UV coordinates are flipped from top-down to
+bottom-up. You do not have to do anything. A character that looks forward in Object Builder looks toward +Z in
+Houdini.</p>
+
+<h2 id="lod-data">LOD data and properties</h2>
+<p>An <strong>attribute</strong> is a named piece of data attached to points, polygons or the whole geometry. Data
+attached to the whole geometry is a <strong>detail attribute</strong>. A LOD geometry keeps its LOD information in detail
+attributes. All attribute names of this add-on start with <code>a3ob_</code>.</p>
+<table>
+<tr><th>What</th><th>Where it is kept</th></tr>
+<tr><td>LOD type (Resolution, Geometry, Memory and so on)</td><td><code>a3ob_lod_type</code></td></tr>
+<tr><td>Resolution number</td><td><code>a3ob_lod_resolution</code></td></tr>
+<tr><td>The number the file stores for the pair above (the <em>signature</em>)</td><td><code>a3ob_lod_signature</code>, kept as read so that an unedited LOD is written exactly as it was</td></tr>
+<tr><td>Named properties, such as <code>class = house</code> or <code>lodnoshadow = 1</code></td><td><code>a3ob_prop_names</code> and <code>a3ob_prop_values</code> (two lists, side by side)</td></tr>
+<tr><td>LOD copies (the same mesh written under a second type and resolution)</td><td><code>a3ob_lod_copy_types</code> and <code>a3ob_lod_copy_resolutions</code></td></tr>
+</table>
+<p>You set all of these with the <kbd class="ui-node">LOD Properties</kbd> node. It gives you a menu of types by name, so you
+never type a number. When you change the type or resolution of an imported LOD, the node also brings the stored
+signature in line.</p>
+
+<p>The LOD types (the entries of the <kbd class="ui-parm" data-node="a3ob_lod_properties">LOD Type</kbd> menu) that you
+meet most often:</p>
+<table>
+<tr><th>Type</th><th>Used for</th><th>Has a resolution number?</th></tr>
+<tr><td><kbd class="ui-menu">Resolution</kbd></td><td>What you see. Resolution 1 is the nearest and best.</td><td>Yes</td></tr>
+<tr><td><kbd class="ui-menu">View - Pilot</kbd>, <kbd class="ui-menu">View - Gunner</kbd>, <kbd class="ui-menu">View - Cargo</kbd></td><td>The first-person view from a seat.</td><td>Only Cargo</td></tr>
+<tr><td><kbd class="ui-menu">Shadow Volume</kbd></td><td>The shape that casts shadows.</td><td>Yes</td></tr>
+<tr><td><kbd class="ui-menu">Geometry</kbd></td><td>Collision with the world, and mass. Built of convex pieces (see Components under Selections).</td><td>No</td></tr>
+<tr><td><kbd class="ui-menu">Fire Geometry</kbd></td><td>Where bullets hit.</td><td>No</td></tr>
+<tr><td><kbd class="ui-menu">View Geometry</kbd></td><td>What blocks the view of the AI.</td><td>No</td></tr>
+<tr><td><kbd class="ui-menu">Memory</kbd></td><td>Named points: weapon muzzles, camera positions, animation axes.</td><td>No</td></tr>
+<tr><td><kbd class="ui-menu">Land Contact</kbd></td><td>Points where the object touches the ground.</td><td>No</td></tr>
+<tr><td><kbd class="ui-menu">Hit-points</kbd></td><td>A cloud of points for damage zones.</td><td>No</td></tr>
+<tr><td><kbd class="ui-menu">Roadway</kbd></td><td>Surfaces that units can walk on.</td><td>No</td></tr>
+<tr><td><kbd class="ui-menu">Paths</kbd></td><td>The mesh for AI path-finding.</td><td>No</td></tr>
+</table>
+<p>The menu has more types. The page for <a href="reference/a3ob_lod_properties.html#lodtype">LOD Properties</a> lists them.</p>
+
+<h2 id="selections">Selections</h2>
+<p>A <strong>selection</strong> in Object Builder is a named set of points, and often the faces made of them. Animation,
+hit zones, components and memory points all use selections. In Houdini a selection is a <strong>group</strong>: a named
+set of points (a <em>point group</em>) or polygons (a <em>polygon group</em>).</p>
+<ul>
+<li><strong>Points.</strong> The selection is a point group with the same name.</li>
+<li><strong>Weights.</strong> A selection can give each point a weight (how strongly it belongs, used for animation).
+  Weights are kept in a point attribute <code>a3ob_w_</code> followed by the name. It is only made where some weight is
+  not 1.</li>
+<li><strong>Faces.</strong> In a P3D file a selection also says which faces belong to it. The importer makes a polygon
+  group for this only where the faces are not simply "all corners are in the selection". Otherwise the faces follow the
+  points. The <kbd class="ui-parm" data-node="a3ob_p3d_import">Explicit Face Groups</kbd> switch of <kbd class="ui-node">P3D Import</kbd> makes a polygon group for every selection.</li>
+</ul>
+<p><strong>Names.</strong> Houdini group names may only hold letters, digits and underscores. Object Builder names can
+hold anything, such as <code>-proxies</code> or <code>proxy:\a3\...</code>. The add-on stores such a name in a reversible
+code that starts with <code>xn__</code>. For example <code>-proxies</code> is stored as <code>xn__proxies_cka</code>.
+Plain names like <code>head</code> are stored as they are. The code is turned back into the real name when the file is
+written. The <a href="reference/tool-a3ob_selection_browser.html">Selection browser</a> shows the real name next to the
+stored one, copies the stored one for you to paste into a group field, and can add nodes that create, delete or rename a
+selection.</p>
+<p><strong>What becomes a selection on export.</strong> Every point group, except names that start with two underscores.
+This is the <kbd class="ui-parm" data-node="a3ob_p3d_export">Selection Mask</kbd> parameter of
+<kbd class="ui-node">P3D Export</kbd>. A group that came from the file is always written.</p>
+<p><strong>Components.</strong> A Geometry LOD is built from convex pieces. Each piece is a selection named
+<code>component01</code>, <code>component02</code> and so on. Arma needs at least one. The starter network has one. The
+<kbd class="ui-parm" data-node="a3ob_p3d_export">Auto-Components</kbd> option of the export can make them for you when none
+exist. The <kbd class="ui-node">Components</kbd> node makes the groups in Houdini, so you can see and edit them: one for
+each closed connected piece, or one for the convex hull of each piece.</p>
+
+<h2 id="proxies">Proxies</h2>
+<p>A <strong>proxy</strong> is a place where the game puts another model: a weapon on a slot, a seat for a crew member,
+a backpack. In the file it is a selection named <code>proxy:</code> plus the model path and an index, on a single
+triangle. The triangle gives the position and direction of the other model. The path and index must be unique within a
+LOD.</p>
+<p>In Houdini the importer makes each proxy a small packed primitive inside the LOD geometry. It has a path attribute
+(<code>a3ob_proxy_path</code>) and an index (<code>a3ob_proxy_index</code>), and you move it with an ordinary
+<kbd class="ui-node">Transform</kbd> node. A proxy that cannot be packed without losing something stays as a plain
+triangle with the same two attributes. The <kbd class="ui-node">Proxy</kbd> node adds new proxies, one by hand or one for
+each point of a second input. A proxy has a position and a rotation but no size.</p>
+
+<h2 id="mass">Mass</h2>
+<p>The Geometry LOD gives each point a mass in kilograms. The game adds them up to get the weight of the object and
+works out its balance. In Houdini this is a point attribute, <code>a3ob_mass</code>. The
+<kbd class="ui-node">Mass</kbd> node sets it. Houdini has its own attribute called <code>mass</code> for simulations; the
+add-on does not use it by accident. The Mass node can copy between the two if you want that.</p>
+<p>Modes of the Mass node: <kbd class="ui-menu">Set on each</kbd> gives every point the same mass,
+<kbd class="ui-menu">Uniform total</kbd> shares a total weight equally between the points,
+<kbd class="ui-menu">From density</kbd> works from a density and the volume of each closed piece, and
+<kbd class="ui-menu">Clear</kbd> removes the mass. See <a href="reference/a3ob_mass.html#mode">Mode</a> in the reference.</p>
+<p><strong>Visualize</strong> colours the points by their mass (blue least, red most). The colours show only when the
+<strong>Visualization</strong> button on the right toolbar of the viewport is on. Houdini gives scripts no way to switch it, so
+the node cannot do it for you; its message reminds you.</p>
+
+<h2 id="surface">Textures, UVs and sharp edges</h2>
+<ul>
+<li><strong>Textures and materials.</strong> Each polygon has two text attributes, <code>a3ob_texture</code> and
+  <code>a3ob_material</code> (the rvmat file). They hold the text exactly as in the file, including procedural textures
+  such as <code>#(argb,8,8,3)color(...)</code>. The <kbd class="ui-node">Material Assign</kbd> node sets them for a group of
+  polygons. Only the toggle <kbd class="ui-parm" data-node="a3ob_material_assign">Show in Viewport</kbd> touches Houdini's
+  own material attribute (<code>shop_materialpath</code>), to show the texture in the viewport; the export ignores it.
+  A <code>.paa</code> is shown from a <code>.png</code>, <code>.tga</code> or <code>.tif</code> of the same name next to it,
+  else from a picture decoded from the <code>.paa</code>. The rvmat is not shown. On export, when <kbd class="ui-parm" data-node="a3ob_p3d_export">Write Textures as .paa</kbd> is on (it is in the
+  <kbd class="ui-menu">Arma 3 release</kbd> preset, not in <kbd class="ui-menu">Lossless</kbd>), every texture path that does
+  not end in <code>.paa</code> is written with <code>.paa</code> (<code>camo1_co.png</code> becomes
+  <code>camo1_co.paa</code>); the <code>.paa</code> itself must exist when you build the add-on, and making it is your job.
+  With it off, texture paths are written exactly as they are. A run of polygons that share a texture and material is a
+  <em>section</em> in Object Builder. Sections are decided by polygon order, so assigning materials to scattered polygons
+  splits them. The <kbd class="ui-parm" data-node="a3ob_p3d_export">Sort Sections</kbd> option groups them on export.</li>
+<li><strong>UVs.</strong> UV sets are vertex attributes: <code>uv</code> for the first set, then <code>uv2</code>,
+  <code>uv3</code> and so on.</li>
+<li><strong>Normals.</strong> The shading directions are kept as the vertex attribute <code>N</code>.</li>
+<li><strong>Sharp edges.</strong> The edges that Object Builder marks sharp are the edge group <code>a3ob_sharp</code>.</li>
+</ul>
+
+<h2 id="paths">Game paths: the P drive, HEMTT and the project root</h2>
+<p>Arma tools expect your source files on a virtual drive, usually called <strong>P:</strong> (the P drive). A texture
+that lives at <code>P:\my_mod\data\crate_co.paa</code> is known to the game as <code>my_mod\data\crate_co.paa</code>.
+The part that stands for the drive is the <strong>project root</strong>, by default <code>P:\</code>.</p>
+<p>The <kbd class="ui-parm" data-node="a3ob_p3d_export">Relative Paths</kbd> option turns the full path of every texture,
+material and proxy file into the path the game uses, when a file is written. For each path it tries these four steps in
+order, and the first one that fits wins:</p>
+<ol>
+<li><strong>A <code>$PBOPREFIX$</code> file.</strong> The add-on looks in the folder of the file, then in each folder above it, for
+  a file called <code>$PBOPREFIX$</code>. The nearest one gives the prefix: the text of its first line (a file with
+  <code>key=value</code> lines is read by its <code>prefix</code> line only). The rest of the path below that folder is added
+  to the prefix.</li>
+<li><strong>A HEMTT project.</strong> If there is no such file, the add-on looks above the file for a folder with
+  <code>.hemtt/project.toml</code>. If the file lies in <code>addons\&lt;name&gt;</code> of that project, the prefix is
+  <code>mainprefix\prefix\addons\&lt;name&gt;</code>, built from the two values in <code>project.toml</code>, which is
+  how HEMTT names the addon.</li>
+<li><strong>The project root.</strong> Otherwise the project root is cut off the front of the path.</li>
+<li><strong>The drive letter.</strong> If the file is not under the project root either, only the drive letter is removed
+  (a path that starts with <code>\\server</code> is kept as it is). The export warns you, because the result is probably not
+  the path you want.</li>
+</ol>
+<p>Example with a HEMTT layout. The folder <code>addons/props</code> holds a <code>$PBOPREFIX$</code> file with the line
+<code>mymod\addons\props</code>. A texture at
+<code>...\addons\props\wallScreen\camo1_co.paa</code> is written as
+<code>mymod\addons\props\wallScreen\camo1_co.paa</code>. Without that file, a <code>project.toml</code> with
+<code>mainprefix = "mymod"</code> and <code>prefix = "stuff"</code> would give
+<code>mymod\stuff\addons\props\wallScreen\camo1_co.paa</code> instead.</p>
+<p>Typing the in-game path directly also works: a path with no drive letter, such as
+<code>mymod\addons\props\wallScreen\camo1_co.paa</code>, is kept as typed (apart from one leading backslash, which is dropped).</p>
+<p>The project root (step 3) comes from the
+<kbd class="ui-parm" data-node="a3ob_p3d_export">Project Root</kbd> parameter of the export node. If that is empty, it comes
+from the <kbd class="ui-shelf">Project root and presets</kbd> shelf tool. If that has none either, it is <code>P:\</code>. You can
+also set the environment variable <code>A3OB_PROJECT_ROOT</code>, which wins over the shelf setting.</p>
+<p>The shelf tool stores its settings in one file, <code>a3ob_settings.json</code>, in your Houdini preferences folder.
+Set the environment variable <code>A3OB_SETTINGS</code> to use another place.</p>
+
+<h2 id="presets">Presets</h2>
+<p>A <strong>preset</strong> is a saved set of export options. Pick one in the <kbd class="ui-parm" data-node="a3ob_p3d_export">Preset</kbd>
+menu of a <kbd class="ui-node">P3D Export</kbd> node and press <kbd class="ui-parm" data-node="a3ob_p3d_export">Apply</kbd> to fill in the
+options. <kbd class="ui-shelf">Quick Export</kbd> and <kbd class="ui-shelf">Batch folder convert</kbd> take a preset by
+name. Two presets come with the add-on. You can save more with the <kbd class="ui-shelf">Project root and presets</kbd> tool.</p>
+<table>
+<tr><th>Option</th><th><kbd class="ui-menu">Lossless</kbd></th><th><kbd class="ui-menu">Arma 3 release</kbd></th><th>What it does</th></tr>
+<tr data-option="lowercase"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Lowercase</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Writes texture and material paths, selection names and property names and values in lower case, as Object Builder does. Warns if two names become the same.</td></tr>
+<tr data-option="relative_paths"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Relative Paths</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Turns texture, material and proxy paths into game paths: by the nearest <code>$PBOPREFIX$</code> file, else by the HEMTT addon rule, else by cutting the project root. See <a href="#paths">Game paths</a>.</td></tr>
+<tr data-option="paa_textures"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Write Textures as .paa</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Writes a texture path that ends in <code>.png</code>, <code>.tga</code>, <code>.tif</code> or another picture ending as <code>.paa</code>. Procedural textures and <code>.paa</code> paths are not changed. A saved preset without this option follows its Relative Paths value.</td></tr>
+<tr data-option="sort_sections"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Sort Sections</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Orders the polygons by texture and material. This changes the polygon order.</td></tr>
+<tr data-option="sort_lods"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Sort LODs</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Writes the LODs sorted by resolution. Off keeps your order.</td></tr>
+<tr data-option="auto_components"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Auto-Components</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Geometry LODs with no component selection get one for each connected piece.</td></tr>
+<tr data-option="renumber_components"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Renumber Components</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">Off</td><td>Renames <code>component</code> selections to <code>component01</code>, <code>component02</code> and so on, in the order they are written.</td></tr>
+<tr data-option="czech_names"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Translate Names to Czech</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">Off</td><td>Renames selections that have an English name in Object Builder's table (such as <code>body</code>) to the Czech name the game uses (<code>telo</code>).</td></tr>
+<tr data-option="drop_uvs"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Drop UVs</kbd></th><td data-preset="Lossless">Off</td><td data-preset="Arma 3 release">On</td><td>Writes no UVs for LOD types that do not use them (Geometry, Memory and the other collision and point types). The geometry in Houdini does not change.</td></tr>
+<tr data-option="triangulate"><th><kbd class="ui-parm" data-node="a3ob_p3d_export">Triangulate Where Needed</kbd></th><td data-preset="Lossless">On</td><td data-preset="Arma 3 release">On</td><td>Divides only the polygons that break the rules, in the written file: more than 4 points in any LOD, quads that are not convex in Geometry and Shadow Volume LODs, and every quad in Underground LODs. See below.</td></tr>
+</table>
+<p><kbd class="ui-menu">Lossless</kbd> turns every option that changes data off. <kbd class="ui-menu">Arma 3 release</kbd> is the set
+that Object Builder uses by default. The two Czech and Renumber options are off in both, as in Object Builder.
+<kbd class="ui-parm" data-node="a3ob_p3d_export">Duplicate LODs</kbd> stays on Fail in both. A preset does not change
+<kbd class="ui-parm" data-node="a3ob_p3d_export">Project Root</kbd> or <kbd class="ui-parm" data-node="a3ob_p3d_export">Keep a .bak</kbd>.</p>
+<p><strong>Triangulate Where Needed</strong> is on in both presets, because a P3D face has 3 or 4 points and the game wants
+triangles in some LODs. The export runs Houdini's own Divide (Convex Polygons on, Maximum Edges 3, Avoid Small Angles on)
+on the bad polygons of each LOD and leaves every other polygon as it is, so a model that already passes is written
+exactly as before. Groups, UVs, textures and materials carry over to the new triangles. The geometry on the node does
+not change, and each LOD it touched gets a warning with the number of polygons. A Divide node placed after Assemble LODs
+cannot do this, because it sees the packed LODs, not the polygons inside. To control the result yourself, put a Divide on
+the LOD's own branch before Assemble LODs. The <kbd class="ui-node">Validate</kbd> node has the
+same switch in its LOD Rules tab. Switch it off and the checks report those polygons as errors or warnings, as before.</p>
+<p>Choosing a preset in the menu changes nothing by itself: press Apply. After Apply you can still switch single options
+on or off on the node. Each option has a full entry in the <a href="reference/a3ob_p3d_export.html">P3D Export reference</a>.</p>
+
+<h2 id="rigging">Rigging</h2>
+<p>A character in Arma 3 moves with a fixed skeleton: the same bones, with the same names, for every soldier. The
+<kbd class="ui-node">Rig Skeleton</kbd> node builds that skeleton in Houdini as a KineFX skeleton, so Rig Pose, Joint Deform and
+the other KineFX nodes can use it. It needs two files.</p>
+<ul>
+<li>A <code>model.cfg</code>. It lists the bones, each with its parent, in a <code>CfgSkeletons</code> class. A file can hold
+several classes: pick one in the Skeleton menu. The node reads exactly the file you pick. Arma itself also reads a
+<code>&lt;foldername&gt;.cfg</code> (it wins over <code>model.cfg</code>) and a <code>&lt;modelname&gt;.cfg</code>, so if your
+skeleton is in one of those, pick that file. <code>#include</code> lines are not followed.</li>
+<li>A <strong>pivots</strong> <code>.p3d</code> file. It says where each joint sits. The <code>model.cfg</code> only names the
+game's own pivots file (<code>pivotsModel</code>), which is packed and can't be read, so you point at an editable copy. Its
+Memory LOD has one selection per bone, and the first point of the selection is the pivot. The Arma 3 Samples have
+one: <code>ManSkeleton_Pivots.p3d</code>.</li>
+</ul>
+<p>Set the <strong>Arma 3 Samples folder</strong> once in the <kbd class="ui-shelf">Project root and presets</kbd> tool (it
+finds the Steam folder by itself when it exists). A new Rig Skeleton node then starts from the Samples files. Each joint is
+named as in the <code>model.cfg</code> and sits at its pivot. The face bones (<code>Face_*</code>) and the eyes are left out. A
+bone with no pivot (the Samples have none for <code>Camera</code>, <code>weapon</code> and <code>launcher</code>) is left out and
+listed on the node, and a pivot that is not a bone (the Samples' <code>Hips</code>) is ignored and listed too.</p>
+
+<h3 id="rigging-weights">Bone weights: selections and capture weights</h3>
+<p>The same bone weights can live in two forms.</p>
+<ul>
+<li><strong>Selections.</strong> This is what a P3D file holds and what P3D Import makes. Each bone has a selection (a point
+group named like the bone) and the weight of each point is in a point attribute <code>a3ob_w_&lt;bone&gt;</code>. P3D Export
+writes this form.</li>
+<li><strong>Capture weights.</strong> This is what the KineFX nodes (Joint Deform, Rig Pose) use: the point attribute
+<code>boneCapture</code>.</li>
+</ul>
+<p>The <kbd class="ui-node">Weights Convert</kbd> node changes one form into the other for the skeleton on its second input.
+Only selections whose name matches a joint (upper and lower case don't matter) are bone weights. A component, a hidden
+selection or a proxy selection is left alone. Capture to Selections names a selection like the joint in the
+<code>model.cfg</code> (<code>head</code>, not <code>Head</code>) and renames an existing one; the option "Keep existing
+spelling" leaves the names as they are. A member with weight 0 (byte 255 in the file) counts as no weight.</p>
+<p>The <kbd class="ui-node">Weight Cleanup</kbd> node makes the selections follow Arma's rules, and you run it before P3D
+Export. It changes only the bone selections, in this order:</p>
+<ol>
+<li>Weights below <strong>Prune Below</strong> (0.01) are dropped. A point never loses its heaviest weight.</li>
+<li>Only the <strong>Max Bones per Point</strong> (4) heaviest weights stay.</li>
+<li>The weights of a point are scaled to a sum of 1, and snapped to steps of 1/254, as in the file. The sum is exactly 1.</li>
+</ol>
+<p>If the skeleton's <code>model.cfg</code> class has <code>isDiscrete = 1</code>, every point keeps only its heaviest bone with
+weight 1. The point attribute <code>a3ob_rig_changed</code> says how much the weights of each point changed (0 means not
+at all), and the node message gives the counts, the points with no bone weight (a warning) and the members with weight 0.
+Proxy points are left out: they are not counted as having no bone weight, and their weights don't change. On the Samples
+character, Cleanup adjusts about 1,850 points by rounding them onto the 1/254 grid with an exact sum of 1. The largest
+change is about 0.04, shown in <code>a3ob_rig_changed</code>. Points already on the grid with a sum of 1 don't change.</p>
+<h3 id="rigging-transfer">Weights for your own mesh: Weight Transfer and Accessory Weights</h3>
+<p>Weights are made in layers, one node for each. The <kbd class="ui-node">Weight Transfer</kbd> node weights only the body: the
+tight polygons that follow the skin (skin, undergarments, shoes). It copies the bone weights of a source body (for example the
+sample character, taken out of its P3D with Extract LOD, or the fitted body from Rig Fit) onto your mesh. It has three inputs:
+your mesh, the source body, and the skeleton from Rig Skeleton. Put your mesh on top of the body first: a point copies the
+weights of the closest point on the body when it is near enough (<strong>Match Distance</strong>, a share of the size of your
+mesh) and faces the same way (<strong>Match Angle</strong>). The points that don't match are filled in smoothly from their
+neighbours. Put the body polygons in the <strong>Body</strong> group; empty means every point. Points outside the group keep
+the weights they have, which is none on a fresh mesh.</p>
+<p><strong>Group fields of the rigging nodes.</strong> The group fields of Rig Fit, Weight Transfer, Accessory Weights, Unpose
+and Mass take a <em>point group</em> or a <em>primitive group</em> (the usual result of Group Create or a modelling tool): a
+primitive group counts as the points of its primitives. A name that is both kinds uses the point group, and the node says so in
+an info line. A name that is neither stops the node with a message that names the field. Point numbers and patterns such as
+<code>0-3</code> work as before. The menu of these fields lists your point groups and primitive groups only. It leaves out the
+<strong>bone groups</strong> (the groups that hold the bone weights) and the helper groups whose names start with
+<code>a3ob_</code>. A group is a bone group when its name is a joint of the skeleton on the node's skeleton input, or when the
+mesh has a weight attribute <code>a3ob_w_&lt;name&gt;</code> for it. With no skeleton connected only the weight attributes tell,
+so a bone whose weights are all 1 (it has no such attribute) is listed until the skeleton is connected. You can always type a
+bone group name by hand. <kbd class="ui-node">Material Assign</kbd> keeps its Group Type menu, because points or primitives
+decide which polygons get the material.</p>
+<p>Accessories (a helmet, pouches, a bandolier) do not follow the skin, so the <kbd class="ui-node">Accessory Weights</kbd> node
+weights them. Put one node after Weight Transfer for each accessory, with two point groups on the same mesh: the
+<strong>Target Group</strong> (the accessory points to weight) and the <strong>Source Group</strong> (the points that give the
+weights: the body, or another accessory). Its second input is the skeleton. A source point with no weight is ignored, with a
+warning that counts them. A target point with no source point within the distance limit takes the nearest weighted source
+point, also with a warning.</p>
+<ul>
+<li><strong>Rigid</strong> (a helmet, a pouch): each piece of the target takes the average of the source weights it
+sits on, then follows one bone or one fixed blend. <strong>Auto</strong> picks the bone with the most weight; with
+<strong>Merge Twist Bones</strong> on, the weight of a twist bone (<code>LeftArmRoll</code>) counts for the next bone down the
+chain (<code>LeftForeArm</code>), so a piece on the elbow follows the forearm. <strong>Fixed blend</strong> gives every point the
+same mix. <strong>Bone</strong> gives every piece the bone you pick from the menu of the skeleton, whatever is under it.
+<strong>Keep a complex accessory together by naming its parts.</strong> A helmet made of a shell, a visor, a strap and bolts
+is several loose parts. With <strong>Pieces From</strong> set to <strong>Names</strong> (the default), all polygons that have the
+same value in the primitive string attribute <strong>Name Attribute</strong> (<code>name</code>: FBX, Alembic and most modelling
+tools write it) are one piece, whether the parts touch or not, so the whole helmet gets one bone. Auto looks under the whole
+named piece, and <strong>Smallest Piece</strong> counts the whole piece, so a small bolt named with the helmet is weighted with
+it. Polygons with no name, meshes without the attribute, and meshes where every polygon has the same name (an importer that
+names the whole mesh) use connected pieces. For that last case the node shows a warning that names the attribute and the
+value (<em>every polygon has name = "transform3", so the names are ignored and connected pieces are used</em>): give the parts
+their own names to keep them whole. A point shared by two names goes to the name
+with most of its polygons (a tie: the name met first). <strong>Connected Pieces</strong> weights every connected part on its own.
+The info lines say, for example, <em>Rigid piece helmet: 1840 points, bone head</em>, and <code>a3ob_rig_piece</code> has one
+number per named piece. Non-rigid mode always uses connected pieces.</li>
+<li><strong>Non-rigid</strong> (a bandolier, a cable): each point takes the source weights under it, then the weights are
+smoothed along the piece (<strong>Smoothing Passes</strong>).</li>
+</ul>
+<p>A chain looks like this: Weight Transfer (body), Accessory Weights (helmet, Rigid, Bone <code>head</code>), Accessory Weights
+(pouch, Rigid, source = the belt group), then Weight Cleanup. The pouch takes its weights from the belt, which is an accessory
+that was weighted by an earlier node. Run Weight Cleanup last.</p>
+<p>The nodes write bone selections with the <code>model.cfg</code> spelling and point attributes that tell you where each
+weight came from: <code>a3ob_rig_origin</code> (0 none, 1 copied, 2 filled in, 3 rigid piece, 4 non-rigid piece) and, from
+Accessory Weights, <code>a3ob_rig_piece</code> (the piece number, -1 outside the pieces; the numbers go on counting along the
+chain). The weights are only as good as the fit: a mesh that is off the body by a few centimetres gets many filled-in points.</p>
+
+<h3 id="rigging-fit">Fitting the skeleton to your mesh: Rig Fit</h3>
+<p>Weight Transfer needs your mesh and the source body to lie on top of each other. Your character has its own size and
+proportions, so the <kbd class="ui-node">Rig Fit</kbd> node fits the Arma skeleton and the sample body to your mesh first. It has
+three inputs: your mesh, the skeleton from Rig Skeleton, and the sample body with its weights. Your mesh should stand
+upright (Y up), face +Z like the sample, and be in an A-pose, with the arms away from the body. The Arma skeleton is never
+changed, whatever the body shape: the fitted skeleton is only a working copy, kept for Weight Transfer and for Unpose.</p>
+<p>The fit starts from 18 <strong>landmarks</strong>, named points of the body. A landmark is a <em>position</em> that you place:
+the <kbd class="ui-node">Rig Landmarks</kbd> node holds one X, Y, Z field for each. Left is the +X side.</p>
+<ul>
+<li>The chin (the tip of the chin) and the groin (the highest point between the legs) are points on the skin. Without a Head Match
+(see below) the head joint is guessed from the chin, 8 cm above it and 10 cm behind it (measured on the head of the Arma sample and turned with your
+torso, not scaled by it), so put the chin where it sticks out lowest on the middle line, not on the throat under it: a chin that is 1 cm too low
+puts the head joint, and a helmet kept at its offset to that joint, about 1 cm too low. In the viewport the
+groin is drawn as an upside-down V (wireframe, its apex is the landmark): push it up into the gap between the thighs until
+both sides sit snug against the inner thighs.</li>
+<li>The left and right shoulder, elbow, wrist, hip, knee and ankle are joints. A joint lies inside the body, so place its marker
+inside the limb, not on the surface. Each hip is drawn as a short wireframe cylinder, the top of the thigh, aimed at the knee
+(straight down until the knee is set): put its centre in the middle of the thigh top. The mesh shows through it, and its size
+follows the distance between your two hips.</li>
+<li>Each hand has two more joints: the last joint of the middle finger (inside the fingertip, in the middle of the finger) and the
+last joint of the thumb (inside the tip of the thumb). The middle finger gives the length and the direction of the hand, and the thumb
+says which way the palm faces. The other fingers follow the hand as a whole, so the finger joints end inside your hand mesh.</li>
+</ul>
+<p>Put <kbd class="ui-node">Rig Landmarks</kbd> between your mesh and Rig Fit, and connect the skeleton and the sample body to its inputs 2 and 3
+(the same ones as Rig Fit). Press <strong>Guess Landmarks</strong>: it fills all 18 fields with the same guess that Rig Fit makes (<strong>Guess This Landmark</strong> guesses the hand from the wrist and elbow that are set). Then select the
+node, move the mouse over the viewport and press Enter. Every landmark is a labelled marker, drawn on top of your mesh. Drag a marker to
+move it; the field follows. <strong>Mirror</strong> is on by default: the right markers follow the left ones, mirrored about the X = 0 plane, so
+dragging a left marker moves its right partner. Switch Mirror off to place both sides freely. To put one landmark back to the guess,
+choose it in the Landmark menu and press <strong>Guess This Landmark</strong>. To set a landmark from your mesh (handy for the chin and the groin),
+select points in the viewport, choose the landmark and press <strong>Set From Selected Points</strong>: the landmark goes to their average, and
+only the position is kept. A fresh Rig Landmarks node has no position set and warns that it needs the guess.</p>
+<p>With <strong>Landmarks</strong> set to Both (the default) Rig Fit uses the positions that are set in Rig Landmarks, and guesses the others from the
+shape of your mesh. A position you set always wins over the guess. Auto-guess ignores Rig Landmarks; From Rig Landmarks needs all 18. The guess
+is a first try: set Show to Landmarks to see the points on your mesh, and correct a wrong one by dragging its marker. A
+mesh with armour or a helmet confuses the guess most at the shoulders, elbows and wrists. <strong>Snap to Surface</strong> moves
+the chin and the groin onto your mesh. <strong>Symmetry</strong> makes left and right mirror each other.</p>
+<p><strong>Head Match: line your head up with the sample's.</strong> The chin guess puts the head joint about right for a plain head, but
+a helmet or a head of another size can leave it several centimetres off, and the helmet then sits too high or too far back after Unpose.
+Rig Fit says so with a warning (&ldquo;the head joint is guessed from the chin landmark&rdquo;). To take the head joint from the sample
+instead, line your character up with the sample at the head: put a Transform SOP on your mesh (Uniform Scale and Translate only, the pivot at
+the origin) and change them until your head sits on the head of the sample (Resolution 4 of the sample character is a good one to look at, next to it).
+Then switch <strong>Head Match</strong> on in Rig Fit and give it the same numbers: <strong>Match Scale</strong> is the Uniform Scale and <strong>Match Translate</strong>
+the Translate. Rig Fit then takes the head joint of the sample itself and maps it back through that transform into your mesh (your point =
+(sample point &minus; translate) / scale), with no chin guess. The neck joints are fitted as before. Easiest: put a channel reference in each
+field, for example <code>ch(&quot;../transform1/scale&quot;)</code>, so that changing the Transform SOP changes the fit. Worked example: the
+head height comparison box of the owner's test scene. Its Transform SOP has Uniform Scale 1.0338 and Translate Y &minus;1.0096; with Head Match on and
+those two numbers, the unposed helmet sits where that box puts it (within 0.5 cm, scale taken out), and the helmet stays at its place on the head joint. The
+match only places the head joint; your mesh is never scaled.</p>
+<p>Then the skeleton is fitted from the pelvis down. Each joint is turned towards the landmarks below it, and given the length
+that puts them on the landmarks (<strong>Per bone length</strong>), or one size is used for the whole body
+(<strong>Whole body</strong>). The node says how far the joints were from their landmarks after the fit, and warns when that is
+more than 1 cm. The error of the fit is the error of everything after it, so look at that message. A Houdini node of this
+kind has one output, which holds the results as named parts (packed primitives with the prim string
+<code>a3ob_rig_part</code>): <code>fitted_skeleton</code>, <code>fitted_body</code> (the sample body posed to match your mesh, with
+its weights) and <code>landmarks</code> (a fourth, <code>rest_body</code>, the sample body as it came in, is never drawn; Unpose uses it). One Rig Fit node feeds Weight Transfer directly: connect its output to input 2 of
+Weight Transfer, which takes the fitted body from it by itself. <strong>Show</strong> only chooses which parts are drawn in the
+viewport; the output is the same for every choice, and changing it does not fit again. Rig Fit also keeps its last fit: when Houdini
+cooks it again but the inputs and the other parameters are the same (an upstream node that was cooked again, or the file reloaded
+into the same geometry), it gives the kept result at once instead of fitting again, which takes several seconds on a full character.
+The nodes after it keep their last result in the same way: Weight Transfer, Accessory Weights, Weight Cleanup, Unpose and LOD
+Weights. Houdini cooks all of them again whenever a node in front is cooked again, even when it gives the same geometry; with
+the same input geometry and the same parameters each node gives its kept result and its messages at once (a recook of the
+whole chain takes a second or two instead of eight). Change any parameter or anything an input holds, and the node works it out again.
+<strong>Refine</strong> (on by default) then wraps the fitted
+body onto your bare body (the points of <strong>Body Group</strong>, default <code>body</code>; empty means the whole mesh) with Topo Transfer, so
+it takes your proportions. The pelvis is placed from the torso (hips and shoulders), not from the groin.</p>
+
+<h3 id="rigging-unpose">Back to the Arma rest pose: Unpose</h3>
+<p>Weight Transfer and Weight Cleanup weight your mesh in the pose of the fitted skeleton. Arma needs it in its own rest pose, so
+the last step of the rigging chain is the <kbd class="ui-node">Unpose</kbd> node. Its inputs are your weighted mesh (from Weight
+Cleanup), the output of Rig Fit as it is (its fitted skeleton, fitted body and rest body are taken from it) and the Arma
+skeleton from Rig Skeleton. With <strong>Method: Cage</strong> (the default) your body moves by a cage: the sample body that
+Rig Fit wrapped onto your body (<strong>Body Group</strong>, the bare body without hair or helmet) is taken back to the sample
+body in the Arma rest pose, and every point of your mesh follows the cage around it. So your body keeps its own proportions
+(thighs, belly, hands) and the mesh does not get bigger or smaller. A perfect fit moves nothing. The weights are not changed.</p>
+<p>The points of a rigid piece (a helmet, a pouch made by Accessory Weights in Rigid mode, or any island outside the Body
+Group that follows one bone only) move with one rigid transform for the whole piece, placed where the cage puts it, so the
+piece keeps its exact shape and size and stays on the body. Switch <strong>Rigid Pieces Keep Their Shape</strong> off to let
+every point follow the cage. Clothes that bend follow the cage like the body. <strong>Method: Bones</strong> is the older way:
+every point moves by the inverse of its blended bone matrix (it cannot show that your body has other proportions than the
+sample, so thighs can telescope and hands crumple). The <strong>Group</strong> field limits the points to unpose. The node
+message gives the mean and the largest move and the bones whose points moved most. The unpose can only remove what the fitted
+skeleton and the wrap describe: a joint that is 1 cm off after the fit leaves your mesh about 1 cm off here.</p>
+<p><strong>The neck under a helmet.</strong> The sample body has no head, so a helmet (or a head) is put on its head joint with the
+offset it has in your mesh, and the neck is carried up with it. On the way down the neck and the chest the carrying fades out, and
+the neck is stretched there to meet the cage again (on the owner scene it spans the 11.5 cm that the cage would otherwise take
+off). <strong>Neck Fade Length (cm)</strong> sets how far down the fade reaches, counted from the neck joint (default 30 cm; the
+fade of the first version was 24 cm). A longer fade spreads the stretch over more of the neck, but a fade that is too long
+carries the chest and the base of the shoulders as well, and then the stretch beside the neck gets worse; on the owner scene
+20 to 30 cm worked best. Shoulders, arms and the rest of the body do not move with it. A neck edge can still come out up to
+about 2 times its posed length at the trapezius, between the carried neck and the shoulder that stays: that is what raising the
+neck without raising the shoulders costs.</p>
+<h3 id="rigging-lods">Weights for the lower LODs: LOD Weights</h3>
+<p>Weight and unpose Resolution 1 first, then make the lower LODs from it. PolyReduce moves and merges points, so the weights it
+carries along stop adding up to 1 (on a character, a third of the points of a reduced LOD). The <kbd class="ui-node">LOD Weights</kbd>
+node weights a reduced LOD again from the finished Res 1. Input 1 is the LOD to weight, input 2 the weighted Res 1 (the Unpose
+output), input 3 the skeleton. Each point takes the weights of the closest place on the Res 1 surface, blended across the Res 1
+triangle, then limited to 4 bones, normalised and put on the 1/254 grid like Weight Cleanup does. A rigid piece of Res 1 (a helmet or
+a plate made by Accessory Weights in Rigid mode, or an island that follows one bone only) keeps its weights exactly: a point next to it
+takes the piece's weights, with no blend at the edge. A point farther from Res 1 than <strong>Match Distance</strong> is counted in a
+warning and filled in from its neighbours. The bone selections of input 1 are replaced; its other groups and attributes stay.</p>
+<p><strong>LOD chain.</strong> Unpose, then for each lower LOD: PolyReduce, LOD Weights, LOD Properties. In nodes:</p>
+<pre>OUT_UNPOSED -> PolyReduce -> LOD Weights (input 2: OUT_UNPOSED, input 3: skeleton) -> LOD Properties (Resolution 2)
+OUT_UNPOSED -> PolyReduce -> LOD Weights (same inputs 2 and 3)                        -> LOD Properties (Resolution 3)</pre>
+<p>Run Weight Cleanup on Res 1 only; the lower LODs come out already clean.</p>
+<h3 id="rigging-check">Checking the weights: Rig Check</h3>
+<p>Put a <kbd class="ui-node">Rig Check</kbd> node after the weights (or after Unpose) with the skeleton on its second input. It
+changes no geometry. It adds point attributes that say what is wrong, and its message counts each problem and warns above the
+limits. <strong>Visualize</strong> colours the points in the viewport by the <strong>Show</strong> entry (a viewport colour only:
+your <code>Cd</code> and the export are not touched): <strong>Origin</strong> (where each weight came from),
+<strong>Jump</strong> (weights unlike the neighbours), <strong>Influences</strong> (more than 4 bones), <strong>Sum</strong> (weights
+that do not add up to 1), <strong>Straddle</strong> (a rigid piece on more than one bone), <strong>Heaviest bone</strong>,
+<strong>Stress</strong> and <strong>Volume</strong>. The <strong>Output</strong> menu shows the skeleton instead (green inside the mesh,
+yellow within 1 cm of the surface, red outside) or the mesh bent into the test pose.</p>
+<p>The Visualize colours show only when the <strong>Visualization</strong> button on the right toolbar of the viewport is on.
+Houdini gives scripts no way to switch it, so the node cannot do it for you; its message reminds you.</p>
+<p>Stress and Volume bend the mesh into a test pose (<strong>Pose</strong>: arms raised, arms forward, elbows, hips, knees, spine,
+neck, wrists, or Worst of all) with linear blend skinning, the way Arma does it. Stress is how much the edges around a point
+stretch (red) or shrink (blue). Volume is where the mesh loses volume (purple) or gains it (teal) against the rest mesh: a pinched
+elbow or knee shows purple and needs smoother weights or more edge loops. The message names the joints with the worst loss. It works
+with the Arma skeleton and with the fitted skeleton of Rig Fit. Set <strong>Pose</strong> to <strong>RTM frame</strong> to test with
+one key frame of an Arma animation file.</p>
+<h3 id="rigging-rtm">Playing an Arma animation: RTM Import</h3>
+<p>To see your rigged mesh move the way it will in the game, pose the Arma skeleton with an animation. Connect the Arma
+skeleton from Rig Skeleton to a <kbd class="ui-node">RTM Import</kbd> node and pick a plain <code>.rtm</code> file (the Samples have
+four stances in <code>Test_Anims</code> and 31 poses in <code>Test_FFV_Poses_F/Anim</code>). Then take your mesh from
+<kbd class="ui-node">Weights Convert</kbd> (Selections to Capture, with the same Arma skeleton) and put it into a stock
+<strong>Bone Deform</strong> node: the mesh on the first input, the Arma skeleton on the second and the RTM Import on the third. Press
+Play. The mesh has to be in the Arma rest pose first (the output of <kbd class="ui-node">Unpose</kbd>).</p>
+<p>An RTM holds key frames with a phase from 0 to 1 and no speed, because the speed is set in the game's config. So you choose
+how long a cycle is: <strong>Frames per Cycle</strong> (24 by default, one second at 24 frames per second) or <strong>Seconds per
+Cycle</strong>, and the <strong>Start Frame</strong> where the cycle begins. <strong>At the End</strong> loops or holds.
+<strong>Apply Displacement</strong> moves the skeleton by the distance the animation walks in one cycle; it is off by default so the
+character stays in place. The message of the node shows the frame in the cycle (also on the geometry as <code>a3ob_rtm_frame</code>).
+Bones in the file that the skeleton does not have are ignored: the face bones, slots, camera, and <code>Weapon</code> and
+<code>launcher</code>, which carry the weapon model in the game. The mesh moves the same with any joint axes, so the skeleton
+rules of Rig Skeleton do not change the animation.</p>
+<p><strong>The game's own animations.</strong> The game stores its animations in the binarised form (BMTR), in the
+<code>anims_f*.pbo</code> files of the Arma 3 folder (<code>anims_f_data.pbo</code> and the ones of each expansion). RTM Import reads
+them straight from there. Set <strong>Animation From</strong> to <strong>Arma 3 game</strong>, type some words of the name in
+<strong>Filter</strong> (for example <code>wlk ras rfl</code> for the walks of the standing rifleman) and pick the animation in the
+<strong>Animation</strong> menu, which also names the PBO each one is in. <strong>Arma 3 Folder</strong> can stay empty: the
+node then uses the environment variable <code>A3OB_ARMA3</code>, then the <code>arma3_dir</code> entry of the A3OB settings file,
+then the Arma 3 folder of your Steam library. The node reads only the animation you pick, nothing is unpacked, and nothing from the
+game is copied. With <strong>Animation From</strong> set to <strong>File</strong> you can also give a binarised file, or an entry in a
+PBO written as <code>path-to-the.pbo|folder\name.rtm</code>. On the test machine listing the 3604 animations of the 15 anims PBOs (13 hold animations)
+takes about 0.01 seconds, and reading one animation takes a few milliseconds (a long cutscene of 7000 frames about 3 seconds).
+The speed of a cycle is still your choice; for the walks the file's displacement is a good guide (1.6 m for the rifle walk).</p>
+<p>P3D Export writes the weights as they are: it never changes them. Three switches on the LOD Rules tab of P3D Export and
+Validate warn when a point breaks the rules: <kbd class="ui-parm" data-node="a3ob_validate">At most 4 bones per point</kbd>,
+<kbd class="ui-parm" data-node="a3ob_validate">Bone weights add up to 1</kbd> (within 0.02) and
+<kbd class="ui-parm" data-node="a3ob_validate">Every point has a bone weight</kbd>. These two nodes have no skeleton input, so a
+selection counts as a bone selection when its name is one of the bones of the standard Arma 3 man skeleton
+(<code>OFP2_ManSkeleton</code>, upper and lower case don't matter). A model with another skeleton is not checked. The checks
+look at Resolution, view and shadow LODs only, and each message tells you to run Weight Cleanup.</p>
+
+<h2 id="validator">The checks: errors and warnings</h2>
+<p>The <kbd class="ui-node">Validate</kbd> node and the cook of <kbd class="ui-node">P3D Export</kbd> run the same checks, so a
+model that passes one passes the other. Each message starts with the LOD name and ends with how to fix the problem.</p>
+<ul>
+<li>An <strong>error</strong> means the file cannot be written correctly. The node turns red, the nodes below it stop,
+  and Save to Disk writes nothing.</li>
+<li>A <strong>warning</strong> means "look at this". The node turns yellow, the data keeps flowing, and you can still save.</li>
+<li><kbd class="ui-parm" data-node="a3ob_validate">Errors Show As</kbd> can turn errors into yellow warnings (the text still
+  starts with Error). <kbd class="ui-parm" data-node="a3ob_validate">Warnings Count As Errors</kbd> does the reverse, for a strict
+  check before a release. Saving always stops on a real error.</li>
+<li>A node shows at most 25 messages (<kbd class="ui-parm" data-node="a3ob_validate">Max Messages</kbd>). The rest are counted,
+  and listed in Windows &gt; Log Viewer (source A3OB).</li>
+</ul>
+
+<h3>Errors you are likely to meet</h3>
+<table>
+<tr><th>Problem</th><th>Fix</th></tr>
+<tr><td>A polygon has more than 4 points, is open, or is not a polygon at all.</td><td>Add a <kbd class="ui-node">Divide</kbd> node (Convex Polygons on, Maximum Edges 3 or 4). Close open polygons.</td></tr>
+<tr><td>Two LODs have the same type and resolution. <samp class="ui-msg">another LOD has the same type and resolution</samp></td><td>Change the resolution of one with <kbd class="ui-node">LOD Properties</kbd>, or set <kbd class="ui-parm" data-node="a3ob_validate">Duplicate LODs</kbd> to Skip or Ignore.</td></tr>
+<tr><td>Packed LODs are mixed with loose polygons or points, or a packed item is neither a LOD nor a proxy.</td><td>Extract the LOD first, or give the loose geometry its own LOD with Assemble LODs.</td></tr>
+<tr><td>A text cannot be written in the file's character set (a texture path or property with a character the file cannot hold).</td><td>Use plain Western characters in paths, names and properties.</td></tr>
+<tr><td>A LOD type and resolution that the file format cannot encode.</td><td>Use a resolution in the range that <kbd class="ui-node">LOD Properties</kbd> names in its message.</td></tr>
+</table>
+
+<h3>Warnings you are likely to meet</h3>
+<table>
+<tr><th>Message starts with</th><th>Meaning and fix</th></tr>
+<tr><td><samp class="ui-msg">Geometry: 1 polygons triangulated</samp></td><td>The export divided the polygons that break the rules (see <kbd class="ui-parm" data-node="a3ob_p3d_export">Triangulate Where Needed</kbd> below) and tells you how many. Nothing to fix unless you want to control the result: then put a Divide on the LOD's branch.</td></tr>
+<tr><td><samp class="ui-msg">Geometry: the mesh is not triangulated</samp></td><td>Only with <kbd class="ui-parm" data-node="a3ob_p3d_export">Triangulate Where Needed</kbd> off. An underground LOD must be made of triangles. A collision or shadow LOD may also hold convex quads, so this message means a quad that is not convex or a polygon with 5 or more points. Add a Divide node (Convex Polygons on).</td></tr>
+<tr><td><samp class="ui-msg">Geometry: the LOD has no component selections</samp></td><td>Add a point group named <code>component01</code> (and <code>component02</code> and so on for more pieces). The Selection browser can add the Group node.</td></tr>
+<tr><td><samp class="ui-msg">Geometry: has no mass</samp></td><td>This is a note, not a warning. It is fine for items such as vests or scopes. A physical object needs mass: add a <kbd class="ui-node">Mass</kbd> node. When a Geometry LOD has mass, every point needs at least 0.001 kg or the point-mass warning appears.</td></tr>
+<tr><td>The LODs look merged</td><td>You joined LODs with a Merge node. Pack them with Assemble LODs instead.</td></tr>
+<tr><td><samp class="ui-msg">has no sound texture</samp></td><td>A Roadway LOD needs a texture on every polygon: it names the sound of the surface.</td></tr>
+<tr><td>a LOD transform is not the identity</td><td>The LOD item was moved or mirrored in Houdini. The move is baked in when the file is written. Check the result in Object Builder.</td></tr>
+</table>
+<p>Besides these, the checks include rules for the shape of each LOD type: Geometry (convex, contiguous, components, mass),
+Shadow Volume (triangles or convex quads; the usual-resolution and <code>LODNoShadow</code> rules are off by default), point LODs
+(no edges or faces), Roadway, Paths and more. Every such rule has its own switch on the node, named like
+<kbd class="ui-parm" data-node="a3ob_validate">Triangulated</kbd> (on the LOD Rules tab), so you can turn off a rule that
+does not suit your model. The rule's id, such as <code>T2-TRI</code>, ends its tooltip and appears in the messages. The <a href="reference/a3ob_validate.html">Validate reference</a> lists them all with their meaning. The node's
+<kbd class="ui-parm" data-node="a3ob_validate">Check LOD-Type Rules</kbd> switch turns all of them off at once.</p>
+<p><strong>Shadow and underground LODs are always written with hard edges.</strong> Every export does this, with every preset, and there is no switch for it:
+every edge of these LODs goes into the sharp edge list of the file, and each polygon gets its own face normal. The message
+&quot;Shadow Volume 0: all edges written as sharp (shadow LODs need hard edges)&quot; says it happened. A LOD that was
+already sharp is written unchanged, and you get no message. The geometry in Houdini is not changed, only the file.</p>
+
+<h2 id="lossless">Lossless round trips</h2>
+<p>A <strong>round trip</strong> means reading a .p3d file into Houdini and writing it out again. With the
+<kbd class="ui-menu">Lossless</kbd> preset and no edits, the new file is identical to the old one, byte for byte. This
+holds for the two sample files in the add-on folder and for all 34 files of Bohemia's Arma 3 Samples. Nothing in the file
+is thrown away on the way through, even data Object Builder does not show: blocks of data it does not understand,
+selection weights that Object Builder itself would lose, and the stored LOD signatures are kept.</p>
+
+<h3>What stays identical, and why</h3>
+<p>Object Builder writes some things in a layout that Houdini geometry cannot hold. When you import a LOD, the add-on
+stores that layout in a small hidden record on the LOD (a detail called <code>a3ob_layout</code>). You never see it as a
+selection, and it is not an attribute you edit. It covers:</p>
+<ul>
+<li>the table of normals, including entries that repeat a vector;</li>
+<li>the unused fourth slot of every triangle;</li>
+<li>the order of the sharp edge pairs, including pairs that are not edges;</li>
+<li>the order of points and faces when proxies sit between the other points and faces;</li>
+<li>the sign of a zero in a position.</li>
+</ul>
+<p>Extract LOD and Assemble LODs pass the record on unchanged, so a LOD that goes through them and was not edited still
+comes back identical.</p>
+
+<h3>When it falls back</h3>
+<p>The record belongs to the positions and the faces it was taken from. If you move a point, delete or add a face or point,
+or reorder the faces (the Sort Sections option does), the record no longer fits. The export then ignores it and writes the
+LOD in its own plain layout: one table entry per different normal, zero in the unused slots, and so on. The content is
+still the same, and the file is valid. You get one info message that names the LOD. Edits that do not change positions or
+faces, such as materials, flags, selections or properties, leave the record valid. If you edit the normals, the layout of
+everything else still comes back.</p>
+
+<h3>Other cases</h3>
+<ul>
+<li>A LOD that did not come from an import (made by hand, or by New P3D) has no record. It is written in the plain layout, with no message.</li>
+<li>A face with fewer than three points is dropped on export, with a warning, because the file writer cannot write it.</li>
+<li>A proxy that you moved is written from its new position. A proxy that you did not touch is written as it was read.</li>
+<li>Data that depends on the number of points or faces (for example a stored sharp edge that is not a polygon edge) is
+  dropped, with a warning, if you add or remove points.</li>
+<li>Every option in a preset that changes data, such as Lowercase, makes the file differ on purpose.</li>
+</ul>
+<p>The <kbd class="ui-shelf">Batch folder convert</kbd> tool is a quick way to test the round trip on a whole folder of your
+own files. It writes every file again into another folder and reports for each one whether it is identical, different or
+failed. It never writes into the folder it reads from.</p>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

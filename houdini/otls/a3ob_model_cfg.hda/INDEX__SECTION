@@ -1,0 +1,14 @@
+Operator:     a3ob_model_cfg
+Label:        Model Cfg
+Path:         oplib:/Sop/a3ob_model_cfg?Sop/a3ob_model_cfg
+Icon:         SOP_python
+Table:        Sop
+License:      
+Extra:        
+User:         
+Inputs:       0 to 1
+Subnet:       false
+Python:       true
+Empty:        false
+Modified:     Mon Nov  3 12:00:00 2026
+

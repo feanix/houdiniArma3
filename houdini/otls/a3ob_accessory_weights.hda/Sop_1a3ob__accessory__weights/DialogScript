@@ -1,0 +1,145 @@
+# Dialog script for a3ob_accessory_weights, version 1
+
+{
+    name	a3ob_accessory_weights
+    script	a3ob_accessory_weights
+    label	"Accessory Weights"
+
+    help {
+	"Weights accessories (a helmet, pouches, a strap) from points that already have weights: the body or another accessory."
+    }
+
+    inputlabel	1	"Your mesh"
+    inputlabel	2	"Skeleton"
+
+    parm {
+	name	"target"
+	label	"Target Group"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('accessory_weights', 'target', kwargs)" ]
+	    language python
+	}
+	help	"The accessory points to weight. Required. A point group or a primitive group (its primitives' points count). Each connected piece of the group is one piece, or each name when Pieces From is Names."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"source"
+	label	"Source Group"
+	type	string
+	default	{ "" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('accessory_weights', 'source', kwargs)" ]
+	    language python
+	}
+	help	"The points that give the weights (a point group or a primitive group): the body, or another accessory that already has weights. Points of it with no bone weight are ignored, with a warning. Not used when Rigid uses a picked bone."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"mode"
+	label	"Mode"
+	type	string
+	default	{ "rigid" }
+	menu {
+	    "rigid"	"Rigid"
+	    "nonrigid"	"Non-rigid"
+	}
+	help	"How the accessory is weighted."
+    }
+    parm {
+	name	"use"
+	label	"Rigid Uses"
+	type	string
+	default	{ "auto" }
+	menu {
+	    "auto"	"Auto"
+	    "blend"	"Fixed blend"
+	    "bone"	"Bone"
+	}
+	help	"How a rigid piece is weighted."
+	hidewhen	"{ mode != rigid }"
+    }
+    parm {
+	name	"bone"
+	label	"Bone"
+	type	string
+	default	{ "head" }
+	menu {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['menu']).menu('accessory_weights', 'bones', kwargs)" ]
+	    language python
+	}
+	help	"The bone every rigid piece follows. The menu lists the bones of the skeleton on input 2."
+	hidewhen	"{ mode != rigid } { use != bone }"
+    }
+    parm {
+	name	"merge_twist"
+	label	"Merge Twist Bones"
+	type	toggle
+	default	{ "1" }
+	help	"The weight of a twist bone (a name ending in Roll) counts for the next bone down the chain that is not a twist, so a piece on the elbow follows the forearm."
+	hidewhen	"{ mode != rigid } { use != auto }"
+    }
+    parm {
+	name	"piecesfrom"
+	label	"Pieces From"
+	type	string
+	default	{ "names" }
+	menu {
+	    "names"	"Names"
+	    "connected"	"Connected Pieces"
+	}
+	help	"How a rigid target is cut into pieces. Non-rigid mode always uses connected pieces."
+	hidewhen	"{ mode != rigid }"
+    }
+    parm {
+	name	"nameattr"
+	label	"Name Attribute"
+	type	string
+	default	{ "name" }
+	help	"The primitive string attribute that holds the piece names. FBX, Alembic and most modelling tools write 'name'."
+	hidewhen	"{ mode != rigid } { piecesfrom != names }"
+    }
+    parm {
+	name	"distance"
+	label	"Match Distance"
+	type	float
+	size	1
+	default	{ "0.05" }
+	range	{ 0! 10 }
+	help	"How far from the source a target point may be and still count, as a share of the size of the target and source groups together (the diagonal of their bounding box). A point with no source this close takes the nearest weighted source point, with a warning."
+    }
+    parm {
+	name	"angle"
+	label	"Match Angle"
+	type	float
+	size	1
+	default	{ "35.0" }
+	range	{ 0! 180! }
+	help	"How much the surface direction may differ, in degrees, for a point to copy weights. A point that faces another way is filled in from its neighbours on the piece."
+	hidewhen	"{ mode != nonrigid }"
+    }
+    parm {
+	name	"smooth"
+	label	"Smoothing Passes"
+	type	integer
+	size	1
+	default	{ "8" }
+	range	{ 0! 100! }
+	help	"How many times the weights are averaged with their neighbours along the piece."
+	hidewhen	"{ mode != nonrigid }"
+    }
+    parm {
+	name	"minpiece"
+	label	"Smallest Piece"
+	type	integer
+	size	1
+	default	{ "10" }
+	range	{ 1! 10 }
+	help	"A piece of the target with fewer points than this is ignored: it gets no weights. A named piece counts all its parts together."
+    }
+}

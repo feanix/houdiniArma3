@@ -1,0 +1,14 @@
+Operator:     a3ob_weights_convert
+Label:        Weights Convert
+Path:         oplib:/Sop/a3ob_weights_convert?Sop/a3ob_weights_convert
+Icon:         SOP_python
+Table:        Sop
+License:      
+Extra:        
+User:         
+Inputs:       2 to 2
+Subnet:       false
+Python:       true
+Empty:        false
+Modified:     Mon Nov  3 12:00:00 2026
+

@@ -1,0 +1,206 @@
+= Rig Landmarks =
+
+#type: node
+#context: sop
+#internal: a3ob_rig_landmarks
+#tags: arma, p3d
+
+"""Places the landmarks of your character (chin, groin, shoulders, elbows, wrists, hips, knees, ankles, middle fingers, thumbs) for Rig Fit, as positions that you drag in the viewport."""
+
+Rig Fit fits the skeleton to 18 landmarks of your character: the chin, the groin, and the left and right shoulder, elbow, wrist, hip, knee, ankle, middle finger and thumb. This node holds them as positions (X, Y, Z) that you place by hand. Put the node between your mesh and Rig Fit. Connect the skeleton and the sample body to its inputs 2 and 3 (the ones that go into Rig Fit) and press Guess Landmarks: it fills all 18 fields with the guess of Rig Fit. Then select the node, move the mouse over the viewport and press Enter: every landmark is a labelled marker that you drag. The markers are drawn on top of the mesh. A joint belongs inside the body; the chin and the groin are on the skin.
+
+Mirror is on by default. Left is the +X side. The right markers follow the left ones, mirrored about the X = 0 plane, so dragging a left marker moves its right partner (the right fields cannot be edited then). Switch Mirror off to place both sides freely. To put a landmark back to the guess, choose it in the Landmark menu and press Guess This Landmark. To set a landmark from the mesh, select points in the viewport, choose the landmark in the Landmark menu and press Set From Selected Points: it takes the average of the points. Only the position is kept, not the selection. This is handy for the chin and the groin.
+
+The node gives your mesh unchanged, with one detail vector per landmark that is set (a3ob_lm_chin and so on), which Rig Fit reads. A fresh node has no position set (all three numbers zero means not set); it warns and needs the guess. Rig Fit then guesses the landmarks that are not set.
+
+@inputs
+
+Your mesh:
+    Your character mesh, the one that goes into Rig Fit. It comes out unchanged.
+
+Skeleton:
+    Optional. The Arma skeleton, for Guess Landmarks (the same one that goes into Rig Fit).
+
+Sample body:
+    Optional. The sample body with its bone weights, for Guess Landmarks (the same one that goes into Rig Fit).
+
+@parameters
+
+Guess Landmarks:
+    #id: guess
+
+    Fills all 18 positions with the auto-guess of Rig Fit for your mesh. Connect the skeleton to input 2 and the sample body to input 3 first. It replaces the positions that are set.
+
+    Type: Button.
+
+Mirror:
+    #id: mirror
+
+    Left is the +X side. On: the right landmarks follow the left ones, mirrored about the X = 0 plane, so dragging a left marker moves its right partner, and the right fields cannot be edited. Off: both sides are free.
+
+    Type: On or off. Default: On.
+
+Chin:
+    #id: chin
+
+    The tip of the chin on the middle line: the lowest point of the chin that faces forward (not the throat under it). The head joint is placed from it. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark.
+
+    Type: 3 numbers. Default: 0, 0, 0.
+
+Groin:
+    #id: groin
+
+    The crotch, the highest point between the legs. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. In the viewport it is an upside-down V (wireframe, the apex is the landmark): push it up into the gap between the thighs until it sits snug against both inner thighs.
+
+    Type: 3 numbers. Default: 0, 0, 0.
+
+Left Shoulder:
+    #id: shoulder_l
+
+    The left shoulder joint, inside the upper arm where it meets the body. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark.
+
+    Type: 3 numbers. Default: 0, 0, 0.
+
+Right Shoulder:
+    #id: shoulder_r
+
+    The right shoulder joint. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. While Mirror is on this one follows the left side and cannot be edited.
+
+    Type: 3 numbers. Default: 0, 0, 0. Editable when: Mirror is off.
+
+Left Elbow:
+    #id: elbow_l
+
+    The left elbow joint, in the middle of the arm. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark.
+
+    Type: 3 numbers. Default: 0, 0, 0.
+
+Right Elbow:
+    #id: elbow_r
+
+    The right elbow joint. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. While Mirror is on this one follows the left side and cannot be edited.
+
+    Type: 3 numbers. Default: 0, 0, 0. Editable when: Mirror is off.
+
+Left Wrist:
+    #id: wrist_l
+
+    The left wrist joint, in the middle of the arm. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark.
+
+    Type: 3 numbers. Default: 0, 0, 0.
+
+Right Wrist:
+    #id: wrist_r
+
+    The right wrist joint. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. While Mirror is on this one follows the left side and cannot be edited.
+
+    Type: 3 numbers. Default: 0, 0, 0. Editable when: Mirror is off.
+
+Left Hip:
+    #id: hip_l
+
+    The left hip joint, inside the top of the thigh. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. In the viewport it is a short wireframe cylinder, the top of the thigh, aimed at the knee: put its centre in the middle of the thigh top.
+
+    Type: 3 numbers. Default: 0, 0, 0.
+
+Right Hip:
+    #id: hip_r
+
+    The right hip joint. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. While Mirror is on this one follows the left side and cannot be edited. In the viewport it is a short wireframe cylinder, the top of the thigh, aimed at the knee: put its centre in the middle of the thigh top.
+
+    Type: 3 numbers. Default: 0, 0, 0. Editable when: Mirror is off.
+
+Left Knee:
+    #id: knee_l
+
+    The left knee joint, in the middle of the leg. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark.
+
+    Type: 3 numbers. Default: 0, 0, 0.
+
+Right Knee:
+    #id: knee_r
+
+    The right knee joint. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. While Mirror is on this one follows the left side and cannot be edited.
+
+    Type: 3 numbers. Default: 0, 0, 0. Editable when: Mirror is off.
+
+Left Ankle:
+    #id: ankle_l
+
+    The left ankle joint, in the middle of the leg. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark.
+
+    Type: 3 numbers. Default: 0, 0, 0.
+
+Right Ankle:
+    #id: ankle_r
+
+    The right ankle joint. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. While Mirror is on this one follows the left side and cannot be edited.
+
+    Type: 3 numbers. Default: 0, 0, 0. Editable when: Mirror is off.
+
+Left Finger:
+    #id: finger_l
+
+    The left middle finger, its last joint: inside the fingertip, in the middle of the finger. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark.
+
+    Type: 3 numbers. Default: 0, 0, 0.
+
+Right Finger:
+    #id: finger_r
+
+    The right middle finger, its last joint. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. While Mirror is on this one follows the left side and cannot be edited.
+
+    Type: 3 numbers. Default: 0, 0, 0. Editable when: Mirror is off.
+
+Left Thumb:
+    #id: thumb_l
+
+    The left thumb, its last joint: inside the tip of the thumb. With the wrist and the middle finger it says which way the palm faces. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark.
+
+    Type: 3 numbers. Default: 0, 0, 0.
+
+Right Thumb:
+    #id: thumb_r
+
+    The right thumb, its last joint. Its position (X, Y, Z). Drag its marker in the viewport (select the node, move the mouse over the viewport and press Enter), type the numbers, or use Guess Landmarks. All zero means not set: Rig Fit then guesses this landmark. While Mirror is on this one follows the left side and cannot be edited.
+
+    Type: 3 numbers. Default: 0, 0, 0. Editable when: Mirror is off.
+
+Match Left to Right:
+    #id: leftToRight
+
+    Once: puts each right landmark at the mirror image of its left partner (mirrored about X = 0, Left is +X). Chin and groin stay as they are, and a left landmark that is not set is skipped. Disabled while Mirror is on, because the right side already follows the left.
+
+    Type: Button. Editable when: Mirror is off.
+
+Match Right to Left:
+    #id: rightToLeft
+
+    Once: puts each left landmark at the mirror image of its right partner (mirrored about X = 0, Left is +X). Chin and groin stay as they are, and a right landmark that is not set is skipped. With Mirror on, the right side then follows the new left side.
+
+    Type: Button.
+
+Landmark:
+    #id: which
+
+    The landmark that the two buttons below work on.
+
+    Type: Menu. Default: Chin.
+
+    Choices: Chin, Groin, Left Shoulder, Right Shoulder, Left Elbow, Right Elbow, Left Wrist, Right Wrist, Left Hip, Right Hip, Left Knee, Right Knee, Left Ankle, Right Ankle, Left Finger, Right Finger, Left Thumb, Right Thumb.
+
+Guess This Landmark:
+    #id: guessone
+
+    Puts the landmark chosen above back to its auto-guess (needs inputs 2 and 3 like Guess Landmarks). With Mirror on, its partner follows.
+
+    Type: Button.
+
+Set From Selected Points:
+    #id: fromsel
+
+    Puts the landmark chosen above at the average of the points that are selected in the viewport. Only the position is kept, not the selection. Useful for the chin and the groin. With Mirror on, its partner follows.
+
+    Type: Button.
+
+The full page for this node is docs/user/reference/a3ob_rig_landmarks.html in the A3OB folder. Open it in a web browser.

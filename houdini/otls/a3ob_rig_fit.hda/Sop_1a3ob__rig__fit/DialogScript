@@ -1,0 +1,120 @@
+# Dialog script for a3ob_rig_fit, version 1
+
+{
+    name	a3ob_rig_fit
+    script	a3ob_rig_fit
+    label	"Rig Fit"
+
+    help {
+	"Fits the Arma skeleton and the sample body to your mesh, from landmarks that you set or that are guessed."
+    }
+
+    inputlabel	1	"Your mesh"
+    inputlabel	2	"Skeleton"
+    inputlabel	3	"Sample body"
+
+    parm {
+	name	"show"
+	label	"Show"
+	type	string
+	default	{ "all" }
+	menu {
+	    "all"	"All"
+	    "skeleton"	"Fitted skeleton"
+	    "body"	"Fitted sample body"
+	    "landmarks"	"Landmarks"
+	}
+	help	"Which results are drawn in the viewport. The node always gives all results as one geometry, packed primitives named by the prim string a3ob_rig_part (a fourth, rest_body, the sample body as it came in, is never drawn; Unpose uses it). This menu only hides the others from view; the output is the same for every choice, and changing it does not fit again (the last fit is kept). Weight Transfer takes the fitted sample body from it by itself."
+    }
+    parm {
+	name	"landmarks"
+	label	"Landmarks"
+	type	string
+	default	{ "both" }
+	menu {
+	    "guess"	"Auto-guess"
+	    "landmarks"	"From Rig Landmarks"
+	    "both"	"Both"
+	}
+	help	"Where the landmarks come from: the chin, the groin and the shoulder, elbow, wrist, hip, knee, ankle, middle finger and thumb of each side. The Rig Landmarks node in front of this one holds the positions you placed (its markers are dragged in the viewport). Left is the +X side."
+    }
+    parm {
+	name	"snap"
+	label	"Snap to Surface"
+	type	toggle
+	default	{ "1" }
+	help	"Move the chin and the groin onto the closest point of your mesh. The joints lie inside the body and are never moved."
+    }
+    parm {
+	name	"symmetry"
+	label	"Symmetry"
+	type	toggle
+	default	{ "1" }
+	help	"Make the left and right landmarks mirror each other. When both sides of a pair are set in Rig Landmarks they are averaged; when only one side is, the other side is its mirror image."
+    }
+    parm {
+	name	"bendfingers"
+	label	"Bend Fingers"
+	type	toggle
+	default	{ "1" }
+	help	"Bend the finger joints of the fitted skeleton to follow the fingers of your mesh (needs Per bone length). The sample's fingers are straight and a relaxed hand is curled, so without this the wrapped sample body cannot follow the curl and Unpose keeps it. The joints after the knuckle of each of the four fingers and the thumb are placed from your finger mesh (the points of Body Group), the sample's own fingers as the model; the finger and thumb landmarks hold the end of the middle finger and the thumb. The bones keep their frames (pure rotations aimed down the bone). Off: the finger chains stay straight, only turned and sized."
+    }
+    parm {
+	name	"refine"
+	label	"Refine"
+	type	toggle
+	default	{ "1" }
+	help	"Wrap the fitted sample body onto your bare body with Topo Transfer, so it takes your proportions. Each landmark is moved to the closest point of the sample body and of your body; the pairs with the same name guide the wrap. The heel and the toe tip of each foot are found on both bodies by themselves and guide it too, and the lower part of each wrapped foot is then laid on your sole, so the feet end where yours end and stand flat. The fitted sample body part becomes the wrapped body, with its bone weights. Off: the sample body is only posed and sized."
+    }
+    parm {
+	name	"bodygroup"
+	label	"Body Group"
+	type	string
+	default	{ "body" }
+	menutoggle {
+	    [ "__import__('a3ob_houdini.entry', fromlist=['group_menu']).group_menu('rig_fit', 'bodygroup', kwargs)" ]
+	    language python
+	}
+	help	"The point group or primitive group of your mesh that Refine wraps onto: the bare body, without hair, helmet or other accessories. A primitive group counts as the points of its primitives. Empty means the whole mesh."
+	parmtag	{ "script_action" "import hou\nimport soputils\nkwargs['geometrytype'] = [hou.geometryType.Points]\nkwargs['inputindex'] = 0\nsoputils.selectGroupParm(kwargs)" }
+	parmtag	{ "script_action_help" "Select geometry from an available viewport.\nShift-click to turn on Select Groups." }
+	parmtag	{ "script_action_icon" "BUTTONS_reselect" }
+    }
+    parm {
+	name	"scale"
+	label	"Scale"
+	type	string
+	default	{ "bone" }
+	menu {
+	    "bone"	"Per bone length"
+	    "body"	"Whole body"
+	}
+	help	"How the length of each bone is fitted."
+    }
+    parm {
+	name	"headmatch"
+	label	"Head Match"
+	type	toggle
+	default	{ "0" }
+	help	"Take the head joint from the sample instead of guessing it from the chin. You line your character up with the sample at the head (a Transform SOP that scales and moves your mesh until your head sits on the sample's head) and give that transform here: Match Scale and Match Translate. The head joint is then the sample's own head joint, mapped back from the sample's space into your mesh's through the inverse of that transform (your point = (sample point - translate) / scale). Off: the head joint is guessed from the chin landmark and this node warns that it is a guess. The transform must be a uniform scale and a translate (no rotation). The neck joints are placed as before (the neck from the torso, neck1 between the neck and the head)."
+    }
+    parm {
+	name	"matchscale"
+	label	"Match Scale"
+	type	float
+	size	1
+	default	{ "1.0" }
+	range	{ 0.01! 10 }
+	help	"The uniform scale of your head match transform (the Uniform Scale of the Transform SOP). Example: 1.0338 for the head height comparison."
+	disablewhen	"{ headmatch != 1 }"
+    }
+    parm {
+	name	"matcht"
+	label	"Match Translate"
+	type	vector
+	size	3
+	default	{ "0.0" "0.0" "0.0" }
+	help	"The translate of your head match transform, in metres (the Translate of the Transform SOP, with its pivot at the origin). Example: 0, -1.0096, 0."
+	disablewhen	"{ headmatch != 1 }"
+    }
+}

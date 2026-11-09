@@ -1,0 +1,13 @@
+{
+    "enable": "houdini_version >= '22.0'",
+    "load_package_once": true,
+    "env": [
+        {
+            "A3OB_HOUDINI": "${A3OB_HOUDINI-$HOUDINI_PACKAGE_PATH/..}"
+        },
+        {
+            "PYTHONPATH": "$A3OB_HOUDINI/python"
+        }
+    ],
+    "hpath": "$A3OB_HOUDINI/houdini"
+}

@@ -1,0 +1,122 @@
+= RTM Import =
+
+#type: node
+#context: sop
+#internal: a3ob_rtm_import
+#tags: arma, p3d
+
+"""Poses the Arma skeleton with an Arma RTM animation file. The timeline plays the animation; Bone Deform skins a rigged mesh with it."""
+
+Plays an Arma animation (a plain or binarised .rtm file, or one of the animations in the game's own PBO files) on the Arma skeleton, so you can see your rigged mesh move the way it will in the game. Connect the Arma skeleton from Rig Skeleton to the input. The output is the same skeleton with its joints posed for the current frame. Put it into the third input of Bone Deform (the Arma skeleton in the second) with your mesh from Weights Convert, then press Play.
+
+An RTM holds key frames with a phase from 0 to 1, not a speed: the speed is in the game's config. So you choose how long one cycle is, in timeline frames (the default is 24) or in seconds, and where it starts. At the end it loops or holds. The animation's displacement (how far a walk moves the character in one cycle) is left out unless you switch Apply Displacement on. Between two key frames the pose of each joint, relative to its parent, is blended.
+
+Bones in the file that the skeleton lacks are ignored (face bones, slots, camera, and Weapon and launcher, which carry the weapon model in the game). A joint the file lacks stays at rest. The message of the node lists both and shows the frame in the cycle; the same numbers are on the geometry as the details a3ob_rtm_frame, a3ob_rtm_phase and a3ob_rtm_cycle. The animation does not depend on how the joints' own axes are turned: the node multiplies the animation onto them, so the mesh moves the same with any skeleton frames.
+
+To use an animation of the game, set Animation From to Arma 3 game, type some words of its name in Filter and pick it in the Animation menu (it names the PBO each one is in). Arma 3 Folder can stay empty: the node then looks at the environment variable A3OB_ARMA3, the A3OB settings file and your Steam library. The game stores its animations in binarised form (BMTR), which is stored relative to the parent bone; the node uses the parents of the skeleton to make the poses. Nothing from the game is copied.
+
+@inputs
+
+Arma skeleton:
+    The Arma rest skeleton from Rig Skeleton. Its joints are posed; the points, names and bone lines stay.
+
+@parameters
+
+Animation From:
+    #id: source
+
+    Where the animation comes from.
+
+    Type: Menu. Default: File.
+
+    File:
+        A plain .rtm file, a binarised one (BMTR, as in the game's PBO files), or an entry inside a PBO written as path/to/anims_f.pbo|a3/anims_f/data/anim/sdr/mov/erc/wlk/rfl/amovpercmwlksraswrfldf.rtm.
+
+    Arma 3 game:
+        One of the animations in the game's anims PBO files (anims_f_data.pbo and the expansions' own). Pick it in Animation; Filter narrows the list.
+
+RTM File:
+    #id: file
+
+    A plain Arma animation (.rtm), a binarised one (BMTR, read with the parents of the skeleton), or an entry inside a PBO written as path/to/anims_f.pbo|a3/anims_f/data/anim/sdr/mov/erc/wlk/rfl/amovpercmwlksraswrfldf.rtm. Bones the skeleton lacks (Weapon, launcher, face and slot bones, Hips) are ignored; joints the file lacks stay at rest.
+
+    Type: File path. Default: (empty). Files: `*.rtm *.pbo`. Shown when: Animation From is File.
+
+Arma 3 Folder:
+    #id: arma3
+
+    The Arma 3 game folder (the one that holds Addons). Empty uses the environment variable A3OB_ARMA3, then the Arma 3 Folder stored in the A3OB settings file, then the Arma 3 folder of your Steam library.
+
+    Type: Folder path. Default: (empty). Shown when: Animation From is Arma 3 game.
+
+Filter:
+    #id: filter
+
+    Words that the animation name must contain (any case); a word may have `*` or ?. Example: wlk ras rfl finds the rifle walks of the standing man. The Animation menu then lists only those.
+
+    Type: Text. Default: (empty). Shown when: Animation From is Arma 3 game.
+
+Animation:
+    #id: anim
+
+    The animation from the game's PBO files. The menu lists the animations that match Filter, 300 at most, with the PBO each one is in.
+
+    Type: Menu. Default: (none). Shown when: Animation From is Arma 3 game.
+
+    The choices are made when you open the menu, from the geometry or the settings.
+
+Playback:
+    #id: playback
+
+    How the length of one cycle is given. An RTM file holds phases (0 to 1) only; how fast it plays in the game is set in the config, so you choose it here.
+
+    Type: Menu. Default: Frames per cycle.
+
+    Frames per cycle:
+        One cycle takes the number of timeline frames in Frames per Cycle.
+
+    Seconds per cycle:
+        One cycle takes Seconds per Cycle, whatever the frame rate of the scene.
+
+Frames per Cycle:
+    #id: cycleframes
+
+    How many timeline frames one cycle of the animation takes. The default is 24, one second at 24 frames per second.
+
+    Type: Whole number. Default: 24. Allowed: At least 1; no upper limit. Shown when: Playback is Frames per cycle.
+
+Seconds per Cycle:
+    #id: cycleseconds
+
+    How many seconds one cycle takes. The default is 1.
+
+    Type: Number. Default: 1. Allowed: At least 0.01; no upper limit. Shown when: Playback is Seconds per cycle.
+
+Start Frame:
+    #id: startframe
+
+    The timeline frame where the cycle starts (phase 0). Playback before it holds the first frame, or runs the cycle backwards when Loop is on.
+
+    Type: Number. Default: 1.
+
+At the End:
+    #id: wrap
+
+    What happens after the last frame of the cycle.
+
+    Type: Menu. Default: Loop.
+
+    Loop:
+        The cycle starts again. With Apply Displacement on, the character keeps walking on.
+
+    Hold:
+        The last frame stays, and the first frame before the start.
+
+Apply Displacement:
+    #id: displace
+
+    Move the skeleton by the displacement of the animation (how far the character walks in one cycle, in the file) times the cycles played. Off keeps the character in place.
+
+    Type: On or off. Default: Off.
+
+The full page for this node is docs/user/reference/a3ob_rtm_import.html in the A3OB folder. Open it in a web browser.

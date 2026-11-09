@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Model Cfg - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
+<h1>Model Cfg</h1>
+<p class="lead">Writes the model.cfg a character P3D needs (uniform, vest, headgear and other gear on the man skeleton) into a folder, or adds the P3D&#x27;s class to the model.cfg that is already there. The messages show what Write model.cfg would do. The output is the input.</p>
+<p>A character P3D (uniform, vest, headgear and other gear on the man skeleton) needs a model.cfg next to it. It holds the man skeleton and one class per P3D file name. This node writes that file into a folder, so you do not copy and edit it by hand.</p>
+<p>Cooking only shows what Write model.cfg would do: the changes, any warnings and the whole text, as node messages. Write model.cfg then writes it. A model.cfg that is already there is updated in place: only the class of each model name is added or replaced (and Default, the base class and the skeleton if they are missing). Everything else in the file stays, and the old file is kept as model.cfg.bak. A binarized file, or a file that cannot be read, is refused with the line number.</p>
+<table class="facts">
+<tr><th>Houdini name</th><td><code>a3ob_model_cfg</code></td></tr>
+<tr><th>Where to find it</th><td>Tab menu, A3OB, Model Cfg</td></tr>
+<tr><th>Inputs</th><td>0 to 1</td></tr>
+</table>
+<h2>Inputs</h2>
+<ol>
+<li value="1">Input 1: P3D geometry or LOD geometry (optional). Optional. Its selections are scanned for section names (Add Selections of the Input).</li>
+</ol>
+<p class="note">The node also works with no input connected.</p>
+<h2>Parameters</h2>
+<p>Parameters are in the order they appear on the node.</p>
+<section class="parm" id="folder">
+<h3>Folder <code>folder</code></h3>
+<p>The folder to write model.cfg into. Normally the folder of the P3D, or a folder above it. The file is named model.cfg.</p>
+<dl>
+<dt>Type</dt><dd>Folder path</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="model">
+<h3>Model Names <code>model</code></h3>
+<p>The P3D file names without .p3d, separated by spaces or commas. Each gets one class in CfgModels, named exactly like the file. Capitals matter to the build tools.</p>
+<dl>
+<dt>Type</dt><dd>Text</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="fromexport">
+<h3>From P3D Export <code>fromexport</code></h3>
+<p>Take Folder and Model Names from the Output File of the P3D Export node in this network (the one that shares this node&#x27;s input, or the only one).</p>
+<dl>
+<dt>Type</dt><dd>Button</dd>
+</dl>
+</section>
+<section class="parm" id="base">
+<h3>Base Class <code>base</code></h3>
+<p>The CfgModels class that holds the shared settings and sections of man models. Each model class inherits from it. It is added when the file has none.</p>
+<dl>
+<dt>Type</dt><dd>Text</dd>
+<dt>Default</dt><dd>ArmaMan</dd>
+</dl>
+</section>
+<section class="parm" id="skeleton">
+<h3>Skeleton <code>skeleton</code></h3>
+<p>The CfgSkeletons class with the Arma 3 man skeleton (103 bones and their parents). It is added when the file has none; a class of that name that is there is kept as it is.</p>
+<dl>
+<dt>Type</dt><dd>Text</dd>
+<dt>Default</dt><dd>OFP2_ManSkeleton</dd>
+</dl>
+</section>
+<section class="parm" id="extra">
+<h3>Extra Sections <code>extra</code></h3>
+<p>More section names (selections that a config can retexture or hide, for example camo3), separated by spaces or commas. They are added to the sections of the base class, on top of the usual man list (camo, camo1, camo2, personality, hl, injury_*, insignia ...).</p>
+<dl>
+<dt>Type</dt><dd>Text</dd>
+<dt>Default</dt><dd>(empty)</dd>
+</dl>
+</section>
+<section class="parm" id="scan">
+<h3>Add Selections of the Input <code>scan</code></h3>
+<p>Also add the selections of the input geometry (visual LODs) that are not bones, proxies or a3ob_ helper groups, for example camo1. Off: they are only listed in the messages. Does nothing without an input. Check the list first: working groups of your own show up here too.</p>
+<dl>
+<dt>Type</dt><dd>On or off</dd>
+<dt>Default</dt><dd>Off</dd>
+</dl>
+</section>
+<section class="parm" id="write">
+<h3>Write model.cfg <code>write</code></h3>
+<p>Create model.cfg, or update the one in the folder: only the model classes are added or replaced (and Default, the base class and the skeleton if missing). Everything else in the file stays. An old file is kept as model.cfg.bak. A binarized file or a file that cannot be read is refused.</p>
+<dl>
+<dt>Type</dt><dd>Button</dd>
+</dl>
+</section>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

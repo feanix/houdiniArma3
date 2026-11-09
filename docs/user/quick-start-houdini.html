@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quick start: Houdini users - A3OB for Houdini</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="index.html">Home</a></li>
+<li><a href="install.html">Install</a></li>
+<li><a href="quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="quick-start-houdini.html" aria-current="page">Quick start: Houdini users</a></li>
+<li><a href="concepts.html">Concepts</a></li>
+<li><a href="reference/index.html">Reference</a></li>
+<li><a href="about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<h1>Quick start: Houdini users</h1>
+<p class="lead">You know Houdini. You have not made an Arma model before.</p>
+
+<p>First the Arma side in a few paragraphs, then the two jobs: a new model, and a change to an existing model. The steps
+are short. The <a href="quick-start-arma.html">quick start for Arma modders</a> has the same jobs with more detail about the
+Houdini window. Install the add-on first: <a href="install.html">Install</a>.</p>
+<p>Steps that need the Houdini window (shelf buttons and dialogs) are marked <strong>Houdini window</strong>. Steps in
+other programs are marked <strong>Outside Houdini</strong>. All other steps were run in Houdini without a window and gave
+the messages quoted here.</p>
+
+<h2>What you need to know about Arma models</h2>
+<dl>
+<dt>P3D</dt>
+<dd>The model file of Arma 3, with the ending <code>.p3d</code>. You make it with the game's tool, <strong>Object
+  Builder</strong>, or with this add-on. A file can hold several models of one object. The game picks the right one
+  at run time.</dd>
+<dt>LOD</dt>
+<dd>"Level of detail": one of those models inside a P3D. It has a <strong>type</strong> and, for some types, a
+  <strong>resolution</strong> number. The types you need first:
+  <ul>
+  <li><kbd class="ui-menu">Resolution</kbd>: what the player sees. Resolution 1 is the most detailed. Higher numbers are
+    simpler versions for longer distances.</li>
+  <li><kbd class="ui-menu">Geometry</kbd>: the collision shape, made of convex pieces, with the mass of the object.</li>
+  <li><kbd class="ui-menu">Memory</kbd>: named points that the game and its scripts look up, such as a muzzle position or
+    the axis of a door.</li>
+  <li><kbd class="ui-menu">Fire Geometry</kbd> and <kbd class="ui-menu">View Geometry</kbd>: hit zones for bullets and
+    occlusion for the AI.</li>
+  <li><kbd class="ui-menu">Shadow Volume</kbd>: the shape used for shadows.</li>
+  </ul>
+  The full list is in <a href="concepts.html#lod-data">Concepts</a>.</dd>
+<dt>Selection</dt>
+<dd>A named set of points (and faces) in a LOD. Animation, hit zones and memory points are all selections. In Houdini
+  they are point groups. Names can hold characters that Houdini does not allow in a group name, so the add-on stores such
+  a name as a reversible code starting with <code>xn__</code>. The
+  <a href="reference/tool-a3ob_selection_browser.html">Selection browser</a> shows the real name.
+  See <a href="concepts.html#selections">Concepts</a>.</dd>
+<dt>Proxy</dt>
+<dd>A place where the game puts another model, such as a weapon slot or a seat. It is a path to another .p3d and an index.
+  In Houdini it is a small packed primitive with a path and an index. See <a href="concepts.html#proxies">Concepts</a>.</dd>
+<dt>Mass</dt>
+<dd>A weight in kilograms for each point of the Geometry LOD. The game adds the points up. The
+  <kbd class="ui-node">Mass</kbd> node sets it.</dd>
+<dt>P drive and project root</dt>
+<dd>Arma tools keep source files on a virtual drive, <strong>P:</strong>. Paths inside a finished P3D are relative to it, so a
+  texture at <code>P:\my_mod\data\crate_co.paa</code> is stored as <code>my_mod\data\crate_co.paa</code>. The add-on calls
+  the start of the path the <strong>project root</strong> (default <code>P:\</code>). Set it with the
+  <kbd class="ui-shelf">Project root and presets</kbd> shelf tool or on the export node. Files in a HEMTT project or next
+  to a <code>$PBOPREFIX$</code> file get their game path from that instead.
+  See <a href="concepts.html#paths">Concepts</a>.</dd>
+<dt>Rules of the format</dt>
+<dd>A polygon has 3 or 4 points. A Geometry LOD should be triangles and have at least one point group named
+  <code>component01</code> (more for more convex pieces; the <kbd class="ui-node">Components</kbd> node makes them) and a mass. Y is up. The importer negates Z
+  and reverses polygon winding so that the model looks the same as in Object Builder.</dd>
+</dl>
+
+<h2>How the add-on is built</h2>
+<p>There are two shapes of geometry, and each A3OB node takes one of them.</p>
+<ul>
+<li><strong>P3D geometry</strong>: one packed primitive for each LOD (the primitive attribute <code>name</code> says
+  which). <kbd class="ui-node">P3D Import</kbd> and <kbd class="ui-node">Assemble LODs</kbd> output it.</li>
+<li><strong>LOD geometry</strong>: one LOD as ordinary unpacked geometry, with its LOD data in detail attributes
+  (<code>a3ob_lod_type</code>, <code>a3ob_lod_resolution</code> and others). <kbd class="ui-node">Extract LOD</kbd> makes it,
+  and you edit it with any nodes.</li>
+</ul>
+<p>The reason: a Merge of unpacked LODs keeps only the detail attributes of its first input. Packed primitives keep
+theirs. So always put edited LODs back with <kbd class="ui-node">Assemble LODs</kbd>, never with a Merge. The page
+<a href="concepts.html">Concepts</a> has the whole picture.</p>
+<p>The network for an existing file:</p>
+<ol class="network">
+<li>P3D Import</li>
+<li>Extract LOD</li>
+<li class="optional">Your edits</li>
+<li>Assemble LODs</li>
+<li>P3D Export</li>
+</ol>
+<p>and the base input of <kbd class="ui-node">Assemble LODs</kbd> takes the import directly, so LODs you did not edit pass
+through as they are.</p>
+<p>The A3OB nodes are Python-type digital assets. Their parameters and defaults are in the
+<a href="reference/index.html">reference</a>. <span class="node-help">Click the <strong>?</strong> (help) icon at the top right of the parameter pane of a node (or press F1 over the node) to open Houdini's
+help for it, which names the full reference page by its path.</span> Do not edit an A3OB asset in the Type
+Properties window: the node files are written by a script, and an edit is lost on the next update.</p>
+
+<h2>Job 1: a new model</h2>
+<ol>
+<li><p class="gui">Click <kbd class="ui-shelf">New P3D</kbd> on the A3OB shelf. If you are inside a SOP network it asks
+  <kbd class="ui-dialog">Build the starter network in</kbd> that network or a new object, with the buttons
+  <kbd class="ui-dialog">This network</kbd> and <kbd class="ui-dialog">New object</kbd>. For a new object it asks
+  <kbd class="ui-dialog">Name of the new Geometry object</kbd>. The status line ends with
+  <kbd class="ui-dialog">Built the starter network in</kbd> and the path.</p>
+  <p>The same from Python:</p>
+<pre><code>from a3ob_houdini import new_p3d
+made = new_p3d.build_starter(None, "my_crate")   # a new /obj/my_crate
+made.nodes["export"]                               # the nodes by name</code></pre></li>
+<li>The network has three LOD chains that meet in <code>assemble</code>, then <code>export</code>:
+<p><img src="img/new-p3d-network.png" width="1110" height="745"
+ alt="The New P3D starter network. Left column: res1_mesh (Box) into res1_props (LOD Properties). Middle column: geometry_mesh (Box) into geometry_triangles (Divide) into geometry_components (Group) into geometry_mass (Mass) into geometry_props (LOD Properties). Right column: memory_points (Add) into memory_group (Group) into memory_props (LOD Properties). The three props nodes each connect to one input of assemble (Assemble LODs), which connects to export (P3D Export)."></p>
+  The nodes <code>*_props</code> are <kbd class="ui-node">LOD Properties</kbd>, <code>assemble</code> is
+  <kbd class="ui-node">Assemble LODs</kbd> with no base input and <code>export</code> is
+  <kbd class="ui-node">P3D Export</kbd> with the display flag. The network already passes every check:
+  <samp class="ui-msg">3 LODs, 3 KB if saved now.</samp></li>
+<li>Replace <code>res1_mesh</code>, <code>geometry_mesh</code> and <code>memory_points</code> with your own geometry.
+  Keep to the rules above (3 or 4 points a polygon, triangles and a <code>component01</code> group in the Geometry LOD).
+  For a quick test, change the <kbd class="ui-parm" data-node="box">Size</kbd> of <code>res1_mesh</code>. Set the real weight
+  on <code>geometry_mass</code>: its <kbd class="ui-parm" data-node="a3ob_mass">Mode</kbd> is
+  <kbd class="ui-menu">Uniform total</kbd> and its message is <samp class="ui-msg">Total 100.0 kg on 8 points.</samp>
+  <p><img src="img/replace-mesh-network.png" width="1272" height="865"
+ alt="The starter network after res1_mesh is replaced. Left column: my_model (Sphere) into place_on_ground (Transform) into res1_props (LOD Properties). Middle column: geometry_mesh (Box) into geometry_triangles (Divide) into geometry_components (Group) into geometry_mass (Mass) into geometry_props (LOD Properties). Right column: memory_points (Add) into memory_group (Group) into memory_props (LOD Properties). The three props nodes each connect to one input of assemble (Assemble LODs), which connects to export (P3D Export)."></p>
+  <p><img src="img/geometry-mass-parms.png" width="641" height="202"
+ alt="The parameter pane of geometry_mass (Mass). Mode is Uniform total. Total Mass (kg) is 100. Group is empty. Visualize is off."></p></li>
+<li>Add a <kbd class="ui-node">Validate</kbd> node after <code>assemble</code>:
+  <samp class="ui-msg">3 LODs checked: 0 errors, 0 warnings.</samp> Bypass <code>geometry_mass</code> to see a note,
+  <samp class="ui-msg">Geometry: has no mass</samp>, and a warning,
+  <samp class="ui-msg">Geometry: the points have no mass</samp>. Give two LODs the same type and resolution to see
+  an error, <samp class="ui-msg">Geometry: another LOD has the same type and resolution.</samp> The meaning of the checks
+  is on <a href="concepts.html#validator">Concepts</a>.</li>
+<li>Set <kbd class="ui-parm" data-node="a3ob_p3d_export">Output File</kbd> on <code>export</code> and press
+  <kbd class="ui-parm" data-node="a3ob_p3d_export">Save to Disk</kbd>. The message is
+  <samp class="ui-msg">Saved 3 LODs, 3 KB to</samp> and the file name. Nothing is written while the node only cooks. From
+  Python, which raises an error when nothing was written:
+<pre><code>from a3ob_houdini.nodes import p3d_export
+p3d_export.save(hou.node("/obj/my_crate/export"))</code></pre></li>
+<li><p class="outside">Open the file in Object Builder (File, then Open). Object Builder is not
+  part of this add-on, so this step is not checked by the tests.</p></li>
+</ol>
+<p>Pick the options before you save. The <kbd class="ui-parm" data-node="a3ob_p3d_export">Preset</kbd> menu has
+<kbd class="ui-menu">Lossless</kbd> (write exactly what is there) and <kbd class="ui-menu">Arma 3 release</kbd> (what Object Builder
+does by default: lowercase, relative paths and so on). Pick one and press
+<kbd class="ui-parm" data-node="a3ob_p3d_export">Apply</kbd>. <a href="concepts.html#presets">Concepts</a> lists the options.</p>
+
+<h2>Job 2: change an existing model</h2>
+<p>The example is a small crate model with 7 LODs. Use any editable .p3d file of your own; your names and numbers will
+differ.</p>
+<ol>
+<li>Add a <kbd class="ui-node">P3D Import</kbd> node and set its <kbd class="ui-parm" data-node="a3ob_p3d_import">File</kbd>:
+  <samp class="ui-msg">7 LODs, 0 packed proxies, 0 inline proxies</samp>. The
+  <kbd class="ui-parm" data-node="a3ob_p3d_import">LODs</kbd> parameter can limit which LODs are read, but then the others are
+  missing from the P3D geometry and from an export of it.</li>
+<li>Add <kbd class="ui-node">Extract LOD</kbd> and pick a LOD in its <kbd class="ui-parm" data-node="a3ob_extract_lod">LOD</kbd> menu.
+  The entries are <kbd class="ui-menu">0: Resolution 1</kbd>, <kbd class="ui-menu">1: Resolution 2</kbd>,
+  <kbd class="ui-menu">2: Shadow Volume 0</kbd>, <kbd class="ui-menu">3: Geometry</kbd>,
+  <kbd class="ui-menu">4: Geometry Buoyancy</kbd>, <kbd class="ui-menu">5: Memory</kbd> and
+  <kbd class="ui-menu">6: Roadway</kbd>. With <kbd class="ui-menu">3: Geometry</kbd> the message is
+  <samp class="ui-msg">Extracted LOD 3: Geometry, 16 points, 24 polygons.</samp> A non-P3D input gives
+  <samp class="ui-msg">Input is not a P3D geometry (packed LODs). Connect P3D Import or Assemble LODs.</samp></li>
+<li>Edit as you like. For example, a <kbd class="ui-node">Mass</kbd> node with <kbd class="ui-menu">Uniform total</kbd> and
+  <kbd class="ui-parm" data-node="a3ob_mass">Total Mass (kg)</kbd> 90: <samp class="ui-msg">Total 90.0 kg on 16 points.</samp> The LOD data
+  stays on the geometry as long as the nodes you use keep detail attributes.</li>
+<li>Add <kbd class="ui-node">Assemble LODs</kbd>. Input 1 is the import (the base), input 2 is your branch. With
+  <kbd class="ui-parm" data-node="a3ob_assemble_lods">Replace Matching LODs</kbd> on, the edited LOD replaces the base LOD
+  with the same stored signature and keeps its place: <samp class="ui-msg">1 replaced, 6 passed through, 0 added.</samp></li>
+<li>Add <kbd class="ui-node">P3D Export</kbd>, set the <kbd class="ui-parm" data-node="a3ob_p3d_export">Output File</kbd> and press
+  <kbd class="ui-parm" data-node="a3ob_p3d_export">Save to Disk</kbd>: <samp class="ui-msg">Saved 7 LODs, 50 KB to</samp> and the
+  file name. The crate's Roadway LOD gives a warning that contains <samp class="ui-msg">has no sound texture</samp>; it does not
+  stop the save.</li>
+</ol>
+<p class="note">Import then export with no edit and the <kbd class="ui-menu">Lossless</kbd> preset gives a file that is identical
+byte for byte. See <a href="concepts.html#lossless">Concepts</a> for when that holds.</p>
+
+<h2>Other shelf tools</h2>
+<ul class="cards">
+<li><a href="reference/tool-a3ob_quick_export.html">Quick Export</a><span>Write a .p3d from the selected node with a preset, without a P3D Export node.</span></li>
+<li><a href="reference/tool-a3ob_batch_convert.html">Batch folder convert</a><span>Re-write a whole folder of .p3d files and report which came back identical.</span></li>
+<li><a href="reference/tool-a3ob_project_settings.html">Project root and presets</a><span>Set the project root and manage export presets.</span></li>
+<li><a href="reference/tool-a3ob_selection_browser.html">Selection browser</a><span>Show selections by their real names.</span></li>
+<li><a href="reference/tool-a3ob_reload.html">Reload A3OB</a><span>Load updated code without restarting Houdini.</span></li>
+</ul>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

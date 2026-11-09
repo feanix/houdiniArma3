@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install - A3OB for Houdini</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="index.html">Home</a></li>
+<li><a href="install.html" aria-current="page">Install</a></li>
+<li><a href="quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="concepts.html">Concepts</a></li>
+<li><a href="reference/index.html">Reference</a></li>
+<li><a href="about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<h1>Install</h1>
+<p class="lead">How to put the add-on in Houdini, check that it works, and update it later.</p>
+
+<p>The add-on is a folder of files. Houdini finds it through a <strong>package file</strong>: a small text file that
+tells Houdini where the add-on lives and which parts to load. You do not run an installer.</p>
+
+<h2>What you need</h2>
+<ul>
+<li>Houdini 22.0 or later. The package file does not load in an older Houdini. Houdini Indie works.</li>
+<li>The add-on folder. Download it or clone it from its repository. This page calls it <em>the add-on folder</em>.
+  It is the folder that holds <code>packages</code>, <code>houdini</code> and <code>python</code>. The examples use
+  <code>C:/tools/houdiniArma3</code>. Use your own path, with forward slashes.</li>
+</ul>
+
+<h2>Step 1: tell Houdini about the add-on</h2>
+<p>Pick one of the two ways below. Way A is how the author installed it.</p>
+
+<h3>Way A: copy the package file</h3>
+<ol>
+<li>Open your Houdini preferences folder. On Windows it is <code>Documents/houdini22.0</code>. If it has no
+  <code>packages</code> folder, make one.</li>
+<li>Copy <code>packages/a3ob_houdini.json</code> from the add-on folder into that <code>packages</code> folder.</li>
+<li>Tell the copy where the add-on folder is. A copied file cannot work that out by itself. Set the environment
+  variable <code>A3OB_HOUDINI</code> to the add-on folder. The simplest way is one line in
+  <code>Documents/houdini22.0/houdini.env</code>:
+<pre><code>A3OB_HOUDINI = "C:/tools/houdiniArma3"</code></pre>
+  A system environment variable with the same name works too.</li>
+</ol>
+<p class="note">Instead of the environment variable you can edit the copy. In its first <code>env</code> entry, replace
+<code>${A3OB_HOUDINI-$HOUDINI_PACKAGE_PATH/..}</code> with the path of the add-on folder.</p>
+
+<h3>Way B: point Houdini at the add-on folder</h3>
+<p>Set the environment variable <code>HOUDINI_PACKAGE_DIR</code> to the <code>packages</code> folder inside the add-on
+folder, for example <code>C:/tools/houdiniArma3/packages</code>. Set it before Houdini starts. Nothing is copied.
+The package file finds the add-on folder on its own, because it sits next to it.</p>
+<p>Use Way B if you want several package folders or do not want to touch your preferences folder. Use only one way: with
+both, it is hard to tell which copy of the package file Houdini read.</p>
+
+<h3>What the package file does</h3>
+<p>It sets <code>A3OB_HOUDINI</code> (if you have not), adds the add-on's <code>houdini</code> folder to Houdini's
+search path so that it finds the nodes and the shelf, and adds the add-on's <code>python</code> folder so that the tools
+can run their Python code.</p>
+
+<h2>Step 2: restart Houdini</h2>
+<p>Close Houdini and start it again. Houdini reads package files only at start-up.</p>
+
+<h2>Step 3: add the A3OB shelf</h2>
+<p>The <strong>shelf</strong> is the row of tool buttons above the viewport. The add-on brings a shelf called
+<kbd class="ui-shelf">A3OB</kbd>, but Houdini does not show it until you ask.</p>
+<ol>
+<li>Click the <strong>+</strong> button at the right end of the shelf tabs.</li>
+<li>Choose <strong>Shelves</strong>, then <kbd class="ui-shelf">A3OB</kbd>.</li>
+</ol>
+<p>A new tab appears with six tools: <kbd class="ui-shelf">Selection browser</kbd>,
+<kbd class="ui-shelf">Quick Export</kbd>, <kbd class="ui-shelf">New P3D</kbd>,
+<kbd class="ui-shelf">Batch folder convert</kbd>, <kbd class="ui-shelf">Project root and presets</kbd> and
+<kbd class="ui-shelf">Reload A3OB</kbd>.</p>
+<p>Every tool has a page in the <a href="reference/index.html">reference</a>.</p>
+
+<h2>Step 4: check that it loaded</h2>
+<p>Do any one of these.</p>
+<ul>
+<li><strong>Tab menu.</strong> Open a Geometry object (see the <a href="quick-start-arma.html">quick start</a>). In the
+  network editor, press Tab. The menu has a submenu called <strong>A3OB</strong> with nine nodes in it.</li>
+<li><strong>Python shell.</strong> Open <strong>Windows</strong>, then <strong>Python Shell</strong>, and type:
+<pre><code>import a3ob_houdini
+hou.getenv("A3OB_HOUDINI")
+hou.nodeType(hou.sopNodeTypeCategory(), "a3ob_p3d_import")</code></pre>
+  The first line must not give an error. The second prints your add-on folder. The third prints a node type, not
+  <code>None</code>. The type name <code class="ui-type">a3ob_p3d_import</code> is the Houdini name of the
+  <kbd class="ui-node">P3D Import</kbd> node.</li>
+<li><strong>Help.</strong> <span class="node-help">Create a <kbd class="ui-node">P3D Import</kbd> node, select it and click
+  the <strong>?</strong> (help) icon at the top right of the parameter pane, or press F1 over the node. Houdini's help opens a short page for the node. That
+  page names the full reference page by its path in the add-on folder,
+  <code>docs/user/reference/a3ob_p3d_import.html</code>. You can open that file in your browser.</span></li>
+</ul>
+
+<h3>If it did not load</h3>
+<ul>
+<li>No <strong>A3OB</strong> submenu: check that you restarted Houdini, that the package file is in the folder
+  <code>packages</code> of the preferences folder you use (or that <code>HOUDINI_PACKAGE_DIR</code> is set), and that
+  your Houdini is 22.0 or later.</li>
+<li>The menu is there but a node says it cannot import <code>a3ob_houdini</code>: the add-on folder path is wrong.
+  Check <code>A3OB_HOUDINI</code> and look for a <code>python</code> folder inside the path it names.</li>
+<li>Houdini prints package problems in its console. On Windows, start Houdini from a terminal to see them.</li>
+</ul>
+
+<h2>Update later</h2>
+<ol>
+<li>Replace the add-on folder with the new version (or pull the new files).</li>
+<li>In Houdini, click <kbd class="ui-shelf">Reload A3OB</kbd> on the A3OB shelf. It makes Houdini forget the old A3OB
+  code and load the new code, without a restart. Nodes you cook after that use the new code.</li>
+<li>If a node looks wrong after an update (a missing parameter, for example), restart Houdini.</li>
+</ol>
+<p class="note">Reload A3OB works from the shelf, so it does not help if the shelf itself did not load. Restart Houdini
+in that case.</p>
+
+<h2>Next</h2>
+<ul class="cards">
+<li><a href="quick-start-arma.html">Quick start: Arma modders</a><span>You know Arma models. You are new to Houdini.</span></li>
+<li><a href="quick-start-houdini.html">Quick start: Houdini users</a><span>You know Houdini. You are new to Arma models.</span></li>
+</ul>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>

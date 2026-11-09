@@ -1,0 +1,14 @@
+Operator:     a3ob_lod_weights
+Label:        LOD Weights
+Path:         oplib:/Sop/a3ob_lod_weights?Sop/a3ob_lod_weights
+Icon:         SOP_python
+Table:        Sop
+License:      
+Extra:        
+User:         
+Inputs:       3 to 3
+Subnet:       false
+Python:       true
+Empty:        false
+Modified:     Mon Nov  3 12:00:00 2026
+

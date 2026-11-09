@@ -1,0 +1,430 @@
+# Dialog script for a3ob_p3d_export, version 1
+
+{
+    name	a3ob_p3d_export
+    script	a3ob_p3d_export
+    label	"P3D Export"
+
+    help {
+	"Checks a P3D geometry or a LOD geometry like Validate and writes it as a .p3d file when Save to Disk is pressed. The output is the input. Shadow and underground LODs are always written with hard edges (the geometry here is not changed)."
+    }
+
+    inputlabel	1	"P3D geometry or LOD geometry"
+
+    parm {
+	name	"file"
+	label	"Output File"
+	type	file
+	default	{ "$HIP/$HIPNAME.p3d" }
+	help	"The .p3d file to write."
+	parmtag	{ "filechooser_mode" "write" }
+	parmtag	{ "filechooser_pattern" "*.p3d" }
+    }
+    parm {
+	name	"save"
+	label	"Save to Disk"
+	type	button
+	default	{ "0" }
+	help	"Check the input again and write the file. Nothing is written when there are errors."
+	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('p3d_export', 'save', kwargs)" }
+	parmtag	{ "script_callback_language" "python" }
+    }
+    parm {
+	name	"backup"
+	label	"Keep a .bak"
+	type	toggle
+	default	{ "0" }
+	help	"When a file is overwritten, keep the old one as .bak."
+    }
+    group {
+	name	"tab_checking"
+	label	"Error Checking"
+
+        parm {
+    	name	"check"
+    	label	"Check"
+    	type	string
+    	default	{ "cook" }
+    	menu {
+    	    "cook"	"Every cook"
+    	    "save"	"When saving"
+    	}
+    	help	"Every cook: check whenever the node cooks. When saving: check only on Save to Disk (for large models)."
+        }
+
+        parm {
+    	name	"errorlevel"
+    	label	"Errors Show As"
+    	type	string
+    	default	{ "error" }
+    	menu {
+    	    "error"	"Error (stop here)"
+    	    "warning"	"Warning (keep geometry)"
+    	}
+    	help	"Error (stop here): the node turns red and the nodes below it stop. Warning (keep geometry): the node turns yellow and the geometry keeps flowing; the text still starts with Error:. Saving stops on errors either way."
+        }
+
+        parm {
+    	name	"strict"
+    	label	"Warnings Count As Errors"
+    	type	toggle
+    	default	{ "0" }
+    	help	"Treat every warning as an error. Off by default: a warning can be what you meant."
+        }
+
+        parm {
+    	name	"dupes"
+    	label	"Duplicate LODs"
+    	type	string
+    	default	{ "fail" }
+    	menu {
+    	    "fail"	"Fail"
+    	    "skip"	"Skip"
+    	    "ignore"	"Ignore"
+    	}
+    	help	"What to do with a LOD whose type and resolution were already written: Fail, Skip the later one, or Ignore and write both."
+        }
+
+        parm {
+    	name	"maxmessages"
+    	label	"Max Messages"
+    	type	integer
+    	size	1
+    	default	{ "25" }
+    	range	{ 1! 10 }
+    	help	"How many messages the node shows. The rest are counted in one line and listed in Windows > Log Viewer (source A3OB)."
+        }
+    }
+
+    group {
+	name	"tab_presets"
+	label	"Presets"
+
+        parm {
+    	name	"preset"
+    	label	"Preset"
+    	type	string
+    	default	{ "Lossless" }
+    	menu {
+    	    [ "__import__('a3ob_houdini.entry', fromlist=['menu']).menu('p3d_export', 'presets', kwargs)" ]
+    	    language python
+    	}
+    	help	"A saved set of the options below: Lossless, Arma 3 release, or one you saved with the Project root and presets shelf tool. A new node starts with the preset that is active there. Pick one and press Apply. Choosing does not change anything by itself."
+        }
+
+        parm {
+    	name	"apply"
+    	label	"Apply"
+    	type	button
+    	default	{ "0" }
+    	help	"Fill the options below from the chosen preset. Project Root and Keep a .bak stay as they are."
+    	parmtag	{ "script_callback" "import a3ob_houdini.entry as e; e.button('p3d_export', 'apply', kwargs)" }
+    	parmtag	{ "script_callback_language" "python" }
+        }
+    }
+
+    group {
+	name	"tab_paths"
+	label	"Paths & Names"
+
+        parm {
+    	name	"relpaths"
+    	label	"Relative Paths"
+    	type	toggle
+    	default	{ "0" }
+    	help	"Write texture, material and proxy files picked with a drive letter as in-game paths. First, the nearest $PBOPREFIX$ file in the file's folder or above it gives the prefix (a file in addons\\props with mymod\\ame\\addons\\props there becomes mymod\\ame\\addons\\props\\...). Second, a HEMTT project (a folder with .hemtt\\project.toml) with the file under addons\\<name> gets the prefix mainprefix\\prefix\\addons\\<name>. Third, the Project Root is cut off, or at least the drive letter (with a warning). Paths without a drive letter are written as typed, so you can also type the in-game path directly."
+        }
+
+        parm {
+    	name	"projectroot"
+    	label	"Project Root"
+    	type	directory
+    	default	{ "" }
+    	help	"Used by Relative Paths only when the file has no $PBOPREFIX$ file and is not in a HEMTT addon: this folder is cut off the start of the path. Empty means the root from the shelf settings, or P:\\ without one."
+        }
+
+        parm {
+    	name	"paatextures"
+    	label	"Write Textures as .paa"
+    	type	toggle
+    	default	{ "0" }
+    	help	"Write a texture path that ends in .png, .tga, .tif or any other picture ending as .paa (camo1_co.png becomes camo1_co.paa). Procedural textures and paths that already end in .paa are not changed. The game reads .paa only, and making the .paa file exist before you build the PBO is your job. Off: paths are written as they are. On in the Arma 3 release preset."
+        }
+
+        parm {
+    	name	"lowercase"
+    	label	"Lowercase"
+    	type	toggle
+    	default	{ "0" }
+    	help	"Write texture and material paths, selection names (so proxy paths too) and property names and values in lower case, as Object Builder does. Warns when two names become equal."
+        }
+
+        parm {
+    	name	"czech"
+    	label	"Translate Names to Czech"
+    	type	toggle
+    	default	{ "0" }
+    	help	"Rename selections that have an English name from Object Builder's table (body becomes telo, weapon becomes zbran) to the Czech name the game uses. Whole name, any case. Warns when two selections end up equal."
+        }
+
+        parm {
+    	name	"renumber"
+    	label	"Renumber Components"
+    	type	toggle
+    	default	{ "0" }
+    	help	"Rename every selection that starts with component and digits to component01, component02, ... in the order they are written, per LOD. The name is lowercased and any text after the digits is lost."
+        }
+    }
+
+    group {
+	name	"tab_selections"
+	label	"Selections"
+
+        parm {
+    	name	"selmask"
+    	label	"Selection Mask"
+    	type	string
+    	default	{ "* ^__*" }
+    	menutoggle {
+    	    [ "__import__('a3ob_houdini.entry', fromlist=['menu']).menu('p3d_export', 'selmask_groups', kwargs)" ]
+    	    language python
+    	}
+    	help	"Which point groups become selections in the file. Leave as is to write all of them except Houdini's internal ones (names starting with __)."
+        }
+
+        parm {
+    	name	"autocomponents"
+    	label	"Auto-Components"
+    	type	toggle
+    	default	{ "0" }
+    	help	"Geometry LODs without a component selection get one per connected piece."
+        }
+    }
+
+    group {
+	name	"tab_layout"
+	label	"File Layout"
+
+        parm {
+    	name	"sortlods"
+    	label	"Sort LODs"
+    	type	toggle
+    	default	{ "0" }
+    	help	"Write the LODs sorted by resolution. Off keeps your order."
+        }
+
+        parm {
+    	name	"sortsections"
+    	label	"Sort Sections"
+    	type	toggle
+    	default	{ "0" }
+    	help	"Order the faces by texture and material, as Object Builder does. This changes the face order."
+        }
+
+        parm {
+    	name	"dropuvs"
+    	label	"Drop UVs"
+    	type	toggle
+    	default	{ "0" }
+    	help	"LODs of a type that does not use UVs (Geometry, Memory, Roadway, the fire and view geometry types) are written without UV sets and with zero face UVs, as Object Builder does. The geometry on the node is not changed."
+        }
+    }
+
+    group {
+	name	"tab_rules"
+	label	"LOD Rules"
+
+        parm {
+    	name	"typerules"
+    	label	"Check LOD-Type Rules"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Warn about what Object Builder's validator would: rules for geometry, shadow, roadway and other LOD types. Each rule has its own switch below."
+        }
+
+        parm {
+    	name	"triangulate"
+    	label	"Triangulate Where Needed"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Divide only the polygons that break the rules, in the written file (the geometry on the node is not changed): polygons with more than 4 points in any LOD, quads that are not convex in Geometry and Shadow Volume LODs, and every quad in Underground LODs. Triangles and allowed quads are left as they are. Uses Divide with Convex Polygons, Maximum Edges 3 and Avoid Small Angles, and warns for each LOD it changed. Off: those polygons stay and the checks report them."
+        }
+
+        parm {
+    	name	"t2uv2"
+    	label	"At most 2 UV sets"
+    	type	toggle
+    	default	{ "1" }
+    	help	"The LOD has no more than 2 UV sets."
+        }
+
+        parm {
+    	name	"t2contig"
+    	label	"Contiguous mesh"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Geometry, shadow and underground LODs: no flipped polygons (shared edges run in opposite directions)."
+        }
+
+        parm {
+    	name	"t2tri"
+    	label	"Triangulated"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Underground LODs: every polygon is a triangle. Geometry and shadow LODs: triangles and convex quads."
+        }
+
+        parm {
+    	name	"t2convex"
+    	label	"Convex mesh"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Geometry and underground LODs: every shared edge is convex or flat."
+        }
+
+        parm {
+    	name	"t2comp"
+    	label	"Component selections"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Geometry and underground LODs: a group called component01, component02, ... exists."
+        }
+
+        parm {
+    	name	"t2mass"
+    	label	"Mass is set"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Geometry LOD: a note (not a warning) when the points have a total mass below 0.001."
+        }
+
+        parm {
+    	name	"t2massall"
+    	label	"Every point has mass"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Geometry LOD: every point has a mass of at least 0.001."
+        }
+
+        parm {
+    	name	"t2nomat"
+    	label	"No materials"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Underground LODs: no polygon has a texture or material. Shadow LODs may have them."
+        }
+
+        parm {
+    	name	"t2shadowres"
+    	label	"Conventional shadow resolution"
+    	type	toggle
+    	default	{ "0" }
+    	help	"Shadow LODs: the resolution is 0, 10, 1000, 1010 or 1020. Off by default."
+        }
+
+        parm {
+    	name	"t2shadowoff"
+    	label	"Shadow not disabled"
+    	type	toggle
+    	default	{ "0" }
+    	help	"Shadow LODs: no LODNoShadow = 1 property. Off by default."
+        }
+
+        parm {
+    	name	"t2pcedge"
+    	label	"No edges in point clouds"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Memory, land contact and hit-point LODs: no 2-point primitives."
+        }
+
+        parm {
+    	name	"t2pcface"
+    	label	"No faces in point clouds"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Memory, land contact and hit-point LODs: no polygons."
+        }
+
+        parm {
+    	name	"t2rwfaces"
+    	label	"Has polygons"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Roadway, ground layer and paths LODs: at least one polygon."
+        }
+
+        parm {
+    	name	"t2rwlimit"
+    	label	"Roadway point limit"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Roadway LODs: at most 255 points."
+        }
+
+        parm {
+    	name	"t2rwsound"
+    	label	"Roadway sound textures"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Roadway LODs: every polygon has a texture (the sound)."
+        }
+
+        parm {
+    	name	"t2gluv"
+    	label	"Ground layer UV set"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Ground layer LODs: exactly one UV set."
+        }
+
+        parm {
+    	name	"t2gluvvalues"
+    	label	"Ground layer UV values"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Ground layer LODs: every UV is (0, 0), (1, 0), (1, 1) or (1, -1)."
+        }
+
+        parm {
+    	name	"t2pathentry"
+    	label	"Path entry points"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Paths LODs: a group called in01, in02, ... exists."
+        }
+
+        parm {
+    	name	"t2pathpos"
+    	label	"Path position points"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Paths LODs: the same test as the entry rule (as in Object Builder, which tests entry points twice)."
+        }
+
+        parm {
+    	name	"t2wgt4"
+    	label	"At most 4 bones per point"
+    	type	toggle
+    	default	{ "1" }
+    	help	"Visual, view and shadow LODs with selections named like the bones of the Arma 3 man skeleton (OFP2_ManSkeleton, case ignored): no point is weighted to more than 4 bones."
+        }
+
+        parm {
+    	name	"t2wgtsum"
+    	label	"Bone weights add up to 1"
+    	type	toggle
+    	default	{ "1" }
+    	help	"The same LODs: the bone weights of a point add up to 1, within 0.02 (Bohemia's own sample character adds up to 0.992 and works in the game)."
+        }
+
+        parm {
+    	name	"t2wgtnone"
+    	label	"Every point has a bone weight"
+    	type	toggle
+    	default	{ "1" }
+    	help	"The same LODs: every point has a weight in at least one bone selection."
+        }
+    }
+
+}

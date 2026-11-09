@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rig Skeleton - A3OB for Houdini</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+<div class="inner">
+<a class="site-title" href="../index.html">A3OB for Houdini</a>
+<!-- nav:start -->
+<nav class="site" aria-label="Main">
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../quick-start-arma.html">Quick start: Arma modders</a></li>
+<li><a href="../quick-start-houdini.html">Quick start: Houdini users</a></li>
+<li><a href="../concepts.html">Concepts</a></li>
+<li><a href="../reference/index.html" aria-current="page">Reference</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+</nav>
+<!-- nav:end -->
+</div>
+</header>
+<main>
+<p class="crumbs"><a href="index.html">Reference</a> / Nodes</p>
+<h1>Rig Skeleton</h1>
+<p class="lead">Builds the Arma 3 character skeleton as a KineFX skeleton, from a model.cfg and a pivots .p3d file. Each joint&#x27;s X axis points down its bone to the next joint, and the hinge of elbows, knees, fingers and thumbs is on Z.</p>
+<p>Builds the Arma 3 character skeleton as a KineFX skeleton (the kind that Rig Pose and Joint Deform use). The bones and their parents come from a model.cfg. Where each joint sits comes from a separate pivots .p3d file: the model.cfg only names the game&#x27;s packed pivots file, which can&#x27;t be read.</p>
+<p>The face bones (Face_*) and the eyes are left out. A bone with no pivot is left out and listed on the node. A new node starts from the Samples files when the Arma 3 Samples folder is set in the Project root and presets tool.</p>
+<table class="facts">
+<tr><th>Houdini name</th><td><code>a3ob_rig_skeleton</code></td></tr>
+<tr><th>Where to find it</th><td>Tab menu, A3OB, Rig Skeleton</td></tr>
+<tr><th>Inputs</th><td>None</td></tr>
+</table>
+<h2>Parameters</h2>
+<p>Parameters are in the order they appear on the node.</p>
+<section class="parm" id="cfg">
+<h3>Model Config <code>cfg</code></h3>
+<p>The model.cfg that holds the skeleton. This node reads exactly this one file. Arma also reads a &lt;foldername&gt;.cfg (which wins over model.cfg) and a &lt;modelname&gt;.cfg next to the model; if your skeleton is in one of those, pick that file. #include lines are not followed.</p>
+<dl>
+<dt>Type</dt><dd>File path</dd>
+<dt>Default</dt><dd>(empty)</dd>
+<dt>Files</dt><dd>*.cfg</dd>
+</dl>
+</section>
+<section class="parm" id="skeleton">
+<h3>Skeleton <code>skeleton</code></h3>
+<p>Which skeleton class of the file to build (the classes in CfgSkeletons, with their bone count). Empty means the first one that has bones. A class that inherits (skeletonInherit) gets the bones of the class it inherits from first.</p>
+<dl>
+<dt>Type</dt><dd>Menu</dd>
+<dt>Default</dt><dd>(none)</dd>
+</dl>
+<p>The choices are made when you open the menu, from the geometry or the settings.</p>
+</section>
+<section class="parm" id="pivots">
+<h3>Pivots File <code>pivots</code></h3>
+<p>An editable pivots .p3d: its Memory LOD has one named selection per bone, and the first point of a selection is that bone&#x27;s pivot. The game file named by pivotsModel in the model.cfg is packed and can&#x27;t be read, so you point at the editable one here (the Samples have ManSkeleton_Pivots.p3d).</p>
+<dl>
+<dt>Type</dt><dd>File path</dd>
+<dt>Default</dt><dd>(empty)</dd>
+<dt>Files</dt><dd>*.p3d</dd>
+</dl>
+</section>
+</main>
+<footer class="site">
+<div class="inner">
+<!-- footer:start -->
+<p>Houdini tools for Arma 3 models. Based on Arma 3 Object Builder by MrClock, which continues ArmAToolbox by Alwarren.</p>
+<p>Licence: GPL-3.0-or-later. <a href="../about.html">About these tools and credits</a>.</p>
+<!-- footer:end -->
+</div>
+</footer>
+</body>
+</html>
